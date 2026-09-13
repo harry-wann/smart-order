@@ -1,0 +1,887 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>11 設計系統 · 火鍋店點餐系統文件</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand-700:#A63522; --brand-600:#C8442E; --brand-500:#DB5B42; --brand-100:#FBE8E3;
+  --accent-500:#E8A33D; --accent-100:#FCF0DC;
+  --bg:#FBF7F0; --surface:#FFFFFF; --surface-2:#F5EFE5; --line:#E6DED2;
+  --t900:#2B211C; --t600:#6B5D54; --t400:#9C8E84;
+  --ok:#3F7A4E; --ok-bg:#E4EFE7; --warn:#D98324; --bad:#B3261E;
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --serif:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --shadow:0 1px 2px rgba(43,33,28,.06),0 4px 12px rgba(43,33,28,.05);
+  --sidebar:280px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:var(--bg);color:var(--t900);font-family:var(--sans);
+  font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased}
+
+.layout{display:flex;min-height:100vh;align-items:flex-start}
+.sidebar{width:var(--sidebar);flex:0 0 var(--sidebar);position:sticky;top:0;height:100vh;
+  overflow-y:auto;background:var(--surface);border-right:1px solid var(--line);padding:22px 0 48px}
+.brand{padding:0 20px 16px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.brand a{text-decoration:none;color:inherit;display:block}
+.brand .logo{font-family:var(--serif);font-weight:900;font-size:18px;line-height:1.35;color:var(--brand-600)}
+.brand .sub{font-size:11.5px;color:var(--t400);margin-top:4px;letter-spacing:.02em}
+.navgroup{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--t400);
+  padding:15px 20px 5px}
+.sidebar a.nav{display:block;padding:6px 20px;color:var(--t600);text-decoration:none;
+  font-size:14px;border-left:3px solid transparent;line-height:1.5}
+.sidebar a.nav:hover{background:var(--brand-100);color:var(--brand-700)}
+.sidebar a.nav.active{background:var(--brand-100);color:var(--brand-700);
+  border-left-color:var(--brand-600);font-weight:700}
+.sidebar details{border-top:1px solid transparent}
+.sidebar details>summary{list-style:none;cursor:pointer;font-size:11px;font-weight:700;
+  letter-spacing:.1em;color:var(--t400);padding:12px 20px 5px;user-select:none}
+.sidebar details>summary::-webkit-details-marker{display:none}
+.sidebar details>summary::before{content:"▸ ";font-size:10px}
+.sidebar details[open]>summary::before{content:"▾ "}
+.sidebar details>summary:hover{color:var(--brand-600)}
+.sidebar .foot{padding:18px 20px;margin-top:14px;border-top:1px solid var(--line);
+  font-size:11.5px;color:var(--t400);line-height:1.7}
+
+.main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 32px 96px}
+.wrap{width:100%;max-width:1140px;display:flex;gap:36px;align-items:flex-start}
+article{flex:1;min-width:0;max-width:880px;padding-top:40px}
+.toc{width:196px;flex:0 0 196px;position:sticky;top:24px;padding-top:52px;font-size:12.5px;
+  max-height:calc(100vh - 60px);overflow-y:auto}
+.toc .tt{font-size:10.5px;letter-spacing:.1em;color:var(--t400);font-weight:700;margin-bottom:9px}
+.toc a{display:block;color:var(--t600);text-decoration:none;padding:3px 0 3px 10px;
+  border-left:2px solid var(--line);line-height:1.5}
+.toc a:hover{color:var(--brand-600);border-left-color:var(--brand-500)}
+
+.topbar{display:none;position:sticky;top:0;z-index:40;background:var(--surface);
+  border-bottom:1px solid var(--line);padding:10px 16px;align-items:center;gap:12px}
+.topbar .logo{font-family:var(--serif);font-weight:900;color:var(--brand-600);font-size:16px}
+.menubtn{background:var(--brand-600);color:#fff;border:0;border-radius:8px;height:40px;
+  padding:0 14px;font-size:15px;font-family:inherit;cursor:pointer}
+
+article h1{font-family:var(--serif);font-weight:900;font-size:32px;line-height:1.35;margin:0 0 10px}
+article h1+p{color:var(--t600)}
+article h2{font-family:var(--serif);font-weight:700;font-size:24px;line-height:1.45;
+  margin:50px 0 14px;padding-bottom:9px;border-bottom:2px solid var(--line)}
+article h3{font-weight:700;font-size:18.5px;margin:30px 0 10px}
+article h4{font-weight:700;font-size:16px;margin:22px 0 8px;color:var(--t600)}
+article p{margin:0 0 16px}
+article ul,article ol{margin:0 0 16px;padding-left:24px}
+article li{margin:5px 0}
+article a{color:var(--brand-600);text-decoration:none;border-bottom:1px solid rgba(200,68,46,.3)}
+article a:hover{border-bottom-color:var(--brand-600)}
+article a.gloss{color:var(--t900);border-bottom:1px dashed var(--accent-500);
+  background:linear-gradient(transparent 72%,var(--accent-100) 72%)}
+article a.gloss:hover{color:var(--brand-700);border-bottom-color:var(--brand-500)}
+article strong{font-weight:700;color:var(--t900)}
+article hr{border:0;border-top:1px solid var(--line);margin:42px 0}
+article img{max-width:100%;border-radius:12px}
+article details{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:12px 16px;margin:0 0 18px}
+article details>summary{cursor:pointer;font-weight:700;color:var(--brand-600)}
+
+article code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.87em;
+  background:var(--surface-2);padding:2px 6px;border-radius:5px;color:var(--brand-700);
+  word-break:break-word}
+article pre{background:#2B211C;color:#F5EFE5;padding:18px 20px;border-radius:12px;
+  overflow-x:auto;margin:0 0 18px;line-height:1.65;font-size:13.5px}
+article pre code{background:none;color:inherit;padding:0;font-size:inherit}
+
+blockquote{margin:0 0 20px;padding:14px 18px;background:var(--accent-100);
+  border-left:4px solid var(--accent-500);border-radius:0 10px 10px 0;color:var(--t600)}
+blockquote p:last-child{margin-bottom:0}
+blockquote strong{color:var(--t900)}
+
+.tablewrap{overflow-x:auto;margin:0 0 20px;border:1px solid var(--line);
+  border-radius:12px;background:var(--surface);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:420px}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--surface-2);font-weight:700;white-space:nowrap;color:var(--t900)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--brand-100)}
+td code,th code{white-space:nowrap}
+article li input[type=checkbox]{width:16px;height:16px;margin-right:6px;accent-color:var(--brand-600)}
+
+pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:22px;text-align:center;overflow-x:auto;box-shadow:var(--shadow);margin:0 0 22px;color:inherit}
+pre.mermaid svg{max-width:100%;height:auto}
+
+.hero{padding:52px 0 32px;border-bottom:1px solid var(--line);margin-bottom:32px}
+.hero .eyebrow{display:inline-block;background:var(--brand-100);color:var(--brand-700);
+  font-size:12.5px;font-weight:700;padding:5px 13px;border-radius:999px;letter-spacing:.04em}
+.hero h1{font-family:var(--serif);font-weight:900;font-size:40px;line-height:1.25;margin:18px 0 12px}
+.hero p{font-size:17px;color:var(--t600);max-width:680px;margin:0}
+.facts{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:10px 16px;font-size:13px;box-shadow:var(--shadow)}
+.fact b{display:block;font-family:var(--serif);font-size:19px;color:var(--brand-600);font-weight:900}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:13px;margin:18px 0 8px}
+.card{display:block;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:16px;text-decoration:none;color:inherit;box-shadow:var(--shadow);transition:.15s}
+.card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(43,33,28,.12);border-color:var(--brand-500)}
+.card .k{font-size:10.5px;letter-spacing:.09em;color:var(--t400);font-weight:700}
+.card .n{font-family:var(--serif);font-weight:700;font-size:17px;margin:5px 0 6px;color:var(--t900)}
+.card .d{font-size:13px;color:var(--t600);line-height:1.6}
+.callout{background:var(--brand-100);border:1px solid var(--brand-500);border-radius:12px;
+  padding:18px 20px;margin:24px 0}
+.callout .h{font-family:var(--serif);font-weight:700;font-size:17px;margin-bottom:6px;color:var(--brand-700)}
+.callout p{margin:0;color:var(--t600);font-size:14.5px}
+.pending{background:var(--accent-100);border-color:var(--accent-500)}
+.pending .h{color:#8A5B12}
+
+.pager{display:flex;gap:12px;margin-top:52px;padding-top:22px;border-top:1px solid var(--line)}
+.pager a{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:13px 16px;text-decoration:none;color:inherit;box-shadow:var(--shadow)}
+.pager a:hover{border-color:var(--brand-500)}
+.pager .k{font-size:11px;color:var(--t400);letter-spacing:.06em}
+.pager .n{font-weight:700;color:var(--brand-600);margin-top:3px;font-size:14.5px}
+.pager .next{text-align:right}
+
+@media(max-width:1200px){ .toc{display:none} }
+@media(max-width:940px){
+  .topbar{display:flex}
+  .layout{display:block}
+  .sidebar{position:fixed;left:0;top:0;height:100vh;z-index:50;transform:translateX(-100%);
+    transition:transform .2s;box-shadow:0 0 40px rgba(43,33,28,.2);width:286px}
+  .sidebar.open{transform:translateX(0)}
+  .main{padding:0 16px 72px}
+  article{padding-top:24px}
+  .hero{padding:30px 0 24px}
+  .hero h1{font-size:30px}
+  article h1{font-size:26px}
+  article h2{font-size:21px;margin-top:38px}
+  .pager{flex-direction:column}
+}
+@media print{
+  .sidebar,.toc,.topbar,.pager{display:none!important}
+  body{background:#fff}
+  .main{padding:0}
+  article{max-width:none}
+  article h2{page-break-after:avoid}
+  .tablewrap,pre.mermaid{box-shadow:none;page-break-inside:avoid}
+  a.gloss{background:none!important;border:0!important}
+}
+</style>
+</head>
+<body>
+<div class="topbar"><button class="menubtn" onclick="document.getElementById('sb').classList.toggle('open')">☰ 目錄</button><span class="logo">火鍋店點餐系統</span></div>
+<div class="layout">
+<nav class="sidebar" id="sb"><div class="brand"><a href="../index.html"><div class="logo">火鍋店點餐系統</div><div class="sub">專案文件 · 69 頁</div></a></div><a class="nav" href="../index.html">首頁</a><div class="navgroup">規格文件</div><a class="nav" href="../spec/00-架構分層與技術選型.html">00 架構分層與技術選型</a><a class="nav" href="../spec/01-專案總覽.html">01 專案總覽</a><a class="nav" href="../spec/02-需求規格.html">02 需求規格：基礎與進階功能總表</a><a class="nav" href="../spec/03-資料庫設計.html">03 資料庫設計</a><a class="nav" href="../spec/04-API規格.html">04 API 規格</a><a class="nav" href="../spec/05-開發流程與分工.html">05 開發流程與時程</a><a class="nav" href="../spec/06-圖表總覽.html">06 圖表總覽</a><div class="navgroup">模組規格</div><a class="nav" href="../spec/modules/M1-菜單與品項.html">M1 菜單與品項</a><a class="nav" href="../spec/modules/M2-桌位開桌與候位.html">M2 桌位、開桌與候位</a><a class="nav" href="../spec/modules/M3-點餐與服務鈴.html">M3 點餐與服務鈴</a><a class="nav" href="../spec/modules/M4-出菜看板.html">M4 出菜看板（KDS）</a><a class="nav" href="../spec/modules/M5-庫存.html">M5 庫存</a><a class="nav" href="../spec/modules/M6-結帳.html">M6 結帳</a><a class="nav" href="../spec/modules/M7-訂位.html">M7 訂位</a><a class="nav" href="../spec/modules/M8-會員.html">M8 會員</a><div class="navgroup">UI 文件</div><a class="nav" href="../ui/10-UI-UX規格.html">10 UI / UX 規格</a><a class="nav active" href="../ui/11-設計系統.html">11 設計系統</a><a class="nav" href="../ui/12-AI-UI工具與提示詞.html">12 AI UI 工具與提示詞</a><div class="navgroup">技術總表</div><a class="nav" href="../tech/00-技術總表.html">00 技術總表</a><details><summary>技術 · 團隊與工具（5）</summary><a class="nav" href="../tech/team/01-命令列.html">01 命令列基本操作</a><a class="nav" href="../tech/team/02-Git是什麼.html">02 Git 是什麼</a><a class="nav" href="../tech/team/03-分支與合併.html">03 分支、合併與衝突</a><a class="nav" href="../tech/team/04-GitHub與PR.html">04 GitHub 與 Pull Request</a><a class="nav" href="../tech/team/05-Docker與Compose.html">05 Docker 與 Docker Compose</a></details><details><summary>技術 · 網頁運作原理（6）</summary><a class="nav" href="../tech/web/06-前端後端在做什麼.html">06 前端與後端各在做什麼</a><a class="nav" href="../tech/web/07-HTTP請求與回應.html">07 HTTP 請求與回應</a><a class="nav" href="../tech/web/08-HTTP狀態碼.html">08 HTTP 狀態碼</a><a class="nav" href="../tech/web/09-JSON.html">09 JSON</a><a class="nav" href="../tech/web/10-REST-API設計.html">10 REST API 設計</a><a class="nav" href="../tech/web/11-CORS跨來源.html">11 CORS 跨來源問題</a></details><details><summary>技術 · 後端（10）</summary><a class="nav" href="../tech/backend/12-Java與JDK.html">12 Java 與 JDK</a><a class="nav" href="../tech/backend/13-Maven.html">13 Maven 與相依套件</a><a class="nav" href="../tech/backend/14-SpringBoot是什麼.html">14 Spring Boot 是什麼</a><a class="nav" href="../tech/backend/15-依賴注入.html">15 依賴注入</a><a class="nav" href="../tech/backend/16-三層架構.html">16 Controller / Service / Repository</a><a class="nav" href="../tech/backend/17-Entity與DTO.html">17 Entity 與 DTO</a><a class="nav" href="../tech/backend/18-全域例外處理.html">18 全域例外處理</a><a class="nav" href="../tech/backend/19-Swagger.html">19 Swagger 自動產生 API 文件</a><a class="nav" href="../tech/backend/20-SpringSecurity.html">20 Spring Security 基礎</a><a class="nav" href="../tech/backend/21-JWT.html">21 JWT 與登入狀態</a></details><details><summary>技術 · 資料庫（8）</summary><a class="nav" href="../tech/database/22-關聯式資料庫與SQL.html">22 關聯式資料庫與 SQL</a><a class="nav" href="../tech/database/23-資料表設計.html">23 資料表設計</a><a class="nav" href="../tech/database/24-索引.html">24 索引是什麼</a><a class="nav" href="../tech/database/25-ORM與JPA.html">25 ORM 與 JPA</a><a class="nav" href="../tech/database/26-JPA關聯對應.html">26 JPA 關聯對應</a><a class="nav" href="../tech/database/27-交易Transaction.html">27 交易 Transaction</a><a class="nav" href="../tech/database/28-鎖與併發.html">28 鎖與併發（防超賣）</a><a class="nav" href="../tech/database/29-Flyway.html">29 Flyway 資料庫版本控管</a></details><details><summary>技術 · 前端（11）</summary><a class="nav" href="../tech/frontend/30-現代JavaScript.html">30 現代 JavaScript 速成</a><a class="nav" href="../tech/frontend/31-非同步與async.html">31 非同步與 async/await</a><a class="nav" href="../tech/frontend/32-npm與套件.html">32 npm 與 node_modules</a><a class="nav" href="../tech/frontend/33-Vite.html">33 Vite</a><a class="nav" href="../tech/frontend/34-React與JSX.html">34 React 與 JSX</a><a class="nav" href="../tech/frontend/35-Props與State.html">35 Props 與 State</a><a class="nav" href="../tech/frontend/36-useState.html">36 useState</a><a class="nav" href="../tech/frontend/37-useEffect.html">37 useEffect</a><a class="nav" href="../tech/frontend/38-ReactRouter.html">38 React Router</a><a class="nav" href="../tech/frontend/39-Tailwind.html">39 Tailwind CSS</a><a class="nav" href="../tech/frontend/40-fetch串接API.html">40 fetch 串接後端 API</a></details><details><summary>技術 · 即時與排程（4）</summary><a class="nav" href="../tech/realtime/41-WebSocket與STOMP.html">41 WebSocket 與 STOMP</a><a class="nav" href="../tech/realtime/42-前端接WebSocket.html">42 前端接 WebSocket</a><a class="nav" href="../tech/realtime/43-排程與Cron.html">43 排程任務與 Cron</a><a class="nav" href="../tech/realtime/44-Redis.html">44 Redis</a></details><details><summary>技術 · 進階（2）</summary><a class="nav" href="../tech/advanced/45-訊息佇列RabbitMQ.html">45 訊息佇列 RabbitMQ</a><a class="nav" href="../tech/advanced/46-區間重疊與訂位排程.html">46 訂位排程的演算法</a></details><details><summary>技術 · 品質與部署（4）</summary><a class="nav" href="../tech/quality/47-單元測試.html">47 單元測試 JUnit + Mockito</a><a class="nav" href="../tech/quality/48-Testcontainers.html">48 Testcontainers</a><a class="nav" href="../tech/quality/49-GitHubActions.html">49 GitHub Actions CI</a><a class="nav" href="../tech/quality/50-部署上線.html">50 部署上線</a></details><div class="foot">由 Markdown 自動產生<br>改文件請編輯 <code>docs/</code> 下的 .md<br>再執行 <code>python3 docs/build_site.py</code></div></nav>
+<div class="main"><div class="wrap">
+<article>
+<h1 id="11">11 設計系統</h1>
+<blockquote>
+<p>這份文件是「所有畫面長什麼樣」的唯一標準。
+<strong>在動手畫任何一張設計稿、寫任何一行 CSS 之前，先讀完這份。</strong>
+先定規範再讓 AI 生成，是「不要有 AI 感」的關鍵——AI 是執行者，不是決定品味的人。</p>
+</blockquote>
+<hr />
+<h2 id="1">1. 設計概念</h2>
+<p><strong>關鍵字</strong>：熱氣、紅湯、白瓷、木桌、鐵鍋、台式老店的親切</p>
+<p>不是：科技感、未來感、極簡北歐、深色儀表板</p>
+<p><strong>一句話</strong>：像一本印得不錯的紙本菜單被搬到手機上，而不是像一個 SaaS 後台。</p>
+<h2 id="11_1">1.1 中高價位共鍋，為什麼還是走台式感</h2>
+<p>我們的餐廳定位是<strong>中高價位、多人共鍋</strong>，但視覺<strong>維持台式親切感</strong>，不走冷調精緻路線。</p>
+<p>理由是客群：<strong>共鍋店的主力是家庭與朋友聚餐</strong>。詹記就是最好的例子——價位不低，但視覺非常台、非常鮮明。而且我們的設計原則裡有「長輩兒童友善」，暖色調的台式感本來就更貼合。</p>
+<p><strong>中高價位和路邊店的差別在執行精準度，不在色票。</strong> 所以色票、字體、圓角全部維持，只做三個微調：</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>微調</th>
+<th>具體做法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>留白放大一級</strong></td>
+<td>卡片內距 16 → 20px、區塊間距 24 → 32px</td>
+</tr>
+<tr>
+<td><strong>照片統一打光與色溫</strong></td>
+<td>混用不同色溫的素材是最掉價的地方，全部挑暖色調、同一種打光風格</td>
+</tr>
+<tr>
+<td><strong>價格呈現保持乾淨</strong></td>
+<td>不用刪除線、不用「原價／特價」的促銷感排版</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="2">2. 色彩</h2>
+<h3 id="21">2.1 色票</h3>
+<pre><code class="language-css">:root {
+  /* 主色 — 紅湯 */
+  --brand-700: #A63522;  /* 按下 */
+  --brand-600: #C8442E;  /* 主按鈕、重點、價格 */
+  --brand-500: #DB5B42;  /* hover */
+  --brand-100: #FBE8E3;  /* 淺底、選中背景 */
+
+  /* 輔色 — 金黃湯頭 */
+  --accent-600: #C9862A;
+  --accent-500: #E8A33D;  /* 標籤、預約優先、推薦徽章 */
+  --accent-100: #FCF0DC;
+
+  /* 中性 — 暖色調，不是灰色 */
+  --bg:         #FBF7F0;  /* 頁面底色 ★絕對不要用純白 */
+  --surface:    #FFFFFF;  /* 卡片 */
+  --surface-2:  #F5EFE5;  /* 次級區塊 */
+  --border:     #E6DED2;
+  --text-900:   #2B211C;  /* 主文字，暖黑不是純黑 */
+  --text-600:   #6B5D54;  /* 次要文字 */
+  --text-400:   #9C8E84;  /* 弱化文字、停用 */
+
+  /* 語意色 */
+  --success:    #3F7A4E;  /* 青蔬綠 — 已出餐、成功 */
+  --success-bg: #E4EFE7;
+  --warning:    #D98324;  /* 庫存偏低、等待過久 */
+  --warning-bg: #FCF0DC;
+  --danger:     #B3261E;  /* 售完、錯誤、取消 */
+  --danger-bg:  #FBE8E3;
+  --info:       #2F6F8F;  /* 一般提示 */
+  --info-bg:    #E5EFF4;
+
+  /* 桌況專用 */
+  --table-available: #E6DED2;
+  --table-occupied:  #C8442E;
+  --table-reserved:  #E8A33D;
+  --table-cleaning:  #9C8E84;
+}
+</code></pre>
+<h3 id="22-tailwind">2.2 Tailwind 設定</h3>
+<pre><code class="language-js">// tailwind.config.js
+export default {
+  content: ['./index.html', './src/**/*.{js,jsx}'],
+  theme: {
+    extend: {
+      colors: {
+        brand:   { 100:'#FBE8E3', 500:'#DB5B42', 600:'#C8442E', 700:'#A63522' },
+        accent:  { 100:'#FCF0DC', 500:'#E8A33D', 600:'#C9862A' },
+        ink:     { 400:'#9C8E84', 600:'#6B5D54', 900:'#2B211C' },
+        paper:   { DEFAULT:'#FBF7F0', card:'#FFFFFF', sub:'#F5EFE5', line:'#E6DED2' },
+        ok:      { DEFAULT:'#3F7A4E', bg:'#E4EFE7' },
+        warn:    { DEFAULT:'#D98324', bg:'#FCF0DC' },
+        bad:     { DEFAULT:'#B3261E', bg:'#FBE8E3' },
+      },
+      fontFamily: {
+        serif: ['&quot;Noto Serif TC&quot;', 'serif'],
+        sans:  ['&quot;Noto Sans TC&quot;', 'system-ui', 'sans-serif'],
+      },
+      borderRadius: { card: '12px', btn: '8px' },
+      boxShadow: {
+        card: '0 1px 2px rgba(43,33,28,.06), 0 4px 12px rgba(43,33,28,.05)',
+        pop:  '0 8px 24px rgba(43,33,28,.12)',
+      },
+    },
+  },
+}
+</code></pre>
+<h3 id="23">2.3 顏色使用規則</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>情況</th>
+<th>用什麼</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>主要行動按鈕</td>
+<td><code>brand-600</code> 底 + 白字</td>
+</tr>
+<tr>
+<td>次要按鈕</td>
+<td>白底 + <code>brand-600</code> 邊框與文字</td>
+</tr>
+<tr>
+<td>文字按鈕</td>
+<td><code>text-600</code>，hover 變 <code>brand-600</code></td>
+</tr>
+<tr>
+<td>價格</td>
+<td><code>brand-600</code>，粗體</td>
+</tr>
+<tr>
+<td>推薦／預約優先徽章</td>
+<td><code>accent-500</code> 底 + <code>text-900</code></td>
+</tr>
+<tr>
+<td>已出餐</td>
+<td><code>success</code></td>
+</tr>
+<tr>
+<td>售完</td>
+<td><code>danger</code> 文字 + 照片灰階 + 「售完」標籤</td>
+</tr>
+<tr>
+<td>頁面底</td>
+<td><code>bg</code>（<code>#FBF7F0</code>）</td>
+</tr>
+<tr>
+<td>卡片</td>
+<td><code>surface</code> + <code>border</code> 1px</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p><strong>紅色是主色，所以錯誤色要用更暗的紅（<code>#B3261E</code>）才分得出來。</strong> 這是常見的陷阱。</p>
+</blockquote>
+<h3 id="24">2.4 唯一的深色例外</h3>
+<p><strong>出菜看板 KDS</strong> 用深色背景（<code>#241C18</code>）+ 白字。理由：廚房光線強、距離遠，深底高對比最清楚。其他所有頁面一律亮色。</p>
+<hr />
+<h2 id="3">3. 字體</h2>
+<h3 id="31">3.1 選用</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>用途</th>
+<th>字體</th>
+<th>字重</th>
+<th>為什麼</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>標題、店名、價格</td>
+<td><strong>Noto Serif TC（思源宋體）</strong></td>
+<td>700 / 900</td>
+<td>台灣餐廳招牌與紙本菜單大量使用明體。<strong>這是脫離 AI 感最有效的一招</strong>——AI 生成的介面幾乎清一色無襯線</td>
+</tr>
+<tr>
+<td>內文、按鈕、表單</td>
+<td><strong>Noto Sans TC（思源黑體）</strong></td>
+<td>400 / 500 / 700</td>
+<td>中文螢幕閱讀最穩的選擇</td>
+</tr>
+<tr>
+<td>數字（金額、桌號、時間）</td>
+<td>Noto Sans TC + <code>font-variant-numeric: tabular-nums</code></td>
+<td>700</td>
+<td>等寬數字，金額對齊才不會跳動</td>
+</tr>
+</tbody>
+</table></div>
+<pre><code class="language-html">&lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;&gt;
+&lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.gstatic.com&quot; crossorigin&gt;
+&lt;link href=&quot;https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&amp;family=Noto+Serif+TC:wght@700;900&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+</code></pre>
+<blockquote>
+<p><strong>替代方案（想更親切、更兒童友善）</strong>：標題改用圓體（<code>jf open 粉圓</code> 或 <code>Zen Maru Gothic</code>）。但中價位店家建議還是宋體，比較有「老店」的份量感。<strong>兩者擇一，不要混用三種字體。</strong></p>
+</blockquote>
+<h3 id="32">3.2 字級階層</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>名稱</th>
+<th>大小 / 行高</th>
+<th>字體</th>
+<th>用在哪</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>display</code></td>
+<td>32 / 1.3</td>
+<td>Serif 900</td>
+<td>結帳合計、付款完成金額</td>
+</tr>
+<tr>
+<td><code>h1</code></td>
+<td>28 / 1.4</td>
+<td>Serif 700</td>
+<td>頁面主標題</td>
+</tr>
+<tr>
+<td><code>h2</code></td>
+<td>22 / 1.5</td>
+<td>Serif 700</td>
+<td>區塊標題、分類名</td>
+</tr>
+<tr>
+<td><code>h3</code></td>
+<td>18 / 1.6</td>
+<td>Sans 700</td>
+<td>品項名稱</td>
+</tr>
+<tr>
+<td><code>body</code></td>
+<td>16 / 1.75</td>
+<td>Sans 400</td>
+<td><strong>內文最小值，不得更小</strong></td>
+</tr>
+<tr>
+<td><code>body-sm</code></td>
+<td>14 / 1.7</td>
+<td>Sans 400</td>
+<td>已選選項、備註等次要資訊</td>
+</tr>
+<tr>
+<td><code>caption</code></td>
+<td>13 / 1.6</td>
+<td>Sans 400</td>
+<td>時間戳、註腳。<strong>僅用於非關鍵資訊</strong></td>
+</tr>
+<tr>
+<td><code>price</code></td>
+<td>20 / 1.4</td>
+<td>Sans 700 tabular</td>
+<td>品項價格</td>
+</tr>
+<tr>
+<td><code>button</code></td>
+<td>18 / 1</td>
+<td>Sans 500</td>
+<td>按鈕文字</td>
+</tr>
+<tr>
+<td><code>kds-table</code></td>
+<td>32 / 1.2</td>
+<td>Sans 900</td>
+<td>KDS 桌號</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>中文行高一律 ≥ 1.6</strong>（比英文需要更多呼吸空間）。</p>
+<hr />
+<h2 id="4">4. 間距、圓角、陰影</h2>
+<h3 id="41-8px">4.1 間距（8px 基準）</h3>
+<p><code>4 / 8 / 12 / 16 / 24 / 32 / 48 / 64</code></p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>用途</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>頁面左右留白（手機）</td>
+<td>16px</td>
+</tr>
+<tr>
+<td>卡片內距</td>
+<td>16px</td>
+</tr>
+<tr>
+<td>卡片之間</td>
+<td>12px</td>
+</tr>
+<tr>
+<td>區塊之間</td>
+<td>24px</td>
+</tr>
+<tr>
+<td>大區塊之間</td>
+<td>40px</td>
+</tr>
+<tr>
+<td>表單欄位之間</td>
+<td>16px</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="42">4.2 圓角</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>元素</th>
+<th>圓角</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>卡片、圖片</td>
+<td>12px</td>
+</tr>
+<tr>
+<td>按鈕、輸入框</td>
+<td>8px</td>
+</tr>
+<tr>
+<td>標籤、徽章</td>
+<td>999px（膠囊）</td>
+</tr>
+<tr>
+<td>底部彈出面板</td>
+<td>上方 20px</td>
+</tr>
+<tr>
+<td>頭像</td>
+<td>50%</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p><strong>不要全部用同一個大圓角。</strong> 「所有東西都 <code>rounded-2xl</code>」是 AI 生成介面的明顯特徵。</p>
+</blockquote>
+<h3 id="43">4.3 陰影</h3>
+<pre><code class="language-css">--shadow-card: 0 1px 2px rgba(43,33,28,.06), 0 4px 12px rgba(43,33,28,.05);
+--shadow-pop:  0 8px 24px rgba(43,33,28,.12);
+</code></pre>
+<p>只有兩級，而且都很淡。<strong>陰影用暖黑（<code>43,33,28</code>）不要用純黑或藍黑。</strong>
+<strong>禁止</strong>：彩色光暈、發光效果、大面積模糊陰影。</p>
+<hr />
+<h2 id="5">5. 元件規範</h2>
+<p>前端只需要自己寫這 8 個元件，其他都由它們組合而成。<strong>指定一位維護者</strong>（工作分配定案後指派），放在 <code>src/components/</code>。</p>
+<h3 id="51-button">5.1 Button</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Variant</th>
+<th>樣式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>primary</code></td>
+<td><code>brand-600</code> 底、白字</td>
+</tr>
+<tr>
+<td><code>secondary</code></td>
+<td>白底、<code>brand-600</code> 1.5px 邊框與文字</td>
+</tr>
+<tr>
+<td><code>ghost</code></td>
+<td>無底、<code>ink-600</code> 文字</td>
+</tr>
+<tr>
+<td><code>danger</code></td>
+<td><code>bad</code> 底、白字</td>
+</tr>
+</tbody>
+</table></div>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Size</th>
+<th>高度</th>
+<th>字級</th>
+<th>左右內距</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>lg</code></td>
+<td><strong>52px</strong></td>
+<td>18px</td>
+<td>24px</td>
+</tr>
+<tr>
+<td><code>md</code></td>
+<td>44px</td>
+<td>16px</td>
+<td>20px</td>
+</tr>
+<tr>
+<td><code>sm</code></td>
+<td>36px</td>
+<td>14px</td>
+<td>14px</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li>主要行動一律用 <code>lg</code>（長輩友善）</li>
+<li>全寬按鈕固定在底部安全區內（<code>padding-bottom: env(safe-area-inset-bottom)</code>）</li>
+<li><strong>狀態</strong>：<code>hover</code> 加深 8%、<code>active</code> 縮放 0.98、<code>disabled</code> 降不透明度至 0.4 且游標 <code>not-allowed</code>、<code>loading</code> 顯示轉圈並停用</li>
+</ul>
+<h3 id="52-card">5.2 Card</h3>
+<p>白底、1px <code>border</code>、12px 圓角、<code>shadow-card</code>、16px 內距。可點擊的卡片 hover 時陰影升到 <code>shadow-pop</code>。</p>
+<h3 id="53-menuitemrow">5.3 MenuItemRow（菜單品項列）★最常出現的元件</h3>
+<ul>
+<li>高度 ≥ 96px</li>
+<li>左：照片 80×80、圓角 12px、<code>object-fit: cover</code></li>
+<li>中：名稱（h3）、描述（body-sm，最多 2 行省略）、價格（price）</li>
+<li>右：<code>+</code> 圓形按鈕 44×44，或數量步進器</li>
+<li><strong>售完態</strong>：照片 <code>filter: grayscale(1) opacity(.6)</code>、價格劃線、右上角 <code>danger</code> 膠囊標籤「售完」、整列 <code>pointer-events: none</code></li>
+</ul>
+<h3 id="54-stepper">5.4 Stepper（數量步進器）</h3>
+<ul>
+<li><code>−</code> 與 <code>+</code> 為 44×44 圓形按鈕，數字區寬 48px 置中</li>
+<li>數量為 0 時 <code>−</code> 變成垃圾桶圖示</li>
+<li>按下有輕微縮放回饋</li>
+</ul>
+<h3 id="55-optioncard">5.5 OptionCard（選項選擇）</h3>
+<ul>
+<li>單選：整張卡片可點，選中時 <code>brand-100</code> 底 + <code>brand-600</code> 1.5px 邊框 + 右側勾勾</li>
+<li>複選：左側方形勾選框 24×24</li>
+<li>右側顯示價差，0 元不顯示</li>
+<li>高度 ≥ 56px</li>
+</ul>
+<h3 id="56-badge">5.6 Badge</h3>
+<p>膠囊形、12px 字、<code>padding: 2px 10px</code></p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>類型</th>
+<th>樣式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>推薦／人氣</td>
+<td><code>accent-500</code> 底、<code>text-900</code></td>
+</tr>
+<tr>
+<td>預約優先</td>
+<td><code>accent-500</code> 底 + 金色邊框</td>
+</tr>
+<tr>
+<td>售完</td>
+<td><code>bad</code> 底、白字</td>
+</tr>
+<tr>
+<td>已出餐</td>
+<td><code>ok</code> 底、白字</td>
+</tr>
+<tr>
+<td>辣度</td>
+<td>白底、<code>bad</code> 邊框與文字 + 辣椒圖示</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="57-toast">5.7 Toast</h3>
+<p>畫面上方滑入、3 秒後自動消失、最多同時 1 個。成功綠、錯誤紅、一般深色。<strong>不要用瀏覽器的 <code>alert()</code>。</strong></p>
+<h3 id="58-emptystate-skeleton-errorstate">5.8 EmptyState / Skeleton / ErrorState</h3>
+<p>三態元件（見 <code>10-UI-UX規格.md</code> §1）。骨架屏用 <code>surface-2</code> 色塊 + 呼吸動畫，<strong>不要用轉圈圈</strong>。</p>
+<hr />
+<h2 id="6">6. 圖片</h2>
+<h3 id="61">6.1 素材來源</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>來源</th>
+<th>用途</th>
+<th>授權</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://unsplash.com">Unsplash</a></td>
+<td>店家形象、情境照</td>
+<td>免費商用</td>
+</tr>
+<tr>
+<td><a href="https://pexels.com">Pexels</a></td>
+<td>食材、菜色</td>
+<td>免費商用</td>
+</tr>
+<tr>
+<td><a href="https://foodiesfeed.com">Foodiesfeed</a></td>
+<td>食物特寫</td>
+<td>免費商用</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>搜尋關鍵字</strong>：<code>hot pot</code>、<code>shabu shabu</code>、<code>taiwanese hotpot</code>、<code>beef slices</code>、<code>sliced meat platter</code>、<code>vegetable platter</code>、<code>asian restaurant interior</code></p>
+<blockquote>
+<p><strong>注意</strong>：要挑<strong>亞洲／台式</strong>的照片。搜 "hot pot" 會出現很多歐美 fusion 風格，用了會很出戲。</p>
+</blockquote>
+<h3 id="62-ai">6.2 不要用 AI 生成食物照</h3>
+<p>AI 生成的食物圖在<strong>筷子、蒸氣、湯汁反光、文字標籤</strong>上幾乎一定會出錯，放大看就穿幫。真實照片免費且更好。
+（AI 生成<strong>背景紋理、圖示、插圖</strong>是可以的。）</p>
+<h3 id="63">6.3 規格</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>用途</th>
+<th>尺寸</th>
+<th>比例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>品項縮圖</td>
+<td>320×320</td>
+<td>1:1</td>
+</tr>
+<tr>
+<td>品項詳情主圖</td>
+<td>1200×675</td>
+<td>16:9</td>
+</tr>
+<tr>
+<td>分類封面</td>
+<td>640×360</td>
+<td>16:9</td>
+</tr>
+<tr>
+<td>店家形象（首頁）</td>
+<td>1600×900</td>
+<td>16:9</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li>格式優先 WebP，退回 JPEG</li>
+<li>縮圖 &lt; 80KB、主圖 &lt; 200KB</li>
+<li>一律 <code>loading="lazy"</code>（首屏除外）</li>
+<li><strong>全部圖片要有 <code>alt</code></strong></li>
+</ul>
+<hr />
+<h2 id="7-ai">7. ★「不要有 AI 感」檢查表</h2>
+<blockquote>
+<p>這是本文件最重要的一節。每張設計稿完成後逐條檢查。
+AI 生成的介面之所以一眼就看得出來，是因為模型在沒有明確指示時，會退回訓練資料中最常見的那組預設值——而那組預設值就是 2019 年之後大量 <a class="gloss" href="../tech/frontend/39-Tailwind.html" title="看這個技術的白話說明">Tailwind</a> 教學文章的樣子。</p>
+</blockquote>
+<h3 id="71">7.1 十個必檢項目</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>❌ AI 感來源</th>
+<th>✅ 我們的做法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>頁面底色用純白 <code>#FFFFFF</code></td>
+<td>用暖米白 <code>#FBF7F0</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>中性色用 Tailwind 預設的 <code>gray</code> / <code>slate</code>（偏冷偏藍）</td>
+<td>用暖灰 <code>#E6DED2</code> / <code>#6B5D54</code> / <code>#2B211C</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>靛藍到紫的漸層</strong>（最經典的 AI 標記）</td>
+<td><strong>全站禁用紫色與藍紫漸層</strong>；漸層只出現在照片上的深色遮罩</td>
+</tr>
+<tr>
+<td>4</td>
+<td>標題用 Inter 或系統預設無襯線</td>
+<td>標題用 <strong>Noto Serif TC</strong>（明體）</td>
+</tr>
+<tr>
+<td>5</td>
+<td>「三張等寬圓角卡片並排」的功能區塊</td>
+<td>菜單用<strong>左圖右文的列表</strong>；推薦區用<strong>橫向捲動</strong>；避免對稱三欄</td>
+</tr>
+<tr>
+<td>6</td>
+<td>所有元素同一個大圓角（<code>rounded-2xl</code>）</td>
+<td>卡片 12px、按鈕 8px、標籤 999px，<strong>分層級</strong></td>
+</tr>
+<tr>
+<td>7</td>
+<td>細線條通用 icon 當主視覺</td>
+<td>主視覺用<strong>真實食物照片</strong>；icon 只在次要位置且統一用 lucide</td>
+</tr>
+<tr>
+<td>8</td>
+<td>空泛的文案（「輕鬆點餐，美味享受」）</td>
+<td>具體：「掃桌號就能點，不用等服務生」「厚切 3mm，涮 8 秒最好吃」</td>
+</tr>
+<tr>
+<td>9</td>
+<td>AI 生成的食物插圖</td>
+<td>Unsplash / Pexels 的真實照片</td>
+</tr>
+<tr>
+<td>10</td>
+<td>用 emoji 當 icon（🍲🔥✨）</td>
+<td>用 lucide 圖示或自製 SVG。emoji 在不同裝置長得不一樣</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="72">7.2 額外加分：三個「只有這家店有」的細節</h3>
+<p>AI 不會主動想到這些，加進去立刻有人味：</p>
+<ol>
+<li><strong>手寫感的「今日推薦」木牌</strong>：在菜單推薦區用木紋底 + 手寫字體的小標題</li>
+<li><strong>鍋子形狀的載入動畫</strong>：火鍋冒泡泡，不是通用轉圈</li>
+<li><strong>售完的「印章」效果</strong>：斜蓋在照片上的紅色方框印章「售完」，不是灰化了事</li>
+</ol>
+<h3 id="73">7.3 一句話原則</h3>
+<blockquote>
+<p><strong>先做完設計決定，再打開 AI。</strong> AI 是執行你的決定的工具，不是幫你決定品味的人。
+這份文件存在的意義就是：讓你們在打開 Figma Make 之前，已經知道答案了。</p>
+</blockquote>
+<hr />
+<h2 id="8">8. 給前端的實作備忘</h2>
+<pre><code class="language-jsx">// src/components/Button.jsx — 範例，其餘元件比照辦理
+const styles = {
+  primary:   'bg-brand-600 text-white hover:bg-brand-500 active:bg-brand-700',
+  secondary: 'bg-white text-brand-600 border-[1.5px] border-brand-600 hover:bg-brand-100',
+  ghost:     'bg-transparent text-ink-600 hover:text-brand-600',
+  danger:    'bg-bad text-white hover:opacity-90',
+};
+const sizes = {
+  lg: 'h-[52px] text-[18px] px-6',
+  md: 'h-11 text-base px-5',
+  sm: 'h-9 text-sm px-3.5',
+};
+
+export default function Button({
+  variant = 'primary', size = 'lg', loading = false,
+  disabled, className = '', children, ...rest
+}) {
+  return (
+    &lt;button
+      disabled={disabled || loading}
+      className={[
+        'rounded-btn font-medium transition-all active:scale-[.98]',
+        'disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100',
+        'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600',
+        styles[variant], sizes[size], className,
+      ].join(' ')}
+      {...rest}
+    &gt;
+      {loading ? '處理中…' : children}
+    &lt;/button&gt;
+  );
+}
+</code></pre>
+<p><strong>三個容易忘的細節</strong></p>
+<ol>
+<li><code>active:scale-[.98]</code> 讓按鈕有「按下去」的手感，成本一行</li>
+<li><code>focus-visible</code> 的外框是鍵盤操作的必要，不要用 <code>outline-none</code> 砍掉</li>
+<li><code>disabled</code> 時要同時關掉 hover 與 active 效果，否則看起來像還能按</li>
+</ol><div class="pager"><a href="../ui/10-UI-UX規格.html"><div class="k">← 上一篇</div><div class="n">10 UI / UX 規格</div></a><a class="next" href="../ui/12-AI-UI工具與提示詞.html"><div class="k">下一篇 →</div><div class="n">12 AI UI 工具與提示詞</div></a></div>
+</article>
+<aside class="toc"><div class="tt">本頁目錄</div><a href="#1">1. 設計概念</a><a href="#11_1">1.1 中高價位共鍋，為什麼還是走台式感</a><a href="#2">2. 色彩</a><a href="#3">3. 字體</a><a href="#4">4. 間距、圓角、陰影</a><a href="#5">5. 元件規範</a><a href="#6">6. 圖片</a><a href="#7-ai">7. ★「不要有 AI 感」檢查表</a><a href="#8">8. 給前端的實作備忘</a></aside>
+</div></div>
+</div>
+<script src="../vendor/mermaid.min.js"></script>
+<script>
+mermaid.initialize({
+  startOnLoad: true, securityLevel: 'loose', theme: 'base',
+  fontFamily: '"Noto Sans TC","PingFang TC",system-ui,sans-serif',
+  themeVariables: {
+    background:'#FFFFFF',
+    primaryColor:'#FBE8E3', primaryTextColor:'#2B211C', primaryBorderColor:'#C8442E',
+    secondaryColor:'#FCF0DC', secondaryBorderColor:'#E8A33D',
+    tertiaryColor:'#F5EFE5', tertiaryBorderColor:'#E6DED2',
+    lineColor:'#9C8E84', textColor:'#2B211C',
+    mainBkg:'#FBE8E3', nodeBorder:'#C8442E', clusterBkg:'#FBF7F0', clusterBorder:'#E6DED2',
+    titleColor:'#2B211C', edgeLabelBackground:'#FBF7F0',
+    actorBkg:'#FBE8E3', actorBorder:'#C8442E', actorTextColor:'#2B211C',
+    signalColor:'#6B5D54', signalTextColor:'#2B211C',
+    labelBoxBkgColor:'#FCF0DC', labelBoxBorderColor:'#E8A33D', labelTextColor:'#2B211C',
+    loopTextColor:'#2B211C', noteBkgColor:'#FCF0DC', noteBorderColor:'#E8A33D', noteTextColor:'#2B211C',
+    activationBkgColor:'#E6DED2', activationBorderColor:'#9C8E84', sequenceNumberColor:'#FFFFFF',
+    altBackground:'#F5EFE5',
+    taskBkgColor:'#FBE8E3', taskBorderColor:'#C8442E', taskTextColor:'#2B211C',
+    taskTextOutsideColor:'#2B211C', taskTextDarkColor:'#2B211C',
+    activeTaskBkgColor:'#E8A33D', activeTaskBorderColor:'#C9862A',
+    doneTaskBkgColor:'#E4EFE7', doneTaskBorderColor:'#3F7A4E',
+    critBkgColor:'#C8442E', critBorderColor:'#A63522',
+    gridColor:'#E6DED2', todayLineColor:'#B3261E',
+    sectionBkgColor:'#FBF7F0', sectionBkgColor2:'#F5EFE5', altSectionBkgColor:'#FFFFFF',
+    classText:'#2B211C',
+    attributeBackgroundColorOdd:'#FFFFFF', attributeBackgroundColorEven:'#F5EFE5'
+  },
+  gantt:{barHeight:18,barGap:5,topPadding:52,leftPadding:180,fontSize:12},
+  mindmap:{padding:12},
+  sequence:{actorMargin:42,boxTextMargin:6,noteMargin:10,messageMargin:32,width:150},
+  er:{entityPadding:12,minEntityWidth:110}
+});
+</script>
+<script>document.addEventListener('click',function(e){var sb=document.getElementById('sb');if(window.innerWidth<=940&&sb.classList.contains('open')&&!sb.contains(e.target)&&!e.target.closest('.menubtn')){sb.classList.remove('open');}});</script>
+</body>
+</html>

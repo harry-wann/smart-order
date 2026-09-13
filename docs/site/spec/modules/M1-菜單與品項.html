@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>模組 1：菜單與品項 · 火鍋店點餐系統文件</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand-700:#A63522; --brand-600:#C8442E; --brand-500:#DB5B42; --brand-100:#FBE8E3;
+  --accent-500:#E8A33D; --accent-100:#FCF0DC;
+  --bg:#FBF7F0; --surface:#FFFFFF; --surface-2:#F5EFE5; --line:#E6DED2;
+  --t900:#2B211C; --t600:#6B5D54; --t400:#9C8E84;
+  --ok:#3F7A4E; --ok-bg:#E4EFE7; --warn:#D98324; --bad:#B3261E;
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --serif:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --shadow:0 1px 2px rgba(43,33,28,.06),0 4px 12px rgba(43,33,28,.05);
+  --sidebar:280px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:var(--bg);color:var(--t900);font-family:var(--sans);
+  font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased}
+
+.layout{display:flex;min-height:100vh;align-items:flex-start}
+.sidebar{width:var(--sidebar);flex:0 0 var(--sidebar);position:sticky;top:0;height:100vh;
+  overflow-y:auto;background:var(--surface);border-right:1px solid var(--line);padding:22px 0 48px}
+.brand{padding:0 20px 16px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.brand a{text-decoration:none;color:inherit;display:block}
+.brand .logo{font-family:var(--serif);font-weight:900;font-size:18px;line-height:1.35;color:var(--brand-600)}
+.brand .sub{font-size:11.5px;color:var(--t400);margin-top:4px;letter-spacing:.02em}
+.navgroup{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--t400);
+  padding:15px 20px 5px}
+.sidebar a.nav{display:block;padding:6px 20px;color:var(--t600);text-decoration:none;
+  font-size:14px;border-left:3px solid transparent;line-height:1.5}
+.sidebar a.nav:hover{background:var(--brand-100);color:var(--brand-700)}
+.sidebar a.nav.active{background:var(--brand-100);color:var(--brand-700);
+  border-left-color:var(--brand-600);font-weight:700}
+.sidebar details{border-top:1px solid transparent}
+.sidebar details>summary{list-style:none;cursor:pointer;font-size:11px;font-weight:700;
+  letter-spacing:.1em;color:var(--t400);padding:12px 20px 5px;user-select:none}
+.sidebar details>summary::-webkit-details-marker{display:none}
+.sidebar details>summary::before{content:"▸ ";font-size:10px}
+.sidebar details[open]>summary::before{content:"▾ "}
+.sidebar details>summary:hover{color:var(--brand-600)}
+.sidebar .foot{padding:18px 20px;margin-top:14px;border-top:1px solid var(--line);
+  font-size:11.5px;color:var(--t400);line-height:1.7}
+
+.main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 32px 96px}
+.wrap{width:100%;max-width:1140px;display:flex;gap:36px;align-items:flex-start}
+article{flex:1;min-width:0;max-width:880px;padding-top:40px}
+.toc{width:196px;flex:0 0 196px;position:sticky;top:24px;padding-top:52px;font-size:12.5px;
+  max-height:calc(100vh - 60px);overflow-y:auto}
+.toc .tt{font-size:10.5px;letter-spacing:.1em;color:var(--t400);font-weight:700;margin-bottom:9px}
+.toc a{display:block;color:var(--t600);text-decoration:none;padding:3px 0 3px 10px;
+  border-left:2px solid var(--line);line-height:1.5}
+.toc a:hover{color:var(--brand-600);border-left-color:var(--brand-500)}
+
+.topbar{display:none;position:sticky;top:0;z-index:40;background:var(--surface);
+  border-bottom:1px solid var(--line);padding:10px 16px;align-items:center;gap:12px}
+.topbar .logo{font-family:var(--serif);font-weight:900;color:var(--brand-600);font-size:16px}
+.menubtn{background:var(--brand-600);color:#fff;border:0;border-radius:8px;height:40px;
+  padding:0 14px;font-size:15px;font-family:inherit;cursor:pointer}
+
+article h1{font-family:var(--serif);font-weight:900;font-size:32px;line-height:1.35;margin:0 0 10px}
+article h1+p{color:var(--t600)}
+article h2{font-family:var(--serif);font-weight:700;font-size:24px;line-height:1.45;
+  margin:50px 0 14px;padding-bottom:9px;border-bottom:2px solid var(--line)}
+article h3{font-weight:700;font-size:18.5px;margin:30px 0 10px}
+article h4{font-weight:700;font-size:16px;margin:22px 0 8px;color:var(--t600)}
+article p{margin:0 0 16px}
+article ul,article ol{margin:0 0 16px;padding-left:24px}
+article li{margin:5px 0}
+article a{color:var(--brand-600);text-decoration:none;border-bottom:1px solid rgba(200,68,46,.3)}
+article a:hover{border-bottom-color:var(--brand-600)}
+article a.gloss{color:var(--t900);border-bottom:1px dashed var(--accent-500);
+  background:linear-gradient(transparent 72%,var(--accent-100) 72%)}
+article a.gloss:hover{color:var(--brand-700);border-bottom-color:var(--brand-500)}
+article strong{font-weight:700;color:var(--t900)}
+article hr{border:0;border-top:1px solid var(--line);margin:42px 0}
+article img{max-width:100%;border-radius:12px}
+article details{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:12px 16px;margin:0 0 18px}
+article details>summary{cursor:pointer;font-weight:700;color:var(--brand-600)}
+
+article code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.87em;
+  background:var(--surface-2);padding:2px 6px;border-radius:5px;color:var(--brand-700);
+  word-break:break-word}
+article pre{background:#2B211C;color:#F5EFE5;padding:18px 20px;border-radius:12px;
+  overflow-x:auto;margin:0 0 18px;line-height:1.65;font-size:13.5px}
+article pre code{background:none;color:inherit;padding:0;font-size:inherit}
+
+blockquote{margin:0 0 20px;padding:14px 18px;background:var(--accent-100);
+  border-left:4px solid var(--accent-500);border-radius:0 10px 10px 0;color:var(--t600)}
+blockquote p:last-child{margin-bottom:0}
+blockquote strong{color:var(--t900)}
+
+.tablewrap{overflow-x:auto;margin:0 0 20px;border:1px solid var(--line);
+  border-radius:12px;background:var(--surface);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:420px}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--surface-2);font-weight:700;white-space:nowrap;color:var(--t900)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--brand-100)}
+td code,th code{white-space:nowrap}
+article li input[type=checkbox]{width:16px;height:16px;margin-right:6px;accent-color:var(--brand-600)}
+
+pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:22px;text-align:center;overflow-x:auto;box-shadow:var(--shadow);margin:0 0 22px;color:inherit}
+pre.mermaid svg{max-width:100%;height:auto}
+
+.hero{padding:52px 0 32px;border-bottom:1px solid var(--line);margin-bottom:32px}
+.hero .eyebrow{display:inline-block;background:var(--brand-100);color:var(--brand-700);
+  font-size:12.5px;font-weight:700;padding:5px 13px;border-radius:999px;letter-spacing:.04em}
+.hero h1{font-family:var(--serif);font-weight:900;font-size:40px;line-height:1.25;margin:18px 0 12px}
+.hero p{font-size:17px;color:var(--t600);max-width:680px;margin:0}
+.facts{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:10px 16px;font-size:13px;box-shadow:var(--shadow)}
+.fact b{display:block;font-family:var(--serif);font-size:19px;color:var(--brand-600);font-weight:900}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:13px;margin:18px 0 8px}
+.card{display:block;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:16px;text-decoration:none;color:inherit;box-shadow:var(--shadow);transition:.15s}
+.card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(43,33,28,.12);border-color:var(--brand-500)}
+.card .k{font-size:10.5px;letter-spacing:.09em;color:var(--t400);font-weight:700}
+.card .n{font-family:var(--serif);font-weight:700;font-size:17px;margin:5px 0 6px;color:var(--t900)}
+.card .d{font-size:13px;color:var(--t600);line-height:1.6}
+.callout{background:var(--brand-100);border:1px solid var(--brand-500);border-radius:12px;
+  padding:18px 20px;margin:24px 0}
+.callout .h{font-family:var(--serif);font-weight:700;font-size:17px;margin-bottom:6px;color:var(--brand-700)}
+.callout p{margin:0;color:var(--t600);font-size:14.5px}
+.pending{background:var(--accent-100);border-color:var(--accent-500)}
+.pending .h{color:#8A5B12}
+
+.pager{display:flex;gap:12px;margin-top:52px;padding-top:22px;border-top:1px solid var(--line)}
+.pager a{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:13px 16px;text-decoration:none;color:inherit;box-shadow:var(--shadow)}
+.pager a:hover{border-color:var(--brand-500)}
+.pager .k{font-size:11px;color:var(--t400);letter-spacing:.06em}
+.pager .n{font-weight:700;color:var(--brand-600);margin-top:3px;font-size:14.5px}
+.pager .next{text-align:right}
+
+@media(max-width:1200px){ .toc{display:none} }
+@media(max-width:940px){
+  .topbar{display:flex}
+  .layout{display:block}
+  .sidebar{position:fixed;left:0;top:0;height:100vh;z-index:50;transform:translateX(-100%);
+    transition:transform .2s;box-shadow:0 0 40px rgba(43,33,28,.2);width:286px}
+  .sidebar.open{transform:translateX(0)}
+  .main{padding:0 16px 72px}
+  article{padding-top:24px}
+  .hero{padding:30px 0 24px}
+  .hero h1{font-size:30px}
+  article h1{font-size:26px}
+  article h2{font-size:21px;margin-top:38px}
+  .pager{flex-direction:column}
+}
+@media print{
+  .sidebar,.toc,.topbar,.pager{display:none!important}
+  body{background:#fff}
+  .main{padding:0}
+  article{max-width:none}
+  article h2{page-break-after:avoid}
+  .tablewrap,pre.mermaid{box-shadow:none;page-break-inside:avoid}
+  a.gloss{background:none!important;border:0!important}
+}
+</style>
+</head>
+<body>
+<div class="topbar"><button class="menubtn" onclick="document.getElementById('sb').classList.toggle('open')">☰ 目錄</button><span class="logo">火鍋店點餐系統</span></div>
+<div class="layout">
+<nav class="sidebar" id="sb"><div class="brand"><a href="../../index.html"><div class="logo">火鍋店點餐系統</div><div class="sub">專案文件 · 69 頁</div></a></div><a class="nav" href="../../index.html">首頁</a><div class="navgroup">規格文件</div><a class="nav" href="../../spec/00-架構分層與技術選型.html">00 架構分層與技術選型</a><a class="nav" href="../../spec/01-專案總覽.html">01 專案總覽</a><a class="nav" href="../../spec/02-需求規格.html">02 需求規格：基礎與進階功能總表</a><a class="nav" href="../../spec/03-資料庫設計.html">03 資料庫設計</a><a class="nav" href="../../spec/04-API規格.html">04 API 規格</a><a class="nav" href="../../spec/05-開發流程與分工.html">05 開發流程與時程</a><a class="nav" href="../../spec/06-圖表總覽.html">06 圖表總覽</a><div class="navgroup">模組規格</div><a class="nav active" href="../../spec/modules/M1-菜單與品項.html">M1 菜單與品項</a><a class="nav" href="../../spec/modules/M2-桌位開桌與候位.html">M2 桌位、開桌與候位</a><a class="nav" href="../../spec/modules/M3-點餐與服務鈴.html">M3 點餐與服務鈴</a><a class="nav" href="../../spec/modules/M4-出菜看板.html">M4 出菜看板（KDS）</a><a class="nav" href="../../spec/modules/M5-庫存.html">M5 庫存</a><a class="nav" href="../../spec/modules/M6-結帳.html">M6 結帳</a><a class="nav" href="../../spec/modules/M7-訂位.html">M7 訂位</a><a class="nav" href="../../spec/modules/M8-會員.html">M8 會員</a><div class="navgroup">UI 文件</div><a class="nav" href="../../ui/10-UI-UX規格.html">10 UI / UX 規格</a><a class="nav" href="../../ui/11-設計系統.html">11 設計系統</a><a class="nav" href="../../ui/12-AI-UI工具與提示詞.html">12 AI UI 工具與提示詞</a><div class="navgroup">技術總表</div><a class="nav" href="../../tech/00-技術總表.html">00 技術總表</a><details><summary>技術 · 團隊與工具（5）</summary><a class="nav" href="../../tech/team/01-命令列.html">01 命令列基本操作</a><a class="nav" href="../../tech/team/02-Git是什麼.html">02 Git 是什麼</a><a class="nav" href="../../tech/team/03-分支與合併.html">03 分支、合併與衝突</a><a class="nav" href="../../tech/team/04-GitHub與PR.html">04 GitHub 與 Pull Request</a><a class="nav" href="../../tech/team/05-Docker與Compose.html">05 Docker 與 Docker Compose</a></details><details><summary>技術 · 網頁運作原理（6）</summary><a class="nav" href="../../tech/web/06-前端後端在做什麼.html">06 前端與後端各在做什麼</a><a class="nav" href="../../tech/web/07-HTTP請求與回應.html">07 HTTP 請求與回應</a><a class="nav" href="../../tech/web/08-HTTP狀態碼.html">08 HTTP 狀態碼</a><a class="nav" href="../../tech/web/09-JSON.html">09 JSON</a><a class="nav" href="../../tech/web/10-REST-API設計.html">10 REST API 設計</a><a class="nav" href="../../tech/web/11-CORS跨來源.html">11 CORS 跨來源問題</a></details><details><summary>技術 · 後端（10）</summary><a class="nav" href="../../tech/backend/12-Java與JDK.html">12 Java 與 JDK</a><a class="nav" href="../../tech/backend/13-Maven.html">13 Maven 與相依套件</a><a class="nav" href="../../tech/backend/14-SpringBoot是什麼.html">14 Spring Boot 是什麼</a><a class="nav" href="../../tech/backend/15-依賴注入.html">15 依賴注入</a><a class="nav" href="../../tech/backend/16-三層架構.html">16 Controller / Service / Repository</a><a class="nav" href="../../tech/backend/17-Entity與DTO.html">17 Entity 與 DTO</a><a class="nav" href="../../tech/backend/18-全域例外處理.html">18 全域例外處理</a><a class="nav" href="../../tech/backend/19-Swagger.html">19 Swagger 自動產生 API 文件</a><a class="nav" href="../../tech/backend/20-SpringSecurity.html">20 Spring Security 基礎</a><a class="nav" href="../../tech/backend/21-JWT.html">21 JWT 與登入狀態</a></details><details><summary>技術 · 資料庫（8）</summary><a class="nav" href="../../tech/database/22-關聯式資料庫與SQL.html">22 關聯式資料庫與 SQL</a><a class="nav" href="../../tech/database/23-資料表設計.html">23 資料表設計</a><a class="nav" href="../../tech/database/24-索引.html">24 索引是什麼</a><a class="nav" href="../../tech/database/25-ORM與JPA.html">25 ORM 與 JPA</a><a class="nav" href="../../tech/database/26-JPA關聯對應.html">26 JPA 關聯對應</a><a class="nav" href="../../tech/database/27-交易Transaction.html">27 交易 Transaction</a><a class="nav" href="../../tech/database/28-鎖與併發.html">28 鎖與併發（防超賣）</a><a class="nav" href="../../tech/database/29-Flyway.html">29 Flyway 資料庫版本控管</a></details><details><summary>技術 · 前端（11）</summary><a class="nav" href="../../tech/frontend/30-現代JavaScript.html">30 現代 JavaScript 速成</a><a class="nav" href="../../tech/frontend/31-非同步與async.html">31 非同步與 async/await</a><a class="nav" href="../../tech/frontend/32-npm與套件.html">32 npm 與 node_modules</a><a class="nav" href="../../tech/frontend/33-Vite.html">33 Vite</a><a class="nav" href="../../tech/frontend/34-React與JSX.html">34 React 與 JSX</a><a class="nav" href="../../tech/frontend/35-Props與State.html">35 Props 與 State</a><a class="nav" href="../../tech/frontend/36-useState.html">36 useState</a><a class="nav" href="../../tech/frontend/37-useEffect.html">37 useEffect</a><a class="nav" href="../../tech/frontend/38-ReactRouter.html">38 React Router</a><a class="nav" href="../../tech/frontend/39-Tailwind.html">39 Tailwind CSS</a><a class="nav" href="../../tech/frontend/40-fetch串接API.html">40 fetch 串接後端 API</a></details><details><summary>技術 · 即時與排程（4）</summary><a class="nav" href="../../tech/realtime/41-WebSocket與STOMP.html">41 WebSocket 與 STOMP</a><a class="nav" href="../../tech/realtime/42-前端接WebSocket.html">42 前端接 WebSocket</a><a class="nav" href="../../tech/realtime/43-排程與Cron.html">43 排程任務與 Cron</a><a class="nav" href="../../tech/realtime/44-Redis.html">44 Redis</a></details><details><summary>技術 · 進階（2）</summary><a class="nav" href="../../tech/advanced/45-訊息佇列RabbitMQ.html">45 訊息佇列 RabbitMQ</a><a class="nav" href="../../tech/advanced/46-區間重疊與訂位排程.html">46 訂位排程的演算法</a></details><details><summary>技術 · 品質與部署（4）</summary><a class="nav" href="../../tech/quality/47-單元測試.html">47 單元測試 JUnit + Mockito</a><a class="nav" href="../../tech/quality/48-Testcontainers.html">48 Testcontainers</a><a class="nav" href="../../tech/quality/49-GitHubActions.html">49 GitHub Actions CI</a><a class="nav" href="../../tech/quality/50-部署上線.html">50 部署上線</a></details><div class="foot">由 Markdown 自動產生<br>改文件請編輯 <code>docs/</code> 下的 .md<br>再執行 <code>python3 docs/build_site.py</code></div></nav>
+<div class="main"><div class="wrap">
+<article>
+<h1 id="1">模組 1：菜單與品項</h1>
+<p><strong>難易度</strong> ★★★☆☆　<strong>里程碑</strong> 第 1 週要能查、第 3 週後台能改</p>
+<h2 id="_1">這個模組在做什麼</h2>
+<p>管理「店裡賣什麼」。分類、品項、價格、照片，還有每道菜可以怎麼客製（份量、辣度、加點）。</p>
+<p>顧客端從這裡讀資料畫出菜單；店家端從這裡改價格、上下架、標售完。</p>
+<p><strong>它是整個系統的地基</strong>——沒有菜單，客人連東西都點不了。所以它是第 1 週第一個要打通的模組。</p>
+<h2 id="_2">難易度為什麼是三顆星</h2>
+<p>CRUD 本身只有一顆星。難的是<strong>選項群組模型</strong>：</p>
+<ul>
+<li>「份量」「辣度」「加點配料」看起來是三種不同的東西，其實是同一個機制</li>
+<li>如果用「在 menu_item 上加欄位」的方式做，加到第三種就做不下去</li>
+<li>多對多關聯（一個群組掛在多個品項上）對新手是個門檻</li>
+</ul>
+<p><strong>做對了，之後所有客製化需求都不用改程式。做錯了，第 3 週要重寫。</strong></p>
+<h2 id="_3">基礎必做功能</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>功能</th>
+<th>驗收條件</th>
+<th>狀態</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.1</td>
+<td>分類 CRUD</td>
+<td>8 個分類可新增、改名、排序、停用</td>
+<td>☐</td>
+</tr>
+<tr>
+<td>1.2</td>
+<td>品項 CRUD</td>
+<td>名稱、描述、價格、照片、所屬分類</td>
+<td>☐</td>
+</tr>
+<tr>
+<td>1.3</td>
+<td>上下架</td>
+<td>停用的品項顧客端完全看不到</td>
+<td>☐</td>
+</tr>
+<tr>
+<td>1.4</td>
+<td>選項群組模型</td>
+<td>一個群組可掛在多個品項上，改一次全部生效</td>
+<td>☐</td>
+</tr>
+<tr>
+<td>1.5</td>
+<td>必選驗證</td>
+<td><code>min_select=1</code> 的群組沒選，加入購物車按鈕停用</td>
+<td>☐</td>
+</tr>
+<tr>
+<td>1.6</td>
+<td>鍋底標記</td>
+<td><code>is_soup_base=true</code>，且開桌後每桌至少要點一份</td>
+<td>☐</td>
+</tr>
+<tr>
+<td>1.7</td>
+<td>鴛鴦鍋</td>
+<td>用兩個 <code>min=1 max=1</code> 的群組（左鍋／右鍋）表達</td>
+<td>☐</td>
+</tr>
+<tr>
+<td>1.8</td>
+<td>售完標示</td>
+<td>庫存 0 時灰階 + 「售完」標籤 + 不可點</td>
+<td>☐</td>
+</tr>
+<tr>
+<td>1.9</td>
+<td>免費續加品項</td>
+<td><code>price=0</code>、<code>track_inventory=false</code>，但仍要出單</td>
+<td>☐</td>
+</tr>
+<tr>
+<td>1.10</td>
+<td>飲食標示</td>
+<td>素食／不含牛／辣度 0–3，顧客端顯示圖示</td>
+<td>☐</td>
+</tr>
+<tr>
+<td>1.11</td>
+<td>菜單查詢 API</td>
+<td>依分類篩選、回傳含選項群組的品項詳情</td>
+<td>☐</td>
+</tr>
+<tr>
+<td>1.12</td>
+<td>飲料與酒分類</td>
+<td>就是一般分類，不做年齡驗證</td>
+<td>☐</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="_4">延伸加分功能</h2>
+<blockquote>
+<p><strong>基礎全部綠燈後才動工。</strong></p>
+</blockquote>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>功能</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.E1</td>
+<td>套餐組合</td>
+<td>一個品項包含多個子品項，需要新的資料表</td>
+</tr>
+<tr>
+<td>1.E2</td>
+<td>每日限量</td>
+<td>每天重置的限量數，跟庫存不同</td>
+</tr>
+<tr>
+<td>1.E3</td>
+<td>午晚餐不同菜單</td>
+<td>菜單依時段上下架，搭配排程</td>
+</tr>
+<tr>
+<td>1.E4</td>
+<td>圖片上傳</td>
+<td>目前用外部圖片網址即可</td>
+</tr>
+<tr>
+<td>1.E5</td>
+<td>多語系</td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="_5">會用到的技術</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>技術</th>
+<th>為什麼需要</th>
+<th>難度</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../../tech/database/25-ORM與JPA.html">ORM 與 JPA</a></td>
+<td>Entity 對應資料表</td>
+<td>★★★☆☆</td>
+</tr>
+<tr>
+<td><a href="../../tech/database/26-JPA關聯對應.html">JPA 關聯對應</a></td>
+<td>品項↔選項群組的多對多</td>
+<td>★★★★☆</td>
+</tr>
+<tr>
+<td><a href="../../tech/database/23-資料表設計.html">資料表設計</a></td>
+<td>中間表、外鍵</td>
+<td>★★★☆☆</td>
+</tr>
+<tr>
+<td><a href="../../tech/backend/17-Entity與DTO.html">Entity 與 DTO</a></td>
+<td>回傳含選項群組的巢狀 DTO</td>
+<td>★★★☆☆</td>
+</tr>
+<tr>
+<td><a href="../../tech/backend/16-三層架構.html">三層架構</a></td>
+<td>Controller/Service/Repository</td>
+<td>★★☆☆☆</td>
+</tr>
+<tr>
+<td><a href="../../tech/web/10-REST-API設計.html">REST API 設計</a></td>
+<td><code>/api/menu/items</code></td>
+<td>★★☆☆☆</td>
+</tr>
+<tr>
+<td><a href="../../tech/database/29-Flyway.html">Flyway</a></td>
+<td>建表</td>
+<td>★★☆☆☆</td>
+</tr>
+<tr>
+<td><a href="../../tech/realtime/44-Redis.html">Redis</a></td>
+<td>菜單快取（進階）</td>
+<td>★★★☆☆</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="_6">問題思考與解決思路</h2>
+<h3 id="1_1">問題 1：「份量」「辣度」「加點」要怎麼存？</h3>
+<p><strong>情境</strong>
+牛五花要能選半份／全份（價差 80）、原味／炙燒（價差 20）、還能加蔥花蒜泥（各 10 元，可複選）。</p>
+<p><strong>直覺會這樣寫</strong>
+在 <code>menu_item</code> 上加欄位：</p>
+<pre><code class="language-sql">menu_item (
+  has_size BOOLEAN, half_price DECIMAL, full_price DECIMAL,
+  has_doneness BOOLEAN, ...
+)
+</code></pre>
+<p><strong>為什麼會壞</strong>
+第三種需求出現時你會發現：欄位無限增加、每個品項的選項都不一樣、加一種新選項要改程式加欄位、而且「可複選」根本表達不出來。</p>
+<p><strong>正確做法：選項群組模型</strong></p>
+<pre><code>option_group「份量」 min=1 max=1
+  ├─ option_value「半份」 +0
+  └─ option_value「全份」 +80
+
+option_group「加點配料」 min=0 max=5
+  ├─ 加蔥花 +10
+  ├─ 加蒜泥 +10
+  └─ 加香菜 +10
+
+menu_item_option_group（中間表）
+  menu_item_id ↔ option_group_id + sort_order
+</code></pre>
+<p>一個模型解決全部三種需求。<code>min_select</code> 和 <code>max_select</code> 兩個數字就決定了「必選／選填」「單選／複選」。</p>
+<p><strong>延伸</strong>
+「辣度」這個群組建立一次，可以掛在 20 個品項上。改一次，20 個品項全部生效。</p>
+<p><strong>面試會問</strong>：「你怎麼設計商品規格？」這題答得好會加很多分。</p>
+<hr />
+<h3 id="2">問題 2：鴛鴦鍋要不要另外建表？</h3>
+<p><strong>情境</strong>
+共鍋店有單味鍋，也有鴛鴦鍋（一鍋兩味）。</p>
+<p><strong>直覺會這樣寫</strong>
+建一張 <code>pot</code> 表，記錄「這桌有幾個鍋、每個鍋什麼湯底、鴛鴦的話兩個湯底各是什麼」。</p>
+<p><strong>為什麼不好</strong>
+多一張表、多一套 CRUD、多一層關聯。而且「點菜要指定下哪一鍋」在真實店家根本不會發生——菜端上桌，客人自己決定下哪鍋。</p>
+<p><strong>正確做法：用現有的選項群組</strong></p>
+<pre><code>menu_item「麻辣鍋底」      price 480, is_soup_base=true
+menu_item「酸菜白肉鍋底」  price 420, is_soup_base=true
+menu_item「昆布鍋底」      price 380, is_soup_base=true
+menu_item「鴛鴦鍋底」      price 0,   is_soup_base=true
+  ├─ option_group「左鍋湯底」 min=1 max=1 → 麻辣 +260 / 酸菜 +230 / 昆布 +210
+  └─ option_group「右鍋湯底」 min=1 max=1 → 同上
+</code></pre>
+<p><strong>零額外資料表。</strong> 鴛鴦價 = 左半 + 右半（各約單鍋的 55%），這也是真實店家的算法。想點兩鍋就點兩份。</p>
+<hr />
+<h3 id="3">問題 3：改了價格，三個月前的帳單會變嗎？</h3>
+<p><strong>情境</strong>
+老闆把牛五花從 280 調到 320。</p>
+<p><strong>直覺會這樣寫</strong>
+<code>order_item</code> 只存 <code>menu_item_id</code>，要顯示時再去 join 菜單表拿名稱和價格。</p>
+<p><strong>為什麼會壞</strong>
+<strong>歷史帳單的金額會跟著變成 320。</strong> 客人三個月前明明付 280，報表卻顯示 320。</p>
+<p><strong>正確做法：存快照</strong></p>
+<pre><code class="language-sql">order_item (
+  menu_item_id BIGINT,               -- 還是要，供統計與推薦用
+  item_name_snapshot VARCHAR(100),   -- 下單當下的名稱
+  unit_price_snapshot DECIMAL(10,2)  -- 下單當下的價格
+)
+</code></pre>
+<p>這是少數「<strong>故意重複存資料</strong>」是正確的情況。</p>
+<p><strong>延伸</strong>
+選項也要存快照（<code>order_item_option</code> 的 <code>group_name_snapshot</code> / <code>value_name_snapshot</code> / <code>price_delta</code>），否則刪掉一個選項後，歷史訂單會顯示空白。</p>
+<hr />
+<h3 id="4">問題 4：售完要怎麼讓所有人立刻看到？</h3>
+<p><strong>情境</strong>
+牛五花剛剛被最後一桌點完。此時有五桌客人正在看菜單。</p>
+<p><strong>直覺會這樣寫</strong>
+菜單 API 每次都查一次資料庫，前端每 3 秒重新抓菜單。</p>
+<p><strong>為什麼不好</strong>
+五桌 × 每 3 秒 = 每分鐘 100 次全菜單查詢，而且客人可能已經把它加進購物車了。</p>
+<p><strong>正確做法：<a class="gloss" href="../../tech/realtime/41-WebSocket與STOMP.html" title="看這個技術的白話說明">WebSocket</a> 推播 + 送出時再驗一次</strong></p>
+<ol>
+<li>庫存歸零時，後端推 <code>MENU_SOLD_OUT</code> 到 <code>/topic/menu</code></li>
+<li>所有正在點餐的裝置收到，把那個品項標成售完</li>
+<li><strong>但這還不夠</strong>——已經在購物車裡的怎麼辦？</li>
+<li>所以<strong>送出點餐時後端一定要再檢查一次</strong>，不夠就回 409</li>
+</ol>
+<p><strong>前端的顯示是體驗，後端的檢查才是真相。</strong></p>
+<hr />
+<h2 id="_7">六週切分</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>週</th>
+<th>這個模組要交出什麼</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>W1</strong></td>
+<td><a class="gloss" href="../../tech/database/29-Flyway.html" title="看這個技術的白話說明">Flyway</a> 建好 <code>menu_category</code> / <code>menu_item</code> / <code>option_group</code> / <code>option_value</code> / 中間表；<code>GET /api/menu/categories</code> 和 <code>GET /api/menu/items</code> 能回傳種子資料；<strong>顧客端 <a class="gloss" href="../../tech/frontend/34-React與JSX.html" title="看這個技術的白話說明">React</a> 能把菜單列出來（walking skeleton）</strong></td>
+</tr>
+<tr>
+<td><strong>W2</strong></td>
+<td><code>GET /api/menu/items/{id}</code> 回傳完整選項群組；必選驗證邏輯；顧客端品項詳情頁能選規格</td>
+</tr>
+<tr>
+<td><strong>W3</strong></td>
+<td>店家端菜單管理後台（品項 CRUD、上下架、快速下架開關）；選項群組管理</td>
+</tr>
+<tr>
+<td><strong>W4</strong></td>
+<td>飲食標示、免費續加品項；人氣推薦查詢（<code>GROUP BY</code> + <code>SUM</code>）</td>
+</tr>
+<tr>
+<td><strong>W5</strong></td>
+<td>售完狀態的 WebSocket 推播；菜單快取（選配）</td>
+</tr>
+<tr>
+<td><strong>W6</strong></td>
+<td>不寫新功能。檢查售完顯示、圖片載入、RWD</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="_8">常見卡關</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>卡點</th>
+<th>解法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>多對多關聯寫不出來</strong></td>
+<td>不要用 <code>@ManyToMany</code>，把中間表做成 Entity（見 <a href="../../tech/database/26-JPA關聯對應.html">JPA 關聯對應</a>）</td>
+</tr>
+<tr>
+<td><strong>回傳品項詳情時噴 lazy 錯誤</strong></td>
+<td>在 Service 裡轉 DTO，或用 <code>JOIN FETCH</code>（見 <a href="../../tech/backend/17-Entity與DTO.html">Entity 與 DTO</a>）</td>
+</tr>
+<tr>
+<td><strong>選項價差算錯</strong></td>
+<td>用 <code>BigDecimal</code> 不要用 <code>double</code>；單價 = 基礎價 + 所有選項價差</td>
+</tr>
+<tr>
+<td><strong>種子資料太少，看不出效果</strong></td>
+<td>60 個品項、5 個選項群組是最低限度</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="demo">驗收 Demo 腳本</h2>
+<ol>
+<li>店家端改一個品項價格 → 顧客端重新整理 → 新價格生效</li>
+<li>店家端把一個品項下架 → 顧客端看不到了</li>
+<li>顧客端點「鴛鴦鍋底」→ 左右鍋各選一個湯底 → 價格正確累加</li>
+<li>點「牛五花」→ 不選份量 → 加入購物車按鈕是停用的</li>
+<li>一個庫存 0 的品項顯示灰階 + 售完標籤，且點不下去</li>
+</ol><div class="pager"><a href="../../spec/06-圖表總覽.html"><div class="k">← 上一篇</div><div class="n">06 圖表總覽</div></a><a class="next" href="../../spec/modules/M2-桌位開桌與候位.html"><div class="k">下一篇 →</div><div class="n">M2 桌位、開桌與候位</div></a></div>
+</article>
+<aside class="toc"><div class="tt">本頁目錄</div><a href="#_1">這個模組在做什麼</a><a href="#_2">難易度為什麼是三顆星</a><a href="#_3">基礎必做功能</a><a href="#_4">延伸加分功能</a><a href="#_5">會用到的技術</a><a href="#_6">問題思考與解決思路</a><a href="#_7">六週切分</a><a href="#_8">常見卡關</a><a href="#demo">驗收 Demo 腳本</a></aside>
+</div></div>
+</div>
+<script src="../../vendor/mermaid.min.js"></script>
+<script>
+mermaid.initialize({
+  startOnLoad: true, securityLevel: 'loose', theme: 'base',
+  fontFamily: '"Noto Sans TC","PingFang TC",system-ui,sans-serif',
+  themeVariables: {
+    background:'#FFFFFF',
+    primaryColor:'#FBE8E3', primaryTextColor:'#2B211C', primaryBorderColor:'#C8442E',
+    secondaryColor:'#FCF0DC', secondaryBorderColor:'#E8A33D',
+    tertiaryColor:'#F5EFE5', tertiaryBorderColor:'#E6DED2',
+    lineColor:'#9C8E84', textColor:'#2B211C',
+    mainBkg:'#FBE8E3', nodeBorder:'#C8442E', clusterBkg:'#FBF7F0', clusterBorder:'#E6DED2',
+    titleColor:'#2B211C', edgeLabelBackground:'#FBF7F0',
+    actorBkg:'#FBE8E3', actorBorder:'#C8442E', actorTextColor:'#2B211C',
+    signalColor:'#6B5D54', signalTextColor:'#2B211C',
+    labelBoxBkgColor:'#FCF0DC', labelBoxBorderColor:'#E8A33D', labelTextColor:'#2B211C',
+    loopTextColor:'#2B211C', noteBkgColor:'#FCF0DC', noteBorderColor:'#E8A33D', noteTextColor:'#2B211C',
+    activationBkgColor:'#E6DED2', activationBorderColor:'#9C8E84', sequenceNumberColor:'#FFFFFF',
+    altBackground:'#F5EFE5',
+    taskBkgColor:'#FBE8E3', taskBorderColor:'#C8442E', taskTextColor:'#2B211C',
+    taskTextOutsideColor:'#2B211C', taskTextDarkColor:'#2B211C',
+    activeTaskBkgColor:'#E8A33D', activeTaskBorderColor:'#C9862A',
+    doneTaskBkgColor:'#E4EFE7', doneTaskBorderColor:'#3F7A4E',
+    critBkgColor:'#C8442E', critBorderColor:'#A63522',
+    gridColor:'#E6DED2', todayLineColor:'#B3261E',
+    sectionBkgColor:'#FBF7F0', sectionBkgColor2:'#F5EFE5', altSectionBkgColor:'#FFFFFF',
+    classText:'#2B211C',
+    attributeBackgroundColorOdd:'#FFFFFF', attributeBackgroundColorEven:'#F5EFE5'
+  },
+  gantt:{barHeight:18,barGap:5,topPadding:52,leftPadding:180,fontSize:12},
+  mindmap:{padding:12},
+  sequence:{actorMargin:42,boxTextMargin:6,noteMargin:10,messageMargin:32,width:150},
+  er:{entityPadding:12,minEntityWidth:110}
+});
+</script>
+<script>document.addEventListener('click',function(e){var sb=document.getElementById('sb');if(window.innerWidth<=940&&sb.classList.contains('open')&&!sb.contains(e.target)&&!e.target.closest('.menubtn')){sb.classList.remove('open');}});</script>
+</body>
+</html>

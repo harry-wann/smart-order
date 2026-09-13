@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CORS 跨來源問題 · 火鍋店點餐系統文件</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand-700:#A63522; --brand-600:#C8442E; --brand-500:#DB5B42; --brand-100:#FBE8E3;
+  --accent-500:#E8A33D; --accent-100:#FCF0DC;
+  --bg:#FBF7F0; --surface:#FFFFFF; --surface-2:#F5EFE5; --line:#E6DED2;
+  --t900:#2B211C; --t600:#6B5D54; --t400:#9C8E84;
+  --ok:#3F7A4E; --ok-bg:#E4EFE7; --warn:#D98324; --bad:#B3261E;
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --serif:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --shadow:0 1px 2px rgba(43,33,28,.06),0 4px 12px rgba(43,33,28,.05);
+  --sidebar:280px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:var(--bg);color:var(--t900);font-family:var(--sans);
+  font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased}
+
+.layout{display:flex;min-height:100vh;align-items:flex-start}
+.sidebar{width:var(--sidebar);flex:0 0 var(--sidebar);position:sticky;top:0;height:100vh;
+  overflow-y:auto;background:var(--surface);border-right:1px solid var(--line);padding:22px 0 48px}
+.brand{padding:0 20px 16px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.brand a{text-decoration:none;color:inherit;display:block}
+.brand .logo{font-family:var(--serif);font-weight:900;font-size:18px;line-height:1.35;color:var(--brand-600)}
+.brand .sub{font-size:11.5px;color:var(--t400);margin-top:4px;letter-spacing:.02em}
+.navgroup{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--t400);
+  padding:15px 20px 5px}
+.sidebar a.nav{display:block;padding:6px 20px;color:var(--t600);text-decoration:none;
+  font-size:14px;border-left:3px solid transparent;line-height:1.5}
+.sidebar a.nav:hover{background:var(--brand-100);color:var(--brand-700)}
+.sidebar a.nav.active{background:var(--brand-100);color:var(--brand-700);
+  border-left-color:var(--brand-600);font-weight:700}
+.sidebar details{border-top:1px solid transparent}
+.sidebar details>summary{list-style:none;cursor:pointer;font-size:11px;font-weight:700;
+  letter-spacing:.1em;color:var(--t400);padding:12px 20px 5px;user-select:none}
+.sidebar details>summary::-webkit-details-marker{display:none}
+.sidebar details>summary::before{content:"▸ ";font-size:10px}
+.sidebar details[open]>summary::before{content:"▾ "}
+.sidebar details>summary:hover{color:var(--brand-600)}
+.sidebar .foot{padding:18px 20px;margin-top:14px;border-top:1px solid var(--line);
+  font-size:11.5px;color:var(--t400);line-height:1.7}
+
+.main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 32px 96px}
+.wrap{width:100%;max-width:1140px;display:flex;gap:36px;align-items:flex-start}
+article{flex:1;min-width:0;max-width:880px;padding-top:40px}
+.toc{width:196px;flex:0 0 196px;position:sticky;top:24px;padding-top:52px;font-size:12.5px;
+  max-height:calc(100vh - 60px);overflow-y:auto}
+.toc .tt{font-size:10.5px;letter-spacing:.1em;color:var(--t400);font-weight:700;margin-bottom:9px}
+.toc a{display:block;color:var(--t600);text-decoration:none;padding:3px 0 3px 10px;
+  border-left:2px solid var(--line);line-height:1.5}
+.toc a:hover{color:var(--brand-600);border-left-color:var(--brand-500)}
+
+.topbar{display:none;position:sticky;top:0;z-index:40;background:var(--surface);
+  border-bottom:1px solid var(--line);padding:10px 16px;align-items:center;gap:12px}
+.topbar .logo{font-family:var(--serif);font-weight:900;color:var(--brand-600);font-size:16px}
+.menubtn{background:var(--brand-600);color:#fff;border:0;border-radius:8px;height:40px;
+  padding:0 14px;font-size:15px;font-family:inherit;cursor:pointer}
+
+article h1{font-family:var(--serif);font-weight:900;font-size:32px;line-height:1.35;margin:0 0 10px}
+article h1+p{color:var(--t600)}
+article h2{font-family:var(--serif);font-weight:700;font-size:24px;line-height:1.45;
+  margin:50px 0 14px;padding-bottom:9px;border-bottom:2px solid var(--line)}
+article h3{font-weight:700;font-size:18.5px;margin:30px 0 10px}
+article h4{font-weight:700;font-size:16px;margin:22px 0 8px;color:var(--t600)}
+article p{margin:0 0 16px}
+article ul,article ol{margin:0 0 16px;padding-left:24px}
+article li{margin:5px 0}
+article a{color:var(--brand-600);text-decoration:none;border-bottom:1px solid rgba(200,68,46,.3)}
+article a:hover{border-bottom-color:var(--brand-600)}
+article a.gloss{color:var(--t900);border-bottom:1px dashed var(--accent-500);
+  background:linear-gradient(transparent 72%,var(--accent-100) 72%)}
+article a.gloss:hover{color:var(--brand-700);border-bottom-color:var(--brand-500)}
+article strong{font-weight:700;color:var(--t900)}
+article hr{border:0;border-top:1px solid var(--line);margin:42px 0}
+article img{max-width:100%;border-radius:12px}
+article details{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:12px 16px;margin:0 0 18px}
+article details>summary{cursor:pointer;font-weight:700;color:var(--brand-600)}
+
+article code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.87em;
+  background:var(--surface-2);padding:2px 6px;border-radius:5px;color:var(--brand-700);
+  word-break:break-word}
+article pre{background:#2B211C;color:#F5EFE5;padding:18px 20px;border-radius:12px;
+  overflow-x:auto;margin:0 0 18px;line-height:1.65;font-size:13.5px}
+article pre code{background:none;color:inherit;padding:0;font-size:inherit}
+
+blockquote{margin:0 0 20px;padding:14px 18px;background:var(--accent-100);
+  border-left:4px solid var(--accent-500);border-radius:0 10px 10px 0;color:var(--t600)}
+blockquote p:last-child{margin-bottom:0}
+blockquote strong{color:var(--t900)}
+
+.tablewrap{overflow-x:auto;margin:0 0 20px;border:1px solid var(--line);
+  border-radius:12px;background:var(--surface);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:420px}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--surface-2);font-weight:700;white-space:nowrap;color:var(--t900)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--brand-100)}
+td code,th code{white-space:nowrap}
+article li input[type=checkbox]{width:16px;height:16px;margin-right:6px;accent-color:var(--brand-600)}
+
+pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:22px;text-align:center;overflow-x:auto;box-shadow:var(--shadow);margin:0 0 22px;color:inherit}
+pre.mermaid svg{max-width:100%;height:auto}
+
+.hero{padding:52px 0 32px;border-bottom:1px solid var(--line);margin-bottom:32px}
+.hero .eyebrow{display:inline-block;background:var(--brand-100);color:var(--brand-700);
+  font-size:12.5px;font-weight:700;padding:5px 13px;border-radius:999px;letter-spacing:.04em}
+.hero h1{font-family:var(--serif);font-weight:900;font-size:40px;line-height:1.25;margin:18px 0 12px}
+.hero p{font-size:17px;color:var(--t600);max-width:680px;margin:0}
+.facts{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:10px 16px;font-size:13px;box-shadow:var(--shadow)}
+.fact b{display:block;font-family:var(--serif);font-size:19px;color:var(--brand-600);font-weight:900}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:13px;margin:18px 0 8px}
+.card{display:block;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:16px;text-decoration:none;color:inherit;box-shadow:var(--shadow);transition:.15s}
+.card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(43,33,28,.12);border-color:var(--brand-500)}
+.card .k{font-size:10.5px;letter-spacing:.09em;color:var(--t400);font-weight:700}
+.card .n{font-family:var(--serif);font-weight:700;font-size:17px;margin:5px 0 6px;color:var(--t900)}
+.card .d{font-size:13px;color:var(--t600);line-height:1.6}
+.callout{background:var(--brand-100);border:1px solid var(--brand-500);border-radius:12px;
+  padding:18px 20px;margin:24px 0}
+.callout .h{font-family:var(--serif);font-weight:700;font-size:17px;margin-bottom:6px;color:var(--brand-700)}
+.callout p{margin:0;color:var(--t600);font-size:14.5px}
+.pending{background:var(--accent-100);border-color:var(--accent-500)}
+.pending .h{color:#8A5B12}
+
+.pager{display:flex;gap:12px;margin-top:52px;padding-top:22px;border-top:1px solid var(--line)}
+.pager a{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:13px 16px;text-decoration:none;color:inherit;box-shadow:var(--shadow)}
+.pager a:hover{border-color:var(--brand-500)}
+.pager .k{font-size:11px;color:var(--t400);letter-spacing:.06em}
+.pager .n{font-weight:700;color:var(--brand-600);margin-top:3px;font-size:14.5px}
+.pager .next{text-align:right}
+
+@media(max-width:1200px){ .toc{display:none} }
+@media(max-width:940px){
+  .topbar{display:flex}
+  .layout{display:block}
+  .sidebar{position:fixed;left:0;top:0;height:100vh;z-index:50;transform:translateX(-100%);
+    transition:transform .2s;box-shadow:0 0 40px rgba(43,33,28,.2);width:286px}
+  .sidebar.open{transform:translateX(0)}
+  .main{padding:0 16px 72px}
+  article{padding-top:24px}
+  .hero{padding:30px 0 24px}
+  .hero h1{font-size:30px}
+  article h1{font-size:26px}
+  article h2{font-size:21px;margin-top:38px}
+  .pager{flex-direction:column}
+}
+@media print{
+  .sidebar,.toc,.topbar,.pager{display:none!important}
+  body{background:#fff}
+  .main{padding:0}
+  article{max-width:none}
+  article h2{page-break-after:avoid}
+  .tablewrap,pre.mermaid{box-shadow:none;page-break-inside:avoid}
+  a.gloss{background:none!important;border:0!important}
+}
+</style>
+</head>
+<body>
+<div class="topbar"><button class="menubtn" onclick="document.getElementById('sb').classList.toggle('open')">☰ 目錄</button><span class="logo">火鍋店點餐系統</span></div>
+<div class="layout">
+<nav class="sidebar" id="sb"><div class="brand"><a href="../../index.html"><div class="logo">火鍋店點餐系統</div><div class="sub">專案文件 · 69 頁</div></a></div><a class="nav" href="../../index.html">首頁</a><div class="navgroup">規格文件</div><a class="nav" href="../../spec/00-架構分層與技術選型.html">00 架構分層與技術選型</a><a class="nav" href="../../spec/01-專案總覽.html">01 專案總覽</a><a class="nav" href="../../spec/02-需求規格.html">02 需求規格：基礎與進階功能總表</a><a class="nav" href="../../spec/03-資料庫設計.html">03 資料庫設計</a><a class="nav" href="../../spec/04-API規格.html">04 API 規格</a><a class="nav" href="../../spec/05-開發流程與分工.html">05 開發流程與時程</a><a class="nav" href="../../spec/06-圖表總覽.html">06 圖表總覽</a><div class="navgroup">模組規格</div><a class="nav" href="../../spec/modules/M1-菜單與品項.html">M1 菜單與品項</a><a class="nav" href="../../spec/modules/M2-桌位開桌與候位.html">M2 桌位、開桌與候位</a><a class="nav" href="../../spec/modules/M3-點餐與服務鈴.html">M3 點餐與服務鈴</a><a class="nav" href="../../spec/modules/M4-出菜看板.html">M4 出菜看板（KDS）</a><a class="nav" href="../../spec/modules/M5-庫存.html">M5 庫存</a><a class="nav" href="../../spec/modules/M6-結帳.html">M6 結帳</a><a class="nav" href="../../spec/modules/M7-訂位.html">M7 訂位</a><a class="nav" href="../../spec/modules/M8-會員.html">M8 會員</a><div class="navgroup">UI 文件</div><a class="nav" href="../../ui/10-UI-UX規格.html">10 UI / UX 規格</a><a class="nav" href="../../ui/11-設計系統.html">11 設計系統</a><a class="nav" href="../../ui/12-AI-UI工具與提示詞.html">12 AI UI 工具與提示詞</a><div class="navgroup">技術總表</div><a class="nav" href="../../tech/00-技術總表.html">00 技術總表</a><details><summary>技術 · 團隊與工具（5）</summary><a class="nav" href="../../tech/team/01-命令列.html">01 命令列基本操作</a><a class="nav" href="../../tech/team/02-Git是什麼.html">02 Git 是什麼</a><a class="nav" href="../../tech/team/03-分支與合併.html">03 分支、合併與衝突</a><a class="nav" href="../../tech/team/04-GitHub與PR.html">04 GitHub 與 Pull Request</a><a class="nav" href="../../tech/team/05-Docker與Compose.html">05 Docker 與 Docker Compose</a></details><details open><summary>技術 · 網頁運作原理（6）</summary><a class="nav" href="../../tech/web/06-前端後端在做什麼.html">06 前端與後端各在做什麼</a><a class="nav" href="../../tech/web/07-HTTP請求與回應.html">07 HTTP 請求與回應</a><a class="nav" href="../../tech/web/08-HTTP狀態碼.html">08 HTTP 狀態碼</a><a class="nav" href="../../tech/web/09-JSON.html">09 JSON</a><a class="nav" href="../../tech/web/10-REST-API設計.html">10 REST API 設計</a><a class="nav active" href="../../tech/web/11-CORS跨來源.html">11 CORS 跨來源問題</a></details><details><summary>技術 · 後端（10）</summary><a class="nav" href="../../tech/backend/12-Java與JDK.html">12 Java 與 JDK</a><a class="nav" href="../../tech/backend/13-Maven.html">13 Maven 與相依套件</a><a class="nav" href="../../tech/backend/14-SpringBoot是什麼.html">14 Spring Boot 是什麼</a><a class="nav" href="../../tech/backend/15-依賴注入.html">15 依賴注入</a><a class="nav" href="../../tech/backend/16-三層架構.html">16 Controller / Service / Repository</a><a class="nav" href="../../tech/backend/17-Entity與DTO.html">17 Entity 與 DTO</a><a class="nav" href="../../tech/backend/18-全域例外處理.html">18 全域例外處理</a><a class="nav" href="../../tech/backend/19-Swagger.html">19 Swagger 自動產生 API 文件</a><a class="nav" href="../../tech/backend/20-SpringSecurity.html">20 Spring Security 基礎</a><a class="nav" href="../../tech/backend/21-JWT.html">21 JWT 與登入狀態</a></details><details><summary>技術 · 資料庫（8）</summary><a class="nav" href="../../tech/database/22-關聯式資料庫與SQL.html">22 關聯式資料庫與 SQL</a><a class="nav" href="../../tech/database/23-資料表設計.html">23 資料表設計</a><a class="nav" href="../../tech/database/24-索引.html">24 索引是什麼</a><a class="nav" href="../../tech/database/25-ORM與JPA.html">25 ORM 與 JPA</a><a class="nav" href="../../tech/database/26-JPA關聯對應.html">26 JPA 關聯對應</a><a class="nav" href="../../tech/database/27-交易Transaction.html">27 交易 Transaction</a><a class="nav" href="../../tech/database/28-鎖與併發.html">28 鎖與併發（防超賣）</a><a class="nav" href="../../tech/database/29-Flyway.html">29 Flyway 資料庫版本控管</a></details><details><summary>技術 · 前端（11）</summary><a class="nav" href="../../tech/frontend/30-現代JavaScript.html">30 現代 JavaScript 速成</a><a class="nav" href="../../tech/frontend/31-非同步與async.html">31 非同步與 async/await</a><a class="nav" href="../../tech/frontend/32-npm與套件.html">32 npm 與 node_modules</a><a class="nav" href="../../tech/frontend/33-Vite.html">33 Vite</a><a class="nav" href="../../tech/frontend/34-React與JSX.html">34 React 與 JSX</a><a class="nav" href="../../tech/frontend/35-Props與State.html">35 Props 與 State</a><a class="nav" href="../../tech/frontend/36-useState.html">36 useState</a><a class="nav" href="../../tech/frontend/37-useEffect.html">37 useEffect</a><a class="nav" href="../../tech/frontend/38-ReactRouter.html">38 React Router</a><a class="nav" href="../../tech/frontend/39-Tailwind.html">39 Tailwind CSS</a><a class="nav" href="../../tech/frontend/40-fetch串接API.html">40 fetch 串接後端 API</a></details><details><summary>技術 · 即時與排程（4）</summary><a class="nav" href="../../tech/realtime/41-WebSocket與STOMP.html">41 WebSocket 與 STOMP</a><a class="nav" href="../../tech/realtime/42-前端接WebSocket.html">42 前端接 WebSocket</a><a class="nav" href="../../tech/realtime/43-排程與Cron.html">43 排程任務與 Cron</a><a class="nav" href="../../tech/realtime/44-Redis.html">44 Redis</a></details><details><summary>技術 · 進階（2）</summary><a class="nav" href="../../tech/advanced/45-訊息佇列RabbitMQ.html">45 訊息佇列 RabbitMQ</a><a class="nav" href="../../tech/advanced/46-區間重疊與訂位排程.html">46 訂位排程的演算法</a></details><details><summary>技術 · 品質與部署（4）</summary><a class="nav" href="../../tech/quality/47-單元測試.html">47 單元測試 JUnit + Mockito</a><a class="nav" href="../../tech/quality/48-Testcontainers.html">48 Testcontainers</a><a class="nav" href="../../tech/quality/49-GitHubActions.html">49 GitHub Actions CI</a><a class="nav" href="../../tech/quality/50-部署上線.html">50 部署上線</a></details><div class="foot">由 Markdown 自動產生<br>改文件請編輯 <code>docs/</code> 下的 .md<br>再執行 <code>python3 docs/build_site.py</code></div></nav>
+<div class="main"><div class="wrap">
+<article>
+<h1 id="cors">CORS 跨來源問題</h1>
+<p><strong>難度</strong> ★★☆☆☆　<strong>用在哪些模組</strong> 全員（第一次串 API 必遇）　<strong>哪幾週</strong> 第 1 週</p>
+<h2 id="_1">一句話</h2>
+<p>CORS 是<strong>瀏覽器的門禁</strong>：它不准網頁隨便去別人家要資料，除非對方說「這個人可以」。</p>
+<h2 id="_2">想像一下</h2>
+<p>你在 <code>evil.com</code> 這個網站上。它偷偷寫了一段程式，去你的網路銀行要你的帳戶資料。</p>
+<p>如果瀏覽器不管，那就完蛋了。所以瀏覽器立了一條規矩：</p>
+<blockquote>
+<p><strong>網頁只能跟「同一個來源」的伺服器要資料。要跟別人要，對方必須明確說「我允許」。</strong></p>
+</blockquote>
+<p>「同一個來源」是指<strong>協定、網域、埠號三個都一樣</strong>：</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>網頁在</th>
+<th>想要資料的地方</th>
+<th>同源嗎</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>http://localhost:5173</code></td>
+<td><code>http://localhost:5173</code></td>
+<td>✅</td>
+</tr>
+<tr>
+<td><code>http://localhost:5173</code></td>
+<td><code>http://localhost:8080</code></td>
+<td>❌ <strong>埠號不同</strong></td>
+</tr>
+<tr>
+<td><code>https://a.com</code></td>
+<td><code>http://a.com</code></td>
+<td>❌ 協定不同</td>
+</tr>
+<tr>
+<td><code>https://a.com</code></td>
+<td><code>https://api.a.com</code></td>
+<td>❌ 網域不同</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="_3">為什麼你一定會遇到</h2>
+<p>我們的開發環境：</p>
+<ul>
+<li>前端 <a class="gloss" href="../../tech/frontend/34-React與JSX.html" title="看這個技術的白話說明">React</a> 跑在 <code>http://localhost:5173</code></li>
+<li>後端 <a class="gloss" href="../../tech/backend/14-SpringBoot是什麼.html" title="看這個技術的白話說明">Spring Boot</a> 跑在 <code>http://localhost:8080</code></li>
+</ul>
+<p><strong>埠號不一樣 = 不同來源 = 被擋。</strong></p>
+<p>所以你第一次串 API 的時候，100% 會看到那個紅色錯誤。<strong>這不是你寫錯，是正常的。</strong></p>
+<h2 id="_4">錯誤長這樣</h2>
+<pre><code>Access to fetch at 'http://localhost:8080/api/menu/items'
+from origin 'http://localhost:5173' has been blocked by CORS policy:
+No 'Access-Control-Allow-Origin' header is present on the requested resource.
+</code></pre>
+<p>翻譯成中文：</p>
+<blockquote>
+<p>你的網頁（5173）想去 8080 要東西，但 8080 沒說「我允許 5173」，所以我擋下來了。</p>
+</blockquote>
+<h2 id="_5">關鍵觀念：這是<strong>後端</strong>要解決的</h2>
+<p>很多新手會在前端東試西試。沒用。</p>
+<p><strong>門禁是瀏覽器在執行，但「允許誰進來」是後端說了算。</strong> 所以修改在後端。</p>
+<p>Spring Boot 的做法（屬於技術地基，寫一次全隊受惠）：</p>
+<pre><code class="language-java">@Configuration
+public class CorsConfig implements WebMvcConfigurer {
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping(&quot;/api/**&quot;)
+                .allowedOrigins(
+                    &quot;http://localhost:5173&quot;,      // 顧客端開發
+                    &quot;http://localhost:5174&quot;,      // 店家端開發
+                    &quot;https://your-app.vercel.app&quot; // 正式環境
+                )
+                .allowedMethods(&quot;GET&quot;, &quot;POST&quot;, &quot;PUT&quot;, &quot;PATCH&quot;, &quot;DELETE&quot;, &quot;OPTIONS&quot;)
+                .allowedHeaders(&quot;*&quot;)
+                .allowCredentials(true);
+    }
+}
+</code></pre>
+<h2 id="options">那個多出來的 OPTIONS 請求</h2>
+<p>你在 Network 分頁可能會看到，每次 POST 之前都多一個 <code>OPTIONS</code> 請求。</p>
+<p>那叫<strong>預檢（preflight）</strong>。瀏覽器在正式送出之前先去問一句：「我等一下要用 POST 送 <a class="gloss" href="../../tech/web/09-JSON.html" title="看這個技術的白話說明">JSON</a>，可以嗎？」後端回答可以，才會真的送。</p>
+<p><strong>這是正常的，不是 bug。</strong> 但它代表兩件事：
+- <code>allowedMethods</code> 一定要包含 <code>OPTIONS</code>
+- 每個 POST 其實是兩個請求，所以本機開發會覺得有點慢</p>
+<h2 id="15">15 分鐘動手小練習</h2>
+<p>親手製造一次 CORS 錯誤：</p>
+<ol>
+<li>打開任何網站，F12 → Console</li>
+<li>貼上這段：</li>
+</ol>
+<pre><code class="language-js">fetch('https://api.github.com/users/octocat')
+  .then(r =&gt; r.json())
+  .then(console.log)
+</code></pre>
+<p><a class="gloss" href="../../tech/team/02-Git是什麼.html" title="看這個技術的白話說明">Git</a>Hub 的 API 有開放 CORS，所以<strong>會成功</strong>。</p>
+<ol start="3">
+<li>換一個沒開放的網址再試一次，你就會看到紅色的 CORS 錯誤</li>
+</ol>
+<p>看過一次，以後在專案裡遇到就認得出來了。</p>
+<h2 id="_6">你會遇到的坑</h2>
+<p><strong>① 在前端找解法</strong>
+翻了兩小時的 StackOverflow 都沒用。<strong>去改後端。</strong></p>
+<p><strong>② 用 <code>allowedOrigins("*")</code> 加上 <code>allowCredentials(true)</code></strong>
+這兩個不能同時用，瀏覽器會拒絕。要帶 cookie／token 的話，<code>allowedOrigins</code> 必須寫明確的網址。</p>
+<p><strong>③ 部署後又壞了</strong>
+正式環境的前端網址（例如 <code>https://xxx.vercel.app</code>）忘記加進 <code>allowedOrigins</code>。
+→ <strong>第 5 週部署時一定會遇到，先寫在待辦清單上。</strong></p>
+<p><strong>④ 以為 CORS 是安全機制</strong>
+CORS 只擋瀏覽器。用 Postman 或 curl 打你的 API 完全不受影響。
+→ <strong>真正的權限控管要靠 <a href="../../tech/backend/20-SpringSecurity.html">Spring Security</a>。</strong></p>
+<h2 id="_7">常見錯誤訊息對照</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>你會看到</th>
+<th>中文意思</th>
+<th>怎麼修</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>No 'Access-Control-Allow-Origin' header</code></td>
+<td>後端沒說允許你</td>
+<td>後端加 CORS 設定</td>
+</tr>
+<tr>
+<td><code>The value of 'Access-Control-Allow-Origin' header ... must not be the wildcard '*' when credentials mode is 'include'</code></td>
+<td><code>*</code> 不能配 credentials</td>
+<td>寫明確的網址</td>
+</tr>
+<tr>
+<td><code>Method PATCH is not allowed by Access-Control-Allow-Methods</code></td>
+<td>沒允許這個方法</td>
+<td><code>allowedMethods</code> 加上 PATCH</td>
+</tr>
+<tr>
+<td><code>Request header field x-session-token is not allowed</code></td>
+<td>沒允許這個標頭</td>
+<td><code>allowedHeaders("*")</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="_8">術語對照表</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>白話</th>
+<th>正式名稱</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>門禁</td>
+<td>CORS（Cross-Origin Resource Sharing）</td>
+</tr>
+<tr>
+<td>同一個來源</td>
+<td>same-origin（協定＋網域＋埠號都一樣）</td>
+</tr>
+<tr>
+<td>先問一句可不可以</td>
+<td>preflight 預檢請求（OPTIONS）</td>
+</tr>
+<tr>
+<td>我允許這些網站</td>
+<td><code>Access-Control-Allow-Origin</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="_9">自我檢核</h2>
+<ol>
+<li><code>localhost:5173</code> 和 <code>localhost:8080</code> 算同源嗎？為什麼？</li>
+<li>CORS 要在前端還是後端修？</li>
+<li>那個多出來的 OPTIONS 請求是什麼？</li>
+<li>CORS 擋得住 Postman 嗎？</li>
+</ol>
+<h2 id="_10">學習資源</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>資源</th>
+<th>語言</th>
+<th>難度</th>
+<th>時間</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://developer.mozilla.org/zh-TW/docs/Web/HTTP/Guides/CORS">MDN：跨來源資源共用 CORS</a></td>
+<td>繁中</td>
+<td>入門～中階</td>
+<td>25 分</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="_11">相關頁面</h2>
+<p><a href="../../tech/web/07-HTTP請求與回應.html">HTTP 請求與回應</a>　<a href="../../tech/backend/20-SpringSecurity.html">Spring Security 基礎</a>　<a href="../../tech/frontend/40-fetch串接API.html">fetch 串接後端 API</a>　<a href="../../tech/quality/50-部署上線.html">部署上線</a></p><div class="pager"><a href="../../tech/web/10-REST-API設計.html"><div class="k">← 上一篇</div><div class="n">10 REST API 設計</div></a><a class="next" href="../../tech/backend/12-Java與JDK.html"><div class="k">下一篇 →</div><div class="n">12 Java 與 JDK</div></a></div>
+</article>
+<aside class="toc"><div class="tt">本頁目錄</div><a href="#_1">一句話</a><a href="#_2">想像一下</a><a href="#_3">為什麼你一定會遇到</a><a href="#_4">錯誤長這樣</a><a href="#_5">關鍵觀念：這是後端要解決的</a><a href="#options">那個多出來的 OPTIONS 請求</a><a href="#15">15 分鐘動手小練習</a><a href="#_6">你會遇到的坑</a><a href="#_7">常見錯誤訊息對照</a><a href="#_8">術語對照表</a><a href="#_9">自我檢核</a><a href="#_10">學習資源</a><a href="#_11">相關頁面</a></aside>
+</div></div>
+</div>
+<script src="../../vendor/mermaid.min.js"></script>
+<script>
+mermaid.initialize({
+  startOnLoad: true, securityLevel: 'loose', theme: 'base',
+  fontFamily: '"Noto Sans TC","PingFang TC",system-ui,sans-serif',
+  themeVariables: {
+    background:'#FFFFFF',
+    primaryColor:'#FBE8E3', primaryTextColor:'#2B211C', primaryBorderColor:'#C8442E',
+    secondaryColor:'#FCF0DC', secondaryBorderColor:'#E8A33D',
+    tertiaryColor:'#F5EFE5', tertiaryBorderColor:'#E6DED2',
+    lineColor:'#9C8E84', textColor:'#2B211C',
+    mainBkg:'#FBE8E3', nodeBorder:'#C8442E', clusterBkg:'#FBF7F0', clusterBorder:'#E6DED2',
+    titleColor:'#2B211C', edgeLabelBackground:'#FBF7F0',
+    actorBkg:'#FBE8E3', actorBorder:'#C8442E', actorTextColor:'#2B211C',
+    signalColor:'#6B5D54', signalTextColor:'#2B211C',
+    labelBoxBkgColor:'#FCF0DC', labelBoxBorderColor:'#E8A33D', labelTextColor:'#2B211C',
+    loopTextColor:'#2B211C', noteBkgColor:'#FCF0DC', noteBorderColor:'#E8A33D', noteTextColor:'#2B211C',
+    activationBkgColor:'#E6DED2', activationBorderColor:'#9C8E84', sequenceNumberColor:'#FFFFFF',
+    altBackground:'#F5EFE5',
+    taskBkgColor:'#FBE8E3', taskBorderColor:'#C8442E', taskTextColor:'#2B211C',
+    taskTextOutsideColor:'#2B211C', taskTextDarkColor:'#2B211C',
+    activeTaskBkgColor:'#E8A33D', activeTaskBorderColor:'#C9862A',
+    doneTaskBkgColor:'#E4EFE7', doneTaskBorderColor:'#3F7A4E',
+    critBkgColor:'#C8442E', critBorderColor:'#A63522',
+    gridColor:'#E6DED2', todayLineColor:'#B3261E',
+    sectionBkgColor:'#FBF7F0', sectionBkgColor2:'#F5EFE5', altSectionBkgColor:'#FFFFFF',
+    classText:'#2B211C',
+    attributeBackgroundColorOdd:'#FFFFFF', attributeBackgroundColorEven:'#F5EFE5'
+  },
+  gantt:{barHeight:18,barGap:5,topPadding:52,leftPadding:180,fontSize:12},
+  mindmap:{padding:12},
+  sequence:{actorMargin:42,boxTextMargin:6,noteMargin:10,messageMargin:32,width:150},
+  er:{entityPadding:12,minEntityWidth:110}
+});
+</script>
+<script>document.addEventListener('click',function(e){var sb=document.getElementById('sb');if(window.innerWidth<=940&&sb.classList.contains('open')&&!sb.contains(e.target)&&!e.target.closest('.menubtn')){sb.classList.remove('open');}});</script>
+</body>
+</html>

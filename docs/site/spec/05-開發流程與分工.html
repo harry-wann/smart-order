@@ -1,0 +1,702 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>05 開發流程與時程 · 火鍋店點餐系統文件</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand-700:#A63522; --brand-600:#C8442E; --brand-500:#DB5B42; --brand-100:#FBE8E3;
+  --accent-500:#E8A33D; --accent-100:#FCF0DC;
+  --bg:#FBF7F0; --surface:#FFFFFF; --surface-2:#F5EFE5; --line:#E6DED2;
+  --t900:#2B211C; --t600:#6B5D54; --t400:#9C8E84;
+  --ok:#3F7A4E; --ok-bg:#E4EFE7; --warn:#D98324; --bad:#B3261E;
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --serif:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --shadow:0 1px 2px rgba(43,33,28,.06),0 4px 12px rgba(43,33,28,.05);
+  --sidebar:280px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:var(--bg);color:var(--t900);font-family:var(--sans);
+  font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased}
+
+.layout{display:flex;min-height:100vh;align-items:flex-start}
+.sidebar{width:var(--sidebar);flex:0 0 var(--sidebar);position:sticky;top:0;height:100vh;
+  overflow-y:auto;background:var(--surface);border-right:1px solid var(--line);padding:22px 0 48px}
+.brand{padding:0 20px 16px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.brand a{text-decoration:none;color:inherit;display:block}
+.brand .logo{font-family:var(--serif);font-weight:900;font-size:18px;line-height:1.35;color:var(--brand-600)}
+.brand .sub{font-size:11.5px;color:var(--t400);margin-top:4px;letter-spacing:.02em}
+.navgroup{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--t400);
+  padding:15px 20px 5px}
+.sidebar a.nav{display:block;padding:6px 20px;color:var(--t600);text-decoration:none;
+  font-size:14px;border-left:3px solid transparent;line-height:1.5}
+.sidebar a.nav:hover{background:var(--brand-100);color:var(--brand-700)}
+.sidebar a.nav.active{background:var(--brand-100);color:var(--brand-700);
+  border-left-color:var(--brand-600);font-weight:700}
+.sidebar details{border-top:1px solid transparent}
+.sidebar details>summary{list-style:none;cursor:pointer;font-size:11px;font-weight:700;
+  letter-spacing:.1em;color:var(--t400);padding:12px 20px 5px;user-select:none}
+.sidebar details>summary::-webkit-details-marker{display:none}
+.sidebar details>summary::before{content:"▸ ";font-size:10px}
+.sidebar details[open]>summary::before{content:"▾ "}
+.sidebar details>summary:hover{color:var(--brand-600)}
+.sidebar .foot{padding:18px 20px;margin-top:14px;border-top:1px solid var(--line);
+  font-size:11.5px;color:var(--t400);line-height:1.7}
+
+.main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 32px 96px}
+.wrap{width:100%;max-width:1140px;display:flex;gap:36px;align-items:flex-start}
+article{flex:1;min-width:0;max-width:880px;padding-top:40px}
+.toc{width:196px;flex:0 0 196px;position:sticky;top:24px;padding-top:52px;font-size:12.5px;
+  max-height:calc(100vh - 60px);overflow-y:auto}
+.toc .tt{font-size:10.5px;letter-spacing:.1em;color:var(--t400);font-weight:700;margin-bottom:9px}
+.toc a{display:block;color:var(--t600);text-decoration:none;padding:3px 0 3px 10px;
+  border-left:2px solid var(--line);line-height:1.5}
+.toc a:hover{color:var(--brand-600);border-left-color:var(--brand-500)}
+
+.topbar{display:none;position:sticky;top:0;z-index:40;background:var(--surface);
+  border-bottom:1px solid var(--line);padding:10px 16px;align-items:center;gap:12px}
+.topbar .logo{font-family:var(--serif);font-weight:900;color:var(--brand-600);font-size:16px}
+.menubtn{background:var(--brand-600);color:#fff;border:0;border-radius:8px;height:40px;
+  padding:0 14px;font-size:15px;font-family:inherit;cursor:pointer}
+
+article h1{font-family:var(--serif);font-weight:900;font-size:32px;line-height:1.35;margin:0 0 10px}
+article h1+p{color:var(--t600)}
+article h2{font-family:var(--serif);font-weight:700;font-size:24px;line-height:1.45;
+  margin:50px 0 14px;padding-bottom:9px;border-bottom:2px solid var(--line)}
+article h3{font-weight:700;font-size:18.5px;margin:30px 0 10px}
+article h4{font-weight:700;font-size:16px;margin:22px 0 8px;color:var(--t600)}
+article p{margin:0 0 16px}
+article ul,article ol{margin:0 0 16px;padding-left:24px}
+article li{margin:5px 0}
+article a{color:var(--brand-600);text-decoration:none;border-bottom:1px solid rgba(200,68,46,.3)}
+article a:hover{border-bottom-color:var(--brand-600)}
+article a.gloss{color:var(--t900);border-bottom:1px dashed var(--accent-500);
+  background:linear-gradient(transparent 72%,var(--accent-100) 72%)}
+article a.gloss:hover{color:var(--brand-700);border-bottom-color:var(--brand-500)}
+article strong{font-weight:700;color:var(--t900)}
+article hr{border:0;border-top:1px solid var(--line);margin:42px 0}
+article img{max-width:100%;border-radius:12px}
+article details{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:12px 16px;margin:0 0 18px}
+article details>summary{cursor:pointer;font-weight:700;color:var(--brand-600)}
+
+article code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.87em;
+  background:var(--surface-2);padding:2px 6px;border-radius:5px;color:var(--brand-700);
+  word-break:break-word}
+article pre{background:#2B211C;color:#F5EFE5;padding:18px 20px;border-radius:12px;
+  overflow-x:auto;margin:0 0 18px;line-height:1.65;font-size:13.5px}
+article pre code{background:none;color:inherit;padding:0;font-size:inherit}
+
+blockquote{margin:0 0 20px;padding:14px 18px;background:var(--accent-100);
+  border-left:4px solid var(--accent-500);border-radius:0 10px 10px 0;color:var(--t600)}
+blockquote p:last-child{margin-bottom:0}
+blockquote strong{color:var(--t900)}
+
+.tablewrap{overflow-x:auto;margin:0 0 20px;border:1px solid var(--line);
+  border-radius:12px;background:var(--surface);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:420px}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--surface-2);font-weight:700;white-space:nowrap;color:var(--t900)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--brand-100)}
+td code,th code{white-space:nowrap}
+article li input[type=checkbox]{width:16px;height:16px;margin-right:6px;accent-color:var(--brand-600)}
+
+pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:22px;text-align:center;overflow-x:auto;box-shadow:var(--shadow);margin:0 0 22px;color:inherit}
+pre.mermaid svg{max-width:100%;height:auto}
+
+.hero{padding:52px 0 32px;border-bottom:1px solid var(--line);margin-bottom:32px}
+.hero .eyebrow{display:inline-block;background:var(--brand-100);color:var(--brand-700);
+  font-size:12.5px;font-weight:700;padding:5px 13px;border-radius:999px;letter-spacing:.04em}
+.hero h1{font-family:var(--serif);font-weight:900;font-size:40px;line-height:1.25;margin:18px 0 12px}
+.hero p{font-size:17px;color:var(--t600);max-width:680px;margin:0}
+.facts{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:10px 16px;font-size:13px;box-shadow:var(--shadow)}
+.fact b{display:block;font-family:var(--serif);font-size:19px;color:var(--brand-600);font-weight:900}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:13px;margin:18px 0 8px}
+.card{display:block;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:16px;text-decoration:none;color:inherit;box-shadow:var(--shadow);transition:.15s}
+.card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(43,33,28,.12);border-color:var(--brand-500)}
+.card .k{font-size:10.5px;letter-spacing:.09em;color:var(--t400);font-weight:700}
+.card .n{font-family:var(--serif);font-weight:700;font-size:17px;margin:5px 0 6px;color:var(--t900)}
+.card .d{font-size:13px;color:var(--t600);line-height:1.6}
+.callout{background:var(--brand-100);border:1px solid var(--brand-500);border-radius:12px;
+  padding:18px 20px;margin:24px 0}
+.callout .h{font-family:var(--serif);font-weight:700;font-size:17px;margin-bottom:6px;color:var(--brand-700)}
+.callout p{margin:0;color:var(--t600);font-size:14.5px}
+.pending{background:var(--accent-100);border-color:var(--accent-500)}
+.pending .h{color:#8A5B12}
+
+.pager{display:flex;gap:12px;margin-top:52px;padding-top:22px;border-top:1px solid var(--line)}
+.pager a{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:13px 16px;text-decoration:none;color:inherit;box-shadow:var(--shadow)}
+.pager a:hover{border-color:var(--brand-500)}
+.pager .k{font-size:11px;color:var(--t400);letter-spacing:.06em}
+.pager .n{font-weight:700;color:var(--brand-600);margin-top:3px;font-size:14.5px}
+.pager .next{text-align:right}
+
+@media(max-width:1200px){ .toc{display:none} }
+@media(max-width:940px){
+  .topbar{display:flex}
+  .layout{display:block}
+  .sidebar{position:fixed;left:0;top:0;height:100vh;z-index:50;transform:translateX(-100%);
+    transition:transform .2s;box-shadow:0 0 40px rgba(43,33,28,.2);width:286px}
+  .sidebar.open{transform:translateX(0)}
+  .main{padding:0 16px 72px}
+  article{padding-top:24px}
+  .hero{padding:30px 0 24px}
+  .hero h1{font-size:30px}
+  article h1{font-size:26px}
+  article h2{font-size:21px;margin-top:38px}
+  .pager{flex-direction:column}
+}
+@media print{
+  .sidebar,.toc,.topbar,.pager{display:none!important}
+  body{background:#fff}
+  .main{padding:0}
+  article{max-width:none}
+  article h2{page-break-after:avoid}
+  .tablewrap,pre.mermaid{box-shadow:none;page-break-inside:avoid}
+  a.gloss{background:none!important;border:0!important}
+}
+</style>
+</head>
+<body>
+<div class="topbar"><button class="menubtn" onclick="document.getElementById('sb').classList.toggle('open')">☰ 目錄</button><span class="logo">火鍋店點餐系統</span></div>
+<div class="layout">
+<nav class="sidebar" id="sb"><div class="brand"><a href="../index.html"><div class="logo">火鍋店點餐系統</div><div class="sub">專案文件 · 69 頁</div></a></div><a class="nav" href="../index.html">首頁</a><div class="navgroup">規格文件</div><a class="nav" href="../spec/00-架構分層與技術選型.html">00 架構分層與技術選型</a><a class="nav" href="../spec/01-專案總覽.html">01 專案總覽</a><a class="nav" href="../spec/02-需求規格.html">02 需求規格：基礎與進階功能總表</a><a class="nav" href="../spec/03-資料庫設計.html">03 資料庫設計</a><a class="nav" href="../spec/04-API規格.html">04 API 規格</a><a class="nav active" href="../spec/05-開發流程與分工.html">05 開發流程與時程</a><a class="nav" href="../spec/06-圖表總覽.html">06 圖表總覽</a><div class="navgroup">模組規格</div><a class="nav" href="../spec/modules/M1-菜單與品項.html">M1 菜單與品項</a><a class="nav" href="../spec/modules/M2-桌位開桌與候位.html">M2 桌位、開桌與候位</a><a class="nav" href="../spec/modules/M3-點餐與服務鈴.html">M3 點餐與服務鈴</a><a class="nav" href="../spec/modules/M4-出菜看板.html">M4 出菜看板（KDS）</a><a class="nav" href="../spec/modules/M5-庫存.html">M5 庫存</a><a class="nav" href="../spec/modules/M6-結帳.html">M6 結帳</a><a class="nav" href="../spec/modules/M7-訂位.html">M7 訂位</a><a class="nav" href="../spec/modules/M8-會員.html">M8 會員</a><div class="navgroup">UI 文件</div><a class="nav" href="../ui/10-UI-UX規格.html">10 UI / UX 規格</a><a class="nav" href="../ui/11-設計系統.html">11 設計系統</a><a class="nav" href="../ui/12-AI-UI工具與提示詞.html">12 AI UI 工具與提示詞</a><div class="navgroup">技術總表</div><a class="nav" href="../tech/00-技術總表.html">00 技術總表</a><details><summary>技術 · 團隊與工具（5）</summary><a class="nav" href="../tech/team/01-命令列.html">01 命令列基本操作</a><a class="nav" href="../tech/team/02-Git是什麼.html">02 Git 是什麼</a><a class="nav" href="../tech/team/03-分支與合併.html">03 分支、合併與衝突</a><a class="nav" href="../tech/team/04-GitHub與PR.html">04 GitHub 與 Pull Request</a><a class="nav" href="../tech/team/05-Docker與Compose.html">05 Docker 與 Docker Compose</a></details><details><summary>技術 · 網頁運作原理（6）</summary><a class="nav" href="../tech/web/06-前端後端在做什麼.html">06 前端與後端各在做什麼</a><a class="nav" href="../tech/web/07-HTTP請求與回應.html">07 HTTP 請求與回應</a><a class="nav" href="../tech/web/08-HTTP狀態碼.html">08 HTTP 狀態碼</a><a class="nav" href="../tech/web/09-JSON.html">09 JSON</a><a class="nav" href="../tech/web/10-REST-API設計.html">10 REST API 設計</a><a class="nav" href="../tech/web/11-CORS跨來源.html">11 CORS 跨來源問題</a></details><details><summary>技術 · 後端（10）</summary><a class="nav" href="../tech/backend/12-Java與JDK.html">12 Java 與 JDK</a><a class="nav" href="../tech/backend/13-Maven.html">13 Maven 與相依套件</a><a class="nav" href="../tech/backend/14-SpringBoot是什麼.html">14 Spring Boot 是什麼</a><a class="nav" href="../tech/backend/15-依賴注入.html">15 依賴注入</a><a class="nav" href="../tech/backend/16-三層架構.html">16 Controller / Service / Repository</a><a class="nav" href="../tech/backend/17-Entity與DTO.html">17 Entity 與 DTO</a><a class="nav" href="../tech/backend/18-全域例外處理.html">18 全域例外處理</a><a class="nav" href="../tech/backend/19-Swagger.html">19 Swagger 自動產生 API 文件</a><a class="nav" href="../tech/backend/20-SpringSecurity.html">20 Spring Security 基礎</a><a class="nav" href="../tech/backend/21-JWT.html">21 JWT 與登入狀態</a></details><details><summary>技術 · 資料庫（8）</summary><a class="nav" href="../tech/database/22-關聯式資料庫與SQL.html">22 關聯式資料庫與 SQL</a><a class="nav" href="../tech/database/23-資料表設計.html">23 資料表設計</a><a class="nav" href="../tech/database/24-索引.html">24 索引是什麼</a><a class="nav" href="../tech/database/25-ORM與JPA.html">25 ORM 與 JPA</a><a class="nav" href="../tech/database/26-JPA關聯對應.html">26 JPA 關聯對應</a><a class="nav" href="../tech/database/27-交易Transaction.html">27 交易 Transaction</a><a class="nav" href="../tech/database/28-鎖與併發.html">28 鎖與併發（防超賣）</a><a class="nav" href="../tech/database/29-Flyway.html">29 Flyway 資料庫版本控管</a></details><details><summary>技術 · 前端（11）</summary><a class="nav" href="../tech/frontend/30-現代JavaScript.html">30 現代 JavaScript 速成</a><a class="nav" href="../tech/frontend/31-非同步與async.html">31 非同步與 async/await</a><a class="nav" href="../tech/frontend/32-npm與套件.html">32 npm 與 node_modules</a><a class="nav" href="../tech/frontend/33-Vite.html">33 Vite</a><a class="nav" href="../tech/frontend/34-React與JSX.html">34 React 與 JSX</a><a class="nav" href="../tech/frontend/35-Props與State.html">35 Props 與 State</a><a class="nav" href="../tech/frontend/36-useState.html">36 useState</a><a class="nav" href="../tech/frontend/37-useEffect.html">37 useEffect</a><a class="nav" href="../tech/frontend/38-ReactRouter.html">38 React Router</a><a class="nav" href="../tech/frontend/39-Tailwind.html">39 Tailwind CSS</a><a class="nav" href="../tech/frontend/40-fetch串接API.html">40 fetch 串接後端 API</a></details><details><summary>技術 · 即時與排程（4）</summary><a class="nav" href="../tech/realtime/41-WebSocket與STOMP.html">41 WebSocket 與 STOMP</a><a class="nav" href="../tech/realtime/42-前端接WebSocket.html">42 前端接 WebSocket</a><a class="nav" href="../tech/realtime/43-排程與Cron.html">43 排程任務與 Cron</a><a class="nav" href="../tech/realtime/44-Redis.html">44 Redis</a></details><details><summary>技術 · 進階（2）</summary><a class="nav" href="../tech/advanced/45-訊息佇列RabbitMQ.html">45 訊息佇列 RabbitMQ</a><a class="nav" href="../tech/advanced/46-區間重疊與訂位排程.html">46 訂位排程的演算法</a></details><details><summary>技術 · 品質與部署（4）</summary><a class="nav" href="../tech/quality/47-單元測試.html">47 單元測試 JUnit + Mockito</a><a class="nav" href="../tech/quality/48-Testcontainers.html">48 Testcontainers</a><a class="nav" href="../tech/quality/49-GitHubActions.html">49 GitHub Actions CI</a><a class="nav" href="../tech/quality/50-部署上線.html">50 部署上線</a></details><div class="foot">由 Markdown 自動產生<br>改文件請編輯 <code>docs/</code> 下的 .md<br>再執行 <code>python3 docs/build_site.py</code></div></nav>
+<div class="main"><div class="wrap">
+<article>
+<h1 id="05">05 開發流程與時程</h1>
+<blockquote>
+<p><strong>工作分配尚未決定。</strong> 等八大模組的規格都定稿後再分。
+本文件先定下<strong>協作規範</strong>與<strong>六週時程</strong>，這兩件事跟誰做什麼無關。</p>
+</blockquote>
+<h2 id="1">1. 工作分配：原則先講，人選後定</h2>
+<h3 id="11">1.1 我們的分工方法：以功能切分</h3>
+<blockquote>
+<p><strong>一個人負責一個功能的前後端</strong>，從資料表 → API → 畫面全部自己走一遍。
+<strong>不切前端組／後端組。</strong></p>
+</blockquote>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>水平切（前端組／後端組）</th>
+<th><strong>功能切（我們用這個）</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>一個人做什麼</td>
+<td>所有功能的某一層</td>
+<td><strong>一個功能的所有層</strong></td>
+</tr>
+<tr>
+<td>學到什麼</td>
+<td>一層很熟，其他層沒碰過</td>
+<td>一條完整的路</td>
+</tr>
+<tr>
+<td>介面對不上時</td>
+<td>「一定是你 API 的問題」</td>
+<td>自己兩邊都改</td>
+</tr>
+<tr>
+<td>面試能講什麼</td>
+<td>「我負責寫前端」</td>
+<td><strong>「我做了訂位，遇到了<a class="gloss" href="../tech/advanced/46-區間重疊與訂位排程.html" title="看這個技術的白話說明">區間重疊</a>和併發問題，我這樣解」</strong></td>
+</tr>
+<tr>
+<td>代價</td>
+<td>學習成本低</td>
+<td><strong>每個人前後端都要學</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p>代價是真的存在的：每個人都要學 <a class="gloss" href="../tech/frontend/34-React與JSX.html" title="看這個技術的白話說明">React</a>、也要學 <a class="gloss" href="../tech/backend/14-SpringBoot是什麼.html" title="看這個技術的白話說明">Spring Boot</a>。這正是為什麼 <a href="../tech/00-技術總表.html">技術總表</a> 安排了<strong>必修八頁</strong>——那是全員的共同語言，先讀完再開工。</p>
+<h3 id="12">1.2 分配的時候要注意什麼</h3>
+<p>等規格定稿後分配時，建議照這幾條：</p>
+<ol>
+<li><strong>難易度要平均</strong>。八大模組的難易度是 ★★☆☆☆ 到 ★★★★☆，不要讓一個人拿到兩個四星模組</li>
+<li><strong>相依性高的模組給同一個人或相鄰的人</strong>。例如 M3 點餐和 M5 庫存共用「送出點餐」那段交易，分開做會很痛</li>
+<li><strong>技術地基（L0）要有人專門負責</strong>，而且他的功能模組要少一點——因為他卡住全隊都會卡住</li>
+<li><strong>每個模組要有第二個人能 review</strong>，尤其是 M3、M5、M7 這三個有併發問題的</li>
+<li><strong>共用檔案要有唯一負責人</strong>（見 §2.4）</li>
+</ol>
+<h3 id="13">1.3 目前已知的模組難易度</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>模組</th>
+<th>難易度</th>
+<th>主要難點</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../spec/modules/M1-菜單與品項.html">M1 菜單與品項</a></td>
+<td>★★★☆☆</td>
+<td>選項群組的多對多模型</td>
+</tr>
+<tr>
+<td><a href="../spec/modules/M2-桌位開桌與候位.html">M2 桌位開桌與候位</a></td>
+<td>★★★☆☆</td>
+<td>開桌的<a class="gloss" href="../tech/database/28-鎖與併發.html" title="看這個技術的白話說明">悲觀鎖</a>、狀態機</td>
+</tr>
+<tr>
+<td><a href="../spec/modules/M3-點餐與服務鈴.html">M3 點餐與服務鈴</a></td>
+<td>★★★★☆</td>
+<td><strong><a class="gloss" href="../tech/database/27-交易Transaction.html" title="看這個技術的白話說明">交易邊界</a>、<a class="gloss" href="../tech/database/28-鎖與併發.html" title="看這個技術的白話說明">防超賣</a>、<a class="gloss" href="../tech/realtime/41-WebSocket與STOMP.html" title="看這個技術的白話說明">WebSocket</a></strong></td>
+</tr>
+<tr>
+<td><a href="../spec/modules/M4-出菜看板.html">M4 出菜看板</a></td>
+<td>★★★☆☆</td>
+<td>狀態推導、即時推播</td>
+</tr>
+<tr>
+<td><a href="../spec/modules/M5-庫存.html">M5 庫存</a></td>
+<td>★★★★☆</td>
+<td><strong>防<a class="gloss" href="../tech/database/28-鎖與併發.html" title="看這個技術的白話說明">超賣</a>、多執行緒測試</strong></td>
+</tr>
+<tr>
+<td><a href="../spec/modules/M6-結帳.html">M6 結帳</a></td>
+<td>★★☆☆☆</td>
+<td>金額精度、狀態鎖定</td>
+</tr>
+<tr>
+<td><a href="../spec/modules/M7-訂位.html">M7 訂位</a></td>
+<td>★★★★☆</td>
+<td><strong>區間重疊演算法、併發控制、排程</strong></td>
+</tr>
+<tr>
+<td><a href="../spec/modules/M8-會員.html">M8 會員</a></td>
+<td>★★★☆☆</td>
+<td><a class="gloss" href="../tech/backend/20-SpringSecurity.html" title="看這個技術的白話說明">Spring Security</a> 雙軌認證、<a class="gloss" href="../tech/backend/21-JWT.html" title="看這個技術的白話說明">JWT</a></td>
+</tr>
+<tr>
+<td>技術地基 L0</td>
+<td>★★★☆☆</td>
+<td><a class="gloss" href="../tech/database/29-Flyway.html" title="看這個技術的白話說明">Flyway</a>、共用層、環境、部署</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="2-git">2. Git 協作規範</h2>
+<blockquote>
+<p>不熟悉的人先看 <a href="../tech/team/02-Git是什麼.html">Git 是什麼</a>、<a href="../tech/team/03-分支與合併.html">分支與合併</a>、<a href="../tech/team/04-GitHub與PR.html">GitHub 與 PR</a>。</p>
+</blockquote>
+<h3 id="21">2.1 分支策略</h3>
+<pre><code>main          ← 隨時可部署。只接受來自 develop 的 PR
+  └ develop   ← 整合分支
+      ├ feature/menu-option-group
+      ├ feature/order-submit
+      ├ feature/reservation-overlap
+      └ fix/kds-websocket-reconnect
+</code></pre>
+<p><strong>三條鐵律</strong></p>
+<ol>
+<li><strong>禁止直接 push 到 <code>main</code> 和 <code>develop</code></strong>（<a class="gloss" href="../tech/team/02-Git是什麼.html" title="看這個技術的白話說明">Git</a>Hub 設 branch protection）</li>
+<li>分支命名：<code>feature/&lt;模組&gt;-&lt;簡述&gt;</code>、<code>fix/&lt;簡述&gt;</code>、<code>docs/&lt;簡述&gt;</code></li>
+<li>每個 PR 至少 <strong>1 人 review</strong>，且 <strong>CI 必須綠燈</strong>才能合併</li>
+</ol>
+<h3 id="22-commit">2.2 Commit 訊息</h3>
+<pre><code>feat: 新增送出點餐 API
+fix: 修正 KDS 斷線後未重抓資料
+docs: 更新 API 規格的 WebSocket 事件表
+refactor: 抽出金額計算邏輯
+test: 補上防超賣的多執行緒測試
+chore: 升級 Spring Boot 版本
+</code></pre>
+<h3 id="23">2.3 最容易出事的地方</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>風險</th>
+<th>預防</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>兩人同時寫 Flyway migration，版本號撞號</td>
+<td><strong>指定唯一負責人</strong>，其他人開 issue</td>
+</tr>
+<tr>
+<td>有人改了已合併的 migration</td>
+<td>Flyway 會拒絕啟動。<strong>已 push 的絕不修改，寫新的一支</strong></td>
+</tr>
+<tr>
+<td><code>package-lock.json</code> 衝突</td>
+<td>不要手動解，刪掉重跑 <code>npm install</code></td>
+</tr>
+<tr>
+<td>Entity 改欄位沒通知</td>
+<td>PR 標題加 <code>[BREAKING]</code>，群組 @所有人</td>
+</tr>
+<tr>
+<td>有人 <code>git push -f</code> 到共用分支</td>
+<td><strong>禁止</strong></td>
+</tr>
+<tr>
+<td>密碼被 commit 上去</td>
+<td>第一天就設好 <code>.gitignore</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="24">2.4 共用檔案的唯一負責人（分配時要指定）</h3>
+<p>這些檔案動到就會影響所有人，<strong>每一個都要有唯一 owner</strong>：</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>為什麼要唯一負責人</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>db/migration/</code> 下的 Flyway 檔案</td>
+<td>版本號會撞、改了別人跑不起來</td>
+</tr>
+<tr>
+<td>Entity 定義</td>
+<td>改欄位所有人都要跟著改</td>
+</tr>
+<tr>
+<td>種子資料程式</td>
+<td></td>
+</tr>
+<tr>
+<td><code>pom.xml</code></td>
+<td>最容易衝突的檔案之一</td>
+</tr>
+<tr>
+<td><code>docker-compose.yml</code></td>
+<td>環境設定</td>
+</tr>
+<tr>
+<td>WebSocket 設定與事件型別</td>
+<td>事件格式是前後端的合約</td>
+</tr>
+<tr>
+<td><code>04-API規格.md</code></td>
+<td>同上</td>
+</tr>
+<tr>
+<td><code>package.json</code>（兩個前端各一）</td>
+<td></td>
+</tr>
+<tr>
+<td><a class="gloss" href="../tech/frontend/39-Tailwind.html" title="看這個技術的白話說明">Tailwind</a> 設定與共用元件</td>
+<td>改了全站樣式都會變</td>
+</tr>
+<tr>
+<td>Figma 檔</td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="25">2.5 第一天就要做的事</h3>
+<pre><code class="language-gitignore">target/
+node_modules/
+dist/
+.env
+.env.local
+application-local.yml
+*.log
+.DS_Store
+.idea/
+.vscode/
+</code></pre>
+<hr />
+<h2 id="3">3. 六週時程</h2>
+<blockquote>
+<p>圖見 <a href="../spec/06-圖表總覽.html">06-圖表總覽</a> 的甘特圖。每個模組的細節見各模組頁的「六週切分」。
+以下只寫「本週要交出什麼」，<strong>不指定誰做</strong>。</p>
+</blockquote>
+<h3 id="0">第 0 週（現在～開工前）</h3>
+<ul>
+<li><input type="checkbox" disabled> 全員讀完 <a href="../spec/00-架構分層與技術選型.html">00-架構分層與技術選型</a> 與 <a href="../tech/00-技術總表.html">技術總表</a> 的<strong>必修八頁</strong></li>
+<li><input type="checkbox" disabled> 八大模組規格定稿 → <strong>開會分配工作</strong>（原則見 §1）</li>
+<li><input type="checkbox" disabled> 建 GitHub repo、設定分支保護、指定共用檔案的 owner</li>
+<li><input type="checkbox" disabled> 每人裝好：<a class="gloss" href="../tech/backend/12-Java與JDK.html" title="看這個技術的白話說明">JDK</a> 17、IntelliJ IDEA、Node 20、<a class="gloss" href="../tech/team/05-Docker與Compose.html" title="看這個技術的白話說明">Docker</a> Desktop、DBeaver</li>
+<li><input type="checkbox" disabled> 每人的機器都能跑起 Hello World Spring Boot + <a class="gloss" href="../tech/frontend/33-Vite.html" title="看這個技術的白話說明">Vite</a> React</li>
+</ul>
+<h3 id="1_1">第 1 週：基礎建設</h3>
+<p><strong>要交出什麼</strong></p>
+<ul>
+<li>全員做完 <a href="../tech/frontend/34-React與JSX.html">React 基礎練習</a>（官方繁中「快速入門」+「描述 UI」），約 2 天</li>
+<li>Spring Boot 骨架、<a href="../tech/team/05-Docker與Compose.html">Docker Compose</a>（<a class="gloss" href="../tech/database/22-關聯式資料庫與SQL.html" title="看這個技術的白話說明">MySQL</a> + <a class="gloss" href="../tech/realtime/44-Redis.html" title="看這個技術的白話說明">Redis</a>）</li>
+<li>統一回應格式、<a href="../tech/backend/18-全域例外處理.html">全域例外處理</a>、<a href="../tech/web/11-CORS跨來源.html">CORS</a>、<a href="../tech/backend/19-Swagger.html">Swagger</a></li>
+<li><strong><a href="../tech/database/29-Flyway.html">Flyway</a> V1～V7 建表 + 種子資料第一版</strong> ← 最高優先，別人才有資料可用</li>
+<li>菜單 Entity / Repository、<code>GET /api/menu/categories</code>、<code>GET /api/menu/items</code></li>
+<li><a href="../tech/backend/20-SpringSecurity.html">Spring Security</a> 基礎設定 + 員工登入 API</li>
+<li><a href="../tech/frontend/33-Vite.html">Vite</a> + <a href="../tech/frontend/39-Tailwind.html">Tailwind</a> 專案初始化、共用元件雛形</li>
+<li>Figma 主視覺定調（用 <a href="../ui/12-AI-UI工具與提示詞.html">12-AI UI 工具與提示詞</a>）</li>
+</ul>
+<blockquote>
+<p><strong>★ 里程碑（週五驗收）</strong>：手機瀏覽器打開顧客端，看到從後端 API 抓下來的菜單。
+這叫 <strong>walking skeleton</strong>。它很醜沒關係，但<strong>整條路必須是通的</strong>：React → <a class="gloss" href="../tech/frontend/40-fetch串接API.html" title="看這個技術的白話說明">fetch</a> → Spring Boot → <a class="gloss" href="../tech/database/25-ORM與JPA.html" title="看這個技術的白話說明">JPA</a> → My<a class="gloss" href="../tech/database/22-關聯式資料庫與SQL.html" title="看這個技術的白話說明">SQL</a>。</p>
+</blockquote>
+<h3 id="2">第 2 週：點餐核心</h3>
+<ul>
+<li>選項群組 API、品項詳情（含選項）</li>
+<li><strong><code>POST /orders</code> 送出點餐</strong>（交易 + <a href="../tech/database/28-鎖與併發.html">防超賣</a> + 快照 + 鍋底規則 + 選項驗證）</li>
+<li><code>GET /orders</code> 本桌訂單、KDS 查詢 API</li>
+<li>開桌／加入／用餐狀態 API（含悲觀鎖）、用餐權杖 filter</li>
+<li>模擬付款 Service</li>
+<li>顧客端：菜單頁、分類頁籤、品項詳情與選項、購物車</li>
+<li>店家端：登入、桌況總覽頁</li>
+<li><a href="../tech/quality/49-GitHubActions.html">CI</a>、<strong>部署技術驗證</strong>（先跑一次 Hello World 上線，確認平台支援 WebSocket）</li>
+</ul>
+<blockquote>
+<p><strong>里程碑</strong>：用 Postman 完成「櫃檯開桌 → 掃碼加入 → 送出點餐 → 查詢本桌訂單」。</p>
+</blockquote>
+<h3 id="3_1">第 3 週：主流程打通 ★最關鍵</h3>
+<ul>
+<li><strong>WebSocket 設定與握手驗證</strong>、五個頻道</li>
+<li>KDS 推播、出菜勾選、狀態自動推導</li>
+<li>結帳與服務費、<code>CHECKOUT_PENDING</code> 鎖定、付款流程</li>
+<li>顧客端：掃碼進入頁、選鍋底頁、<strong>本桌訂單頁 + 即時同步</strong>、結帳頁、付款頁、完成頁</li>
+<li>店家端：<strong>KDS 看板</strong>（深色、大字）、桌位詳情、菜單管理後台</li>
+</ul>
+<blockquote>
+<p><strong>★ 本週是整個專案最關鍵的里程碑</strong>：
+用手機完整走一次「掃碼 → 加入 → 選鍋底 → 點餐 → 送出 → <strong>另一支手機 1 秒內看到</strong> → 廚房收到 → 勾選出餐 → <strong>手機看到已出餐</strong> → 結帳 → 付款成功」。</p>
+<p><strong>這條路通了，這個專題就算成功了一半。</strong> 第 3 週結束還沒通的話，第 4 週不要開新功能，先把它補完。</p>
+</blockquote>
+<h3 id="4">第 4 週：訂位、候位、服務鈴</h3>
+<ul>
+<li><strong><a href="../spec/modules/M7-訂位.html">訂位</a></strong>：區間重疊檢查 + 悲觀鎖 + best-fit 配桌、可訂時段查詢、取消、報到開桌</li>
+<li>服務鈴（後端表 + 推播 + 顧客端按鈕 + 櫃檯面板）</li>
+<li>候位登記、叫號、報到、過號</li>
+<li>人氣推薦 API、出餐順序建議</li>
+<li>顧客端：訂位三步驟頁面、服務鈴面板</li>
+<li>店家端：候位管理、訂位管理後台</li>
+</ul>
+<blockquote>
+<p><strong>里程碑</strong>：線上訂位 → 自動配到合適的桌 → 到店報到 → 自動開桌；按服務鈴櫃檯即時跳出。</p>
+</blockquote>
+<h3 id="5">第 5 週：會員、庫存、排程、部署 ★</h3>
+<ul>
+<li><strong><a href="../spec/modules/M5-庫存.html">庫存管理</a></strong>：補貨、低水位、售完自動下架與推播、異動紀錄</li>
+<li><strong><a href="../spec/modules/M8-會員.html">會員</a></strong>：OTP + JWT + 會員中心 + 消費歷史 + 匿名轉會員</li>
+<li><strong>十個<a href="../tech/realtime/43-排程與Cron.html">排程任務</a> + 對應的手動觸發 API</strong></li>
+<li><a href="../tech/quality/47-單元測試.html">單元測試</a>補到 15～20 個</li>
+<li>前端三態處理、RWD、<strong>iOS Safari 實機測試</strong></li>
+<li>UI 一致性檢查（把 30 個畫面並排看）</li>
+<li><strong>★ <a class="gloss" href="../tech/quality/50-部署上線.html" title="看這個技術的白話說明">部署上線</a></strong></li>
+</ul>
+<blockquote>
+<p><strong>里程碑</strong>：線上 demo 網址可以完整操作。
+<strong>第一次部署一定會卡 <a href="../tech/web/11-CORS跨來源.html">CORS</a>、環境變數、SPA 路由、WebSocket 的 <code>wss://</code>——絕對不能留到第 6 週。</strong></p>
+</blockquote>
+<h3 id="6">第 6 週：收斂（★不寫新功能）</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>天</th>
+<th>做什麼</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>一～三</td>
+<td>修 bug、補錯誤流程、跨瀏覽器測試、<strong>寫防超賣的多執行緒測試</strong></td>
+</tr>
+<tr>
+<td>四</td>
+<td>README（含<strong>線上連結與測試帳號</strong>）、架構圖、功能 GIF</td>
+</tr>
+<tr>
+<td>五</td>
+<td>上線最終版、demo 腳本、<strong>備援方案</strong></td>
+</tr>
+<tr>
+<td>六～日</td>
+<td>簡報製作與演練（至少完整演練 3 次）</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p><strong>鐵則：第 6 週一行新功能都不要寫。</strong> 每年都有組在最後一週加功能然後 demo 當天炸掉。</p>
+<p><strong>備援清單</strong>（demo 當天保命用）：
+- 錄好一段 3 分鐘的完整操作影片
+- 本機也能跑（<code>docker compose up</code> 就能起）
+- 資料庫備份一份乾淨的 demo 資料
+- <code>reset-demo.sh</code> 在 demo 前 10 分鐘跑一次
+- <strong>開始前 5 分鐘先打開網站叫醒免費方案的服務</strong>
+- 手機和電腦都先連好網路並測試過</p>
+</blockquote>
+<hr />
+<h2 id="4_1">4. 每日／每週節奏</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>時間</th>
+<th>活動</th>
+<th>時長</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>每天早上</td>
+<td>站立會：昨天做了什麼／今天要做什麼／卡在哪</td>
+<td><strong>15 分鐘，站著講</strong></td>
+</tr>
+<tr>
+<td>每天結束</td>
+<td>各自 push 到 feature 分支（<strong>不要囤積本機程式碼</strong>）</td>
+<td>—</td>
+</tr>
+<tr>
+<td>每週三</td>
+<td>中期檢查：本週里程碑會不會達成？不會的話現在就砍範圍</td>
+<td>30 分鐘</td>
+</tr>
+<tr>
+<td>每週五</td>
+<td>收斂會：合併 PR、整體跑一次、更新 <a href="../spec/02-需求規格.html">02-需求規格</a> 的狀態欄</td>
+<td>60 分鐘</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>「卡住 30 分鐘就要開口」原則</strong>：新手最常見的時間殺手是一個人默默卡 3 小時。規定卡住 30 分鐘沒進展就在群組貼出來。<strong>這條規則能省掉整個專案 20% 的時間。</strong></p>
+<hr />
+<h2 id="5-dod">5. 完成定義（DoD）</h2>
+<p>一個功能要標成完成，必須全部符合：</p>
+<ul>
+<li><input type="checkbox" disabled> 已合併到 <code>develop</code>，且 <code>develop</code> 能正常啟動</li>
+<li><input type="checkbox" disabled> <strong>CI 綠燈</strong></li>
+<li><input type="checkbox" disabled> API 出現在 <a class="gloss" href="../tech/backend/19-Swagger.html" title="看這個技術的白話說明">Swagger</a> 上，參數說明正確</li>
+<li><input type="checkbox" disabled> 前端處理<strong>三種狀態</strong>：載入中、空資料、錯誤</li>
+<li><input type="checkbox" disabled> 手機 375px 不破版（顧客端功能）</li>
+<li><input type="checkbox" disabled> 至少一位組員 review 過 PR</li>
+<li><input type="checkbox" disabled> 對應模組頁的驗收條件逐條測過</li>
+<li><input type="checkbox" disabled> 沒有殘留的 <code>console.log</code> / <code>System.out.println</code></li>
+<li><input type="checkbox" disabled> <code>02-需求規格.md</code> 的狀態欄已更新</li>
+</ul>
+<hr />
+<h2 id="6_1">6. 風險與應對</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>風險</th>
+<th>可能性</th>
+<th>影響</th>
+<th>應對</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>React 學習曲線導致前端落後</td>
+<td><strong>高</strong></td>
+<td><strong>高</strong></td>
+<td>第 1 週結束檢查點；落後則店家端改 Thymeleaf</td>
+</tr>
+<tr>
+<td>送出點餐的交易 + 防超賣寫錯</td>
+<td>中</td>
+<td><strong>高</strong></td>
+<td>一定要有第二個人 review；第 6 週寫多執行緒測試</td>
+</tr>
+<tr>
+<td>WebSocket 部署後連不上</td>
+<td>中</td>
+<td>高</td>
+<td><strong>第 2 週就做部署技術驗證</strong></td>
+</tr>
+<tr>
+<td>功能切分後有人前後端都不熟，整個卡住</td>
+<td><strong>高</strong></td>
+<td>高</td>
+<td>必修八頁先讀完；卡住 30 分鐘就開口；相依模組安排相鄰</td>
+</tr>
+<tr>
+<td>第一次部署卡住</td>
+<td><strong>高</strong></td>
+<td>中</td>
+<td>提前到第 5 週；第 2 週先驗證</td>
+</tr>
+<tr>
+<td>Git 衝突導致程式碼遺失</td>
+<td>中</td>
+<td>高</td>
+<td>分支保護、禁 force push、每天 push</td>
+</tr>
+<tr>
+<td>Demo 當天網路或服務掛掉</td>
+<td>中</td>
+<td><strong>高</strong></td>
+<td>備援清單（§3 第 6 週）</td>
+</tr>
+<tr>
+<td>範圍蔓延</td>
+<td><strong>高</strong></td>
+<td>高</td>
+<td>進階功能一律不排時程；要加必須先砍一個</td>
+</tr>
+<tr>
+<td>種子資料沒做，推薦報表空白</td>
+<td>中</td>
+<td>中</td>
+<td>第 1 週最高優先</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="7">7. 給整合負責人的三個提醒</h2>
+<p>不管最後誰擔任這個角色，這三件事要有人做：</p>
+<ol>
+<li><strong>主要工作不是寫最多程式碼，是讓其他四個人不被卡住。</strong> 把共用層做好、環境弄順、衝突解掉，比自己多寫一個功能有價值。</li>
+<li><strong>第 3 週結束時要誠實評估。</strong> 如果主流程還沒通，立刻砍掉第 4、5 週的一半功能。<strong>砍範圍不丟臉，交不出來才丟臉。</strong></li>
+<li><strong>每週五一定要整體跑一次。</strong> 不要等到第 6 週才第一次把所有人的東西合起來——那時候才發現介面對不上就來不及了。</li>
+</ol><div class="pager"><a href="../spec/04-API規格.html"><div class="k">← 上一篇</div><div class="n">04 API 規格</div></a><a class="next" href="../spec/06-圖表總覽.html"><div class="k">下一篇 →</div><div class="n">06 圖表總覽</div></a></div>
+</article>
+<aside class="toc"><div class="tt">本頁目錄</div><a href="#1">1. 工作分配：原則先講，人選後定</a><a href="#2-git">2. Git 協作規範</a><a href="#3">3. 六週時程</a><a href="#4_1">4. 每日／每週節奏</a><a href="#5-dod">5. 完成定義（DoD）</a><a href="#6_1">6. 風險與應對</a><a href="#7">7. 給整合負責人的三個提醒</a></aside>
+</div></div>
+</div>
+<script src="../vendor/mermaid.min.js"></script>
+<script>
+mermaid.initialize({
+  startOnLoad: true, securityLevel: 'loose', theme: 'base',
+  fontFamily: '"Noto Sans TC","PingFang TC",system-ui,sans-serif',
+  themeVariables: {
+    background:'#FFFFFF',
+    primaryColor:'#FBE8E3', primaryTextColor:'#2B211C', primaryBorderColor:'#C8442E',
+    secondaryColor:'#FCF0DC', secondaryBorderColor:'#E8A33D',
+    tertiaryColor:'#F5EFE5', tertiaryBorderColor:'#E6DED2',
+    lineColor:'#9C8E84', textColor:'#2B211C',
+    mainBkg:'#FBE8E3', nodeBorder:'#C8442E', clusterBkg:'#FBF7F0', clusterBorder:'#E6DED2',
+    titleColor:'#2B211C', edgeLabelBackground:'#FBF7F0',
+    actorBkg:'#FBE8E3', actorBorder:'#C8442E', actorTextColor:'#2B211C',
+    signalColor:'#6B5D54', signalTextColor:'#2B211C',
+    labelBoxBkgColor:'#FCF0DC', labelBoxBorderColor:'#E8A33D', labelTextColor:'#2B211C',
+    loopTextColor:'#2B211C', noteBkgColor:'#FCF0DC', noteBorderColor:'#E8A33D', noteTextColor:'#2B211C',
+    activationBkgColor:'#E6DED2', activationBorderColor:'#9C8E84', sequenceNumberColor:'#FFFFFF',
+    altBackground:'#F5EFE5',
+    taskBkgColor:'#FBE8E3', taskBorderColor:'#C8442E', taskTextColor:'#2B211C',
+    taskTextOutsideColor:'#2B211C', taskTextDarkColor:'#2B211C',
+    activeTaskBkgColor:'#E8A33D', activeTaskBorderColor:'#C9862A',
+    doneTaskBkgColor:'#E4EFE7', doneTaskBorderColor:'#3F7A4E',
+    critBkgColor:'#C8442E', critBorderColor:'#A63522',
+    gridColor:'#E6DED2', todayLineColor:'#B3261E',
+    sectionBkgColor:'#FBF7F0', sectionBkgColor2:'#F5EFE5', altSectionBkgColor:'#FFFFFF',
+    classText:'#2B211C',
+    attributeBackgroundColorOdd:'#FFFFFF', attributeBackgroundColorEven:'#F5EFE5'
+  },
+  gantt:{barHeight:18,barGap:5,topPadding:52,leftPadding:180,fontSize:12},
+  mindmap:{padding:12},
+  sequence:{actorMargin:42,boxTextMargin:6,noteMargin:10,messageMargin:32,width:150},
+  er:{entityPadding:12,minEntityWidth:110}
+});
+</script>
+<script>document.addEventListener('click',function(e){var sb=document.getElementById('sb');if(window.innerWidth<=940&&sb.classList.contains('open')&&!sb.contains(e.target)&&!e.target.closest('.menubtn')){sb.classList.remove('open');}});</script>
+</body>
+</html>

@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>鎖與併發（防超賣） · 火鍋店點餐系統文件</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand-700:#A63522; --brand-600:#C8442E; --brand-500:#DB5B42; --brand-100:#FBE8E3;
+  --accent-500:#E8A33D; --accent-100:#FCF0DC;
+  --bg:#FBF7F0; --surface:#FFFFFF; --surface-2:#F5EFE5; --line:#E6DED2;
+  --t900:#2B211C; --t600:#6B5D54; --t400:#9C8E84;
+  --ok:#3F7A4E; --ok-bg:#E4EFE7; --warn:#D98324; --bad:#B3261E;
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --serif:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --shadow:0 1px 2px rgba(43,33,28,.06),0 4px 12px rgba(43,33,28,.05);
+  --sidebar:280px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:var(--bg);color:var(--t900);font-family:var(--sans);
+  font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased}
+
+.layout{display:flex;min-height:100vh;align-items:flex-start}
+.sidebar{width:var(--sidebar);flex:0 0 var(--sidebar);position:sticky;top:0;height:100vh;
+  overflow-y:auto;background:var(--surface);border-right:1px solid var(--line);padding:22px 0 48px}
+.brand{padding:0 20px 16px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.brand a{text-decoration:none;color:inherit;display:block}
+.brand .logo{font-family:var(--serif);font-weight:900;font-size:18px;line-height:1.35;color:var(--brand-600)}
+.brand .sub{font-size:11.5px;color:var(--t400);margin-top:4px;letter-spacing:.02em}
+.navgroup{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--t400);
+  padding:15px 20px 5px}
+.sidebar a.nav{display:block;padding:6px 20px;color:var(--t600);text-decoration:none;
+  font-size:14px;border-left:3px solid transparent;line-height:1.5}
+.sidebar a.nav:hover{background:var(--brand-100);color:var(--brand-700)}
+.sidebar a.nav.active{background:var(--brand-100);color:var(--brand-700);
+  border-left-color:var(--brand-600);font-weight:700}
+.sidebar details{border-top:1px solid transparent}
+.sidebar details>summary{list-style:none;cursor:pointer;font-size:11px;font-weight:700;
+  letter-spacing:.1em;color:var(--t400);padding:12px 20px 5px;user-select:none}
+.sidebar details>summary::-webkit-details-marker{display:none}
+.sidebar details>summary::before{content:"▸ ";font-size:10px}
+.sidebar details[open]>summary::before{content:"▾ "}
+.sidebar details>summary:hover{color:var(--brand-600)}
+.sidebar .foot{padding:18px 20px;margin-top:14px;border-top:1px solid var(--line);
+  font-size:11.5px;color:var(--t400);line-height:1.7}
+
+.main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 32px 96px}
+.wrap{width:100%;max-width:1140px;display:flex;gap:36px;align-items:flex-start}
+article{flex:1;min-width:0;max-width:880px;padding-top:40px}
+.toc{width:196px;flex:0 0 196px;position:sticky;top:24px;padding-top:52px;font-size:12.5px;
+  max-height:calc(100vh - 60px);overflow-y:auto}
+.toc .tt{font-size:10.5px;letter-spacing:.1em;color:var(--t400);font-weight:700;margin-bottom:9px}
+.toc a{display:block;color:var(--t600);text-decoration:none;padding:3px 0 3px 10px;
+  border-left:2px solid var(--line);line-height:1.5}
+.toc a:hover{color:var(--brand-600);border-left-color:var(--brand-500)}
+
+.topbar{display:none;position:sticky;top:0;z-index:40;background:var(--surface);
+  border-bottom:1px solid var(--line);padding:10px 16px;align-items:center;gap:12px}
+.topbar .logo{font-family:var(--serif);font-weight:900;color:var(--brand-600);font-size:16px}
+.menubtn{background:var(--brand-600);color:#fff;border:0;border-radius:8px;height:40px;
+  padding:0 14px;font-size:15px;font-family:inherit;cursor:pointer}
+
+article h1{font-family:var(--serif);font-weight:900;font-size:32px;line-height:1.35;margin:0 0 10px}
+article h1+p{color:var(--t600)}
+article h2{font-family:var(--serif);font-weight:700;font-size:24px;line-height:1.45;
+  margin:50px 0 14px;padding-bottom:9px;border-bottom:2px solid var(--line)}
+article h3{font-weight:700;font-size:18.5px;margin:30px 0 10px}
+article h4{font-weight:700;font-size:16px;margin:22px 0 8px;color:var(--t600)}
+article p{margin:0 0 16px}
+article ul,article ol{margin:0 0 16px;padding-left:24px}
+article li{margin:5px 0}
+article a{color:var(--brand-600);text-decoration:none;border-bottom:1px solid rgba(200,68,46,.3)}
+article a:hover{border-bottom-color:var(--brand-600)}
+article a.gloss{color:var(--t900);border-bottom:1px dashed var(--accent-500);
+  background:linear-gradient(transparent 72%,var(--accent-100) 72%)}
+article a.gloss:hover{color:var(--brand-700);border-bottom-color:var(--brand-500)}
+article strong{font-weight:700;color:var(--t900)}
+article hr{border:0;border-top:1px solid var(--line);margin:42px 0}
+article img{max-width:100%;border-radius:12px}
+article details{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:12px 16px;margin:0 0 18px}
+article details>summary{cursor:pointer;font-weight:700;color:var(--brand-600)}
+
+article code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.87em;
+  background:var(--surface-2);padding:2px 6px;border-radius:5px;color:var(--brand-700);
+  word-break:break-word}
+article pre{background:#2B211C;color:#F5EFE5;padding:18px 20px;border-radius:12px;
+  overflow-x:auto;margin:0 0 18px;line-height:1.65;font-size:13.5px}
+article pre code{background:none;color:inherit;padding:0;font-size:inherit}
+
+blockquote{margin:0 0 20px;padding:14px 18px;background:var(--accent-100);
+  border-left:4px solid var(--accent-500);border-radius:0 10px 10px 0;color:var(--t600)}
+blockquote p:last-child{margin-bottom:0}
+blockquote strong{color:var(--t900)}
+
+.tablewrap{overflow-x:auto;margin:0 0 20px;border:1px solid var(--line);
+  border-radius:12px;background:var(--surface);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:420px}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--surface-2);font-weight:700;white-space:nowrap;color:var(--t900)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--brand-100)}
+td code,th code{white-space:nowrap}
+article li input[type=checkbox]{width:16px;height:16px;margin-right:6px;accent-color:var(--brand-600)}
+
+pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:22px;text-align:center;overflow-x:auto;box-shadow:var(--shadow);margin:0 0 22px;color:inherit}
+pre.mermaid svg{max-width:100%;height:auto}
+
+.hero{padding:52px 0 32px;border-bottom:1px solid var(--line);margin-bottom:32px}
+.hero .eyebrow{display:inline-block;background:var(--brand-100);color:var(--brand-700);
+  font-size:12.5px;font-weight:700;padding:5px 13px;border-radius:999px;letter-spacing:.04em}
+.hero h1{font-family:var(--serif);font-weight:900;font-size:40px;line-height:1.25;margin:18px 0 12px}
+.hero p{font-size:17px;color:var(--t600);max-width:680px;margin:0}
+.facts{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:10px 16px;font-size:13px;box-shadow:var(--shadow)}
+.fact b{display:block;font-family:var(--serif);font-size:19px;color:var(--brand-600);font-weight:900}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:13px;margin:18px 0 8px}
+.card{display:block;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:16px;text-decoration:none;color:inherit;box-shadow:var(--shadow);transition:.15s}
+.card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(43,33,28,.12);border-color:var(--brand-500)}
+.card .k{font-size:10.5px;letter-spacing:.09em;color:var(--t400);font-weight:700}
+.card .n{font-family:var(--serif);font-weight:700;font-size:17px;margin:5px 0 6px;color:var(--t900)}
+.card .d{font-size:13px;color:var(--t600);line-height:1.6}
+.callout{background:var(--brand-100);border:1px solid var(--brand-500);border-radius:12px;
+  padding:18px 20px;margin:24px 0}
+.callout .h{font-family:var(--serif);font-weight:700;font-size:17px;margin-bottom:6px;color:var(--brand-700)}
+.callout p{margin:0;color:var(--t600);font-size:14.5px}
+.pending{background:var(--accent-100);border-color:var(--accent-500)}
+.pending .h{color:#8A5B12}
+
+.pager{display:flex;gap:12px;margin-top:52px;padding-top:22px;border-top:1px solid var(--line)}
+.pager a{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:13px 16px;text-decoration:none;color:inherit;box-shadow:var(--shadow)}
+.pager a:hover{border-color:var(--brand-500)}
+.pager .k{font-size:11px;color:var(--t400);letter-spacing:.06em}
+.pager .n{font-weight:700;color:var(--brand-600);margin-top:3px;font-size:14.5px}
+.pager .next{text-align:right}
+
+@media(max-width:1200px){ .toc{display:none} }
+@media(max-width:940px){
+  .topbar{display:flex}
+  .layout{display:block}
+  .sidebar{position:fixed;left:0;top:0;height:100vh;z-index:50;transform:translateX(-100%);
+    transition:transform .2s;box-shadow:0 0 40px rgba(43,33,28,.2);width:286px}
+  .sidebar.open{transform:translateX(0)}
+  .main{padding:0 16px 72px}
+  article{padding-top:24px}
+  .hero{padding:30px 0 24px}
+  .hero h1{font-size:30px}
+  article h1{font-size:26px}
+  article h2{font-size:21px;margin-top:38px}
+  .pager{flex-direction:column}
+}
+@media print{
+  .sidebar,.toc,.topbar,.pager{display:none!important}
+  body{background:#fff}
+  .main{padding:0}
+  article{max-width:none}
+  article h2{page-break-after:avoid}
+  .tablewrap,pre.mermaid{box-shadow:none;page-break-inside:avoid}
+  a.gloss{background:none!important;border:0!important}
+}
+</style>
+</head>
+<body>
+<div class="topbar"><button class="menubtn" onclick="document.getElementById('sb').classList.toggle('open')">☰ 目錄</button><span class="logo">火鍋店點餐系統</span></div>
+<div class="layout">
+<nav class="sidebar" id="sb"><div class="brand"><a href="../../index.html"><div class="logo">火鍋店點餐系統</div><div class="sub">專案文件 · 69 頁</div></a></div><a class="nav" href="../../index.html">首頁</a><div class="navgroup">規格文件</div><a class="nav" href="../../spec/00-架構分層與技術選型.html">00 架構分層與技術選型</a><a class="nav" href="../../spec/01-專案總覽.html">01 專案總覽</a><a class="nav" href="../../spec/02-需求規格.html">02 需求規格：基礎與進階功能總表</a><a class="nav" href="../../spec/03-資料庫設計.html">03 資料庫設計</a><a class="nav" href="../../spec/04-API規格.html">04 API 規格</a><a class="nav" href="../../spec/05-開發流程與分工.html">05 開發流程與時程</a><a class="nav" href="../../spec/06-圖表總覽.html">06 圖表總覽</a><div class="navgroup">模組規格</div><a class="nav" href="../../spec/modules/M1-菜單與品項.html">M1 菜單與品項</a><a class="nav" href="../../spec/modules/M2-桌位開桌與候位.html">M2 桌位、開桌與候位</a><a class="nav" href="../../spec/modules/M3-點餐與服務鈴.html">M3 點餐與服務鈴</a><a class="nav" href="../../spec/modules/M4-出菜看板.html">M4 出菜看板（KDS）</a><a class="nav" href="../../spec/modules/M5-庫存.html">M5 庫存</a><a class="nav" href="../../spec/modules/M6-結帳.html">M6 結帳</a><a class="nav" href="../../spec/modules/M7-訂位.html">M7 訂位</a><a class="nav" href="../../spec/modules/M8-會員.html">M8 會員</a><div class="navgroup">UI 文件</div><a class="nav" href="../../ui/10-UI-UX規格.html">10 UI / UX 規格</a><a class="nav" href="../../ui/11-設計系統.html">11 設計系統</a><a class="nav" href="../../ui/12-AI-UI工具與提示詞.html">12 AI UI 工具與提示詞</a><div class="navgroup">技術總表</div><a class="nav" href="../../tech/00-技術總表.html">00 技術總表</a><details><summary>技術 · 團隊與工具（5）</summary><a class="nav" href="../../tech/team/01-命令列.html">01 命令列基本操作</a><a class="nav" href="../../tech/team/02-Git是什麼.html">02 Git 是什麼</a><a class="nav" href="../../tech/team/03-分支與合併.html">03 分支、合併與衝突</a><a class="nav" href="../../tech/team/04-GitHub與PR.html">04 GitHub 與 Pull Request</a><a class="nav" href="../../tech/team/05-Docker與Compose.html">05 Docker 與 Docker Compose</a></details><details><summary>技術 · 網頁運作原理（6）</summary><a class="nav" href="../../tech/web/06-前端後端在做什麼.html">06 前端與後端各在做什麼</a><a class="nav" href="../../tech/web/07-HTTP請求與回應.html">07 HTTP 請求與回應</a><a class="nav" href="../../tech/web/08-HTTP狀態碼.html">08 HTTP 狀態碼</a><a class="nav" href="../../tech/web/09-JSON.html">09 JSON</a><a class="nav" href="../../tech/web/10-REST-API設計.html">10 REST API 設計</a><a class="nav" href="../../tech/web/11-CORS跨來源.html">11 CORS 跨來源問題</a></details><details><summary>技術 · 後端（10）</summary><a class="nav" href="../../tech/backend/12-Java與JDK.html">12 Java 與 JDK</a><a class="nav" href="../../tech/backend/13-Maven.html">13 Maven 與相依套件</a><a class="nav" href="../../tech/backend/14-SpringBoot是什麼.html">14 Spring Boot 是什麼</a><a class="nav" href="../../tech/backend/15-依賴注入.html">15 依賴注入</a><a class="nav" href="../../tech/backend/16-三層架構.html">16 Controller / Service / Repository</a><a class="nav" href="../../tech/backend/17-Entity與DTO.html">17 Entity 與 DTO</a><a class="nav" href="../../tech/backend/18-全域例外處理.html">18 全域例外處理</a><a class="nav" href="../../tech/backend/19-Swagger.html">19 Swagger 自動產生 API 文件</a><a class="nav" href="../../tech/backend/20-SpringSecurity.html">20 Spring Security 基礎</a><a class="nav" href="../../tech/backend/21-JWT.html">21 JWT 與登入狀態</a></details><details open><summary>技術 · 資料庫（8）</summary><a class="nav" href="../../tech/database/22-關聯式資料庫與SQL.html">22 關聯式資料庫與 SQL</a><a class="nav" href="../../tech/database/23-資料表設計.html">23 資料表設計</a><a class="nav" href="../../tech/database/24-索引.html">24 索引是什麼</a><a class="nav" href="../../tech/database/25-ORM與JPA.html">25 ORM 與 JPA</a><a class="nav" href="../../tech/database/26-JPA關聯對應.html">26 JPA 關聯對應</a><a class="nav" href="../../tech/database/27-交易Transaction.html">27 交易 Transaction</a><a class="nav active" href="../../tech/database/28-鎖與併發.html">28 鎖與併發（防超賣）</a><a class="nav" href="../../tech/database/29-Flyway.html">29 Flyway 資料庫版本控管</a></details><details><summary>技術 · 前端（11）</summary><a class="nav" href="../../tech/frontend/30-現代JavaScript.html">30 現代 JavaScript 速成</a><a class="nav" href="../../tech/frontend/31-非同步與async.html">31 非同步與 async/await</a><a class="nav" href="../../tech/frontend/32-npm與套件.html">32 npm 與 node_modules</a><a class="nav" href="../../tech/frontend/33-Vite.html">33 Vite</a><a class="nav" href="../../tech/frontend/34-React與JSX.html">34 React 與 JSX</a><a class="nav" href="../../tech/frontend/35-Props與State.html">35 Props 與 State</a><a class="nav" href="../../tech/frontend/36-useState.html">36 useState</a><a class="nav" href="../../tech/frontend/37-useEffect.html">37 useEffect</a><a class="nav" href="../../tech/frontend/38-ReactRouter.html">38 React Router</a><a class="nav" href="../../tech/frontend/39-Tailwind.html">39 Tailwind CSS</a><a class="nav" href="../../tech/frontend/40-fetch串接API.html">40 fetch 串接後端 API</a></details><details><summary>技術 · 即時與排程（4）</summary><a class="nav" href="../../tech/realtime/41-WebSocket與STOMP.html">41 WebSocket 與 STOMP</a><a class="nav" href="../../tech/realtime/42-前端接WebSocket.html">42 前端接 WebSocket</a><a class="nav" href="../../tech/realtime/43-排程與Cron.html">43 排程任務與 Cron</a><a class="nav" href="../../tech/realtime/44-Redis.html">44 Redis</a></details><details><summary>技術 · 進階（2）</summary><a class="nav" href="../../tech/advanced/45-訊息佇列RabbitMQ.html">45 訊息佇列 RabbitMQ</a><a class="nav" href="../../tech/advanced/46-區間重疊與訂位排程.html">46 訂位排程的演算法</a></details><details><summary>技術 · 品質與部署（4）</summary><a class="nav" href="../../tech/quality/47-單元測試.html">47 單元測試 JUnit + Mockito</a><a class="nav" href="../../tech/quality/48-Testcontainers.html">48 Testcontainers</a><a class="nav" href="../../tech/quality/49-GitHubActions.html">49 GitHub Actions CI</a><a class="nav" href="../../tech/quality/50-部署上線.html">50 部署上線</a></details><div class="foot">由 Markdown 自動產生<br>改文件請編輯 <code>docs/</code> 下的 .md<br>再執行 <code>python3 docs/build_site.py</code></div></nav>
+<div class="main"><div class="wrap">
+<article>
+<h1 id="_1">鎖與併發（防超賣）</h1>
+<p><strong>難度</strong> ★★★★☆　<strong>用在哪些模組</strong> M3、M5、M7（<strong>全員都該懂</strong>）　<strong>哪幾週</strong> 第 2 週</p>
+<h2 id="_2">一句話</h2>
+<p>當兩個人同時做同一件事，要有辦法保證<strong>只有一個人成功</strong>。</p>
+<blockquote>
+<p><strong>這一頁是整個專案技術含量最高、面試最愛問的一頁。五個人都要能講。</strong></p>
+</blockquote>
+<h2 id="_3">想像一下</h2>
+<p>牛五花庫存剩 <strong>1 份</strong>。你和朋友幾乎同時按下「送出點餐」。</p>
+<p><strong>直覺的寫法</strong>：</p>
+<pre><code class="language-java">int stock = inventoryRepo.findQuantity(12);    // 查庫存
+if (stock &gt;= 1) {                              // 夠嗎？
+    inventoryRepo.decrease(12, 1);             // 扣掉
+}
+</code></pre>
+<p>看起來沒問題。但把時間軸攤開：</p>
+<pre><code>時間 →
+你：    查庫存(=1) ──→ 判斷 1&gt;=1 ✓ ──→ 扣掉 ──→ 庫存 0
+朋友：       查庫存(=1) ──→ 判斷 1&gt;=1 ✓ ──→ 扣掉 ──→ 庫存 -1
+</code></pre>
+<p><strong>兩個人的「查」都發生在對方的「扣」之前</strong>，所以兩邊查到的都是 1，兩邊都通過檢查，兩邊都扣。</p>
+<p>結果：<strong>賣出兩份，但只有一份貨。庫存變成 -1。</strong></p>
+<p>這叫<strong>超賣</strong>。電商、演唱會售票、餐廳庫存——全部都要處理這個問題。</p>
+<h2 id="_4">為什麼不能「加個判斷」解決</h2>
+<p>很多人的第一反應是「那我扣完再檢查一次不就好了」。不行，因為問題的根源是：</p>
+<blockquote>
+<p><strong>「查」和「扣」是兩個分開的動作，中間有空隙讓別人插進來。</strong></p>
+</blockquote>
+<p>只要是兩個動作，就一定有空隙。<strong>解法是讓它變成一個動作。</strong></p>
+<h2 id="update">解法一：把條件寫進 UPDATE（我們用這個）</h2>
+<pre><code class="language-sql">UPDATE inventory_item
+   SET quantity = quantity - :qty,
+       updated_at = NOW(3)
+ WHERE menu_item_id = :itemId
+   AND quantity &gt;= :qty;          -- ← 關鍵在這一行
+</code></pre>
+<pre><code class="language-java">int affected = inventoryRepo.decreaseIfEnough(itemId, qty);
+if (affected == 0) {
+    throw new BusinessException(&quot;ITEM_SOLD_OUT&quot;, item.getName() + &quot; 已售完&quot;, CONFLICT);
+}
+</code></pre>
+<p><strong>為什麼這樣就安全？</strong></p>
+<p>資料庫保證：<strong>同一時間只有一個交易能修改同一列</strong>。第二個人的 UPDATE 會排隊等，等到執行時庫存已經是 0，<code>quantity &gt;= 1</code> 不成立，<strong>影響筆數是 0</strong>。</p>
+<p>一句 <a class="gloss" href="../../tech/database/22-關聯式資料庫與SQL.html" title="看這個技術的白話說明">SQL</a>，沒有鎖的概念要學，效能也最好。</p>
+<p><strong>判斷成敗看「影響筆數」，不是看有沒有報錯。</strong> 這點很多人會漏掉。</p>
+<h2 id="_5">解法二：悲觀鎖</h2>
+<p>「我先把這一列鎖住，誰都不准動，等我做完再說。」</p>
+<pre><code class="language-java">@Lock(LockModeType.PESSIMISTIC_WRITE)
+@Query(&quot;SELECT i FROM InventoryItem i WHERE i.menuItem.id = :id&quot;)
+Optional&lt;InventoryItem&gt; findByMenuItemIdForUpdate(@Param(&quot;id&quot;) Long id);
+</code></pre>
+<p>底下對應的 SQL 是 <code>SELECT ... FOR UPDATE</code>。</p>
+<ul>
+<li><strong>優點</strong>：拿到鎖之後你可以放心做任何複雜判斷</li>
+<li><strong>缺點</strong>：別人要排隊等，高併發時會慢；而且有<strong>死鎖</strong>風險</li>
+</ul>
+<p><strong>我們在訂位配桌時用這個</strong>，因為配桌要做<a class="gloss" href="../../tech/advanced/46-區間重疊與訂位排程.html" title="看這個技術的白話說明">區間重疊</a>計算，沒辦法寫成一句 UPDATE。</p>
+<h2 id="_6">解法三：樂觀鎖</h2>
+<p>「我先假設沒人會跟我搶。真的撞到了再重試。」</p>
+<pre><code class="language-java">@Entity
+public class InventoryItem {
+    @Version                 // ← 加這個欄位
+    private Long version;
+}
+</code></pre>
+<p><a class="gloss" href="../../tech/database/25-ORM與JPA.html" title="看這個技術的白話說明">JPA</a> 會自動在更新時帶上版本號：</p>
+<pre><code class="language-sql">UPDATE inventory_item SET quantity = ?, version = version + 1
+WHERE id = ? AND version = ?     -- 版本對不上就更新 0 筆
+</code></pre>
+<p>版本對不上 → 丟 <code>OptimisticLockException</code> → 你可以捕捉後重試。</p>
+<ul>
+<li><strong>優點</strong>：不用等，效能好</li>
+<li><strong>缺點</strong>：要自己寫重試邏輯</li>
+</ul>
+<h2 id="_7">三種解法怎麼選</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>情況</th>
+<th>用什麼</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>單純的加減（扣庫存）</td>
+<td><strong>條件式 UPDATE</strong> ← 最簡單最好</td>
+</tr>
+<tr>
+<td>要複雜判斷（訂位配桌）</td>
+<td><strong>悲觀鎖</strong></td>
+</tr>
+<tr>
+<td>衝突機率低、不想等</td>
+<td><strong>樂觀鎖</strong></td>
+</tr>
+<tr>
+<td>多台伺服器且要鎖的不是資料庫的東西</td>
+<td><a href="../../tech/realtime/44-Redis.html">Redis 分散式鎖</a></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="_8">我們專案的三個併發場景</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>場景</th>
+<th>會發生什麼</th>
+<th>解法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>兩人同時點最後一份牛五花</strong></td>
+<td>超賣</td>
+<td>條件式 UPDATE</td>
+</tr>
+<tr>
+<td><strong>兩人同時訂同一時段同一桌</strong></td>
+<td>重複預約</td>
+<td>悲觀鎖 + 唯一約束</td>
+</tr>
+<tr>
+<td><strong>兩支手機同時對同一桌開桌</strong></td>
+<td>出現兩張帳單</td>
+<td>悲觀鎖 <code>SELECT ... FOR UPDATE</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="_9">死鎖是什麼</h2>
+<p>兩個交易互相等對方的鎖：</p>
+<pre><code>交易 A：鎖住品項 1 → 想鎖品項 2（但 2 被 B 鎖著，等）
+交易 B：鎖住品項 2 → 想鎖品項 1（但 1 被 A 鎖著，等）
+</code></pre>
+<p>兩邊永遠等下去。<a class="gloss" href="../../tech/database/22-關聯式資料庫與SQL.html" title="看這個技術的白話說明">MySQL</a> 會偵測到，隨機殺掉一個並回 <code>Deadlock found</code>。</p>
+<p><strong>怎麼避免</strong>：<strong>永遠用同樣的順序鎖東西</strong>。我們的做法是扣庫存前先把品項 id 排序：</p>
+<pre><code class="language-java">List&lt;Long&gt; sortedIds = itemIds.stream().sorted().toList();
+for (Long id : sortedIds) { decreaseStock(id, ...); }
+</code></pre>
+<p>這樣所有交易都按 id 由小到大鎖，就不會互相等。</p>
+<h2 id="15">15 分鐘動手小練習</h2>
+<p><strong>親手製造一次超賣。</strong></p>
+<ol>
+<li>建一張表 <code>stock(id, quantity)</code>，塞一筆 <code>quantity = 1</code></li>
+<li>寫一個 Service 方法：先查、判斷、再扣（故意用錯的寫法），中間加 <code>Thread.sleep(100)</code> 放大空隙</li>
+<li>寫一個測試，用 10 條執行緒同時呼叫：</li>
+</ol>
+<pre><code class="language-java">ExecutorService pool = Executors.newFixedThreadPool(10);
+CountDownLatch latch = new CountDownLatch(10);
+for (int i = 0; i &lt; 10; i++) {
+    pool.submit(() -&gt; { try { service.buy(1L, 1); } catch (Exception ignored) {} finally { latch.countDown(); } });
+}
+latch.await();
+</code></pre>
+<ol start="4">
+<li>去資料庫看 quantity ——<strong>會是負的</strong></li>
+<li>把 Service 改成條件式 UPDATE，再跑一次 ——<strong>這次是 0，而且只有 1 個人成功</strong></li>
+</ol>
+<p><strong>這個練習是本專案最有價值的 15 分鐘。</strong> 做完你在面試時可以完整講一個故事。</p>
+<h2 id="_10">你會遇到的坑</h2>
+<p><strong>① 先查再改</strong>
+本頁的核心。</p>
+<p><strong>② 在程式裡用 <code>synchronized</code></strong>
+只鎖得住同一台伺服器。部署兩台就失效。而且資料庫層的問題要在資料庫層解。</p>
+<p><strong>③ 忘記檢查影響筆數</strong>
+條件式 UPDATE 不會報錯，它只是「更新了 0 筆」。你不檢查就等於沒防護。</p>
+<p><strong>④ 交易太長</strong>
+鎖住的時間越久，別人等越久，越容易死鎖。</p>
+<p><strong>⑤ 沒有測試</strong>
+這種問題單人測試<strong>永遠測不出來</strong>。必須寫多執行緒測試。</p>
+<h2 id="_11">常見錯誤訊息對照</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>你會看到</th>
+<th>中文意思</th>
+<th>怎麼修</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Deadlock found when trying to get lock</code></td>
+<td>死鎖</td>
+<td>統一鎖定順序（依 id 排序）</td>
+</tr>
+<tr>
+<td><code>Lock wait timeout exceeded</code></td>
+<td>等鎖等太久</td>
+<td>交易太長，縮短它</td>
+</tr>
+<tr>
+<td><code>ObjectOptimisticLockingFailureException</code></td>
+<td>樂觀鎖版本衝突</td>
+<td>捕捉後重試</td>
+</tr>
+<tr>
+<td>庫存變成負數</td>
+<td>沒有防超賣</td>
+<td>改成條件式 UPDATE</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="_12">術語對照表</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>白話</th>
+<th>正式名稱</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>兩個人同時做同一件事</td>
+<td>併發 Concurrency</td>
+</tr>
+<tr>
+<td>賣超過庫存</td>
+<td>超賣 Oversell</td>
+</tr>
+<tr>
+<td>先查再改中間的空隙</td>
+<td>Race Condition 競態條件</td>
+</tr>
+<tr>
+<td>我先鎖住誰都不准動</td>
+<td>悲觀鎖 Pessimistic Lock</td>
+</tr>
+<tr>
+<td>撞到再重試</td>
+<td>樂觀鎖 Optimistic Lock</td>
+</tr>
+<tr>
+<td>互相等對方</td>
+<td>死鎖 Deadlock</td>
+</tr>
+<tr>
+<td>影響了幾筆</td>
+<td>affected rows</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="_13">自我檢核</h2>
+<ol>
+<li>「先查庫存再扣」為什麼會超賣？把時間軸畫出來。</li>
+<li>條件式 UPDATE 為什麼安全？靠什麼判斷成敗？</li>
+<li>悲觀鎖和樂觀鎖的差別？各適合什麼場景？</li>
+<li>怎麼避免死鎖？</li>
+<li>用 <code>synchronized</code> 為什麼不行？</li>
+</ol>
+<h2 id="_14">學習資源</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>資源</th>
+<th>語言</th>
+<th>難度</th>
+<th>時間</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://ithelp.ithome.com.tw/articles/10271229">[面試][資料庫] 關聯式資料庫要如何設計避免超賣？</a></td>
+<td><strong>繁中</strong></td>
+<td><strong>中階</strong></td>
+<td>20 分</td>
+</tr>
+<tr>
+<td><a href="https://hackmd.io/@C7dTP58xT9aucsqkl4Z_rQ/ryRDW7fU2">SQL 樂觀鎖悲觀鎖（HackMD）</a></td>
+<td>繁中</td>
+<td>中階</td>
+<td>15 分</td>
+</tr>
+<tr>
+<td><a href="https://hackmd.io/@UTRxSLfpRa6ds1oeI2U7Lw/H1SFq3CFs">好像要鎖一下ㄟ（悲觀鎖、樂觀鎖）</a></td>
+<td>繁中</td>
+<td>中階</td>
+<td>15 分</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="_15">相關頁面</h2>
+<p><a href="../../tech/database/27-交易Transaction.html">交易 Transaction</a>　<a href="../../tech/database/22-關聯式資料庫與SQL.html">關聯式資料庫與 SQL</a>　<a href="../../tech/realtime/44-Redis.html">Redis</a>　<a href="../../tech/advanced/46-區間重疊與訂位排程.html">區間重疊與訂位排程</a></p><div class="pager"><a href="../../tech/database/27-交易Transaction.html"><div class="k">← 上一篇</div><div class="n">27 交易 Transaction</div></a><a class="next" href="../../tech/database/29-Flyway.html"><div class="k">下一篇 →</div><div class="n">29 Flyway 資料庫版本控管</div></a></div>
+</article>
+<aside class="toc"><div class="tt">本頁目錄</div><a href="#_2">一句話</a><a href="#_3">想像一下</a><a href="#_4">為什麼不能「加個判斷」解決</a><a href="#update">解法一：把條件寫進 UPDATE（我們用這個）</a><a href="#_5">解法二：悲觀鎖</a><a href="#_6">解法三：樂觀鎖</a><a href="#_7">三種解法怎麼選</a><a href="#_8">我們專案的三個併發場景</a><a href="#_9">死鎖是什麼</a><a href="#15">15 分鐘動手小練習</a><a href="#_10">你會遇到的坑</a><a href="#_11">常見錯誤訊息對照</a><a href="#_12">術語對照表</a><a href="#_13">自我檢核</a><a href="#_14">學習資源</a><a href="#_15">相關頁面</a></aside>
+</div></div>
+</div>
+<script src="../../vendor/mermaid.min.js"></script>
+<script>
+mermaid.initialize({
+  startOnLoad: true, securityLevel: 'loose', theme: 'base',
+  fontFamily: '"Noto Sans TC","PingFang TC",system-ui,sans-serif',
+  themeVariables: {
+    background:'#FFFFFF',
+    primaryColor:'#FBE8E3', primaryTextColor:'#2B211C', primaryBorderColor:'#C8442E',
+    secondaryColor:'#FCF0DC', secondaryBorderColor:'#E8A33D',
+    tertiaryColor:'#F5EFE5', tertiaryBorderColor:'#E6DED2',
+    lineColor:'#9C8E84', textColor:'#2B211C',
+    mainBkg:'#FBE8E3', nodeBorder:'#C8442E', clusterBkg:'#FBF7F0', clusterBorder:'#E6DED2',
+    titleColor:'#2B211C', edgeLabelBackground:'#FBF7F0',
+    actorBkg:'#FBE8E3', actorBorder:'#C8442E', actorTextColor:'#2B211C',
+    signalColor:'#6B5D54', signalTextColor:'#2B211C',
+    labelBoxBkgColor:'#FCF0DC', labelBoxBorderColor:'#E8A33D', labelTextColor:'#2B211C',
+    loopTextColor:'#2B211C', noteBkgColor:'#FCF0DC', noteBorderColor:'#E8A33D', noteTextColor:'#2B211C',
+    activationBkgColor:'#E6DED2', activationBorderColor:'#9C8E84', sequenceNumberColor:'#FFFFFF',
+    altBackground:'#F5EFE5',
+    taskBkgColor:'#FBE8E3', taskBorderColor:'#C8442E', taskTextColor:'#2B211C',
+    taskTextOutsideColor:'#2B211C', taskTextDarkColor:'#2B211C',
+    activeTaskBkgColor:'#E8A33D', activeTaskBorderColor:'#C9862A',
+    doneTaskBkgColor:'#E4EFE7', doneTaskBorderColor:'#3F7A4E',
+    critBkgColor:'#C8442E', critBorderColor:'#A63522',
+    gridColor:'#E6DED2', todayLineColor:'#B3261E',
+    sectionBkgColor:'#FBF7F0', sectionBkgColor2:'#F5EFE5', altSectionBkgColor:'#FFFFFF',
+    classText:'#2B211C',
+    attributeBackgroundColorOdd:'#FFFFFF', attributeBackgroundColorEven:'#F5EFE5'
+  },
+  gantt:{barHeight:18,barGap:5,topPadding:52,leftPadding:180,fontSize:12},
+  mindmap:{padding:12},
+  sequence:{actorMargin:42,boxTextMargin:6,noteMargin:10,messageMargin:32,width:150},
+  er:{entityPadding:12,minEntityWidth:110}
+});
+</script>
+<script>document.addEventListener('click',function(e){var sb=document.getElementById('sb');if(window.innerWidth<=940&&sb.classList.contains('open')&&!sb.contains(e.target)&&!e.target.closest('.menubtn')){sb.classList.remove('open');}});</script>
+</body>
+</html>

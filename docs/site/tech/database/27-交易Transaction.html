@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>交易 Transaction · 火鍋店點餐系統文件</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand-700:#A63522; --brand-600:#C8442E; --brand-500:#DB5B42; --brand-100:#FBE8E3;
+  --accent-500:#E8A33D; --accent-100:#FCF0DC;
+  --bg:#FBF7F0; --surface:#FFFFFF; --surface-2:#F5EFE5; --line:#E6DED2;
+  --t900:#2B211C; --t600:#6B5D54; --t400:#9C8E84;
+  --ok:#3F7A4E; --ok-bg:#E4EFE7; --warn:#D98324; --bad:#B3261E;
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --serif:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --shadow:0 1px 2px rgba(43,33,28,.06),0 4px 12px rgba(43,33,28,.05);
+  --sidebar:280px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:var(--bg);color:var(--t900);font-family:var(--sans);
+  font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased}
+
+.layout{display:flex;min-height:100vh;align-items:flex-start}
+.sidebar{width:var(--sidebar);flex:0 0 var(--sidebar);position:sticky;top:0;height:100vh;
+  overflow-y:auto;background:var(--surface);border-right:1px solid var(--line);padding:22px 0 48px}
+.brand{padding:0 20px 16px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.brand a{text-decoration:none;color:inherit;display:block}
+.brand .logo{font-family:var(--serif);font-weight:900;font-size:18px;line-height:1.35;color:var(--brand-600)}
+.brand .sub{font-size:11.5px;color:var(--t400);margin-top:4px;letter-spacing:.02em}
+.navgroup{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--t400);
+  padding:15px 20px 5px}
+.sidebar a.nav{display:block;padding:6px 20px;color:var(--t600);text-decoration:none;
+  font-size:14px;border-left:3px solid transparent;line-height:1.5}
+.sidebar a.nav:hover{background:var(--brand-100);color:var(--brand-700)}
+.sidebar a.nav.active{background:var(--brand-100);color:var(--brand-700);
+  border-left-color:var(--brand-600);font-weight:700}
+.sidebar details{border-top:1px solid transparent}
+.sidebar details>summary{list-style:none;cursor:pointer;font-size:11px;font-weight:700;
+  letter-spacing:.1em;color:var(--t400);padding:12px 20px 5px;user-select:none}
+.sidebar details>summary::-webkit-details-marker{display:none}
+.sidebar details>summary::before{content:"▸ ";font-size:10px}
+.sidebar details[open]>summary::before{content:"▾ "}
+.sidebar details>summary:hover{color:var(--brand-600)}
+.sidebar .foot{padding:18px 20px;margin-top:14px;border-top:1px solid var(--line);
+  font-size:11.5px;color:var(--t400);line-height:1.7}
+
+.main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 32px 96px}
+.wrap{width:100%;max-width:1140px;display:flex;gap:36px;align-items:flex-start}
+article{flex:1;min-width:0;max-width:880px;padding-top:40px}
+.toc{width:196px;flex:0 0 196px;position:sticky;top:24px;padding-top:52px;font-size:12.5px;
+  max-height:calc(100vh - 60px);overflow-y:auto}
+.toc .tt{font-size:10.5px;letter-spacing:.1em;color:var(--t400);font-weight:700;margin-bottom:9px}
+.toc a{display:block;color:var(--t600);text-decoration:none;padding:3px 0 3px 10px;
+  border-left:2px solid var(--line);line-height:1.5}
+.toc a:hover{color:var(--brand-600);border-left-color:var(--brand-500)}
+
+.topbar{display:none;position:sticky;top:0;z-index:40;background:var(--surface);
+  border-bottom:1px solid var(--line);padding:10px 16px;align-items:center;gap:12px}
+.topbar .logo{font-family:var(--serif);font-weight:900;color:var(--brand-600);font-size:16px}
+.menubtn{background:var(--brand-600);color:#fff;border:0;border-radius:8px;height:40px;
+  padding:0 14px;font-size:15px;font-family:inherit;cursor:pointer}
+
+article h1{font-family:var(--serif);font-weight:900;font-size:32px;line-height:1.35;margin:0 0 10px}
+article h1+p{color:var(--t600)}
+article h2{font-family:var(--serif);font-weight:700;font-size:24px;line-height:1.45;
+  margin:50px 0 14px;padding-bottom:9px;border-bottom:2px solid var(--line)}
+article h3{font-weight:700;font-size:18.5px;margin:30px 0 10px}
+article h4{font-weight:700;font-size:16px;margin:22px 0 8px;color:var(--t600)}
+article p{margin:0 0 16px}
+article ul,article ol{margin:0 0 16px;padding-left:24px}
+article li{margin:5px 0}
+article a{color:var(--brand-600);text-decoration:none;border-bottom:1px solid rgba(200,68,46,.3)}
+article a:hover{border-bottom-color:var(--brand-600)}
+article a.gloss{color:var(--t900);border-bottom:1px dashed var(--accent-500);
+  background:linear-gradient(transparent 72%,var(--accent-100) 72%)}
+article a.gloss:hover{color:var(--brand-700);border-bottom-color:var(--brand-500)}
+article strong{font-weight:700;color:var(--t900)}
+article hr{border:0;border-top:1px solid var(--line);margin:42px 0}
+article img{max-width:100%;border-radius:12px}
+article details{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:12px 16px;margin:0 0 18px}
+article details>summary{cursor:pointer;font-weight:700;color:var(--brand-600)}
+
+article code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.87em;
+  background:var(--surface-2);padding:2px 6px;border-radius:5px;color:var(--brand-700);
+  word-break:break-word}
+article pre{background:#2B211C;color:#F5EFE5;padding:18px 20px;border-radius:12px;
+  overflow-x:auto;margin:0 0 18px;line-height:1.65;font-size:13.5px}
+article pre code{background:none;color:inherit;padding:0;font-size:inherit}
+
+blockquote{margin:0 0 20px;padding:14px 18px;background:var(--accent-100);
+  border-left:4px solid var(--accent-500);border-radius:0 10px 10px 0;color:var(--t600)}
+blockquote p:last-child{margin-bottom:0}
+blockquote strong{color:var(--t900)}
+
+.tablewrap{overflow-x:auto;margin:0 0 20px;border:1px solid var(--line);
+  border-radius:12px;background:var(--surface);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:420px}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--surface-2);font-weight:700;white-space:nowrap;color:var(--t900)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--brand-100)}
+td code,th code{white-space:nowrap}
+article li input[type=checkbox]{width:16px;height:16px;margin-right:6px;accent-color:var(--brand-600)}
+
+pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:22px;text-align:center;overflow-x:auto;box-shadow:var(--shadow);margin:0 0 22px;color:inherit}
+pre.mermaid svg{max-width:100%;height:auto}
+
+.hero{padding:52px 0 32px;border-bottom:1px solid var(--line);margin-bottom:32px}
+.hero .eyebrow{display:inline-block;background:var(--brand-100);color:var(--brand-700);
+  font-size:12.5px;font-weight:700;padding:5px 13px;border-radius:999px;letter-spacing:.04em}
+.hero h1{font-family:var(--serif);font-weight:900;font-size:40px;line-height:1.25;margin:18px 0 12px}
+.hero p{font-size:17px;color:var(--t600);max-width:680px;margin:0}
+.facts{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:10px 16px;font-size:13px;box-shadow:var(--shadow)}
+.fact b{display:block;font-family:var(--serif);font-size:19px;color:var(--brand-600);font-weight:900}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:13px;margin:18px 0 8px}
+.card{display:block;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:16px;text-decoration:none;color:inherit;box-shadow:var(--shadow);transition:.15s}
+.card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(43,33,28,.12);border-color:var(--brand-500)}
+.card .k{font-size:10.5px;letter-spacing:.09em;color:var(--t400);font-weight:700}
+.card .n{font-family:var(--serif);font-weight:700;font-size:17px;margin:5px 0 6px;color:var(--t900)}
+.card .d{font-size:13px;color:var(--t600);line-height:1.6}
+.callout{background:var(--brand-100);border:1px solid var(--brand-500);border-radius:12px;
+  padding:18px 20px;margin:24px 0}
+.callout .h{font-family:var(--serif);font-weight:700;font-size:17px;margin-bottom:6px;color:var(--brand-700)}
+.callout p{margin:0;color:var(--t600);font-size:14.5px}
+.pending{background:var(--accent-100);border-color:var(--accent-500)}
+.pending .h{color:#8A5B12}
+
+.pager{display:flex;gap:12px;margin-top:52px;padding-top:22px;border-top:1px solid var(--line)}
+.pager a{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:13px 16px;text-decoration:none;color:inherit;box-shadow:var(--shadow)}
+.pager a:hover{border-color:var(--brand-500)}
+.pager .k{font-size:11px;color:var(--t400);letter-spacing:.06em}
+.pager .n{font-weight:700;color:var(--brand-600);margin-top:3px;font-size:14.5px}
+.pager .next{text-align:right}
+
+@media(max-width:1200px){ .toc{display:none} }
+@media(max-width:940px){
+  .topbar{display:flex}
+  .layout{display:block}
+  .sidebar{position:fixed;left:0;top:0;height:100vh;z-index:50;transform:translateX(-100%);
+    transition:transform .2s;box-shadow:0 0 40px rgba(43,33,28,.2);width:286px}
+  .sidebar.open{transform:translateX(0)}
+  .main{padding:0 16px 72px}
+  article{padding-top:24px}
+  .hero{padding:30px 0 24px}
+  .hero h1{font-size:30px}
+  article h1{font-size:26px}
+  article h2{font-size:21px;margin-top:38px}
+  .pager{flex-direction:column}
+}
+@media print{
+  .sidebar,.toc,.topbar,.pager{display:none!important}
+  body{background:#fff}
+  .main{padding:0}
+  article{max-width:none}
+  article h2{page-break-after:avoid}
+  .tablewrap,pre.mermaid{box-shadow:none;page-break-inside:avoid}
+  a.gloss{background:none!important;border:0!important}
+}
+</style>
+</head>
+<body>
+<div class="topbar"><button class="menubtn" onclick="document.getElementById('sb').classList.toggle('open')">☰ 目錄</button><span class="logo">火鍋店點餐系統</span></div>
+<div class="layout">
+<nav class="sidebar" id="sb"><div class="brand"><a href="../../index.html"><div class="logo">火鍋店點餐系統</div><div class="sub">專案文件 · 69 頁</div></a></div><a class="nav" href="../../index.html">首頁</a><div class="navgroup">規格文件</div><a class="nav" href="../../spec/00-架構分層與技術選型.html">00 架構分層與技術選型</a><a class="nav" href="../../spec/01-專案總覽.html">01 專案總覽</a><a class="nav" href="../../spec/02-需求規格.html">02 需求規格：基礎與進階功能總表</a><a class="nav" href="../../spec/03-資料庫設計.html">03 資料庫設計</a><a class="nav" href="../../spec/04-API規格.html">04 API 規格</a><a class="nav" href="../../spec/05-開發流程與分工.html">05 開發流程與時程</a><a class="nav" href="../../spec/06-圖表總覽.html">06 圖表總覽</a><div class="navgroup">模組規格</div><a class="nav" href="../../spec/modules/M1-菜單與品項.html">M1 菜單與品項</a><a class="nav" href="../../spec/modules/M2-桌位開桌與候位.html">M2 桌位、開桌與候位</a><a class="nav" href="../../spec/modules/M3-點餐與服務鈴.html">M3 點餐與服務鈴</a><a class="nav" href="../../spec/modules/M4-出菜看板.html">M4 出菜看板（KDS）</a><a class="nav" href="../../spec/modules/M5-庫存.html">M5 庫存</a><a class="nav" href="../../spec/modules/M6-結帳.html">M6 結帳</a><a class="nav" href="../../spec/modules/M7-訂位.html">M7 訂位</a><a class="nav" href="../../spec/modules/M8-會員.html">M8 會員</a><div class="navgroup">UI 文件</div><a class="nav" href="../../ui/10-UI-UX規格.html">10 UI / UX 規格</a><a class="nav" href="../../ui/11-設計系統.html">11 設計系統</a><a class="nav" href="../../ui/12-AI-UI工具與提示詞.html">12 AI UI 工具與提示詞</a><div class="navgroup">技術總表</div><a class="nav" href="../../tech/00-技術總表.html">00 技術總表</a><details><summary>技術 · 團隊與工具（5）</summary><a class="nav" href="../../tech/team/01-命令列.html">01 命令列基本操作</a><a class="nav" href="../../tech/team/02-Git是什麼.html">02 Git 是什麼</a><a class="nav" href="../../tech/team/03-分支與合併.html">03 分支、合併與衝突</a><a class="nav" href="../../tech/team/04-GitHub與PR.html">04 GitHub 與 Pull Request</a><a class="nav" href="../../tech/team/05-Docker與Compose.html">05 Docker 與 Docker Compose</a></details><details><summary>技術 · 網頁運作原理（6）</summary><a class="nav" href="../../tech/web/06-前端後端在做什麼.html">06 前端與後端各在做什麼</a><a class="nav" href="../../tech/web/07-HTTP請求與回應.html">07 HTTP 請求與回應</a><a class="nav" href="../../tech/web/08-HTTP狀態碼.html">08 HTTP 狀態碼</a><a class="nav" href="../../tech/web/09-JSON.html">09 JSON</a><a class="nav" href="../../tech/web/10-REST-API設計.html">10 REST API 設計</a><a class="nav" href="../../tech/web/11-CORS跨來源.html">11 CORS 跨來源問題</a></details><details><summary>技術 · 後端（10）</summary><a class="nav" href="../../tech/backend/12-Java與JDK.html">12 Java 與 JDK</a><a class="nav" href="../../tech/backend/13-Maven.html">13 Maven 與相依套件</a><a class="nav" href="../../tech/backend/14-SpringBoot是什麼.html">14 Spring Boot 是什麼</a><a class="nav" href="../../tech/backend/15-依賴注入.html">15 依賴注入</a><a class="nav" href="../../tech/backend/16-三層架構.html">16 Controller / Service / Repository</a><a class="nav" href="../../tech/backend/17-Entity與DTO.html">17 Entity 與 DTO</a><a class="nav" href="../../tech/backend/18-全域例外處理.html">18 全域例外處理</a><a class="nav" href="../../tech/backend/19-Swagger.html">19 Swagger 自動產生 API 文件</a><a class="nav" href="../../tech/backend/20-SpringSecurity.html">20 Spring Security 基礎</a><a class="nav" href="../../tech/backend/21-JWT.html">21 JWT 與登入狀態</a></details><details open><summary>技術 · 資料庫（8）</summary><a class="nav" href="../../tech/database/22-關聯式資料庫與SQL.html">22 關聯式資料庫與 SQL</a><a class="nav" href="../../tech/database/23-資料表設計.html">23 資料表設計</a><a class="nav" href="../../tech/database/24-索引.html">24 索引是什麼</a><a class="nav" href="../../tech/database/25-ORM與JPA.html">25 ORM 與 JPA</a><a class="nav" href="../../tech/database/26-JPA關聯對應.html">26 JPA 關聯對應</a><a class="nav active" href="../../tech/database/27-交易Transaction.html">27 交易 Transaction</a><a class="nav" href="../../tech/database/28-鎖與併發.html">28 鎖與併發（防超賣）</a><a class="nav" href="../../tech/database/29-Flyway.html">29 Flyway 資料庫版本控管</a></details><details><summary>技術 · 前端（11）</summary><a class="nav" href="../../tech/frontend/30-現代JavaScript.html">30 現代 JavaScript 速成</a><a class="nav" href="../../tech/frontend/31-非同步與async.html">31 非同步與 async/await</a><a class="nav" href="../../tech/frontend/32-npm與套件.html">32 npm 與 node_modules</a><a class="nav" href="../../tech/frontend/33-Vite.html">33 Vite</a><a class="nav" href="../../tech/frontend/34-React與JSX.html">34 React 與 JSX</a><a class="nav" href="../../tech/frontend/35-Props與State.html">35 Props 與 State</a><a class="nav" href="../../tech/frontend/36-useState.html">36 useState</a><a class="nav" href="../../tech/frontend/37-useEffect.html">37 useEffect</a><a class="nav" href="../../tech/frontend/38-ReactRouter.html">38 React Router</a><a class="nav" href="../../tech/frontend/39-Tailwind.html">39 Tailwind CSS</a><a class="nav" href="../../tech/frontend/40-fetch串接API.html">40 fetch 串接後端 API</a></details><details><summary>技術 · 即時與排程（4）</summary><a class="nav" href="../../tech/realtime/41-WebSocket與STOMP.html">41 WebSocket 與 STOMP</a><a class="nav" href="../../tech/realtime/42-前端接WebSocket.html">42 前端接 WebSocket</a><a class="nav" href="../../tech/realtime/43-排程與Cron.html">43 排程任務與 Cron</a><a class="nav" href="../../tech/realtime/44-Redis.html">44 Redis</a></details><details><summary>技術 · 進階（2）</summary><a class="nav" href="../../tech/advanced/45-訊息佇列RabbitMQ.html">45 訊息佇列 RabbitMQ</a><a class="nav" href="../../tech/advanced/46-區間重疊與訂位排程.html">46 訂位排程的演算法</a></details><details><summary>技術 · 品質與部署（4）</summary><a class="nav" href="../../tech/quality/47-單元測試.html">47 單元測試 JUnit + Mockito</a><a class="nav" href="../../tech/quality/48-Testcontainers.html">48 Testcontainers</a><a class="nav" href="../../tech/quality/49-GitHubActions.html">49 GitHub Actions CI</a><a class="nav" href="../../tech/quality/50-部署上線.html">50 部署上線</a></details><div class="foot">由 Markdown 自動產生<br>改文件請編輯 <code>docs/</code> 下的 .md<br>再執行 <code>python3 docs/build_site.py</code></div></nav>
+<div class="main"><div class="wrap">
+<article>
+<h1 id="transaction">交易 Transaction</h1>
+<p><strong>難度</strong> ★★★☆☆　<strong>用在哪些模組</strong> M3、M5、M6、M7　<strong>哪幾週</strong> 第 2 週</p>
+<h2 id="_1">一句話</h2>
+<p>交易就是「<strong>這幾件事要嘛全部成功，要嘛全部當作沒發生</strong>」。</p>
+<h2 id="_2">想像一下</h2>
+<p>你要轉帳 1000 元給朋友。這件事其實是兩步：</p>
+<ol>
+<li>你的帳戶 −1000</li>
+<li>朋友的帳戶 +1000</li>
+</ol>
+<p>如果第 1 步做完、第 2 步的時候系統當機——<strong>那 1000 元就人間蒸發了</strong>。</p>
+<p>交易的意思是：把這兩步綁在一起。中間出任何問題，第 1 步也要<strong>倒回去</strong>，當作什麼都沒發生。</p>
+<h2 id="_3">我們專案最重要的交易：送出點餐</h2>
+<p>送出一張點餐單，後端要做這些事：</p>
+<pre><code>① 檢查這桌狀態是不是 OPEN
+② 檢查每個品項的必選選項有沒有選齊
+③ 檢查有沒有點鍋底（第一單才檢查）
+④ 逐項扣庫存
+⑤ 建立 order_ticket
+⑥ 建立每一筆 order_item
+⑦ 建立每一筆 order_item_option
+⑧ 更新 dining_session 的小計
+⑨ 推 WebSocket 通知廚房
+</code></pre>
+<p>如果第 ④ 步扣到第三個品項時發現庫存不夠——<strong>前兩個品項的庫存已經扣掉了</strong>。</p>
+<p>沒有交易的話：庫存憑空少了兩份，但訂單沒成立。<strong>資料就錯了，而且沒人會發現。</strong></p>
+<p>有交易的話：整個回滾，庫存回到原來的數字，回前端 409。<strong>乾淨。</strong></p>
+<h2 id="_4">怎麼用</h2>
+<pre><code class="language-java">@Service
+@RequiredArgsConstructor
+public class OrderService {
+
+    @Transactional                    // ← 就這一行
+    public OrderTicketDto submitOrder(String token, SubmitOrderRequest req) {
+        // 這個方法裡的所有資料庫操作，要嘛全部成功，要嘛全部回滾
+    }
+}
+</code></pre>
+<p><strong>貼在 Service 的方法上。</strong> 不要貼在 Controller，也不要貼在 Repository。</p>
+<h2 id="_5">什麼時候會回滾</h2>
+<p>這是最容易搞錯的地方：</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>情況</th>
+<th>會回滾嗎</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>丟出 <code>RuntimeException</code>（含我們的 <code>BusinessException</code>）</td>
+<td>✅ 會</td>
+</tr>
+<tr>
+<td>丟出 <code>Error</code></td>
+<td>✅ 會</td>
+</tr>
+<tr>
+<td>丟出<strong>檢查型例外</strong>（像 <code>IOException</code>）</td>
+<td>❌ <strong>不會！</strong></td>
+</tr>
+<tr>
+<td>方法正常結束</td>
+<td>❌ 提交</td>
+</tr>
+</tbody>
+</table></div>
+<p>如果你需要檢查型例外也回滾：</p>
+<pre><code class="language-java">@Transactional(rollbackFor = Exception.class)
+</code></pre>
+<p><strong>我們的做法</strong>：所有業務錯誤都用 <code>BusinessException</code>（繼承 <code>RuntimeException</code>），這樣就不用煩惱。</p>
+<h2 id="_6">唯讀交易</h2>
+<p>單純查詢的方法加上 <code>readOnly = true</code>：</p>
+<pre><code class="language-java">@Transactional(readOnly = true)
+public List&lt;MenuItemDto&gt; findItems(Long categoryId) { ... }
+</code></pre>
+<p>好處：資料庫知道你不會改東西，可以最佳化；而且防止你不小心改到。</p>
+<h2 id="acid">ACID 是什麼</h2>
+<p>交易的四個保證，聽過就好：</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>字母</th>
+<th>白話</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A</strong>tomicity 原子性</td>
+<td>全部成功或全部失敗</td>
+</tr>
+<tr>
+<td><strong>C</strong>onsistency 一致性</td>
+<td>做完之後資料還是合法的（外鍵、約束都符合）</td>
+</tr>
+<tr>
+<td><strong>I</strong>solation 隔離性</td>
+<td>你的交易做到一半，別人看不到中間狀態</td>
+</tr>
+<tr>
+<td><strong>D</strong>urability 持久性</td>
+<td>成功之後就算斷電也不會不見</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="15">15 分鐘動手小練習</h2>
+<ol>
+<li>寫一個 Service 方法，裡面存兩筆資料，<strong>中間故意丟一個 RuntimeException</strong>：</li>
+</ol>
+<pre><code class="language-java">@Transactional
+public void test() {
+    repo.save(new Note(&quot;第一筆&quot;));
+    if (true) throw new RuntimeException(&quot;故意的&quot;);
+    repo.save(new Note(&quot;第二筆&quot;));
+}
+</code></pre>
+<ol start="2">
+<li>呼叫它，然後去資料庫看——<strong>第一筆應該也不在</strong></li>
+<li>把 <code>@Transactional</code> 拿掉，再跑一次——<strong>第一筆會留下來</strong></li>
+</ol>
+<p>這個對比讓你一輩子記得交易在做什麼。</p>
+<h2 id="_7">你會遇到的坑</h2>
+<p><strong>① 同一個類別裡自己呼叫自己的 <code>@Transactional</code> 方法</strong></p>
+<pre><code class="language-java">@Service
+public class OrderService {
+    public void a() {
+        b();                     // ❌ @Transactional 完全沒生效！
+    }
+
+    @Transactional
+    public void b() { ... }
+}
+</code></pre>
+<p>原因：Spring 是用代理（proxy）實作的，<strong>內部呼叫不會經過代理</strong>。
+→ 把 <code>b()</code> 搬到另一個 Service，或從外面呼叫。<strong>這個坑非常隱蔽，因為不會報錯，只是靜靜地沒有交易保護。</strong></p>
+<p><strong>② 方法是 <code>private</code></strong>
+代理蓋不住 private 方法，<code>@Transactional</code> 無效。<strong>必須是 public。</strong></p>
+<p><strong>③ 自己 try-catch 把例外吃掉</strong></p>
+<pre><code class="language-java">@Transactional
+public void submit() {
+    try {
+        // ...
+    } catch (Exception e) {
+        log.error(&quot;錯誤&quot;, e);     // ❌ 吃掉了 → 不會回滾
+    }
+}
+</code></pre>
+<p><strong>④ 交易範圍太大</strong>
+把「呼叫外部 API」「發 email」「推 <a class="gloss" href="../../tech/realtime/41-WebSocket與STOMP.html" title="看這個技術的白話說明">WebSocket</a>」都放進交易裡。外部服務慢的時候，資料庫連線被佔住不放。
+→ <strong>只把資料庫操作放進交易。推 WebSocket 這種放在交易外面。</strong></p>
+<p><strong>⑤ 交易裡面 sleep 或做長運算</strong>
+同上，會佔住連線。</p>
+<h2 id="_8">常見錯誤訊息對照</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>你會看到</th>
+<th>中文意思</th>
+<th>怎麼修</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>No EntityManager with actual transaction available</code></td>
+<td>這個操作需要交易但沒有</td>
+<td>方法上加 <code>@Transactional</code></td>
+</tr>
+<tr>
+<td><code>Transaction silently rolled back</code></td>
+<td>交易已被標記回滾，卻還想提交</td>
+<td>內層丟了例外但被外層吃掉</td>
+</tr>
+<tr>
+<td><code>Connection is read-only</code></td>
+<td>在 <code>readOnly = true</code> 的交易裡想寫資料</td>
+<td>拿掉 readOnly</td>
+</tr>
+<tr>
+<td><code>Lock wait timeout exceeded</code></td>
+<td>等別人的鎖等太久</td>
+<td>交易太長，或有<a class="gloss" href="../../tech/database/28-鎖與併發.html" title="看這個技術的白話說明">死鎖</a>，見 <a href="../../tech/database/28-鎖與併發.html">鎖與併發</a></td>
+</tr>
+<tr>
+<td>資料明明存了卻不見</td>
+<td>交易回滾了</td>
+<td>看日誌有沒有例外被丟出來</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="_9">術語對照表</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>白話</th>
+<th>正式名稱</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>全部成功或全部失敗</td>
+<td>交易 Transaction</td>
+</tr>
+<tr>
+<td>倒回去</td>
+<td>rollback 回滾</td>
+</tr>
+<tr>
+<td>確定寫進去</td>
+<td>commit 提交</td>
+</tr>
+<tr>
+<td>四個保證</td>
+<td>ACID</td>
+</tr>
+<tr>
+<td>只讀不寫</td>
+<td><code>readOnly</code></td>
+</tr>
+<tr>
+<td>Spring 在外面包一層</td>
+<td>proxy 代理</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="_10">自我檢核</h2>
+<ol>
+<li>送出點餐時，扣到一半庫存不夠，沒有交易會發生什麼事？</li>
+<li><code>@Transactional</code> 應該貼在哪一層？</li>
+<li>同一個類別裡 <code>a()</code> 呼叫 <code>@Transactional</code> 的 <code>b()</code>，交易會生效嗎？為什麼？</li>
+<li>推 WebSocket 通知應該放在交易裡面還是外面？</li>
+</ol>
+<h2 id="_11">學習資源</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>資源</th>
+<th>語言</th>
+<th>難度</th>
+<th>時間</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://ithelp.ithome.com.tw/users/20151036/ironman/6130">Spring Boot 零基礎入門 — 交易篇章</a></td>
+<td>繁中</td>
+<td>中階</td>
+<td>20 分</td>
+</tr>
+<tr>
+<td><a href="https://docs.spring.io/spring-framework/reference/data-access/transaction.html">Spring 官方文件：Transaction Management</a></td>
+<td>英文</td>
+<td>中階</td>
+<td>查用</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="_12">相關頁面</h2>
+<p><a href="../../tech/database/28-鎖與併發.html">鎖與併發</a>　<a href="../../tech/database/25-ORM與JPA.html">ORM 與 JPA</a>　<a href="../../tech/backend/16-三層架構.html">三層架構</a></p><div class="pager"><a href="../../tech/database/26-JPA關聯對應.html"><div class="k">← 上一篇</div><div class="n">26 JPA 關聯對應</div></a><a class="next" href="../../tech/database/28-鎖與併發.html"><div class="k">下一篇 →</div><div class="n">28 鎖與併發（防超賣）</div></a></div>
+</article>
+<aside class="toc"><div class="tt">本頁目錄</div><a href="#_1">一句話</a><a href="#_2">想像一下</a><a href="#_3">我們專案最重要的交易：送出點餐</a><a href="#_4">怎麼用</a><a href="#_5">什麼時候會回滾</a><a href="#_6">唯讀交易</a><a href="#acid">ACID 是什麼</a><a href="#15">15 分鐘動手小練習</a><a href="#_7">你會遇到的坑</a><a href="#_8">常見錯誤訊息對照</a><a href="#_9">術語對照表</a><a href="#_10">自我檢核</a><a href="#_11">學習資源</a><a href="#_12">相關頁面</a></aside>
+</div></div>
+</div>
+<script src="../../vendor/mermaid.min.js"></script>
+<script>
+mermaid.initialize({
+  startOnLoad: true, securityLevel: 'loose', theme: 'base',
+  fontFamily: '"Noto Sans TC","PingFang TC",system-ui,sans-serif',
+  themeVariables: {
+    background:'#FFFFFF',
+    primaryColor:'#FBE8E3', primaryTextColor:'#2B211C', primaryBorderColor:'#C8442E',
+    secondaryColor:'#FCF0DC', secondaryBorderColor:'#E8A33D',
+    tertiaryColor:'#F5EFE5', tertiaryBorderColor:'#E6DED2',
+    lineColor:'#9C8E84', textColor:'#2B211C',
+    mainBkg:'#FBE8E3', nodeBorder:'#C8442E', clusterBkg:'#FBF7F0', clusterBorder:'#E6DED2',
+    titleColor:'#2B211C', edgeLabelBackground:'#FBF7F0',
+    actorBkg:'#FBE8E3', actorBorder:'#C8442E', actorTextColor:'#2B211C',
+    signalColor:'#6B5D54', signalTextColor:'#2B211C',
+    labelBoxBkgColor:'#FCF0DC', labelBoxBorderColor:'#E8A33D', labelTextColor:'#2B211C',
+    loopTextColor:'#2B211C', noteBkgColor:'#FCF0DC', noteBorderColor:'#E8A33D', noteTextColor:'#2B211C',
+    activationBkgColor:'#E6DED2', activationBorderColor:'#9C8E84', sequenceNumberColor:'#FFFFFF',
+    altBackground:'#F5EFE5',
+    taskBkgColor:'#FBE8E3', taskBorderColor:'#C8442E', taskTextColor:'#2B211C',
+    taskTextOutsideColor:'#2B211C', taskTextDarkColor:'#2B211C',
+    activeTaskBkgColor:'#E8A33D', activeTaskBorderColor:'#C9862A',
+    doneTaskBkgColor:'#E4EFE7', doneTaskBorderColor:'#3F7A4E',
+    critBkgColor:'#C8442E', critBorderColor:'#A63522',
+    gridColor:'#E6DED2', todayLineColor:'#B3261E',
+    sectionBkgColor:'#FBF7F0', sectionBkgColor2:'#F5EFE5', altSectionBkgColor:'#FFFFFF',
+    classText:'#2B211C',
+    attributeBackgroundColorOdd:'#FFFFFF', attributeBackgroundColorEven:'#F5EFE5'
+  },
+  gantt:{barHeight:18,barGap:5,topPadding:52,leftPadding:180,fontSize:12},
+  mindmap:{padding:12},
+  sequence:{actorMargin:42,boxTextMargin:6,noteMargin:10,messageMargin:32,width:150},
+  er:{entityPadding:12,minEntityWidth:110}
+});
+</script>
+<script>document.addEventListener('click',function(e){var sb=document.getElementById('sb');if(window.innerWidth<=940&&sb.classList.contains('open')&&!sb.contains(e.target)&&!e.target.closest('.menubtn')){sb.classList.remove('open');}});</script>
+</body>
+</html>

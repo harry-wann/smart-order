@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>React 與 JSX · 火鍋店點餐系統文件</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand-700:#A63522; --brand-600:#C8442E; --brand-500:#DB5B42; --brand-100:#FBE8E3;
+  --accent-500:#E8A33D; --accent-100:#FCF0DC;
+  --bg:#FBF7F0; --surface:#FFFFFF; --surface-2:#F5EFE5; --line:#E6DED2;
+  --t900:#2B211C; --t600:#6B5D54; --t400:#9C8E84;
+  --ok:#3F7A4E; --ok-bg:#E4EFE7; --warn:#D98324; --bad:#B3261E;
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --serif:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --shadow:0 1px 2px rgba(43,33,28,.06),0 4px 12px rgba(43,33,28,.05);
+  --sidebar:280px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:var(--bg);color:var(--t900);font-family:var(--sans);
+  font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased}
+
+.layout{display:flex;min-height:100vh;align-items:flex-start}
+.sidebar{width:var(--sidebar);flex:0 0 var(--sidebar);position:sticky;top:0;height:100vh;
+  overflow-y:auto;background:var(--surface);border-right:1px solid var(--line);padding:22px 0 48px}
+.brand{padding:0 20px 16px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.brand a{text-decoration:none;color:inherit;display:block}
+.brand .logo{font-family:var(--serif);font-weight:900;font-size:18px;line-height:1.35;color:var(--brand-600)}
+.brand .sub{font-size:11.5px;color:var(--t400);margin-top:4px;letter-spacing:.02em}
+.navgroup{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--t400);
+  padding:15px 20px 5px}
+.sidebar a.nav{display:block;padding:6px 20px;color:var(--t600);text-decoration:none;
+  font-size:14px;border-left:3px solid transparent;line-height:1.5}
+.sidebar a.nav:hover{background:var(--brand-100);color:var(--brand-700)}
+.sidebar a.nav.active{background:var(--brand-100);color:var(--brand-700);
+  border-left-color:var(--brand-600);font-weight:700}
+.sidebar details{border-top:1px solid transparent}
+.sidebar details>summary{list-style:none;cursor:pointer;font-size:11px;font-weight:700;
+  letter-spacing:.1em;color:var(--t400);padding:12px 20px 5px;user-select:none}
+.sidebar details>summary::-webkit-details-marker{display:none}
+.sidebar details>summary::before{content:"▸ ";font-size:10px}
+.sidebar details[open]>summary::before{content:"▾ "}
+.sidebar details>summary:hover{color:var(--brand-600)}
+.sidebar .foot{padding:18px 20px;margin-top:14px;border-top:1px solid var(--line);
+  font-size:11.5px;color:var(--t400);line-height:1.7}
+
+.main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 32px 96px}
+.wrap{width:100%;max-width:1140px;display:flex;gap:36px;align-items:flex-start}
+article{flex:1;min-width:0;max-width:880px;padding-top:40px}
+.toc{width:196px;flex:0 0 196px;position:sticky;top:24px;padding-top:52px;font-size:12.5px;
+  max-height:calc(100vh - 60px);overflow-y:auto}
+.toc .tt{font-size:10.5px;letter-spacing:.1em;color:var(--t400);font-weight:700;margin-bottom:9px}
+.toc a{display:block;color:var(--t600);text-decoration:none;padding:3px 0 3px 10px;
+  border-left:2px solid var(--line);line-height:1.5}
+.toc a:hover{color:var(--brand-600);border-left-color:var(--brand-500)}
+
+.topbar{display:none;position:sticky;top:0;z-index:40;background:var(--surface);
+  border-bottom:1px solid var(--line);padding:10px 16px;align-items:center;gap:12px}
+.topbar .logo{font-family:var(--serif);font-weight:900;color:var(--brand-600);font-size:16px}
+.menubtn{background:var(--brand-600);color:#fff;border:0;border-radius:8px;height:40px;
+  padding:0 14px;font-size:15px;font-family:inherit;cursor:pointer}
+
+article h1{font-family:var(--serif);font-weight:900;font-size:32px;line-height:1.35;margin:0 0 10px}
+article h1+p{color:var(--t600)}
+article h2{font-family:var(--serif);font-weight:700;font-size:24px;line-height:1.45;
+  margin:50px 0 14px;padding-bottom:9px;border-bottom:2px solid var(--line)}
+article h3{font-weight:700;font-size:18.5px;margin:30px 0 10px}
+article h4{font-weight:700;font-size:16px;margin:22px 0 8px;color:var(--t600)}
+article p{margin:0 0 16px}
+article ul,article ol{margin:0 0 16px;padding-left:24px}
+article li{margin:5px 0}
+article a{color:var(--brand-600);text-decoration:none;border-bottom:1px solid rgba(200,68,46,.3)}
+article a:hover{border-bottom-color:var(--brand-600)}
+article a.gloss{color:var(--t900);border-bottom:1px dashed var(--accent-500);
+  background:linear-gradient(transparent 72%,var(--accent-100) 72%)}
+article a.gloss:hover{color:var(--brand-700);border-bottom-color:var(--brand-500)}
+article strong{font-weight:700;color:var(--t900)}
+article hr{border:0;border-top:1px solid var(--line);margin:42px 0}
+article img{max-width:100%;border-radius:12px}
+article details{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:12px 16px;margin:0 0 18px}
+article details>summary{cursor:pointer;font-weight:700;color:var(--brand-600)}
+
+article code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.87em;
+  background:var(--surface-2);padding:2px 6px;border-radius:5px;color:var(--brand-700);
+  word-break:break-word}
+article pre{background:#2B211C;color:#F5EFE5;padding:18px 20px;border-radius:12px;
+  overflow-x:auto;margin:0 0 18px;line-height:1.65;font-size:13.5px}
+article pre code{background:none;color:inherit;padding:0;font-size:inherit}
+
+blockquote{margin:0 0 20px;padding:14px 18px;background:var(--accent-100);
+  border-left:4px solid var(--accent-500);border-radius:0 10px 10px 0;color:var(--t600)}
+blockquote p:last-child{margin-bottom:0}
+blockquote strong{color:var(--t900)}
+
+.tablewrap{overflow-x:auto;margin:0 0 20px;border:1px solid var(--line);
+  border-radius:12px;background:var(--surface);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:420px}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--surface-2);font-weight:700;white-space:nowrap;color:var(--t900)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--brand-100)}
+td code,th code{white-space:nowrap}
+article li input[type=checkbox]{width:16px;height:16px;margin-right:6px;accent-color:var(--brand-600)}
+
+pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:22px;text-align:center;overflow-x:auto;box-shadow:var(--shadow);margin:0 0 22px;color:inherit}
+pre.mermaid svg{max-width:100%;height:auto}
+
+.hero{padding:52px 0 32px;border-bottom:1px solid var(--line);margin-bottom:32px}
+.hero .eyebrow{display:inline-block;background:var(--brand-100);color:var(--brand-700);
+  font-size:12.5px;font-weight:700;padding:5px 13px;border-radius:999px;letter-spacing:.04em}
+.hero h1{font-family:var(--serif);font-weight:900;font-size:40px;line-height:1.25;margin:18px 0 12px}
+.hero p{font-size:17px;color:var(--t600);max-width:680px;margin:0}
+.facts{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:10px 16px;font-size:13px;box-shadow:var(--shadow)}
+.fact b{display:block;font-family:var(--serif);font-size:19px;color:var(--brand-600);font-weight:900}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:13px;margin:18px 0 8px}
+.card{display:block;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:16px;text-decoration:none;color:inherit;box-shadow:var(--shadow);transition:.15s}
+.card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(43,33,28,.12);border-color:var(--brand-500)}
+.card .k{font-size:10.5px;letter-spacing:.09em;color:var(--t400);font-weight:700}
+.card .n{font-family:var(--serif);font-weight:700;font-size:17px;margin:5px 0 6px;color:var(--t900)}
+.card .d{font-size:13px;color:var(--t600);line-height:1.6}
+.callout{background:var(--brand-100);border:1px solid var(--brand-500);border-radius:12px;
+  padding:18px 20px;margin:24px 0}
+.callout .h{font-family:var(--serif);font-weight:700;font-size:17px;margin-bottom:6px;color:var(--brand-700)}
+.callout p{margin:0;color:var(--t600);font-size:14.5px}
+.pending{background:var(--accent-100);border-color:var(--accent-500)}
+.pending .h{color:#8A5B12}
+
+.pager{display:flex;gap:12px;margin-top:52px;padding-top:22px;border-top:1px solid var(--line)}
+.pager a{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:13px 16px;text-decoration:none;color:inherit;box-shadow:var(--shadow)}
+.pager a:hover{border-color:var(--brand-500)}
+.pager .k{font-size:11px;color:var(--t400);letter-spacing:.06em}
+.pager .n{font-weight:700;color:var(--brand-600);margin-top:3px;font-size:14.5px}
+.pager .next{text-align:right}
+
+@media(max-width:1200px){ .toc{display:none} }
+@media(max-width:940px){
+  .topbar{display:flex}
+  .layout{display:block}
+  .sidebar{position:fixed;left:0;top:0;height:100vh;z-index:50;transform:translateX(-100%);
+    transition:transform .2s;box-shadow:0 0 40px rgba(43,33,28,.2);width:286px}
+  .sidebar.open{transform:translateX(0)}
+  .main{padding:0 16px 72px}
+  article{padding-top:24px}
+  .hero{padding:30px 0 24px}
+  .hero h1{font-size:30px}
+  article h1{font-size:26px}
+  article h2{font-size:21px;margin-top:38px}
+  .pager{flex-direction:column}
+}
+@media print{
+  .sidebar,.toc,.topbar,.pager{display:none!important}
+  body{background:#fff}
+  .main{padding:0}
+  article{max-width:none}
+  article h2{page-break-after:avoid}
+  .tablewrap,pre.mermaid{box-shadow:none;page-break-inside:avoid}
+  a.gloss{background:none!important;border:0!important}
+}
+</style>
+</head>
+<body>
+<div class="topbar"><button class="menubtn" onclick="document.getElementById('sb').classList.toggle('open')">☰ 目錄</button><span class="logo">火鍋店點餐系統</span></div>
+<div class="layout">
+<nav class="sidebar" id="sb"><div class="brand"><a href="../../index.html"><div class="logo">火鍋店點餐系統</div><div class="sub">專案文件 · 69 頁</div></a></div><a class="nav" href="../../index.html">首頁</a><div class="navgroup">規格文件</div><a class="nav" href="../../spec/00-架構分層與技術選型.html">00 架構分層與技術選型</a><a class="nav" href="../../spec/01-專案總覽.html">01 專案總覽</a><a class="nav" href="../../spec/02-需求規格.html">02 需求規格：基礎與進階功能總表</a><a class="nav" href="../../spec/03-資料庫設計.html">03 資料庫設計</a><a class="nav" href="../../spec/04-API規格.html">04 API 規格</a><a class="nav" href="../../spec/05-開發流程與分工.html">05 開發流程與時程</a><a class="nav" href="../../spec/06-圖表總覽.html">06 圖表總覽</a><div class="navgroup">模組規格</div><a class="nav" href="../../spec/modules/M1-菜單與品項.html">M1 菜單與品項</a><a class="nav" href="../../spec/modules/M2-桌位開桌與候位.html">M2 桌位、開桌與候位</a><a class="nav" href="../../spec/modules/M3-點餐與服務鈴.html">M3 點餐與服務鈴</a><a class="nav" href="../../spec/modules/M4-出菜看板.html">M4 出菜看板（KDS）</a><a class="nav" href="../../spec/modules/M5-庫存.html">M5 庫存</a><a class="nav" href="../../spec/modules/M6-結帳.html">M6 結帳</a><a class="nav" href="../../spec/modules/M7-訂位.html">M7 訂位</a><a class="nav" href="../../spec/modules/M8-會員.html">M8 會員</a><div class="navgroup">UI 文件</div><a class="nav" href="../../ui/10-UI-UX規格.html">10 UI / UX 規格</a><a class="nav" href="../../ui/11-設計系統.html">11 設計系統</a><a class="nav" href="../../ui/12-AI-UI工具與提示詞.html">12 AI UI 工具與提示詞</a><div class="navgroup">技術總表</div><a class="nav" href="../../tech/00-技術總表.html">00 技術總表</a><details><summary>技術 · 團隊與工具（5）</summary><a class="nav" href="../../tech/team/01-命令列.html">01 命令列基本操作</a><a class="nav" href="../../tech/team/02-Git是什麼.html">02 Git 是什麼</a><a class="nav" href="../../tech/team/03-分支與合併.html">03 分支、合併與衝突</a><a class="nav" href="../../tech/team/04-GitHub與PR.html">04 GitHub 與 Pull Request</a><a class="nav" href="../../tech/team/05-Docker與Compose.html">05 Docker 與 Docker Compose</a></details><details><summary>技術 · 網頁運作原理（6）</summary><a class="nav" href="../../tech/web/06-前端後端在做什麼.html">06 前端與後端各在做什麼</a><a class="nav" href="../../tech/web/07-HTTP請求與回應.html">07 HTTP 請求與回應</a><a class="nav" href="../../tech/web/08-HTTP狀態碼.html">08 HTTP 狀態碼</a><a class="nav" href="../../tech/web/09-JSON.html">09 JSON</a><a class="nav" href="../../tech/web/10-REST-API設計.html">10 REST API 設計</a><a class="nav" href="../../tech/web/11-CORS跨來源.html">11 CORS 跨來源問題</a></details><details><summary>技術 · 後端（10）</summary><a class="nav" href="../../tech/backend/12-Java與JDK.html">12 Java 與 JDK</a><a class="nav" href="../../tech/backend/13-Maven.html">13 Maven 與相依套件</a><a class="nav" href="../../tech/backend/14-SpringBoot是什麼.html">14 Spring Boot 是什麼</a><a class="nav" href="../../tech/backend/15-依賴注入.html">15 依賴注入</a><a class="nav" href="../../tech/backend/16-三層架構.html">16 Controller / Service / Repository</a><a class="nav" href="../../tech/backend/17-Entity與DTO.html">17 Entity 與 DTO</a><a class="nav" href="../../tech/backend/18-全域例外處理.html">18 全域例外處理</a><a class="nav" href="../../tech/backend/19-Swagger.html">19 Swagger 自動產生 API 文件</a><a class="nav" href="../../tech/backend/20-SpringSecurity.html">20 Spring Security 基礎</a><a class="nav" href="../../tech/backend/21-JWT.html">21 JWT 與登入狀態</a></details><details><summary>技術 · 資料庫（8）</summary><a class="nav" href="../../tech/database/22-關聯式資料庫與SQL.html">22 關聯式資料庫與 SQL</a><a class="nav" href="../../tech/database/23-資料表設計.html">23 資料表設計</a><a class="nav" href="../../tech/database/24-索引.html">24 索引是什麼</a><a class="nav" href="../../tech/database/25-ORM與JPA.html">25 ORM 與 JPA</a><a class="nav" href="../../tech/database/26-JPA關聯對應.html">26 JPA 關聯對應</a><a class="nav" href="../../tech/database/27-交易Transaction.html">27 交易 Transaction</a><a class="nav" href="../../tech/database/28-鎖與併發.html">28 鎖與併發（防超賣）</a><a class="nav" href="../../tech/database/29-Flyway.html">29 Flyway 資料庫版本控管</a></details><details open><summary>技術 · 前端（11）</summary><a class="nav" href="../../tech/frontend/30-現代JavaScript.html">30 現代 JavaScript 速成</a><a class="nav" href="../../tech/frontend/31-非同步與async.html">31 非同步與 async/await</a><a class="nav" href="../../tech/frontend/32-npm與套件.html">32 npm 與 node_modules</a><a class="nav" href="../../tech/frontend/33-Vite.html">33 Vite</a><a class="nav active" href="../../tech/frontend/34-React與JSX.html">34 React 與 JSX</a><a class="nav" href="../../tech/frontend/35-Props與State.html">35 Props 與 State</a><a class="nav" href="../../tech/frontend/36-useState.html">36 useState</a><a class="nav" href="../../tech/frontend/37-useEffect.html">37 useEffect</a><a class="nav" href="../../tech/frontend/38-ReactRouter.html">38 React Router</a><a class="nav" href="../../tech/frontend/39-Tailwind.html">39 Tailwind CSS</a><a class="nav" href="../../tech/frontend/40-fetch串接API.html">40 fetch 串接後端 API</a></details><details><summary>技術 · 即時與排程（4）</summary><a class="nav" href="../../tech/realtime/41-WebSocket與STOMP.html">41 WebSocket 與 STOMP</a><a class="nav" href="../../tech/realtime/42-前端接WebSocket.html">42 前端接 WebSocket</a><a class="nav" href="../../tech/realtime/43-排程與Cron.html">43 排程任務與 Cron</a><a class="nav" href="../../tech/realtime/44-Redis.html">44 Redis</a></details><details><summary>技術 · 進階（2）</summary><a class="nav" href="../../tech/advanced/45-訊息佇列RabbitMQ.html">45 訊息佇列 RabbitMQ</a><a class="nav" href="../../tech/advanced/46-區間重疊與訂位排程.html">46 訂位排程的演算法</a></details><details><summary>技術 · 品質與部署（4）</summary><a class="nav" href="../../tech/quality/47-單元測試.html">47 單元測試 JUnit + Mockito</a><a class="nav" href="../../tech/quality/48-Testcontainers.html">48 Testcontainers</a><a class="nav" href="../../tech/quality/49-GitHubActions.html">49 GitHub Actions CI</a><a class="nav" href="../../tech/quality/50-部署上線.html">50 部署上線</a></details><div class="foot">由 Markdown 自動產生<br>改文件請編輯 <code>docs/</code> 下的 .md<br>再執行 <code>python3 docs/build_site.py</code></div></nav>
+<div class="main"><div class="wrap">
+<article>
+<h1 id="react-jsx">React 與 JSX</h1>
+<p><strong>難度</strong> ★★★☆☆　<strong>用在哪些模組</strong> 所有前端工作　<strong>哪幾週</strong> 第 1 週</p>
+<h2 id="_1">一句話</h2>
+<p>React 的核心觀念是：<strong>你不去改畫面，你只改資料，畫面自己會變。</strong></p>
+<h2 id="jquery">你們熟悉的 jQuery 思維</h2>
+<pre><code class="language-js">// 加一項到購物車
+$('#cart-list').append('&lt;li&gt;牛五花 x2&lt;/li&gt;');
+$('#cart-count').text(count + 1);
+$('#cart-total').text(total + 560);
+$('#cart-bar').show();
+</code></pre>
+<p><strong>你在「指揮畫面怎麼改」。</strong> 每個要變的地方都要自己去抓、自己去改。</p>
+<p>問題是：畫面一複雜，你要記得「加一項的時候有哪五個地方要跟著變」。漏掉一個就是 bug。</p>
+<h2 id="react">React 的思維</h2>
+<pre><code class="language-jsx">// 只改資料
+setCart([...cart, { name: '牛五花', quantity: 2, price: 280 }]);
+</code></pre>
+<p><strong>就這一行。</strong> 數量、總額、購物車列表、底部橫條——全部自己變。</p>
+<p>因為你在別的地方已經描述過「<strong>畫面應該長什麼樣子</strong>」：</p>
+<pre><code class="language-jsx">&lt;div&gt;
+  &lt;ul&gt;
+    {cart.map(item =&gt; &lt;li key={item.id}&gt;{item.name} x{item.quantity}&lt;/li&gt;)}
+  &lt;/ul&gt;
+  &lt;span&gt;{cart.length} 項&lt;/span&gt;
+  &lt;span&gt;${cart.reduce((s, i) =&gt; s + i.price * i.quantity, 0)}&lt;/span&gt;
+&lt;/div&gt;
+</code></pre>
+<p>React 會自動算出「資料變了之後畫面該長怎樣」，然後只改真正需要改的部分。</p>
+<p><strong>這個思維轉換是 React 最難的地方。</strong> 想清楚這一點，剩下的都是語法。</p>
+<h2 id="_2">元件是什麼</h2>
+<p>元件就是<strong>一個會回傳畫面的函式</strong>。</p>
+<pre><code class="language-jsx">function MenuItemRow({ name, price, soldOut }) {
+  return (
+    &lt;div className=&quot;flex items-center gap-3 py-3&quot;&gt;
+      &lt;img src=&quot;/beef.jpg&quot; alt={name} className=&quot;w-20 h-20 rounded-xl&quot; /&gt;
+      &lt;div&gt;
+        &lt;h3 className=&quot;text-lg font-bold&quot;&gt;{name}&lt;/h3&gt;
+        &lt;p className=&quot;text-brand-600 text-xl font-bold&quot;&gt;${price}&lt;/p&gt;
+      &lt;/div&gt;
+      {soldOut &amp;&amp; &lt;span className=&quot;badge-soldout&quot;&gt;售完&lt;/span&gt;}
+    &lt;/div&gt;
+  );
+}
+</code></pre>
+<p>用起來像 HTML 標籤：</p>
+<pre><code class="language-jsx">&lt;MenuItemRow name=&quot;美國牛五花&quot; price={280} soldOut={false} /&gt;
+</code></pre>
+<p><strong>規則：元件名稱一定要大寫開頭。</strong> 小寫的 React 會當成一般 HTML 標籤。</p>
+<h2 id="jsx">JSX 的七條規則</h2>
+<p>JSX 就是「寫在 JS 裡面的 HTML」。它很像 HTML 但有幾個不同：</p>
+<p><strong>① <code>class</code> 要寫 <code>className</code></strong>（因為 <code>class</code> 是 JS 保留字）</p>
+<pre><code class="language-jsx">&lt;div className=&quot;card&quot;&gt;   ✅
+&lt;div class=&quot;card&quot;&gt;       ❌
+</code></pre>
+<p><strong>② 標籤一定要關</strong></p>
+<pre><code class="language-jsx">&lt;img src=&quot;x.jpg&quot; /&gt;      ✅
+&lt;br /&gt;                   ✅
+&lt;img src=&quot;x.jpg&quot;&gt;        ❌
+</code></pre>
+<p><strong>③ 只能回傳一個根元素</strong></p>
+<pre><code class="language-jsx">// ❌ 兩個並排
+return &lt;div&gt;A&lt;/div&gt;&lt;div&gt;B&lt;/div&gt;;
+
+// ✅ 包起來
+return &lt;&gt;&lt;div&gt;A&lt;/div&gt;&lt;div&gt;B&lt;/div&gt;&lt;/&gt;;    // &lt;&gt; &lt;/&gt; 是「空標籤」
+</code></pre>
+<p><strong>④ 放變數用大括號</strong></p>
+<pre><code class="language-jsx">&lt;h3&gt;{item.name}&lt;/h3&gt;
+&lt;p&gt;共 {adultCount + childCount} 位&lt;/p&gt;
+&lt;img src={item.imageUrl} /&gt;
+</code></pre>
+<p><strong>⑤ 條件顯示</strong></p>
+<pre><code class="language-jsx">{soldOut &amp;&amp; &lt;span&gt;售完&lt;/span&gt;}                    {/* 有才顯示 */}
+{soldOut ? &lt;span&gt;售完&lt;/span&gt; : &lt;button&gt;加入&lt;/button&gt;}   {/* 二選一 */}
+</code></pre>
+<p><strong>⑥ 畫清單用 <code>map</code>，而且要 <code>key</code></strong></p>
+<pre><code class="language-jsx">{items.map(item =&gt; (
+  &lt;MenuItemRow key={item.id} {...item} /&gt;
+))}
+</code></pre>
+<p><code>key</code> 要用<strong>穩定的唯一值</strong>（通常是 id）。用陣列<a class="gloss" href="../../tech/database/24-索引.html" title="看這個技術的白話說明">索引</a>會在排序或刪除時出錯。</p>
+<p><strong>⑦ 註解要寫在大括號裡</strong></p>
+<pre><code class="language-jsx">{/* 這是註解 */}
+</code></pre>
+<h2 id="props">Props：從外面傳進來的資料</h2>
+<pre><code class="language-jsx">// 定義
+function Button({ variant = 'primary', size = 'lg', children, onClick }) {
+  return &lt;button className={`btn-${variant} btn-${size}`} onClick={onClick}&gt;{children}&lt;/button&gt;;
+}
+
+// 使用
+&lt;Button variant=&quot;secondary&quot; onClick={handleAdd}&gt;加入購物車&lt;/Button&gt;
+</code></pre>
+<p><code>children</code> 是特殊的 prop，代表「標籤中間夾的東西」。</p>
+<p><strong>Props 是唯讀的。</strong> 子元件不能改父元件傳來的東西。</p>
+<h2 id="_3">事件處理</h2>
+<pre><code class="language-jsx">&lt;button onClick={handleClick}&gt;送出&lt;/button&gt;              ✅ 傳函式
+&lt;button onClick={handleClick()}&gt;送出&lt;/button&gt;            ❌ 這是「馬上執行」
+&lt;button onClick={() =&gt; handleAdd(item.id)}&gt;加入&lt;/button&gt;  ✅ 要帶參數就包一層
+</code></pre>
+<p><strong>這是新手第一天最常犯的錯</strong>：<code>onClick={handleClick()}</code> 會在畫面一載入就執行。</p>
+<h2 id="15">15 分鐘動手小練習</h2>
+<p>在 <a class="gloss" href="../../tech/frontend/33-Vite.html" title="看這個技術的白話說明">Vite</a> 專案裡，把 <code>src/App.jsx</code> 換成：</p>
+<pre><code class="language-jsx">function MenuItemRow({ name, price, soldOut }) {
+  return (
+    &lt;div style={{ padding: 12, borderBottom: '1px solid #E6DED2', opacity: soldOut ? 0.5 : 1 }}&gt;
+      &lt;strong&gt;{name}&lt;/strong&gt; — ${price}
+      {soldOut &amp;&amp; &lt;span style={{ color: '#B3261E' }}&gt; 售完&lt;/span&gt;}
+    &lt;/div&gt;
+  );
+}
+
+export default function App() {
+  const items = [
+    { id: 1, name: '麻辣鍋底', price: 480, soldOut: false },
+    { id: 2, name: '美國牛五花', price: 280, soldOut: false },
+    { id: 3, name: '紐西蘭羊肉', price: 320, soldOut: true },
+  ];
+
+  return (
+    &lt;div style={{ maxWidth: 375, margin: '0 auto' }}&gt;
+      &lt;h1&gt;今日菜單&lt;/h1&gt;
+      {items.map(item =&gt; &lt;MenuItemRow key={item.id} {...item} /&gt;)}
+      &lt;p&gt;共 {items.length} 項，{items.filter(i =&gt; !i.soldOut).length} 項可點&lt;/p&gt;
+    &lt;/div&gt;
+  );
+}
+</code></pre>
+<p><strong>練習重點</strong>：把 <code>soldOut</code> 改成 true/false，看畫面跟著變。你完全沒有去「改畫面」，只是改資料。</p>
+<h2 id="_4">你會遇到的坑</h2>
+<p><strong>① <code>onClick={fn()}</code> 而不是 <code>onClick={fn}</code></strong>
+畫面一載入就執行。</p>
+<p><strong>② 元件名稱小寫</strong>
+<code>&lt;menuItemRow /&gt;</code> React 會當成不認識的 HTML 標籤，畫面一片空白。</p>
+<p><strong>③ 忘記 <code>key</code></strong>
+Console 會警告，而且排序／刪除時畫面會錯亂。</p>
+<p><strong>④ 用 <code>class</code> 而不是 <code>className</code></strong></p>
+<p><strong>⑤ 想回傳兩個並排的元素</strong>
+要用 <code>&lt;&gt;...&lt;/&gt;</code> 包起來。</p>
+<p><strong>⑥ 還在用 jQuery 思維</strong>
+<code>document.getElementById('x').innerText = '...'</code> ——<strong>React 裡不要這樣做。</strong> 改資料就好。</p>
+<h2 id="_5">常見錯誤訊息對照</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>你會看到</th>
+<th>中文意思</th>
+<th>怎麼修</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Adjacent JSX elements must be wrapped in an enclosing tag</code></td>
+<td>回傳了兩個並排元素</td>
+<td>用 <code>&lt;&gt;...&lt;/&gt;</code></td>
+</tr>
+<tr>
+<td><code>Each child in a list should have a unique "key" prop</code></td>
+<td>map 忘了 key</td>
+<td>加 <code>key={item.id}</code></td>
+</tr>
+<tr>
+<td><code>Objects are not valid as a React child</code></td>
+<td>你把物件直接放進 JSX</td>
+<td>要放字串或數字，例如 <code>{item.name}</code></td>
+</tr>
+<tr>
+<td><code>xxx is not defined</code></td>
+<td>變數或元件沒 import</td>
+<td>檢查 import</td>
+</tr>
+<tr>
+<td><code>Too many re-renders</code></td>
+<td>在渲染時直接呼叫了 setState</td>
+<td><code>onClick={fn}</code> 不是 <code>fn()</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="_6">術語對照表</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>白話</th>
+<th>正式名稱</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>會回傳畫面的函式</td>
+<td>元件 Component</td>
+</tr>
+<tr>
+<td>寫在 JS 裡的 HTML</td>
+<td>JSX</td>
+</tr>
+<tr>
+<td>從外面傳進來的資料</td>
+<td>Props</td>
+</tr>
+<tr>
+<td>標籤中間夾的東西</td>
+<td><code>children</code></td>
+</tr>
+<tr>
+<td>空標籤 <code>&lt;&gt;</code></td>
+<td>Fragment</td>
+</tr>
+<tr>
+<td>改資料畫面自己變</td>
+<td>宣告式 Declarative</td>
+</tr>
+<tr>
+<td>自己指揮畫面改</td>
+<td>命令式 Imperative（jQuery 的做法）</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="_7">自我檢核</h2>
+<ol>
+<li>React 跟 jQuery 最根本的差別是什麼？</li>
+<li><code>onClick={handleClick}</code> 和 <code>onClick={handleClick()}</code> 差在哪？</li>
+<li>為什麼 map 要加 <code>key</code>？可以用陣列索引嗎？</li>
+<li>JSX 裡為什麼要寫 <code>className</code> 不是 <code>class</code>？</li>
+</ol>
+<h2 id="_8">學習資源</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>資源</th>
+<th>語言</th>
+<th>難度</th>
+<th>時間</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://zh-hant.react.dev/learn">React 官方繁中文件：快速入門</a></td>
+<td><strong>繁中</strong></td>
+<td><strong>入門</strong></td>
+<td>60 分</td>
+</tr>
+<tr>
+<td><a href="https://zh-hant.react.dev/learn/describing-the-ui">React 官方繁中：描述 UI</a></td>
+<td>繁中</td>
+<td>入門</td>
+<td>60 分</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p><strong>這是前端最重要的一頁。</strong> D 和 E 第 1 週務必把官方繁中文件的「快速入門」和「描述 UI」兩章做完，其他三位也建議至少看「快速入門」。</p>
+</blockquote>
+<h2 id="_9">相關頁面</h2>
+<p><a href="../../tech/frontend/30-現代JavaScript.html">現代 JavaScript 速成</a>　<a href="../../tech/frontend/35-Props與State.html">Props 與 State</a>　<a href="../../tech/frontend/36-useState.html">useState</a>　<a href="../../tech/frontend/39-Tailwind.html">Tailwind CSS</a></p><div class="pager"><a href="../../tech/frontend/33-Vite.html"><div class="k">← 上一篇</div><div class="n">33 Vite</div></a><a class="next" href="../../tech/frontend/35-Props與State.html"><div class="k">下一篇 →</div><div class="n">35 Props 與 State</div></a></div>
+</article>
+<aside class="toc"><div class="tt">本頁目錄</div><a href="#_1">一句話</a><a href="#jquery">你們熟悉的 jQuery 思維</a><a href="#react">React 的思維</a><a href="#_2">元件是什麼</a><a href="#jsx">JSX 的七條規則</a><a href="#props">Props：從外面傳進來的資料</a><a href="#_3">事件處理</a><a href="#15">15 分鐘動手小練習</a><a href="#_4">你會遇到的坑</a><a href="#_5">常見錯誤訊息對照</a><a href="#_6">術語對照表</a><a href="#_7">自我檢核</a><a href="#_8">學習資源</a><a href="#_9">相關頁面</a></aside>
+</div></div>
+</div>
+<script src="../../vendor/mermaid.min.js"></script>
+<script>
+mermaid.initialize({
+  startOnLoad: true, securityLevel: 'loose', theme: 'base',
+  fontFamily: '"Noto Sans TC","PingFang TC",system-ui,sans-serif',
+  themeVariables: {
+    background:'#FFFFFF',
+    primaryColor:'#FBE8E3', primaryTextColor:'#2B211C', primaryBorderColor:'#C8442E',
+    secondaryColor:'#FCF0DC', secondaryBorderColor:'#E8A33D',
+    tertiaryColor:'#F5EFE5', tertiaryBorderColor:'#E6DED2',
+    lineColor:'#9C8E84', textColor:'#2B211C',
+    mainBkg:'#FBE8E3', nodeBorder:'#C8442E', clusterBkg:'#FBF7F0', clusterBorder:'#E6DED2',
+    titleColor:'#2B211C', edgeLabelBackground:'#FBF7F0',
+    actorBkg:'#FBE8E3', actorBorder:'#C8442E', actorTextColor:'#2B211C',
+    signalColor:'#6B5D54', signalTextColor:'#2B211C',
+    labelBoxBkgColor:'#FCF0DC', labelBoxBorderColor:'#E8A33D', labelTextColor:'#2B211C',
+    loopTextColor:'#2B211C', noteBkgColor:'#FCF0DC', noteBorderColor:'#E8A33D', noteTextColor:'#2B211C',
+    activationBkgColor:'#E6DED2', activationBorderColor:'#9C8E84', sequenceNumberColor:'#FFFFFF',
+    altBackground:'#F5EFE5',
+    taskBkgColor:'#FBE8E3', taskBorderColor:'#C8442E', taskTextColor:'#2B211C',
+    taskTextOutsideColor:'#2B211C', taskTextDarkColor:'#2B211C',
+    activeTaskBkgColor:'#E8A33D', activeTaskBorderColor:'#C9862A',
+    doneTaskBkgColor:'#E4EFE7', doneTaskBorderColor:'#3F7A4E',
+    critBkgColor:'#C8442E', critBorderColor:'#A63522',
+    gridColor:'#E6DED2', todayLineColor:'#B3261E',
+    sectionBkgColor:'#FBF7F0', sectionBkgColor2:'#F5EFE5', altSectionBkgColor:'#FFFFFF',
+    classText:'#2B211C',
+    attributeBackgroundColorOdd:'#FFFFFF', attributeBackgroundColorEven:'#F5EFE5'
+  },
+  gantt:{barHeight:18,barGap:5,topPadding:52,leftPadding:180,fontSize:12},
+  mindmap:{padding:12},
+  sequence:{actorMargin:42,boxTextMargin:6,noteMargin:10,messageMargin:32,width:150},
+  er:{entityPadding:12,minEntityWidth:110}
+});
+</script>
+<script>document.addEventListener('click',function(e){var sb=document.getElementById('sb');if(window.innerWidth<=940&&sb.classList.contains('open')&&!sb.contains(e.target)&&!e.target.closest('.menubtn')){sb.classList.remove('open');}});</script>
+</body>
+</html>

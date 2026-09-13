@@ -1,0 +1,181 @@
+# Vite
+
+**難度** ★☆☆☆☆　**用在哪些模組** 所有前端工作　**哪幾週** 第 1 週
+
+## 一句話
+
+Vite 是**前端的啟動器和打包機**：開發時幫你即時重整，上線時把幾百個檔案壓成幾個。
+
+## 想像一下
+
+你寫的 React 程式碼，瀏覽器其實**看不懂**：
+
+- 瀏覽器不認識 JSX（那個 `<div>` 寫在 JS 裡的語法）
+- 瀏覽器不認識 `import './Button.css'`
+- 你有 200 個小檔案，一個一個載入會很慢
+
+**需要有人在中間翻譯和整理**。以前是 webpack，現在多半用 Vite（更快、設定更少）。
+
+## 它做兩件事
+
+**① 開發時：即時預覽**
+
+```bash
+npm run dev
+```
+
+打開 `http://localhost:5173`，你改一行程式碼**存檔的瞬間**畫面就更新了，而且不會重整整頁（狀態還在）。這叫 HMR（熱模組替換）。
+
+**② 上線時：打包**
+
+```bash
+npm run build
+```
+
+把幾百個檔案壓成 `dist/` 資料夾裡的幾個檔案，程式碼壓縮、沒用到的砍掉。這個資料夾就是要丟到 Vercel 的東西。
+
+## 怎麼開一個專案
+
+```bash
+npm create vite@latest frontend-customer -- --template react
+cd frontend-customer
+npm install
+npm run dev
+```
+
+**四行，一個 React 專案就跑起來了。**
+
+（注意是 `--template react` 不是 `react-ts`，我們不用 TypeScript。）
+
+## 專案結構
+
+```
+frontend-customer/
+├── index.html           ← 入口，只有一個空的 <div id="root">
+├── package.json
+├── vite.config.js       ← Vite 設定
+├── tailwind.config.js
+└── src/
+    ├── main.jsx         ← 程式進入點
+    ├── App.jsx          ← 根元件
+    ├── index.css        ← Tailwind 的引入處
+    ├── components/      ← 共用元件
+    ├── pages/           ← 各個頁面
+    ├── api/             ← fetch 封裝
+    └── contexts/        ← 全域狀態
+```
+
+## 環境變數
+
+不同環境要打不同的後端網址：
+
+```
+.env.development     VITE_API_BASE=http://localhost:8080/api
+.env.production      VITE_API_BASE=https://your-api.onrender.com/api
+```
+
+在程式裡用：
+
+```js
+const BASE = import.meta.env.VITE_API_BASE;
+```
+
+**兩個重點：**
+
+1. **變數名一定要 `VITE_` 開頭**，否則 Vite 不會把它給你
+2. **環境變數會被打包進去，使用者看得到。** 絕對不要放密鑰。
+
+## 開發代理（解決 CORS 的另一招）
+
+`vite.config.js`：
+
+```js
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+    },
+  },
+});
+```
+
+這樣前端打 `/api/menu/items`，Vite 會幫你轉給 `localhost:8080`。**對瀏覽器來說都是同一個來源，就不會有 [CORS](../web/11-CORS跨來源.md) 問題。**
+
+**但後端還是要設 CORS**，因為正式環境前後端是分開部署的。
+
+## 15 分鐘動手小練習
+
+```bash
+npm create vite@latest my-test -- --template react
+cd my-test && npm install && npm run dev
+```
+
+1. 打開 `http://localhost:5173`
+2. 打開 `src/App.jsx`，把裡面的文字改成「火鍋店」
+3. **存檔** ← 不要重整，看瀏覽器自己變了
+4. 按幾下計數器按鈕讓數字變成 5
+5. **再改一次文字存檔** ← 數字還是 5（狀態沒被重置，這就是 HMR）
+6. 跑 `npm run build`，看 `dist/` 資料夾裡有什麼
+
+## 你會遇到的坑
+
+**① 環境變數沒有 `VITE_` 前綴**
+`import.meta.env.API_BASE` 會是 `undefined`。
+
+**② 改了 `.env` 沒重啟**
+環境變數是啟動時讀的，要 `Ctrl+C` 再 `npm run dev`。
+
+**③ 5173 被佔用**
+Vite 會自動換成 5174。注意看終端機印出來的網址。
+
+**④ 打包後打不開（白畫面）**
+多半是路徑問題。部署到子路徑時要設 `base: '/子路徑/'`。
+
+**⑤ 以為開發代理也會在正式環境生效**
+不會。`server.proxy` **只有 `npm run dev` 時有用**。
+
+**⑥ 把密鑰放進 `.env`**
+打包後直接寫在 JS 檔裡，誰都看得到。
+
+## 常見錯誤訊息對照
+
+| 你會看到 | 中文意思 | 怎麼修 |
+|---|---|---|
+| `Port 5173 is in use, trying another one` | 埠號被佔 | 正常，看它換到幾號 |
+| `Failed to resolve import "xxx"` | 找不到這個模組 | 套件沒裝，或路徑打錯 |
+| `[vite] Internal server error` | 程式碼有語法錯誤 | 往下看真正的錯誤行數 |
+| 白畫面、console 說 `Failed to load module script` | 打包路徑錯 | 檢查 `base` 設定 |
+| `import.meta.env.XXX is undefined` | 沒有 `VITE_` 前綴，或沒重啟 | 兩個都檢查 |
+
+## 術語對照表
+
+| 白話 | 正式名稱 |
+|---|---|
+| 前端的啟動器與打包機 | 建置工具 build tool |
+| 存檔就更新 | HMR（Hot Module Replacement） |
+| 開發伺服器 | dev server |
+| 打包 | build / bundle |
+| 打包好的成品 | `dist/` |
+| 轉給後端 | proxy 代理 |
+
+## 自我檢核
+
+1. Vite 在開發時和上線時各做什麼？
+2. 環境變數的名字一定要什麼開頭？
+3. 環境變數可以放密鑰嗎？為什麼？
+4. 設了 `server.proxy` 之後，後端還需要設 CORS 嗎？
+
+## 學習資源
+
+| 資源 | 語言 | 難度 | 時間 |
+|---|---|---|---|
+| [Vite 官方中文文件](https://cn.vitejs.dev/guide/) | 簡中 | 入門 | 20 分 |
+| [zh-hant.react.dev：安裝](https://zh-hant.react.dev/learn/installation) | **繁中** | 入門 | 10 分 |
+
+## 相關頁面
+
+[npm 與 node_modules](32-npm與套件.md)　[React 與 JSX](34-React與JSX.md)　[CORS 跨來源問題](../web/11-CORS跨來源.md)　[部署上線](../quality/50-部署上線.md)

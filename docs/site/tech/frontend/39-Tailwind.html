@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tailwind CSS · 火鍋店點餐系統文件</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand-700:#A63522; --brand-600:#C8442E; --brand-500:#DB5B42; --brand-100:#FBE8E3;
+  --accent-500:#E8A33D; --accent-100:#FCF0DC;
+  --bg:#FBF7F0; --surface:#FFFFFF; --surface-2:#F5EFE5; --line:#E6DED2;
+  --t900:#2B211C; --t600:#6B5D54; --t400:#9C8E84;
+  --ok:#3F7A4E; --ok-bg:#E4EFE7; --warn:#D98324; --bad:#B3261E;
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --serif:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --shadow:0 1px 2px rgba(43,33,28,.06),0 4px 12px rgba(43,33,28,.05);
+  --sidebar:280px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:var(--bg);color:var(--t900);font-family:var(--sans);
+  font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased}
+
+.layout{display:flex;min-height:100vh;align-items:flex-start}
+.sidebar{width:var(--sidebar);flex:0 0 var(--sidebar);position:sticky;top:0;height:100vh;
+  overflow-y:auto;background:var(--surface);border-right:1px solid var(--line);padding:22px 0 48px}
+.brand{padding:0 20px 16px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.brand a{text-decoration:none;color:inherit;display:block}
+.brand .logo{font-family:var(--serif);font-weight:900;font-size:18px;line-height:1.35;color:var(--brand-600)}
+.brand .sub{font-size:11.5px;color:var(--t400);margin-top:4px;letter-spacing:.02em}
+.navgroup{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--t400);
+  padding:15px 20px 5px}
+.sidebar a.nav{display:block;padding:6px 20px;color:var(--t600);text-decoration:none;
+  font-size:14px;border-left:3px solid transparent;line-height:1.5}
+.sidebar a.nav:hover{background:var(--brand-100);color:var(--brand-700)}
+.sidebar a.nav.active{background:var(--brand-100);color:var(--brand-700);
+  border-left-color:var(--brand-600);font-weight:700}
+.sidebar details{border-top:1px solid transparent}
+.sidebar details>summary{list-style:none;cursor:pointer;font-size:11px;font-weight:700;
+  letter-spacing:.1em;color:var(--t400);padding:12px 20px 5px;user-select:none}
+.sidebar details>summary::-webkit-details-marker{display:none}
+.sidebar details>summary::before{content:"▸ ";font-size:10px}
+.sidebar details[open]>summary::before{content:"▾ "}
+.sidebar details>summary:hover{color:var(--brand-600)}
+.sidebar .foot{padding:18px 20px;margin-top:14px;border-top:1px solid var(--line);
+  font-size:11.5px;color:var(--t400);line-height:1.7}
+
+.main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 32px 96px}
+.wrap{width:100%;max-width:1140px;display:flex;gap:36px;align-items:flex-start}
+article{flex:1;min-width:0;max-width:880px;padding-top:40px}
+.toc{width:196px;flex:0 0 196px;position:sticky;top:24px;padding-top:52px;font-size:12.5px;
+  max-height:calc(100vh - 60px);overflow-y:auto}
+.toc .tt{font-size:10.5px;letter-spacing:.1em;color:var(--t400);font-weight:700;margin-bottom:9px}
+.toc a{display:block;color:var(--t600);text-decoration:none;padding:3px 0 3px 10px;
+  border-left:2px solid var(--line);line-height:1.5}
+.toc a:hover{color:var(--brand-600);border-left-color:var(--brand-500)}
+
+.topbar{display:none;position:sticky;top:0;z-index:40;background:var(--surface);
+  border-bottom:1px solid var(--line);padding:10px 16px;align-items:center;gap:12px}
+.topbar .logo{font-family:var(--serif);font-weight:900;color:var(--brand-600);font-size:16px}
+.menubtn{background:var(--brand-600);color:#fff;border:0;border-radius:8px;height:40px;
+  padding:0 14px;font-size:15px;font-family:inherit;cursor:pointer}
+
+article h1{font-family:var(--serif);font-weight:900;font-size:32px;line-height:1.35;margin:0 0 10px}
+article h1+p{color:var(--t600)}
+article h2{font-family:var(--serif);font-weight:700;font-size:24px;line-height:1.45;
+  margin:50px 0 14px;padding-bottom:9px;border-bottom:2px solid var(--line)}
+article h3{font-weight:700;font-size:18.5px;margin:30px 0 10px}
+article h4{font-weight:700;font-size:16px;margin:22px 0 8px;color:var(--t600)}
+article p{margin:0 0 16px}
+article ul,article ol{margin:0 0 16px;padding-left:24px}
+article li{margin:5px 0}
+article a{color:var(--brand-600);text-decoration:none;border-bottom:1px solid rgba(200,68,46,.3)}
+article a:hover{border-bottom-color:var(--brand-600)}
+article a.gloss{color:var(--t900);border-bottom:1px dashed var(--accent-500);
+  background:linear-gradient(transparent 72%,var(--accent-100) 72%)}
+article a.gloss:hover{color:var(--brand-700);border-bottom-color:var(--brand-500)}
+article strong{font-weight:700;color:var(--t900)}
+article hr{border:0;border-top:1px solid var(--line);margin:42px 0}
+article img{max-width:100%;border-radius:12px}
+article details{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:12px 16px;margin:0 0 18px}
+article details>summary{cursor:pointer;font-weight:700;color:var(--brand-600)}
+
+article code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.87em;
+  background:var(--surface-2);padding:2px 6px;border-radius:5px;color:var(--brand-700);
+  word-break:break-word}
+article pre{background:#2B211C;color:#F5EFE5;padding:18px 20px;border-radius:12px;
+  overflow-x:auto;margin:0 0 18px;line-height:1.65;font-size:13.5px}
+article pre code{background:none;color:inherit;padding:0;font-size:inherit}
+
+blockquote{margin:0 0 20px;padding:14px 18px;background:var(--accent-100);
+  border-left:4px solid var(--accent-500);border-radius:0 10px 10px 0;color:var(--t600)}
+blockquote p:last-child{margin-bottom:0}
+blockquote strong{color:var(--t900)}
+
+.tablewrap{overflow-x:auto;margin:0 0 20px;border:1px solid var(--line);
+  border-radius:12px;background:var(--surface);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:420px}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--surface-2);font-weight:700;white-space:nowrap;color:var(--t900)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--brand-100)}
+td code,th code{white-space:nowrap}
+article li input[type=checkbox]{width:16px;height:16px;margin-right:6px;accent-color:var(--brand-600)}
+
+pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:22px;text-align:center;overflow-x:auto;box-shadow:var(--shadow);margin:0 0 22px;color:inherit}
+pre.mermaid svg{max-width:100%;height:auto}
+
+.hero{padding:52px 0 32px;border-bottom:1px solid var(--line);margin-bottom:32px}
+.hero .eyebrow{display:inline-block;background:var(--brand-100);color:var(--brand-700);
+  font-size:12.5px;font-weight:700;padding:5px 13px;border-radius:999px;letter-spacing:.04em}
+.hero h1{font-family:var(--serif);font-weight:900;font-size:40px;line-height:1.25;margin:18px 0 12px}
+.hero p{font-size:17px;color:var(--t600);max-width:680px;margin:0}
+.facts{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:10px 16px;font-size:13px;box-shadow:var(--shadow)}
+.fact b{display:block;font-family:var(--serif);font-size:19px;color:var(--brand-600);font-weight:900}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:13px;margin:18px 0 8px}
+.card{display:block;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:16px;text-decoration:none;color:inherit;box-shadow:var(--shadow);transition:.15s}
+.card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(43,33,28,.12);border-color:var(--brand-500)}
+.card .k{font-size:10.5px;letter-spacing:.09em;color:var(--t400);font-weight:700}
+.card .n{font-family:var(--serif);font-weight:700;font-size:17px;margin:5px 0 6px;color:var(--t900)}
+.card .d{font-size:13px;color:var(--t600);line-height:1.6}
+.callout{background:var(--brand-100);border:1px solid var(--brand-500);border-radius:12px;
+  padding:18px 20px;margin:24px 0}
+.callout .h{font-family:var(--serif);font-weight:700;font-size:17px;margin-bottom:6px;color:var(--brand-700)}
+.callout p{margin:0;color:var(--t600);font-size:14.5px}
+.pending{background:var(--accent-100);border-color:var(--accent-500)}
+.pending .h{color:#8A5B12}
+
+.pager{display:flex;gap:12px;margin-top:52px;padding-top:22px;border-top:1px solid var(--line)}
+.pager a{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:13px 16px;text-decoration:none;color:inherit;box-shadow:var(--shadow)}
+.pager a:hover{border-color:var(--brand-500)}
+.pager .k{font-size:11px;color:var(--t400);letter-spacing:.06em}
+.pager .n{font-weight:700;color:var(--brand-600);margin-top:3px;font-size:14.5px}
+.pager .next{text-align:right}
+
+@media(max-width:1200px){ .toc{display:none} }
+@media(max-width:940px){
+  .topbar{display:flex}
+  .layout{display:block}
+  .sidebar{position:fixed;left:0;top:0;height:100vh;z-index:50;transform:translateX(-100%);
+    transition:transform .2s;box-shadow:0 0 40px rgba(43,33,28,.2);width:286px}
+  .sidebar.open{transform:translateX(0)}
+  .main{padding:0 16px 72px}
+  article{padding-top:24px}
+  .hero{padding:30px 0 24px}
+  .hero h1{font-size:30px}
+  article h1{font-size:26px}
+  article h2{font-size:21px;margin-top:38px}
+  .pager{flex-direction:column}
+}
+@media print{
+  .sidebar,.toc,.topbar,.pager{display:none!important}
+  body{background:#fff}
+  .main{padding:0}
+  article{max-width:none}
+  article h2{page-break-after:avoid}
+  .tablewrap,pre.mermaid{box-shadow:none;page-break-inside:avoid}
+  a.gloss{background:none!important;border:0!important}
+}
+</style>
+</head>
+<body>
+<div class="topbar"><button class="menubtn" onclick="document.getElementById('sb').classList.toggle('open')">☰ 目錄</button><span class="logo">火鍋店點餐系統</span></div>
+<div class="layout">
+<nav class="sidebar" id="sb"><div class="brand"><a href="../../index.html"><div class="logo">火鍋店點餐系統</div><div class="sub">專案文件 · 69 頁</div></a></div><a class="nav" href="../../index.html">首頁</a><div class="navgroup">規格文件</div><a class="nav" href="../../spec/00-架構分層與技術選型.html">00 架構分層與技術選型</a><a class="nav" href="../../spec/01-專案總覽.html">01 專案總覽</a><a class="nav" href="../../spec/02-需求規格.html">02 需求規格：基礎與進階功能總表</a><a class="nav" href="../../spec/03-資料庫設計.html">03 資料庫設計</a><a class="nav" href="../../spec/04-API規格.html">04 API 規格</a><a class="nav" href="../../spec/05-開發流程與分工.html">05 開發流程與時程</a><a class="nav" href="../../spec/06-圖表總覽.html">06 圖表總覽</a><div class="navgroup">模組規格</div><a class="nav" href="../../spec/modules/M1-菜單與品項.html">M1 菜單與品項</a><a class="nav" href="../../spec/modules/M2-桌位開桌與候位.html">M2 桌位、開桌與候位</a><a class="nav" href="../../spec/modules/M3-點餐與服務鈴.html">M3 點餐與服務鈴</a><a class="nav" href="../../spec/modules/M4-出菜看板.html">M4 出菜看板（KDS）</a><a class="nav" href="../../spec/modules/M5-庫存.html">M5 庫存</a><a class="nav" href="../../spec/modules/M6-結帳.html">M6 結帳</a><a class="nav" href="../../spec/modules/M7-訂位.html">M7 訂位</a><a class="nav" href="../../spec/modules/M8-會員.html">M8 會員</a><div class="navgroup">UI 文件</div><a class="nav" href="../../ui/10-UI-UX規格.html">10 UI / UX 規格</a><a class="nav" href="../../ui/11-設計系統.html">11 設計系統</a><a class="nav" href="../../ui/12-AI-UI工具與提示詞.html">12 AI UI 工具與提示詞</a><div class="navgroup">技術總表</div><a class="nav" href="../../tech/00-技術總表.html">00 技術總表</a><details><summary>技術 · 團隊與工具（5）</summary><a class="nav" href="../../tech/team/01-命令列.html">01 命令列基本操作</a><a class="nav" href="../../tech/team/02-Git是什麼.html">02 Git 是什麼</a><a class="nav" href="../../tech/team/03-分支與合併.html">03 分支、合併與衝突</a><a class="nav" href="../../tech/team/04-GitHub與PR.html">04 GitHub 與 Pull Request</a><a class="nav" href="../../tech/team/05-Docker與Compose.html">05 Docker 與 Docker Compose</a></details><details><summary>技術 · 網頁運作原理（6）</summary><a class="nav" href="../../tech/web/06-前端後端在做什麼.html">06 前端與後端各在做什麼</a><a class="nav" href="../../tech/web/07-HTTP請求與回應.html">07 HTTP 請求與回應</a><a class="nav" href="../../tech/web/08-HTTP狀態碼.html">08 HTTP 狀態碼</a><a class="nav" href="../../tech/web/09-JSON.html">09 JSON</a><a class="nav" href="../../tech/web/10-REST-API設計.html">10 REST API 設計</a><a class="nav" href="../../tech/web/11-CORS跨來源.html">11 CORS 跨來源問題</a></details><details><summary>技術 · 後端（10）</summary><a class="nav" href="../../tech/backend/12-Java與JDK.html">12 Java 與 JDK</a><a class="nav" href="../../tech/backend/13-Maven.html">13 Maven 與相依套件</a><a class="nav" href="../../tech/backend/14-SpringBoot是什麼.html">14 Spring Boot 是什麼</a><a class="nav" href="../../tech/backend/15-依賴注入.html">15 依賴注入</a><a class="nav" href="../../tech/backend/16-三層架構.html">16 Controller / Service / Repository</a><a class="nav" href="../../tech/backend/17-Entity與DTO.html">17 Entity 與 DTO</a><a class="nav" href="../../tech/backend/18-全域例外處理.html">18 全域例外處理</a><a class="nav" href="../../tech/backend/19-Swagger.html">19 Swagger 自動產生 API 文件</a><a class="nav" href="../../tech/backend/20-SpringSecurity.html">20 Spring Security 基礎</a><a class="nav" href="../../tech/backend/21-JWT.html">21 JWT 與登入狀態</a></details><details><summary>技術 · 資料庫（8）</summary><a class="nav" href="../../tech/database/22-關聯式資料庫與SQL.html">22 關聯式資料庫與 SQL</a><a class="nav" href="../../tech/database/23-資料表設計.html">23 資料表設計</a><a class="nav" href="../../tech/database/24-索引.html">24 索引是什麼</a><a class="nav" href="../../tech/database/25-ORM與JPA.html">25 ORM 與 JPA</a><a class="nav" href="../../tech/database/26-JPA關聯對應.html">26 JPA 關聯對應</a><a class="nav" href="../../tech/database/27-交易Transaction.html">27 交易 Transaction</a><a class="nav" href="../../tech/database/28-鎖與併發.html">28 鎖與併發（防超賣）</a><a class="nav" href="../../tech/database/29-Flyway.html">29 Flyway 資料庫版本控管</a></details><details open><summary>技術 · 前端（11）</summary><a class="nav" href="../../tech/frontend/30-現代JavaScript.html">30 現代 JavaScript 速成</a><a class="nav" href="../../tech/frontend/31-非同步與async.html">31 非同步與 async/await</a><a class="nav" href="../../tech/frontend/32-npm與套件.html">32 npm 與 node_modules</a><a class="nav" href="../../tech/frontend/33-Vite.html">33 Vite</a><a class="nav" href="../../tech/frontend/34-React與JSX.html">34 React 與 JSX</a><a class="nav" href="../../tech/frontend/35-Props與State.html">35 Props 與 State</a><a class="nav" href="../../tech/frontend/36-useState.html">36 useState</a><a class="nav" href="../../tech/frontend/37-useEffect.html">37 useEffect</a><a class="nav" href="../../tech/frontend/38-ReactRouter.html">38 React Router</a><a class="nav active" href="../../tech/frontend/39-Tailwind.html">39 Tailwind CSS</a><a class="nav" href="../../tech/frontend/40-fetch串接API.html">40 fetch 串接後端 API</a></details><details><summary>技術 · 即時與排程（4）</summary><a class="nav" href="../../tech/realtime/41-WebSocket與STOMP.html">41 WebSocket 與 STOMP</a><a class="nav" href="../../tech/realtime/42-前端接WebSocket.html">42 前端接 WebSocket</a><a class="nav" href="../../tech/realtime/43-排程與Cron.html">43 排程任務與 Cron</a><a class="nav" href="../../tech/realtime/44-Redis.html">44 Redis</a></details><details><summary>技術 · 進階（2）</summary><a class="nav" href="../../tech/advanced/45-訊息佇列RabbitMQ.html">45 訊息佇列 RabbitMQ</a><a class="nav" href="../../tech/advanced/46-區間重疊與訂位排程.html">46 訂位排程的演算法</a></details><details><summary>技術 · 品質與部署（4）</summary><a class="nav" href="../../tech/quality/47-單元測試.html">47 單元測試 JUnit + Mockito</a><a class="nav" href="../../tech/quality/48-Testcontainers.html">48 Testcontainers</a><a class="nav" href="../../tech/quality/49-GitHubActions.html">49 GitHub Actions CI</a><a class="nav" href="../../tech/quality/50-部署上線.html">50 部署上線</a></details><div class="foot">由 Markdown 自動產生<br>改文件請編輯 <code>docs/</code> 下的 .md<br>再執行 <code>python3 docs/build_site.py</code></div></nav>
+<div class="main"><div class="wrap">
+<article>
+<h1 id="tailwind-css">Tailwind CSS</h1>
+<p><strong>難度</strong> ★★☆☆☆　<strong>用在哪些模組</strong> 所有前端工作　<strong>哪幾週</strong> 第 1 週</p>
+<h2 id="_1">一句話</h2>
+<p>Tailwind 是<strong>把每個 CSS 屬性都變成一個小 class</strong>，你直接在 HTML 上組合。</p>
+<h2 id="_2">想像一下</h2>
+<p><strong>傳統寫法</strong>：先想一個名字，再去別的檔案寫樣式。</p>
+<pre><code class="language-html">&lt;div class=&quot;menu-item-card&quot;&gt;...&lt;/div&gt;
+</code></pre>
+<pre><code class="language-css">/* 在另一個檔案，或檔案的另一端 */
+.menu-item-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+}
+</code></pre>
+<p>麻煩的地方：
+- 要一直發明名字（<code>card</code>、<code>card-wrapper</code>、<code>card-inner</code>、<code>card-inner-2</code>…）
+- 改樣式要在兩個檔案之間跳來跳去
+- 刪掉元件時，那段 CSS 沒人敢刪（怕別的地方也在用）</p>
+<p><strong>Tailwind 寫法</strong>：</p>
+<pre><code class="language-html">&lt;div class=&quot;flex items-center gap-3 p-4 bg-white rounded-xl&quot;&gt;...&lt;/div&gt;
+</code></pre>
+<p>不用想名字、不用切檔案、刪掉元件樣式就跟著消失。</p>
+<h2 id="class">常用 class 對照表</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Tailwind</th>
+<th>CSS</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>flex</code></td>
+<td><code>display: flex</code></td>
+</tr>
+<tr>
+<td><code>items-center</code></td>
+<td><code>align-items: center</code></td>
+</tr>
+<tr>
+<td><code>justify-between</code></td>
+<td><code>justify-content: space-between</code></td>
+</tr>
+<tr>
+<td><code>gap-3</code></td>
+<td><code>gap: 12px</code></td>
+</tr>
+<tr>
+<td><code>p-4</code> / <code>px-4</code> / <code>py-2</code></td>
+<td><code>padding</code> / 左右 / 上下</td>
+</tr>
+<tr>
+<td><code>m-4</code> / <code>mt-2</code></td>
+<td><code>margin</code> / <code>margin-top</code></td>
+</tr>
+<tr>
+<td><code>w-20</code> <code>h-20</code></td>
+<td><code>width/height: 80px</code></td>
+</tr>
+<tr>
+<td><code>w-full</code></td>
+<td><code>width: 100%</code></td>
+</tr>
+<tr>
+<td><code>text-lg</code> <code>text-xl</code></td>
+<td>字級</td>
+</tr>
+<tr>
+<td><code>font-bold</code></td>
+<td><code>font-weight: 700</code></td>
+</tr>
+<tr>
+<td><code>bg-white</code></td>
+<td>背景白</td>
+</tr>
+<tr>
+<td><code>rounded-xl</code></td>
+<td><code>border-radius: 12px</code></td>
+</tr>
+<tr>
+<td><code>border</code> <code>border-paper-line</code></td>
+<td>邊框</td>
+</tr>
+<tr>
+<td><code>shadow-card</code></td>
+<td>陰影</td>
+</tr>
+<tr>
+<td><code>hidden</code></td>
+<td><code>display: none</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>數字的規則</strong>：<code>1</code> = 4px，所以 <code>p-4</code> = 16px、<code>gap-3</code> = 12px、<code>w-20</code> = 80px。</p>
+<h2 id="_3">用我們自己的設計系統</h2>
+<p><code>tailwind.config.js</code> 裡把我們的色票寫進去（見 <a href="../../ui/11-設計系統.html">11-設計系統</a>）：</p>
+<pre><code class="language-js">theme: {
+  extend: {
+    colors: {
+      brand:  { 100:'#FBE8E3', 500:'#DB5B42', 600:'#C8442E', 700:'#A63522' },
+      accent: { 100:'#FCF0DC', 500:'#E8A33D' },
+      ink:    { 400:'#9C8E84', 600:'#6B5D54', 900:'#2B211C' },
+      paper:  { DEFAULT:'#FBF7F0', card:'#FFFFFF', line:'#E6DED2' },
+    },
+    fontFamily: {
+      serif: ['&quot;Noto Serif TC&quot;', 'serif'],
+      sans:  ['&quot;Noto Sans TC&quot;', 'system-ui', 'sans-serif'],
+    },
+    borderRadius: { card: '12px', btn: '8px' },
+  },
+}
+</code></pre>
+<p>之後就可以寫 <code>bg-brand-600</code>、<code>text-ink-900</code>、<code>rounded-card</code>——<strong>全隊用同一組顏色，不會有人手打 <code>#C8442D</code></strong>。</p>
+<h2 id="_4">響應式：手機優先</h2>
+<pre><code class="language-html">&lt;div class=&quot;p-4 md:p-6 lg:p-8&quot;&gt;
+</code></pre>
+<p>意思是：<strong>預設 16px，螢幕 ≥768px 時 24px，≥1024px 時 32px</strong>。</p>
+<p><strong>沒有前綴的是手機版</strong>，這叫「手機優先」。我們顧客端主要就寫沒前綴的。</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>前綴</th>
+<th>從幾 px 開始</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>（無）</td>
+<td>0</td>
+</tr>
+<tr>
+<td><code>sm:</code></td>
+<td>640</td>
+</tr>
+<tr>
+<td><code>md:</code></td>
+<td>768</td>
+</tr>
+<tr>
+<td><code>lg:</code></td>
+<td>1024</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="_5">狀態變化</h2>
+<pre><code class="language-html">&lt;button class=&quot;bg-brand-600 hover:bg-brand-500 active:scale-95
+               disabled:opacity-40 disabled:cursor-not-allowed
+               focus-visible:outline focus-visible:outline-2&quot;&gt;
+</code></pre>
+<p>滑過、按下、停用、鍵盤聚焦——全部直接寫在 class 裡。</p>
+<h2 id="class_1">class 太長怎麼辦</h2>
+<p>這是 Tailwind 最常被抱怨的地方。解法<strong>不是回去寫 CSS，是包成元件</strong>：</p>
+<pre><code class="language-jsx">// components/Button.jsx —— 長的 class 只出現在這一個檔案
+const styles = {
+  primary:   'bg-brand-600 text-white hover:bg-brand-500 active:bg-brand-700',
+  secondary: 'bg-white text-brand-600 border-[1.5px] border-brand-600 hover:bg-brand-100',
+};
+const sizes = { lg: 'h-[52px] text-[18px] px-6', md: 'h-11 text-base px-5' };
+
+export default function Button({ variant='primary', size='lg', className='', ...rest }) {
+  return &lt;button className={`rounded-btn font-medium transition-all active:scale-[.98]
+    disabled:opacity-40 ${styles[variant]} ${sizes[size]} ${className}`} {...rest} /&gt;;
+}
+</code></pre>
+<p>之後全專案就寫 <code>&lt;Button&gt;加入購物車&lt;/Button&gt;</code>，乾淨。</p>
+<p><strong>我們要自己寫的 8 個元件</strong>：Button、Card、MenuItemRow、Stepper、OptionCard、Badge、Toast、EmptyState。</p>
+<h2 id="15">15 分鐘動手小練習</h2>
+<p>在 <a class="gloss" href="../../tech/frontend/33-Vite.html" title="看這個技術的白話說明">Vite</a> 專案裝 Tailwind（照 <a href="https://tailwindcss.com/docs/guides/vite">官方 Vite 指南</a>），然後刻一張菜單卡片：</p>
+<pre><code class="language-jsx">export default function App() {
+  return (
+    &lt;div className=&quot;min-h-screen bg-[#FBF7F0] p-4&quot;&gt;
+      &lt;div className=&quot;flex items-center gap-3 bg-white rounded-xl border border-[#E6DED2] p-4 shadow-sm&quot;&gt;
+        &lt;div className=&quot;w-20 h-20 rounded-xl bg-[#F5EFE5] shrink-0&quot; /&gt;
+        &lt;div className=&quot;flex-1&quot;&gt;
+          &lt;h3 className=&quot;text-lg font-bold text-[#2B211C]&quot;&gt;美國牛五花&lt;/h3&gt;
+          &lt;p className=&quot;text-sm text-[#6B5D54] mt-0.5&quot;&gt;厚切 3mm，涮 8 秒最好吃&lt;/p&gt;
+          &lt;p className=&quot;text-xl font-bold text-[#C8442E] mt-1&quot;&gt;$280&lt;/p&gt;
+        &lt;/div&gt;
+        &lt;button className=&quot;w-11 h-11 rounded-full bg-[#C8442E] text-white text-2xl
+                           active:scale-95 transition-transform&quot;&gt;＋&lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}
+</code></pre>
+<p><strong>然後把瀏覽器縮到 375px 寬</strong>，看看會不會破版。</p>
+<h2 id="_6">你會遇到的坑</h2>
+<p><strong>① 用字串拼 class</strong></p>
+<pre><code class="language-jsx">&lt;div className={`text-${color}-600`}&gt;     // ❌ Tailwind 掃不到，樣式不會生成
+&lt;div className={color === 'red' ? 'text-brand-600' : 'text-ink-600'}&gt;  // ✅
+</code></pre>
+<p>Tailwind 是在<strong>編譯時</strong>掃描你的原始碼找出用到哪些 class。動態拼出來的它看不見。</p>
+<p><strong>② 到處寫死顏色</strong>
+<code>bg-[#C8442E]</code> 這種寫法能用，但全專案散落魔術數字。
+→ <strong>設定好 <code>tailwind.config.js</code> 之後一律用 <code>bg-brand-600</code>。</strong></p>
+<p><strong>③ class 排列雜亂</strong>
+裝 Prettier 的 Tailwind 外掛會自動排序，看起來整齊很多。</p>
+<p><strong>④ 跟其他 UI 套件混用</strong>
+MUI、Ant Design 有自己的樣式系統，會跟 Tailwind 打架。<strong>我們不裝。</strong></p>
+<p><strong>⑤ 忘記設定 <code>content</code></strong></p>
+<pre><code class="language-js">content: ['./index.html', './src/**/*.{js,jsx}'],
+</code></pre>
+<p>沒設的話 Tailwind 不知道要掃哪些檔案，樣式全部不見。</p>
+<h2 id="_7">常見錯誤訊息對照</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>症狀</th>
+<th>原因</th>
+<th>怎麼修</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>樣式完全沒生效</td>
+<td><code>index.css</code> 沒引入 Tailwind，或 <code>content</code> 設錯</td>
+<td>檢查兩個地方</td>
+</tr>
+<tr>
+<td>某個 class 沒生效</td>
+<td>動態拼字串</td>
+<td>改成完整字串</td>
+</tr>
+<tr>
+<td>自訂顏色不能用</td>
+<td>config 沒設或沒重啟</td>
+<td>改 config 後要重跑 dev</td>
+</tr>
+<tr>
+<td>手機版破版</td>
+<td>有東西 <code>min-width</code> 太寬</td>
+<td>加 <code>min-w-0</code> 或 <code>flex-1</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="_8">術語對照表</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>白話</th>
+<th>正式名稱</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>一個 class 一個屬性</td>
+<td>Utility-first CSS</td>
+</tr>
+<tr>
+<td>手機優先</td>
+<td>mobile-first</td>
+</tr>
+<tr>
+<td>斷點</td>
+<td>breakpoint（<code>sm:</code> <code>md:</code> <code>lg:</code>）</td>
+</tr>
+<tr>
+<td>掃描原始碼找用到的 class</td>
+<td>JIT / content scanning</td>
+</tr>
+<tr>
+<td>自訂設定</td>
+<td><code>tailwind.config.js</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="_9">自我檢核</h2>
+<ol>
+<li><code>p-4</code> 是幾 px？</li>
+<li><code>md:p-6</code> 是什麼意思？</li>
+<li>為什麼 <code>text-${color}-600</code> 不會生效？</li>
+<li>class 太長的正確解法是什麼？</li>
+</ol>
+<h2 id="_10">學習資源</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>資源</th>
+<th>語言</th>
+<th>難度</th>
+<th>時間</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://tailwindcss.com/docs">Tailwind 官方文件</a></td>
+<td>英文（但都是查用）</td>
+<td>入門</td>
+<td>查用</td>
+</tr>
+<tr>
+<td><a href="https://www.tailwindcss.cn/docs">Tailwind CSS 中文文件</a></td>
+<td>簡中</td>
+<td>入門</td>
+<td>查用</td>
+</tr>
+<tr>
+<td>我們的 <a href="../../ui/11-設計系統.html">11-設計系統</a></td>
+<td>繁中</td>
+<td>入門</td>
+<td>20 分</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>Tailwind <strong>不需要從頭看到尾</strong>，把常用的十幾個記起來，其他的用官網搜尋就好。</p>
+</blockquote>
+<h2 id="_11">相關頁面</h2>
+<p><a href="../../tech/frontend/34-React與JSX.html">React 與 JSX</a>　<a href="../../ui/11-設計系統.html">設計系統</a>　<a href="../../tech/frontend/33-Vite.html">Vite</a></p><div class="pager"><a href="../../tech/frontend/38-ReactRouter.html"><div class="k">← 上一篇</div><div class="n">38 React Router</div></a><a class="next" href="../../tech/frontend/40-fetch串接API.html"><div class="k">下一篇 →</div><div class="n">40 fetch 串接後端 API</div></a></div>
+</article>
+<aside class="toc"><div class="tt">本頁目錄</div><a href="#_1">一句話</a><a href="#_2">想像一下</a><a href="#class">常用 class 對照表</a><a href="#_3">用我們自己的設計系統</a><a href="#_4">響應式：手機優先</a><a href="#_5">狀態變化</a><a href="#class_1">class 太長怎麼辦</a><a href="#15">15 分鐘動手小練習</a><a href="#_6">你會遇到的坑</a><a href="#_7">常見錯誤訊息對照</a><a href="#_8">術語對照表</a><a href="#_9">自我檢核</a><a href="#_10">學習資源</a><a href="#_11">相關頁面</a></aside>
+</div></div>
+</div>
+<script src="../../vendor/mermaid.min.js"></script>
+<script>
+mermaid.initialize({
+  startOnLoad: true, securityLevel: 'loose', theme: 'base',
+  fontFamily: '"Noto Sans TC","PingFang TC",system-ui,sans-serif',
+  themeVariables: {
+    background:'#FFFFFF',
+    primaryColor:'#FBE8E3', primaryTextColor:'#2B211C', primaryBorderColor:'#C8442E',
+    secondaryColor:'#FCF0DC', secondaryBorderColor:'#E8A33D',
+    tertiaryColor:'#F5EFE5', tertiaryBorderColor:'#E6DED2',
+    lineColor:'#9C8E84', textColor:'#2B211C',
+    mainBkg:'#FBE8E3', nodeBorder:'#C8442E', clusterBkg:'#FBF7F0', clusterBorder:'#E6DED2',
+    titleColor:'#2B211C', edgeLabelBackground:'#FBF7F0',
+    actorBkg:'#FBE8E3', actorBorder:'#C8442E', actorTextColor:'#2B211C',
+    signalColor:'#6B5D54', signalTextColor:'#2B211C',
+    labelBoxBkgColor:'#FCF0DC', labelBoxBorderColor:'#E8A33D', labelTextColor:'#2B211C',
+    loopTextColor:'#2B211C', noteBkgColor:'#FCF0DC', noteBorderColor:'#E8A33D', noteTextColor:'#2B211C',
+    activationBkgColor:'#E6DED2', activationBorderColor:'#9C8E84', sequenceNumberColor:'#FFFFFF',
+    altBackground:'#F5EFE5',
+    taskBkgColor:'#FBE8E3', taskBorderColor:'#C8442E', taskTextColor:'#2B211C',
+    taskTextOutsideColor:'#2B211C', taskTextDarkColor:'#2B211C',
+    activeTaskBkgColor:'#E8A33D', activeTaskBorderColor:'#C9862A',
+    doneTaskBkgColor:'#E4EFE7', doneTaskBorderColor:'#3F7A4E',
+    critBkgColor:'#C8442E', critBorderColor:'#A63522',
+    gridColor:'#E6DED2', todayLineColor:'#B3261E',
+    sectionBkgColor:'#FBF7F0', sectionBkgColor2:'#F5EFE5', altSectionBkgColor:'#FFFFFF',
+    classText:'#2B211C',
+    attributeBackgroundColorOdd:'#FFFFFF', attributeBackgroundColorEven:'#F5EFE5'
+  },
+  gantt:{barHeight:18,barGap:5,topPadding:52,leftPadding:180,fontSize:12},
+  mindmap:{padding:12},
+  sequence:{actorMargin:42,boxTextMargin:6,noteMargin:10,messageMargin:32,width:150},
+  er:{entityPadding:12,minEntityWidth:110}
+});
+</script>
+<script>document.addEventListener('click',function(e){var sb=document.getElementById('sb');if(window.innerWidth<=940&&sb.classList.contains('open')&&!sb.contains(e.target)&&!e.target.closest('.menubtn')){sb.classList.remove('open');}});</script>
+</body>
+</html>

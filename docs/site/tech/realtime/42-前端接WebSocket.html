@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>前端接 WebSocket · 火鍋店點餐系統文件</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand-700:#A63522; --brand-600:#C8442E; --brand-500:#DB5B42; --brand-100:#FBE8E3;
+  --accent-500:#E8A33D; --accent-100:#FCF0DC;
+  --bg:#FBF7F0; --surface:#FFFFFF; --surface-2:#F5EFE5; --line:#E6DED2;
+  --t900:#2B211C; --t600:#6B5D54; --t400:#9C8E84;
+  --ok:#3F7A4E; --ok-bg:#E4EFE7; --warn:#D98324; --bad:#B3261E;
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --serif:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --shadow:0 1px 2px rgba(43,33,28,.06),0 4px 12px rgba(43,33,28,.05);
+  --sidebar:280px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:var(--bg);color:var(--t900);font-family:var(--sans);
+  font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased}
+
+.layout{display:flex;min-height:100vh;align-items:flex-start}
+.sidebar{width:var(--sidebar);flex:0 0 var(--sidebar);position:sticky;top:0;height:100vh;
+  overflow-y:auto;background:var(--surface);border-right:1px solid var(--line);padding:22px 0 48px}
+.brand{padding:0 20px 16px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.brand a{text-decoration:none;color:inherit;display:block}
+.brand .logo{font-family:var(--serif);font-weight:900;font-size:18px;line-height:1.35;color:var(--brand-600)}
+.brand .sub{font-size:11.5px;color:var(--t400);margin-top:4px;letter-spacing:.02em}
+.navgroup{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--t400);
+  padding:15px 20px 5px}
+.sidebar a.nav{display:block;padding:6px 20px;color:var(--t600);text-decoration:none;
+  font-size:14px;border-left:3px solid transparent;line-height:1.5}
+.sidebar a.nav:hover{background:var(--brand-100);color:var(--brand-700)}
+.sidebar a.nav.active{background:var(--brand-100);color:var(--brand-700);
+  border-left-color:var(--brand-600);font-weight:700}
+.sidebar details{border-top:1px solid transparent}
+.sidebar details>summary{list-style:none;cursor:pointer;font-size:11px;font-weight:700;
+  letter-spacing:.1em;color:var(--t400);padding:12px 20px 5px;user-select:none}
+.sidebar details>summary::-webkit-details-marker{display:none}
+.sidebar details>summary::before{content:"▸ ";font-size:10px}
+.sidebar details[open]>summary::before{content:"▾ "}
+.sidebar details>summary:hover{color:var(--brand-600)}
+.sidebar .foot{padding:18px 20px;margin-top:14px;border-top:1px solid var(--line);
+  font-size:11.5px;color:var(--t400);line-height:1.7}
+
+.main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 32px 96px}
+.wrap{width:100%;max-width:1140px;display:flex;gap:36px;align-items:flex-start}
+article{flex:1;min-width:0;max-width:880px;padding-top:40px}
+.toc{width:196px;flex:0 0 196px;position:sticky;top:24px;padding-top:52px;font-size:12.5px;
+  max-height:calc(100vh - 60px);overflow-y:auto}
+.toc .tt{font-size:10.5px;letter-spacing:.1em;color:var(--t400);font-weight:700;margin-bottom:9px}
+.toc a{display:block;color:var(--t600);text-decoration:none;padding:3px 0 3px 10px;
+  border-left:2px solid var(--line);line-height:1.5}
+.toc a:hover{color:var(--brand-600);border-left-color:var(--brand-500)}
+
+.topbar{display:none;position:sticky;top:0;z-index:40;background:var(--surface);
+  border-bottom:1px solid var(--line);padding:10px 16px;align-items:center;gap:12px}
+.topbar .logo{font-family:var(--serif);font-weight:900;color:var(--brand-600);font-size:16px}
+.menubtn{background:var(--brand-600);color:#fff;border:0;border-radius:8px;height:40px;
+  padding:0 14px;font-size:15px;font-family:inherit;cursor:pointer}
+
+article h1{font-family:var(--serif);font-weight:900;font-size:32px;line-height:1.35;margin:0 0 10px}
+article h1+p{color:var(--t600)}
+article h2{font-family:var(--serif);font-weight:700;font-size:24px;line-height:1.45;
+  margin:50px 0 14px;padding-bottom:9px;border-bottom:2px solid var(--line)}
+article h3{font-weight:700;font-size:18.5px;margin:30px 0 10px}
+article h4{font-weight:700;font-size:16px;margin:22px 0 8px;color:var(--t600)}
+article p{margin:0 0 16px}
+article ul,article ol{margin:0 0 16px;padding-left:24px}
+article li{margin:5px 0}
+article a{color:var(--brand-600);text-decoration:none;border-bottom:1px solid rgba(200,68,46,.3)}
+article a:hover{border-bottom-color:var(--brand-600)}
+article a.gloss{color:var(--t900);border-bottom:1px dashed var(--accent-500);
+  background:linear-gradient(transparent 72%,var(--accent-100) 72%)}
+article a.gloss:hover{color:var(--brand-700);border-bottom-color:var(--brand-500)}
+article strong{font-weight:700;color:var(--t900)}
+article hr{border:0;border-top:1px solid var(--line);margin:42px 0}
+article img{max-width:100%;border-radius:12px}
+article details{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:12px 16px;margin:0 0 18px}
+article details>summary{cursor:pointer;font-weight:700;color:var(--brand-600)}
+
+article code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.87em;
+  background:var(--surface-2);padding:2px 6px;border-radius:5px;color:var(--brand-700);
+  word-break:break-word}
+article pre{background:#2B211C;color:#F5EFE5;padding:18px 20px;border-radius:12px;
+  overflow-x:auto;margin:0 0 18px;line-height:1.65;font-size:13.5px}
+article pre code{background:none;color:inherit;padding:0;font-size:inherit}
+
+blockquote{margin:0 0 20px;padding:14px 18px;background:var(--accent-100);
+  border-left:4px solid var(--accent-500);border-radius:0 10px 10px 0;color:var(--t600)}
+blockquote p:last-child{margin-bottom:0}
+blockquote strong{color:var(--t900)}
+
+.tablewrap{overflow-x:auto;margin:0 0 20px;border:1px solid var(--line);
+  border-radius:12px;background:var(--surface);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:420px}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--surface-2);font-weight:700;white-space:nowrap;color:var(--t900)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--brand-100)}
+td code,th code{white-space:nowrap}
+article li input[type=checkbox]{width:16px;height:16px;margin-right:6px;accent-color:var(--brand-600)}
+
+pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:22px;text-align:center;overflow-x:auto;box-shadow:var(--shadow);margin:0 0 22px;color:inherit}
+pre.mermaid svg{max-width:100%;height:auto}
+
+.hero{padding:52px 0 32px;border-bottom:1px solid var(--line);margin-bottom:32px}
+.hero .eyebrow{display:inline-block;background:var(--brand-100);color:var(--brand-700);
+  font-size:12.5px;font-weight:700;padding:5px 13px;border-radius:999px;letter-spacing:.04em}
+.hero h1{font-family:var(--serif);font-weight:900;font-size:40px;line-height:1.25;margin:18px 0 12px}
+.hero p{font-size:17px;color:var(--t600);max-width:680px;margin:0}
+.facts{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:10px 16px;font-size:13px;box-shadow:var(--shadow)}
+.fact b{display:block;font-family:var(--serif);font-size:19px;color:var(--brand-600);font-weight:900}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:13px;margin:18px 0 8px}
+.card{display:block;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:16px;text-decoration:none;color:inherit;box-shadow:var(--shadow);transition:.15s}
+.card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(43,33,28,.12);border-color:var(--brand-500)}
+.card .k{font-size:10.5px;letter-spacing:.09em;color:var(--t400);font-weight:700}
+.card .n{font-family:var(--serif);font-weight:700;font-size:17px;margin:5px 0 6px;color:var(--t900)}
+.card .d{font-size:13px;color:var(--t600);line-height:1.6}
+.callout{background:var(--brand-100);border:1px solid var(--brand-500);border-radius:12px;
+  padding:18px 20px;margin:24px 0}
+.callout .h{font-family:var(--serif);font-weight:700;font-size:17px;margin-bottom:6px;color:var(--brand-700)}
+.callout p{margin:0;color:var(--t600);font-size:14.5px}
+.pending{background:var(--accent-100);border-color:var(--accent-500)}
+.pending .h{color:#8A5B12}
+
+.pager{display:flex;gap:12px;margin-top:52px;padding-top:22px;border-top:1px solid var(--line)}
+.pager a{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:13px 16px;text-decoration:none;color:inherit;box-shadow:var(--shadow)}
+.pager a:hover{border-color:var(--brand-500)}
+.pager .k{font-size:11px;color:var(--t400);letter-spacing:.06em}
+.pager .n{font-weight:700;color:var(--brand-600);margin-top:3px;font-size:14.5px}
+.pager .next{text-align:right}
+
+@media(max-width:1200px){ .toc{display:none} }
+@media(max-width:940px){
+  .topbar{display:flex}
+  .layout{display:block}
+  .sidebar{position:fixed;left:0;top:0;height:100vh;z-index:50;transform:translateX(-100%);
+    transition:transform .2s;box-shadow:0 0 40px rgba(43,33,28,.2);width:286px}
+  .sidebar.open{transform:translateX(0)}
+  .main{padding:0 16px 72px}
+  article{padding-top:24px}
+  .hero{padding:30px 0 24px}
+  .hero h1{font-size:30px}
+  article h1{font-size:26px}
+  article h2{font-size:21px;margin-top:38px}
+  .pager{flex-direction:column}
+}
+@media print{
+  .sidebar,.toc,.topbar,.pager{display:none!important}
+  body{background:#fff}
+  .main{padding:0}
+  article{max-width:none}
+  article h2{page-break-after:avoid}
+  .tablewrap,pre.mermaid{box-shadow:none;page-break-inside:avoid}
+  a.gloss{background:none!important;border:0!important}
+}
+</style>
+</head>
+<body>
+<div class="topbar"><button class="menubtn" onclick="document.getElementById('sb').classList.toggle('open')">☰ 目錄</button><span class="logo">火鍋店點餐系統</span></div>
+<div class="layout">
+<nav class="sidebar" id="sb"><div class="brand"><a href="../../index.html"><div class="logo">火鍋店點餐系統</div><div class="sub">專案文件 · 69 頁</div></a></div><a class="nav" href="../../index.html">首頁</a><div class="navgroup">規格文件</div><a class="nav" href="../../spec/00-架構分層與技術選型.html">00 架構分層與技術選型</a><a class="nav" href="../../spec/01-專案總覽.html">01 專案總覽</a><a class="nav" href="../../spec/02-需求規格.html">02 需求規格：基礎與進階功能總表</a><a class="nav" href="../../spec/03-資料庫設計.html">03 資料庫設計</a><a class="nav" href="../../spec/04-API規格.html">04 API 規格</a><a class="nav" href="../../spec/05-開發流程與分工.html">05 開發流程與時程</a><a class="nav" href="../../spec/06-圖表總覽.html">06 圖表總覽</a><div class="navgroup">模組規格</div><a class="nav" href="../../spec/modules/M1-菜單與品項.html">M1 菜單與品項</a><a class="nav" href="../../spec/modules/M2-桌位開桌與候位.html">M2 桌位、開桌與候位</a><a class="nav" href="../../spec/modules/M3-點餐與服務鈴.html">M3 點餐與服務鈴</a><a class="nav" href="../../spec/modules/M4-出菜看板.html">M4 出菜看板（KDS）</a><a class="nav" href="../../spec/modules/M5-庫存.html">M5 庫存</a><a class="nav" href="../../spec/modules/M6-結帳.html">M6 結帳</a><a class="nav" href="../../spec/modules/M7-訂位.html">M7 訂位</a><a class="nav" href="../../spec/modules/M8-會員.html">M8 會員</a><div class="navgroup">UI 文件</div><a class="nav" href="../../ui/10-UI-UX規格.html">10 UI / UX 規格</a><a class="nav" href="../../ui/11-設計系統.html">11 設計系統</a><a class="nav" href="../../ui/12-AI-UI工具與提示詞.html">12 AI UI 工具與提示詞</a><div class="navgroup">技術總表</div><a class="nav" href="../../tech/00-技術總表.html">00 技術總表</a><details><summary>技術 · 團隊與工具（5）</summary><a class="nav" href="../../tech/team/01-命令列.html">01 命令列基本操作</a><a class="nav" href="../../tech/team/02-Git是什麼.html">02 Git 是什麼</a><a class="nav" href="../../tech/team/03-分支與合併.html">03 分支、合併與衝突</a><a class="nav" href="../../tech/team/04-GitHub與PR.html">04 GitHub 與 Pull Request</a><a class="nav" href="../../tech/team/05-Docker與Compose.html">05 Docker 與 Docker Compose</a></details><details><summary>技術 · 網頁運作原理（6）</summary><a class="nav" href="../../tech/web/06-前端後端在做什麼.html">06 前端與後端各在做什麼</a><a class="nav" href="../../tech/web/07-HTTP請求與回應.html">07 HTTP 請求與回應</a><a class="nav" href="../../tech/web/08-HTTP狀態碼.html">08 HTTP 狀態碼</a><a class="nav" href="../../tech/web/09-JSON.html">09 JSON</a><a class="nav" href="../../tech/web/10-REST-API設計.html">10 REST API 設計</a><a class="nav" href="../../tech/web/11-CORS跨來源.html">11 CORS 跨來源問題</a></details><details><summary>技術 · 後端（10）</summary><a class="nav" href="../../tech/backend/12-Java與JDK.html">12 Java 與 JDK</a><a class="nav" href="../../tech/backend/13-Maven.html">13 Maven 與相依套件</a><a class="nav" href="../../tech/backend/14-SpringBoot是什麼.html">14 Spring Boot 是什麼</a><a class="nav" href="../../tech/backend/15-依賴注入.html">15 依賴注入</a><a class="nav" href="../../tech/backend/16-三層架構.html">16 Controller / Service / Repository</a><a class="nav" href="../../tech/backend/17-Entity與DTO.html">17 Entity 與 DTO</a><a class="nav" href="../../tech/backend/18-全域例外處理.html">18 全域例外處理</a><a class="nav" href="../../tech/backend/19-Swagger.html">19 Swagger 自動產生 API 文件</a><a class="nav" href="../../tech/backend/20-SpringSecurity.html">20 Spring Security 基礎</a><a class="nav" href="../../tech/backend/21-JWT.html">21 JWT 與登入狀態</a></details><details><summary>技術 · 資料庫（8）</summary><a class="nav" href="../../tech/database/22-關聯式資料庫與SQL.html">22 關聯式資料庫與 SQL</a><a class="nav" href="../../tech/database/23-資料表設計.html">23 資料表設計</a><a class="nav" href="../../tech/database/24-索引.html">24 索引是什麼</a><a class="nav" href="../../tech/database/25-ORM與JPA.html">25 ORM 與 JPA</a><a class="nav" href="../../tech/database/26-JPA關聯對應.html">26 JPA 關聯對應</a><a class="nav" href="../../tech/database/27-交易Transaction.html">27 交易 Transaction</a><a class="nav" href="../../tech/database/28-鎖與併發.html">28 鎖與併發（防超賣）</a><a class="nav" href="../../tech/database/29-Flyway.html">29 Flyway 資料庫版本控管</a></details><details><summary>技術 · 前端（11）</summary><a class="nav" href="../../tech/frontend/30-現代JavaScript.html">30 現代 JavaScript 速成</a><a class="nav" href="../../tech/frontend/31-非同步與async.html">31 非同步與 async/await</a><a class="nav" href="../../tech/frontend/32-npm與套件.html">32 npm 與 node_modules</a><a class="nav" href="../../tech/frontend/33-Vite.html">33 Vite</a><a class="nav" href="../../tech/frontend/34-React與JSX.html">34 React 與 JSX</a><a class="nav" href="../../tech/frontend/35-Props與State.html">35 Props 與 State</a><a class="nav" href="../../tech/frontend/36-useState.html">36 useState</a><a class="nav" href="../../tech/frontend/37-useEffect.html">37 useEffect</a><a class="nav" href="../../tech/frontend/38-ReactRouter.html">38 React Router</a><a class="nav" href="../../tech/frontend/39-Tailwind.html">39 Tailwind CSS</a><a class="nav" href="../../tech/frontend/40-fetch串接API.html">40 fetch 串接後端 API</a></details><details open><summary>技術 · 即時與排程（4）</summary><a class="nav" href="../../tech/realtime/41-WebSocket與STOMP.html">41 WebSocket 與 STOMP</a><a class="nav active" href="../../tech/realtime/42-前端接WebSocket.html">42 前端接 WebSocket</a><a class="nav" href="../../tech/realtime/43-排程與Cron.html">43 排程任務與 Cron</a><a class="nav" href="../../tech/realtime/44-Redis.html">44 Redis</a></details><details><summary>技術 · 進階（2）</summary><a class="nav" href="../../tech/advanced/45-訊息佇列RabbitMQ.html">45 訊息佇列 RabbitMQ</a><a class="nav" href="../../tech/advanced/46-區間重疊與訂位排程.html">46 訂位排程的演算法</a></details><details><summary>技術 · 品質與部署（4）</summary><a class="nav" href="../../tech/quality/47-單元測試.html">47 單元測試 JUnit + Mockito</a><a class="nav" href="../../tech/quality/48-Testcontainers.html">48 Testcontainers</a><a class="nav" href="../../tech/quality/49-GitHubActions.html">49 GitHub Actions CI</a><a class="nav" href="../../tech/quality/50-部署上線.html">50 部署上線</a></details><div class="foot">由 Markdown 自動產生<br>改文件請編輯 <code>docs/</code> 下的 .md<br>再執行 <code>python3 docs/build_site.py</code></div></nav>
+<div class="main"><div class="wrap">
+<article>
+<h1 id="websocket">前端接 WebSocket</h1>
+<p><strong>難度</strong> ★★★☆☆　<strong>用在哪些模組</strong> M2、M3、M4、M5　<strong>哪幾週</strong> 第 3 週</p>
+<h2 id="_1">一句話</h2>
+<p>用 <code>@stomp/stompjs</code> 接上後端的喇叭，收到訊息就更新畫面。</p>
+<h2 id="_2">要裝什麼</h2>
+<pre><code class="language-bash">npm install @stomp/stompjs sockjs-client
+</code></pre>
+<h2 id="_3">最小的例子</h2>
+<pre><code class="language-js">import { Client } from '@stomp/stompjs';
+
+const client = new Client({
+  brokerURL: 'ws://localhost:8080/ws',
+  connectHeaders: { 'X-Session-Token': localStorage.getItem('sessionToken') },
+  reconnectDelay: 3000,                      // 斷線 3 秒後自動重連
+});
+
+client.onConnect = () =&gt; {
+  client.subscribe('/topic/session/1052', (msg) =&gt; {
+    const event = JSON.parse(msg.body);
+    console.log(event.type, event.payload);
+  });
+};
+
+client.activate();
+</code></pre>
+<p><strong>核心就這幾行。</strong> 剩下的是怎麼跟 <a class="gloss" href="../../tech/frontend/34-React與JSX.html" title="看這個技術的白話說明">React</a> 整合。</p>
+<h2 id="hook">包成一個 Hook（我們的做法）</h2>
+<pre><code class="language-jsx">// src/hooks/useStomp.js
+import { useEffect, useRef } from 'react';
+import { Client } from '@stomp/stompjs';
+
+export function useStomp({ topics, onEvent, onReconnect, enabled = true }) {
+  const clientRef = useRef(null);
+
+  useEffect(() =&gt; {
+    if (!enabled) return;
+
+    const client = new Client({
+      brokerURL: import.meta.env.VITE_WS_URL,
+      connectHeaders: {
+        'X-Session-Token': localStorage.getItem('sessionToken') ?? '',
+      },
+      reconnectDelay: 3000,
+      onConnect: () =&gt; {
+        topics.forEach(topic =&gt; {
+          client.subscribe(topic, (msg) =&gt; onEvent(JSON.parse(msg.body)));
+        });
+        onReconnect?.();          // ★ 每次（重新）連上都重抓完整資料
+      },
+      onStompError: (frame) =&gt; console.error('STOMP 錯誤', frame.headers['message']),
+    });
+
+    client.activate();
+    clientRef.current = client;
+
+    return () =&gt; { client.deactivate(); };     // ★ 離開頁面就斷線
+  }, [enabled, topics.join(','), onEvent, onReconnect]);
+
+  return clientRef;
+}
+</code></pre>
+<p>用起來：</p>
+<pre><code class="language-jsx">function TicketsPage() {
+  const [tickets, setTickets] = useState([]);
+  const { sessionId } = useContext(SessionContext);
+
+  const refetch = useCallback(async () =&gt; {
+    setTickets(await request('/dining-sessions/me/orders'));
+  }, []);
+
+  const handleEvent = useCallback((event) =&gt; {
+    switch (event.type) {
+      case 'NEW_TICKET':
+        setTickets(prev =&gt; [...prev, event.payload]);
+        break;
+      case 'ITEM_SERVED':
+        setTickets(prev =&gt; prev.map(t =&gt; applyServed(t, event.payload)));
+        break;
+      case 'TICKET_CANCELLED':
+        setTickets(prev =&gt; prev.filter(t =&gt; t.ticketId !== event.payload.ticketId));
+        break;
+      default:
+        refetch();          // 不認識的事件就整包重抓，最安全
+    }
+  }, [refetch]);
+
+  useStomp({
+    topics: [`/topic/session/${sessionId}`, '/topic/menu'],
+    onEvent: handleEvent,
+    onReconnect: refetch,           // ★ 關鍵
+  });
+
+  useEffect(() =&gt; { refetch(); }, [refetch]);   // 第一次進頁面先抓一次
+
+  return &lt;TicketList tickets={tickets} /&gt;;
+}
+</code></pre>
+<h2 id="_4">兩件一定要做的事</h2>
+<p><strong>① <code>onConnect</code> 裡一定要 <code>refetch()</code></strong></p>
+<p>每次連上（包含斷線後重連）都重抓一次完整資料。斷線那幾秒漏掉的東西，就靠這個補回來。</p>
+<p><strong>② <code>useEffect</code> 的 return 一定要 <code>deactivate()</code></strong></p>
+<p>不斷線的話，使用者換十次頁就有十條連線在跑。</p>
+<h2 id="_5">讓「即時」看得見</h2>
+<p>同步太快，demo 時評審反而看不出來。加一點視覺提示：</p>
+<pre><code class="language-jsx">// 新單進來時高亮 2 秒
+const [highlightId, setHighlightId] = useState(null);
+
+case 'NEW_TICKET':
+  setTickets(prev =&gt; [...prev, event.payload]);
+  setHighlightId(event.payload.ticketId);
+  setTimeout(() =&gt; setHighlightId(null), 2000);
+  break;
+</code></pre>
+<pre><code class="language-jsx">&lt;div className={ticket.ticketId === highlightId
+  ? 'animate-pulse ring-2 ring-brand-500' : ''}&gt;
+</code></pre>
+<p><strong>這個小動畫在 demo 時的效果比講十句話有用。</strong></p>
+<h2 id="_6">連線狀態指示</h2>
+<pre><code class="language-jsx">const [connected, setConnected] = useState(false);
+// client 設定裡：
+onConnect: () =&gt; { setConnected(true); ... }
+onWebSocketClose: () =&gt; setConnected(false);
+</code></pre>
+<pre><code class="language-jsx">{!connected &amp;&amp; (
+  &lt;div className=&quot;bg-warn-bg text-warn text-sm px-4 py-2&quot;&gt;
+    連線中斷，正在重新連線…
+  &lt;/div&gt;
+)}
+</code></pre>
+<p>使用者知道現在資料可能不是最新的，比默默失敗好。</p>
+<h2 id="15">15 分鐘動手小練習</h2>
+<p>接續 <a href="../../tech/realtime/41-WebSocket與STOMP.html">WebSocket 與 STOMP</a> 的後端練習：</p>
+<ol>
+<li>裝 <code>@stomp/stompjs</code></li>
+<li>寫一個最小的 <code>useStomp</code></li>
+<li>訂閱 <code>/topic/counter-test</code></li>
+<li>開兩個分頁，一個按按鈕，另一個要跟著變</li>
+<li><strong>把其中一個分頁的網路關掉幾秒再打開</strong> → 看它自動重連</li>
+<li><strong>把 <code>deactivate()</code> 註解掉</strong>，反覆換頁十次 → F12 Network 的 WS 分頁會看到十條連線</li>
+</ol>
+<p>第 5、6 步是本頁的重點。</p>
+<h2 id="_7">你會遇到的坑</h2>
+<p><strong>① 忘記 <code>deactivate()</code></strong>
+連線累積。</p>
+<p><strong>② 沒有在重連後重抓</strong>
+斷線期間的更新永遠遺失，畫面跟資料庫對不起來。</p>
+<p><strong>③ 在 <code>onConnect</code> 之前就 <code>subscribe</code> 或 <code>publish</code></strong>
+會噴錯。所有操作都要在 <code>onConnect</code> 裡面。</p>
+<p><strong>④ 依賴陣列放了每次都變的東西</strong>
+<code>topics: ['/topic/a']</code> 這個陣列每次渲染都是新的 → effect 一直重跑 → 連線一直斷開重連。
+→ 用 <code>useMemo</code> 或把 <code>topics.join(',')</code> 放進依賴。</p>
+<p><strong>⑤ 以為有 <a class="gloss" href="../../tech/realtime/41-WebSocket與STOMP.html" title="看這個技術的白話說明">WebSocket</a> 就不用初次抓資料</strong>
+WebSocket 只推「之後發生的事」。進頁面時的現有資料還是要用 API 抓。</p>
+<p><strong>⑥ 正式環境網址寫死 <code>ws://</code></strong>
+HTTPS 網站只能用 <code>wss://</code>。
+→ 用環境變數。</p>
+<h2 id="_8">常見錯誤訊息對照</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>你會看到</th>
+<th>中文意思</th>
+<th>怎麼修</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>WebSocket connection failed</code></td>
+<td>連不上</td>
+<td>後端沒開、網址錯、<a class="gloss" href="../../tech/web/11-CORS跨來源.html" title="看這個技術的白話說明">CORS</a> 沒設</td>
+</tr>
+<tr>
+<td><code>Mixed Content: ... was loaded over HTTPS, but attempted to connect to ws://</code></td>
+<td>HTTPS 頁面用了不安全的 ws</td>
+<td>改成 <code>wss://</code></td>
+</tr>
+<tr>
+<td>一直重連</td>
+<td>握手驗證失敗</td>
+<td>檢查 token 有沒有帶對</td>
+</tr>
+<tr>
+<td>畫面更新但資料不對</td>
+<td>事件處理邏輯有問題</td>
+<td>不認識的事件就整包 re<a class="gloss" href="../../tech/frontend/40-fetch串接API.html" title="看這個技術的白話說明">fetch</a></td>
+</tr>
+<tr>
+<td>換頁後還在收訊息</td>
+<td>沒 deactivate</td>
+<td>檢查 <a class="gloss" href="../../tech/frontend/37-useEffect.html" title="看這個技術的白話說明">useEffect</a> 的 return</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="_9">術語對照表</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>白話</th>
+<th>正式名稱</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>接電話的客戶端</td>
+<td><a class="gloss" href="../../tech/realtime/41-WebSocket與STOMP.html" title="看這個技術的白話說明">STOMP</a> Client</td>
+</tr>
+<tr>
+<td>訂閱喇叭</td>
+<td><code>subscribe</code></td>
+</tr>
+<tr>
+<td>自動重撥</td>
+<td><code>reconnectDelay</code></td>
+</tr>
+<tr>
+<td>掛電話</td>
+<td><code>deactivate()</code></td>
+</tr>
+<tr>
+<td>安全的 WebSocket</td>
+<td><code>wss://</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="_10">自我檢核</h2>
+<ol>
+<li>為什麼 <code>onConnect</code> 裡要呼叫 <code>refetch()</code>？</li>
+<li>不寫 <code>deactivate()</code> 會發生什麼？</li>
+<li>有了 WebSocket，進頁面時還需要用 API 抓一次資料嗎？</li>
+<li>HTTPS 的網站要用 <code>ws://</code> 還是 <code>wss://</code>？</li>
+</ol>
+<h2 id="_11">學習資源</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>資源</th>
+<th>語言</th>
+<th>難度</th>
+<th>時間</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://stomp-js.github.io/">@stomp/stompjs 官方文件</a></td>
+<td>英文</td>
+<td>中階</td>
+<td>25 分</td>
+</tr>
+<tr>
+<td><a href="https://hackmd.io/@Heidi-Liu/javascript-websocket">淺談 WebSocket 協定（含前端實作）</a></td>
+<td>繁中</td>
+<td>入門</td>
+<td>30 分</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="_12">相關頁面</h2>
+<p><a href="../../tech/realtime/41-WebSocket與STOMP.html">WebSocket 與 STOMP</a>　<a href="../../tech/frontend/37-useEffect.html">useEffect</a>　<a href="../../tech/frontend/40-fetch串接API.html">fetch 串接後端 API</a></p><div class="pager"><a href="../../tech/realtime/41-WebSocket與STOMP.html"><div class="k">← 上一篇</div><div class="n">41 WebSocket 與 STOMP</div></a><a class="next" href="../../tech/realtime/43-排程與Cron.html"><div class="k">下一篇 →</div><div class="n">43 排程任務與 Cron</div></a></div>
+</article>
+<aside class="toc"><div class="tt">本頁目錄</div><a href="#_1">一句話</a><a href="#_2">要裝什麼</a><a href="#_3">最小的例子</a><a href="#hook">包成一個 Hook（我們的做法）</a><a href="#_4">兩件一定要做的事</a><a href="#_5">讓「即時」看得見</a><a href="#_6">連線狀態指示</a><a href="#15">15 分鐘動手小練習</a><a href="#_7">你會遇到的坑</a><a href="#_8">常見錯誤訊息對照</a><a href="#_9">術語對照表</a><a href="#_10">自我檢核</a><a href="#_11">學習資源</a><a href="#_12">相關頁面</a></aside>
+</div></div>
+</div>
+<script src="../../vendor/mermaid.min.js"></script>
+<script>
+mermaid.initialize({
+  startOnLoad: true, securityLevel: 'loose', theme: 'base',
+  fontFamily: '"Noto Sans TC","PingFang TC",system-ui,sans-serif',
+  themeVariables: {
+    background:'#FFFFFF',
+    primaryColor:'#FBE8E3', primaryTextColor:'#2B211C', primaryBorderColor:'#C8442E',
+    secondaryColor:'#FCF0DC', secondaryBorderColor:'#E8A33D',
+    tertiaryColor:'#F5EFE5', tertiaryBorderColor:'#E6DED2',
+    lineColor:'#9C8E84', textColor:'#2B211C',
+    mainBkg:'#FBE8E3', nodeBorder:'#C8442E', clusterBkg:'#FBF7F0', clusterBorder:'#E6DED2',
+    titleColor:'#2B211C', edgeLabelBackground:'#FBF7F0',
+    actorBkg:'#FBE8E3', actorBorder:'#C8442E', actorTextColor:'#2B211C',
+    signalColor:'#6B5D54', signalTextColor:'#2B211C',
+    labelBoxBkgColor:'#FCF0DC', labelBoxBorderColor:'#E8A33D', labelTextColor:'#2B211C',
+    loopTextColor:'#2B211C', noteBkgColor:'#FCF0DC', noteBorderColor:'#E8A33D', noteTextColor:'#2B211C',
+    activationBkgColor:'#E6DED2', activationBorderColor:'#9C8E84', sequenceNumberColor:'#FFFFFF',
+    altBackground:'#F5EFE5',
+    taskBkgColor:'#FBE8E3', taskBorderColor:'#C8442E', taskTextColor:'#2B211C',
+    taskTextOutsideColor:'#2B211C', taskTextDarkColor:'#2B211C',
+    activeTaskBkgColor:'#E8A33D', activeTaskBorderColor:'#C9862A',
+    doneTaskBkgColor:'#E4EFE7', doneTaskBorderColor:'#3F7A4E',
+    critBkgColor:'#C8442E', critBorderColor:'#A63522',
+    gridColor:'#E6DED2', todayLineColor:'#B3261E',
+    sectionBkgColor:'#FBF7F0', sectionBkgColor2:'#F5EFE5', altSectionBkgColor:'#FFFFFF',
+    classText:'#2B211C',
+    attributeBackgroundColorOdd:'#FFFFFF', attributeBackgroundColorEven:'#F5EFE5'
+  },
+  gantt:{barHeight:18,barGap:5,topPadding:52,leftPadding:180,fontSize:12},
+  mindmap:{padding:12},
+  sequence:{actorMargin:42,boxTextMargin:6,noteMargin:10,messageMargin:32,width:150},
+  er:{entityPadding:12,minEntityWidth:110}
+});
+</script>
+<script>document.addEventListener('click',function(e){var sb=document.getElementById('sb');if(window.innerWidth<=940&&sb.classList.contains('open')&&!sb.contains(e.target)&&!e.target.closest('.menubtn')){sb.classList.remove('open');}});</script>
+</body>
+</html>

@@ -1,0 +1,1321 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>04 API 規格 · 火鍋店點餐系統文件</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand-700:#A63522; --brand-600:#C8442E; --brand-500:#DB5B42; --brand-100:#FBE8E3;
+  --accent-500:#E8A33D; --accent-100:#FCF0DC;
+  --bg:#FBF7F0; --surface:#FFFFFF; --surface-2:#F5EFE5; --line:#E6DED2;
+  --t900:#2B211C; --t600:#6B5D54; --t400:#9C8E84;
+  --ok:#3F7A4E; --ok-bg:#E4EFE7; --warn:#D98324; --bad:#B3261E;
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --serif:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --shadow:0 1px 2px rgba(43,33,28,.06),0 4px 12px rgba(43,33,28,.05);
+  --sidebar:280px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:var(--bg);color:var(--t900);font-family:var(--sans);
+  font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased}
+
+.layout{display:flex;min-height:100vh;align-items:flex-start}
+.sidebar{width:var(--sidebar);flex:0 0 var(--sidebar);position:sticky;top:0;height:100vh;
+  overflow-y:auto;background:var(--surface);border-right:1px solid var(--line);padding:22px 0 48px}
+.brand{padding:0 20px 16px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.brand a{text-decoration:none;color:inherit;display:block}
+.brand .logo{font-family:var(--serif);font-weight:900;font-size:18px;line-height:1.35;color:var(--brand-600)}
+.brand .sub{font-size:11.5px;color:var(--t400);margin-top:4px;letter-spacing:.02em}
+.navgroup{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--t400);
+  padding:15px 20px 5px}
+.sidebar a.nav{display:block;padding:6px 20px;color:var(--t600);text-decoration:none;
+  font-size:14px;border-left:3px solid transparent;line-height:1.5}
+.sidebar a.nav:hover{background:var(--brand-100);color:var(--brand-700)}
+.sidebar a.nav.active{background:var(--brand-100);color:var(--brand-700);
+  border-left-color:var(--brand-600);font-weight:700}
+.sidebar details{border-top:1px solid transparent}
+.sidebar details>summary{list-style:none;cursor:pointer;font-size:11px;font-weight:700;
+  letter-spacing:.1em;color:var(--t400);padding:12px 20px 5px;user-select:none}
+.sidebar details>summary::-webkit-details-marker{display:none}
+.sidebar details>summary::before{content:"▸ ";font-size:10px}
+.sidebar details[open]>summary::before{content:"▾ "}
+.sidebar details>summary:hover{color:var(--brand-600)}
+.sidebar .foot{padding:18px 20px;margin-top:14px;border-top:1px solid var(--line);
+  font-size:11.5px;color:var(--t400);line-height:1.7}
+
+.main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 32px 96px}
+.wrap{width:100%;max-width:1140px;display:flex;gap:36px;align-items:flex-start}
+article{flex:1;min-width:0;max-width:880px;padding-top:40px}
+.toc{width:196px;flex:0 0 196px;position:sticky;top:24px;padding-top:52px;font-size:12.5px;
+  max-height:calc(100vh - 60px);overflow-y:auto}
+.toc .tt{font-size:10.5px;letter-spacing:.1em;color:var(--t400);font-weight:700;margin-bottom:9px}
+.toc a{display:block;color:var(--t600);text-decoration:none;padding:3px 0 3px 10px;
+  border-left:2px solid var(--line);line-height:1.5}
+.toc a:hover{color:var(--brand-600);border-left-color:var(--brand-500)}
+
+.topbar{display:none;position:sticky;top:0;z-index:40;background:var(--surface);
+  border-bottom:1px solid var(--line);padding:10px 16px;align-items:center;gap:12px}
+.topbar .logo{font-family:var(--serif);font-weight:900;color:var(--brand-600);font-size:16px}
+.menubtn{background:var(--brand-600);color:#fff;border:0;border-radius:8px;height:40px;
+  padding:0 14px;font-size:15px;font-family:inherit;cursor:pointer}
+
+article h1{font-family:var(--serif);font-weight:900;font-size:32px;line-height:1.35;margin:0 0 10px}
+article h1+p{color:var(--t600)}
+article h2{font-family:var(--serif);font-weight:700;font-size:24px;line-height:1.45;
+  margin:50px 0 14px;padding-bottom:9px;border-bottom:2px solid var(--line)}
+article h3{font-weight:700;font-size:18.5px;margin:30px 0 10px}
+article h4{font-weight:700;font-size:16px;margin:22px 0 8px;color:var(--t600)}
+article p{margin:0 0 16px}
+article ul,article ol{margin:0 0 16px;padding-left:24px}
+article li{margin:5px 0}
+article a{color:var(--brand-600);text-decoration:none;border-bottom:1px solid rgba(200,68,46,.3)}
+article a:hover{border-bottom-color:var(--brand-600)}
+article a.gloss{color:var(--t900);border-bottom:1px dashed var(--accent-500);
+  background:linear-gradient(transparent 72%,var(--accent-100) 72%)}
+article a.gloss:hover{color:var(--brand-700);border-bottom-color:var(--brand-500)}
+article strong{font-weight:700;color:var(--t900)}
+article hr{border:0;border-top:1px solid var(--line);margin:42px 0}
+article img{max-width:100%;border-radius:12px}
+article details{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:12px 16px;margin:0 0 18px}
+article details>summary{cursor:pointer;font-weight:700;color:var(--brand-600)}
+
+article code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.87em;
+  background:var(--surface-2);padding:2px 6px;border-radius:5px;color:var(--brand-700);
+  word-break:break-word}
+article pre{background:#2B211C;color:#F5EFE5;padding:18px 20px;border-radius:12px;
+  overflow-x:auto;margin:0 0 18px;line-height:1.65;font-size:13.5px}
+article pre code{background:none;color:inherit;padding:0;font-size:inherit}
+
+blockquote{margin:0 0 20px;padding:14px 18px;background:var(--accent-100);
+  border-left:4px solid var(--accent-500);border-radius:0 10px 10px 0;color:var(--t600)}
+blockquote p:last-child{margin-bottom:0}
+blockquote strong{color:var(--t900)}
+
+.tablewrap{overflow-x:auto;margin:0 0 20px;border:1px solid var(--line);
+  border-radius:12px;background:var(--surface);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:420px}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--surface-2);font-weight:700;white-space:nowrap;color:var(--t900)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--brand-100)}
+td code,th code{white-space:nowrap}
+article li input[type=checkbox]{width:16px;height:16px;margin-right:6px;accent-color:var(--brand-600)}
+
+pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:22px;text-align:center;overflow-x:auto;box-shadow:var(--shadow);margin:0 0 22px;color:inherit}
+pre.mermaid svg{max-width:100%;height:auto}
+
+.hero{padding:52px 0 32px;border-bottom:1px solid var(--line);margin-bottom:32px}
+.hero .eyebrow{display:inline-block;background:var(--brand-100);color:var(--brand-700);
+  font-size:12.5px;font-weight:700;padding:5px 13px;border-radius:999px;letter-spacing:.04em}
+.hero h1{font-family:var(--serif);font-weight:900;font-size:40px;line-height:1.25;margin:18px 0 12px}
+.hero p{font-size:17px;color:var(--t600);max-width:680px;margin:0}
+.facts{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:10px 16px;font-size:13px;box-shadow:var(--shadow)}
+.fact b{display:block;font-family:var(--serif);font-size:19px;color:var(--brand-600);font-weight:900}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:13px;margin:18px 0 8px}
+.card{display:block;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:16px;text-decoration:none;color:inherit;box-shadow:var(--shadow);transition:.15s}
+.card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(43,33,28,.12);border-color:var(--brand-500)}
+.card .k{font-size:10.5px;letter-spacing:.09em;color:var(--t400);font-weight:700}
+.card .n{font-family:var(--serif);font-weight:700;font-size:17px;margin:5px 0 6px;color:var(--t900)}
+.card .d{font-size:13px;color:var(--t600);line-height:1.6}
+.callout{background:var(--brand-100);border:1px solid var(--brand-500);border-radius:12px;
+  padding:18px 20px;margin:24px 0}
+.callout .h{font-family:var(--serif);font-weight:700;font-size:17px;margin-bottom:6px;color:var(--brand-700)}
+.callout p{margin:0;color:var(--t600);font-size:14.5px}
+.pending{background:var(--accent-100);border-color:var(--accent-500)}
+.pending .h{color:#8A5B12}
+
+.pager{display:flex;gap:12px;margin-top:52px;padding-top:22px;border-top:1px solid var(--line)}
+.pager a{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:13px 16px;text-decoration:none;color:inherit;box-shadow:var(--shadow)}
+.pager a:hover{border-color:var(--brand-500)}
+.pager .k{font-size:11px;color:var(--t400);letter-spacing:.06em}
+.pager .n{font-weight:700;color:var(--brand-600);margin-top:3px;font-size:14.5px}
+.pager .next{text-align:right}
+
+@media(max-width:1200px){ .toc{display:none} }
+@media(max-width:940px){
+  .topbar{display:flex}
+  .layout{display:block}
+  .sidebar{position:fixed;left:0;top:0;height:100vh;z-index:50;transform:translateX(-100%);
+    transition:transform .2s;box-shadow:0 0 40px rgba(43,33,28,.2);width:286px}
+  .sidebar.open{transform:translateX(0)}
+  .main{padding:0 16px 72px}
+  article{padding-top:24px}
+  .hero{padding:30px 0 24px}
+  .hero h1{font-size:30px}
+  article h1{font-size:26px}
+  article h2{font-size:21px;margin-top:38px}
+  .pager{flex-direction:column}
+}
+@media print{
+  .sidebar,.toc,.topbar,.pager{display:none!important}
+  body{background:#fff}
+  .main{padding:0}
+  article{max-width:none}
+  article h2{page-break-after:avoid}
+  .tablewrap,pre.mermaid{box-shadow:none;page-break-inside:avoid}
+  a.gloss{background:none!important;border:0!important}
+}
+</style>
+</head>
+<body>
+<div class="topbar"><button class="menubtn" onclick="document.getElementById('sb').classList.toggle('open')">☰ 目錄</button><span class="logo">火鍋店點餐系統</span></div>
+<div class="layout">
+<nav class="sidebar" id="sb"><div class="brand"><a href="../index.html"><div class="logo">火鍋店點餐系統</div><div class="sub">專案文件 · 69 頁</div></a></div><a class="nav" href="../index.html">首頁</a><div class="navgroup">規格文件</div><a class="nav" href="../spec/00-架構分層與技術選型.html">00 架構分層與技術選型</a><a class="nav" href="../spec/01-專案總覽.html">01 專案總覽</a><a class="nav" href="../spec/02-需求規格.html">02 需求規格：基礎與進階功能總表</a><a class="nav" href="../spec/03-資料庫設計.html">03 資料庫設計</a><a class="nav active" href="../spec/04-API規格.html">04 API 規格</a><a class="nav" href="../spec/05-開發流程與分工.html">05 開發流程與時程</a><a class="nav" href="../spec/06-圖表總覽.html">06 圖表總覽</a><div class="navgroup">模組規格</div><a class="nav" href="../spec/modules/M1-菜單與品項.html">M1 菜單與品項</a><a class="nav" href="../spec/modules/M2-桌位開桌與候位.html">M2 桌位、開桌與候位</a><a class="nav" href="../spec/modules/M3-點餐與服務鈴.html">M3 點餐與服務鈴</a><a class="nav" href="../spec/modules/M4-出菜看板.html">M4 出菜看板（KDS）</a><a class="nav" href="../spec/modules/M5-庫存.html">M5 庫存</a><a class="nav" href="../spec/modules/M6-結帳.html">M6 結帳</a><a class="nav" href="../spec/modules/M7-訂位.html">M7 訂位</a><a class="nav" href="../spec/modules/M8-會員.html">M8 會員</a><div class="navgroup">UI 文件</div><a class="nav" href="../ui/10-UI-UX規格.html">10 UI / UX 規格</a><a class="nav" href="../ui/11-設計系統.html">11 設計系統</a><a class="nav" href="../ui/12-AI-UI工具與提示詞.html">12 AI UI 工具與提示詞</a><div class="navgroup">技術總表</div><a class="nav" href="../tech/00-技術總表.html">00 技術總表</a><details><summary>技術 · 團隊與工具（5）</summary><a class="nav" href="../tech/team/01-命令列.html">01 命令列基本操作</a><a class="nav" href="../tech/team/02-Git是什麼.html">02 Git 是什麼</a><a class="nav" href="../tech/team/03-分支與合併.html">03 分支、合併與衝突</a><a class="nav" href="../tech/team/04-GitHub與PR.html">04 GitHub 與 Pull Request</a><a class="nav" href="../tech/team/05-Docker與Compose.html">05 Docker 與 Docker Compose</a></details><details><summary>技術 · 網頁運作原理（6）</summary><a class="nav" href="../tech/web/06-前端後端在做什麼.html">06 前端與後端各在做什麼</a><a class="nav" href="../tech/web/07-HTTP請求與回應.html">07 HTTP 請求與回應</a><a class="nav" href="../tech/web/08-HTTP狀態碼.html">08 HTTP 狀態碼</a><a class="nav" href="../tech/web/09-JSON.html">09 JSON</a><a class="nav" href="../tech/web/10-REST-API設計.html">10 REST API 設計</a><a class="nav" href="../tech/web/11-CORS跨來源.html">11 CORS 跨來源問題</a></details><details><summary>技術 · 後端（10）</summary><a class="nav" href="../tech/backend/12-Java與JDK.html">12 Java 與 JDK</a><a class="nav" href="../tech/backend/13-Maven.html">13 Maven 與相依套件</a><a class="nav" href="../tech/backend/14-SpringBoot是什麼.html">14 Spring Boot 是什麼</a><a class="nav" href="../tech/backend/15-依賴注入.html">15 依賴注入</a><a class="nav" href="../tech/backend/16-三層架構.html">16 Controller / Service / Repository</a><a class="nav" href="../tech/backend/17-Entity與DTO.html">17 Entity 與 DTO</a><a class="nav" href="../tech/backend/18-全域例外處理.html">18 全域例外處理</a><a class="nav" href="../tech/backend/19-Swagger.html">19 Swagger 自動產生 API 文件</a><a class="nav" href="../tech/backend/20-SpringSecurity.html">20 Spring Security 基礎</a><a class="nav" href="../tech/backend/21-JWT.html">21 JWT 與登入狀態</a></details><details><summary>技術 · 資料庫（8）</summary><a class="nav" href="../tech/database/22-關聯式資料庫與SQL.html">22 關聯式資料庫與 SQL</a><a class="nav" href="../tech/database/23-資料表設計.html">23 資料表設計</a><a class="nav" href="../tech/database/24-索引.html">24 索引是什麼</a><a class="nav" href="../tech/database/25-ORM與JPA.html">25 ORM 與 JPA</a><a class="nav" href="../tech/database/26-JPA關聯對應.html">26 JPA 關聯對應</a><a class="nav" href="../tech/database/27-交易Transaction.html">27 交易 Transaction</a><a class="nav" href="../tech/database/28-鎖與併發.html">28 鎖與併發（防超賣）</a><a class="nav" href="../tech/database/29-Flyway.html">29 Flyway 資料庫版本控管</a></details><details><summary>技術 · 前端（11）</summary><a class="nav" href="../tech/frontend/30-現代JavaScript.html">30 現代 JavaScript 速成</a><a class="nav" href="../tech/frontend/31-非同步與async.html">31 非同步與 async/await</a><a class="nav" href="../tech/frontend/32-npm與套件.html">32 npm 與 node_modules</a><a class="nav" href="../tech/frontend/33-Vite.html">33 Vite</a><a class="nav" href="../tech/frontend/34-React與JSX.html">34 React 與 JSX</a><a class="nav" href="../tech/frontend/35-Props與State.html">35 Props 與 State</a><a class="nav" href="../tech/frontend/36-useState.html">36 useState</a><a class="nav" href="../tech/frontend/37-useEffect.html">37 useEffect</a><a class="nav" href="../tech/frontend/38-ReactRouter.html">38 React Router</a><a class="nav" href="../tech/frontend/39-Tailwind.html">39 Tailwind CSS</a><a class="nav" href="../tech/frontend/40-fetch串接API.html">40 fetch 串接後端 API</a></details><details><summary>技術 · 即時與排程（4）</summary><a class="nav" href="../tech/realtime/41-WebSocket與STOMP.html">41 WebSocket 與 STOMP</a><a class="nav" href="../tech/realtime/42-前端接WebSocket.html">42 前端接 WebSocket</a><a class="nav" href="../tech/realtime/43-排程與Cron.html">43 排程任務與 Cron</a><a class="nav" href="../tech/realtime/44-Redis.html">44 Redis</a></details><details><summary>技術 · 進階（2）</summary><a class="nav" href="../tech/advanced/45-訊息佇列RabbitMQ.html">45 訊息佇列 RabbitMQ</a><a class="nav" href="../tech/advanced/46-區間重疊與訂位排程.html">46 訂位排程的演算法</a></details><details><summary>技術 · 品質與部署（4）</summary><a class="nav" href="../tech/quality/47-單元測試.html">47 單元測試 JUnit + Mockito</a><a class="nav" href="../tech/quality/48-Testcontainers.html">48 Testcontainers</a><a class="nav" href="../tech/quality/49-GitHubActions.html">49 GitHub Actions CI</a><a class="nav" href="../tech/quality/50-部署上線.html">50 部署上線</a></details><div class="foot">由 Markdown 自動產生<br>改文件請編輯 <code>docs/</code> 下的 .md<br>再執行 <code>python3 docs/build_site.py</code></div></nav>
+<div class="main"><div class="wrap">
+<article>
+<h1 id="04-api">04 API 規格</h1>
+<blockquote>
+<p>本文件是前後端的<strong>合約</strong>。實作後以 <a class="gloss" href="../tech/backend/19-Swagger.html" title="看這個技術的白話說明">Swagger</a> UI（<code>/swagger-ui.html</code>）為單一真實來源；本文件描述設計原則與端點總表。
+不熟悉 REST 的人先看 <a href="../tech/web/10-REST-API設計.html">REST API 設計</a> 和 <a href="../tech/web/08-HTTP狀態碼.html">HTTP 狀態碼</a>。</p>
+</blockquote>
+<h2 id="1">1. 通用約定</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>項目</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Base URL</td>
+<td><code>/api</code></td>
+</tr>
+<tr>
+<td>格式</td>
+<td><code>application/json; charset=utf-8</code></td>
+</tr>
+<tr>
+<td>時間</td>
+<td>ISO 8601，例 <code>2026-09-13T18:30:00+08:00</code></td>
+</tr>
+<tr>
+<td>金額</td>
+<td>數字，兩位小數</td>
+</tr>
+<tr>
+<td><a class="gloss" href="../tech/web/09-JSON.html" title="看這個技術的白話說明">JSON</a> 命名</td>
+<td><code>camelCase</code></td>
+</tr>
+<tr>
+<td>網址命名</td>
+<td>小寫 + 連字號（<code>/dining-sessions</code>）</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="11">1.1 成功回應</h3>
+<p><strong>直接回傳資料本身</strong>，不包一層 <code>{success, data}</code>。分頁用 Spring Data <code>Page</code> 的預設結構。</p>
+<h3 id="12">1.2 錯誤回應（統一格式）</h3>
+<p>由 <a href="../tech/backend/18-全域例外處理.html"><code>@RestControllerAdvice</code></a> 全域處理，<strong>所有錯誤都長這樣</strong>：</p>
+<pre><code class="language-json">{
+  &quot;timestamp&quot;: &quot;2026-09-13T18:30:00+08:00&quot;,
+  &quot;status&quot;: 409,
+  &quot;code&quot;: &quot;ITEM_SOLD_OUT&quot;,
+  &quot;message&quot;: &quot;部分品項已售完，請調整後重新送出&quot;,
+  &quot;path&quot;: &quot;/api/dining-sessions/me/orders&quot;,
+  &quot;details&quot;: [
+    { &quot;field&quot;: &quot;menuItemId&quot;, &quot;message&quot;: &quot;美國牛五花 庫存不足（剩 1）&quot;, &quot;value&quot;: 12 }
+  ]
+}
+</code></pre>
+<h3 id="13">1.3 錯誤碼表</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>HTTP</th>
+<th>code</th>
+<th>何時發生</th>
+<th>前端該做什麼</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>400</td>
+<td><code>VALIDATION_FAILED</code></td>
+<td>欄位驗證失敗</td>
+<td>在欄位下顯示 <code>details</code> 訊息</td>
+</tr>
+<tr>
+<td>400</td>
+<td><code>SOUP_BASE_REQUIRED</code></td>
+<td>第一單沒有鍋底</td>
+<td>提示「請先選擇鍋底」</td>
+</tr>
+<tr>
+<td>400</td>
+<td><code>OPTION_REQUIRED</code></td>
+<td>必選群組沒選</td>
+<td>標出是哪個群組</td>
+</tr>
+<tr>
+<td>401</td>
+<td><code>UNAUTHORIZED</code></td>
+<td>未登入或 <a class="gloss" href="../tech/backend/21-JWT.html" title="看這個技術的白話說明">JWT</a> 失效</td>
+<td>導回登入頁</td>
+</tr>
+<tr>
+<td>401</td>
+<td><code>INVALID_SESSION_TOKEN</code></td>
+<td>用餐權杖失效（已結帳或取消）</td>
+<td>清除 localStorage，導回掃碼頁</td>
+</tr>
+<tr>
+<td>403</td>
+<td><code>FORBIDDEN</code></td>
+<td>角色權限不足</td>
+<td>顯示「權限不足」</td>
+</tr>
+<tr>
+<td>404</td>
+<td><code>NOT_FOUND</code></td>
+<td>資源不存在</td>
+<td>顯示查無資料</td>
+</tr>
+<tr>
+<td>409</td>
+<td><code>ITEM_SOLD_OUT</code></td>
+<td>送出點餐時品項已售完</td>
+<td><strong>標紅該品項，整張單未成立</strong></td>
+</tr>
+<tr>
+<td>409</td>
+<td><code>TABLE_NOT_OPENED</code></td>
+<td>掃碼時該桌尚未開桌</td>
+<td>顯示「請洽櫃檯帶位」</td>
+</tr>
+<tr>
+<td>409</td>
+<td><code>TABLE_OCCUPIED</code></td>
+<td>開桌時該桌已在使用</td>
+<td>顯示「此桌使用中」</td>
+</tr>
+<tr>
+<td>409</td>
+<td><code>SESSION_LOCKED</code></td>
+<td>已進入結帳，不可加點</td>
+<td>顯示「結帳中無法加點」</td>
+</tr>
+<tr>
+<td>409</td>
+<td><code>ALREADY_CHECKING_OUT</code></td>
+<td>重複要求結帳</td>
+<td>直接導到結帳頁</td>
+</tr>
+<tr>
+<td>409</td>
+<td><code>SLOT_UNAVAILABLE</code></td>
+<td>訂位時段已客滿</td>
+<td>重新載入可訂時段</td>
+</tr>
+<tr>
+<td>409</td>
+<td><code>ALREADY_ATTACHED</code></td>
+<td>此次用餐已綁定會員</td>
+<td>—</td>
+</tr>
+<tr>
+<td>422</td>
+<td><code>PAYMENT_FAILED</code></td>
+<td>模擬付款失敗（5%）</td>
+<td>顯示原因 + 重試按鈕</td>
+</tr>
+<tr>
+<td>429</td>
+<td><code>TOO_MANY_ATTEMPTS</code></td>
+<td>驗證碼／開桌碼太頻繁</td>
+<td>顯示倒數</td>
+</tr>
+<tr>
+<td>500</td>
+<td><code>INTERNAL_ERROR</code></td>
+<td>未預期錯誤</td>
+<td>通用錯誤訊息，<strong>去看後端日誌</strong></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="14">1.4 認證</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>身分</th>
+<th>標頭</th>
+<th>取得方式</th>
+<th>有效期</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>匿名顧客</td>
+<td><code>X-Session-Token: &lt;token&gt;</code></td>
+<td>掃碼加入時取得</td>
+<td>到該次結帳為止</td>
+</tr>
+<tr>
+<td>會員</td>
+<td><code>Authorization: Bearer &lt;JWT&gt;</code></td>
+<td>手機驗證碼登入</td>
+<td>7 天</td>
+</tr>
+<tr>
+<td>員工</td>
+<td><code>Authorization: Bearer &lt;JWT&gt;</code></td>
+<td>帳密登入</td>
+<td>12 小時</td>
+</tr>
+</tbody>
+</table></div>
+<p>顧客端可<strong>同時帶兩個</strong>：用餐權杖說「我坐在哪一桌」，JWT 說「我是誰」。</p>
+<p><strong>權限規則</strong>：<code>/api/admin/**</code> 一律需要員工 JWT + 角色檢查。<strong>前端隱藏按鈕不算權限控制</strong>，後端一定要擋（見 <a href="../tech/backend/20-SpringSecurity.html">Spring Security</a>）。</p>
+<hr />
+<h2 id="2">2. 端點總表</h2>
+<h3 id="21">2.1 顧客端 — 用餐與點餐</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>路徑</th>
+<th>說明</th>
+<th>認證</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/tables/{tableNo}/status</code></td>
+<td>查桌位狀態（決定掃碼後顯示什麼）</td>
+<td>無</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/dining-sessions/join</code></td>
+<td>掃碼加入用餐，取得權杖</td>
+<td>無</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/dining-sessions/me</code></td>
+<td>目前用餐資訊</td>
+<td>Session</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/menu/categories</code></td>
+<td>分類清單</td>
+<td>Session</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/menu/items</code></td>
+<td>品項清單（<code>?categoryId=</code>）</td>
+<td>Session</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/menu/items/{id}</code></td>
+<td>品項詳情（含選項群組）</td>
+<td>Session</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/menu/recommendations</code></td>
+<td>推薦（<code>?type=POPULAR\|HISTORY\|PROFILE&amp;audience=ADULT\|CHILD</code>）</td>
+<td>Session</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/dining-sessions/me/orders</code></td>
+<td><strong>送出購物車 → 建立一張點餐單</strong></td>
+<td>Session</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/dining-sessions/me/orders</code></td>
+<td>本桌所有點餐單</td>
+<td>Session</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/dining-sessions/me/order-items/{id}</code></td>
+<td>取消單品</td>
+<td>Session</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/service-calls</code></td>
+<td><strong>按服務鈴</strong></td>
+<td>Session</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/dining-sessions/me/checkout</code></td>
+<td>要求結帳（鎖定）</td>
+<td>Session</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/dining-sessions/me/checkout/cancel</code></td>
+<td>取消結帳</td>
+<td>Session</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/payments</code></td>
+<td>模擬付款</td>
+<td>Session</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/dining-sessions/me/attach-member</code></td>
+<td>輸入手機累積點數</td>
+<td>Session</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="22">2.2 顧客端 — 會員</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>路徑</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST</td>
+<td><code>/api/auth/otp/request</code></td>
+<td>取得驗證碼（測試模式直接回傳）</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/auth/otp/verify</code></td>
+<td>驗證 → 回 JWT 或「需補資料」</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/members</code></td>
+<td>補齊資料完成註冊</td>
+</tr>
+<tr>
+<td>GET / PATCH</td>
+<td><code>/api/members/me</code></td>
+<td>我的資料</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/members/me/sessions</code></td>
+<td>消費歷史（分頁）</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/members/me/sessions/{id}</code></td>
+<td>單次消費明細</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/members/me/points</code></td>
+<td>點數與異動紀錄（進階）</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="23">2.3 顧客端 — 訂位</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>路徑</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET</td>
+<td><code>/api/reservations/availability</code></td>
+<td><code>?date=&amp;partySize=</code> → 各時間點剩幾桌</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/reservations</code></td>
+<td>建立訂位（含配桌）</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/reservations/{id}</code></td>
+<td>訂位詳情</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/reservations/{id}</code></td>
+<td>取消（含期限判定）</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/members/me/reservations</code></td>
+<td>我的訂位</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/reservations/{id}/preorder</code></td>
+<td>預先點餐（進階）</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="24-apiadmin">2.4 店家端 <code>/api/admin</code></h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>路徑</th>
+<th>說明</th>
+<th>角色</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/auth/login</code></td>
+<td>員工登入</td>
+<td>—</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/tables</code></td>
+<td>桌況總覽</td>
+<td>全部</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/tables/{id}/open</code></td>
+<td>櫃檯開桌</td>
+<td>COUNTER, MANAGER</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/tables/{id}/clean</code></td>
+<td>整理完成 → 空桌</td>
+<td>COUNTER, MANAGER</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/dining-sessions/{id}</code></td>
+<td>桌位詳情</td>
+<td>COUNTER, MANAGER</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/dining-sessions/{id}/orders</code></td>
+<td>代客加點</td>
+<td>COUNTER, MANAGER</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/dining-sessions/{id}/settle</code></td>
+<td><strong>標記已結清</strong>（現金或模擬支付）</td>
+<td>COUNTER, MANAGER</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/dining-sessions/{id}/cancel</code></td>
+<td>取消該次用餐</td>
+<td>MANAGER</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/service-calls</code></td>
+<td>未處理的服務鈴</td>
+<td>COUNTER, MANAGER</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/admin/service-calls/{id}/ack</code></td>
+<td>標記已處理</td>
+<td>COUNTER, MANAGER</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/kitchen/tickets</code></td>
+<td>KDS 看板</td>
+<td>KITCHEN, MANAGER</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/admin/order-items/{id}/serve</code></td>
+<td>勾選已出餐</td>
+<td>KITCHEN, MANAGER</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/admin/order-tickets/{id}/serve-all</code></td>
+<td>整單出完</td>
+<td>KITCHEN, MANAGER</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/admin/order-items/{id}/waste</code></td>
+<td>退菜／廢棄</td>
+<td>KITCHEN, MANAGER</td>
+</tr>
+<tr>
+<td>GET/POST</td>
+<td><code>/api/admin/waitlist</code></td>
+<td>候位清單／登記</td>
+<td>COUNTER, MANAGER</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/waitlist/{id}/call</code></td>
+<td>叫號</td>
+<td>COUNTER, MANAGER</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/waitlist/{id}/seat</code></td>
+<td>報到入座（自動開桌）</td>
+<td>COUNTER, MANAGER</td>
+</tr>
+<tr>
+<td>DELETE</td>
+<td><code>/api/admin/waitlist/{id}</code></td>
+<td>放棄</td>
+<td>COUNTER, MANAGER</td>
+</tr>
+<tr>
+<td>CRUD</td>
+<td><code>/api/admin/menu/categories</code></td>
+<td>分類管理</td>
+<td>MANAGER</td>
+</tr>
+<tr>
+<td>CRUD</td>
+<td><code>/api/admin/menu/items</code></td>
+<td>品項管理（含上下架）</td>
+<td>MANAGER</td>
+</tr>
+<tr>
+<td>CRUD</td>
+<td><code>/api/admin/menu/option-groups</code></td>
+<td>選項群組管理</td>
+<td>MANAGER</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/menu/items/{id}/qrcode</code></td>
+<td>產生桌位 QR code（PNG）</td>
+<td>MANAGER</td>
+</tr>
+<tr>
+<td>CRUD</td>
+<td><code>/api/admin/tables-config</code></td>
+<td>座位管理</td>
+<td>MANAGER</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/reservations</code></td>
+<td>訂位管理（<code>?date=</code>）</td>
+<td>COUNTER, MANAGER</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/reservations/{id}/seat</code></td>
+<td>訂位報到並開桌</td>
+<td>COUNTER, MANAGER</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/inventory</code></td>
+<td>庫存清單（低量優先）</td>
+<td>MANAGER</td>
+</tr>
+<tr>
+<td>PATCH</td>
+<td><code>/api/admin/inventory/{menuItemId}</code></td>
+<td>調整庫存／補貨</td>
+<td>MANAGER</td>
+</tr>
+<tr>
+<td>GET</td>
+<td><code>/api/admin/reports/**</code></td>
+<td>報表（進階）</td>
+<td>MANAGER</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="25-demo">2.5 排程手動觸發 ★demo 必備</h3>
+<blockquote>
+<p><strong>你不可能在 demo 時等到晚上 11:30。</strong> 每個排程都要有對應的手動觸發 API。</p>
+</blockquote>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>路徑</th>
+<th>對應排程</th>
+<th>角色</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/scheduler/check-overtime</code></td>
+<td>用餐超時掃描</td>
+<td>MANAGER</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/scheduler/expire-waitlist</code></td>
+<td>候位過號標記</td>
+<td>MANAGER</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/scheduler/remind-cleaning</code></td>
+<td>待清理提醒</td>
+<td>MANAGER</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/scheduler/reserve-tables</code></td>
+<td>桌位預留轉換</td>
+<td>MANAGER</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/scheduler/mark-no-show</code></td>
+<td>NO_SHOW 標記</td>
+<td>MANAGER</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/scheduler/send-reminders</code></td>
+<td>訂位提醒</td>
+<td>MANAGER</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/scheduler/check-low-stock</code></td>
+<td>低庫存檢查</td>
+<td>MANAGER</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/scheduler/daily-settlement?date=</code></td>
+<td>營業日結算</td>
+<td>MANAGER</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/admin/scheduler/prep-suggestion?date=</code></td>
+<td>明日備貨建議</td>
+<td>MANAGER</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>實作方式</strong>：排程方法只負責「呼叫 Service + 記日誌」，邏輯全在 Service，排程與手動 API 共用同一段程式碼。</p>
+<hr />
+<h2 id="3-websocket">3. WebSocket 事件規格 ★</h2>
+<blockquote>
+<p>技術說明見 <a href="../tech/realtime/41-WebSocket與STOMP.html">WebSocket 與 STOMP</a> 與 <a href="../tech/realtime/42-前端接WebSocket.html">前端接 WebSocket</a>。</p>
+</blockquote>
+<h3 id="31">3.1 連線</h3>
+<pre><code>端點：/ws（SockJS fallback）
+握手標頭：X-Session-Token（顧客端）或 Authorization: Bearer（員工）
+</code></pre>
+<p><strong>握手時必須驗證身分</strong>（<code>ChannelInterceptor</code> 攔 CONNECT frame），否則隔壁桌的人可以訂閱你這桌的頻道。</p>
+<h3 id="32">3.2 頻道</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>頻道</th>
+<th>訂閱者</th>
+<th>權限</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/topic/session/{sessionId}</code></td>
+<td>該桌所有裝置</td>
+<td>持有該桌用餐權杖</td>
+</tr>
+<tr>
+<td><code>/topic/kitchen</code></td>
+<td>KDS</td>
+<td><code>KITCHEN</code> / <code>MANAGER</code></td>
+</tr>
+<tr>
+<td><code>/topic/counter</code></td>
+<td>櫃檯</td>
+<td><code>COUNTER</code> / <code>MANAGER</code></td>
+</tr>
+<tr>
+<td><code>/topic/menu</code></td>
+<td>所有點餐中的裝置</td>
+<td>任何有效權杖</td>
+</tr>
+<tr>
+<td><code>/topic/waitlist</code></td>
+<td>櫃檯與候位螢幕</td>
+<td><code>COUNTER</code> / <code>MANAGER</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="33">3.3 統一事件格式</h3>
+<pre><code class="language-json">{
+  &quot;type&quot;: &quot;NEW_TICKET&quot;,
+  &quot;payload&quot;: { },
+  &quot;serverTime&quot;: &quot;2026-09-13T18:42:11+08:00&quot;
+}
+</code></pre>
+<h3 id="34">3.4 事件類型</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>type</th>
+<th>推到哪些頻道</th>
+<th>payload</th>
+<th>前端該做什麼</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NEW_TICKET</code></td>
+<td>session、kitchen</td>
+<td><code>OrderTicketDto</code></td>
+<td>加進清單，高亮 2 秒</td>
+</tr>
+<tr>
+<td><code>ITEM_SERVED</code></td>
+<td>session、kitchen</td>
+<td><code>{ticketId, itemId, servedAt}</code></td>
+<td>該品項狀態改「已出餐」</td>
+</tr>
+<tr>
+<td><code>TICKET_SERVED</code></td>
+<td>session、kitchen</td>
+<td><code>{ticketId}</code></td>
+<td>KDS 卡片淡出移除</td>
+</tr>
+<tr>
+<td><code>TICKET_CANCELLED</code></td>
+<td>session、kitchen</td>
+<td><code>{ticketId, reason}</code></td>
+<td>從清單移除</td>
+</tr>
+<tr>
+<td><code>ITEM_WASTED</code></td>
+<td>kitchen</td>
+<td><code>{itemId, reason}</code></td>
+<td>標記退菜</td>
+</tr>
+<tr>
+<td><code>SESSION_UPDATED</code></td>
+<td>session、counter</td>
+<td><code>{subtotal, serviceFee, total, status}</code></td>
+<td>更新金額顯示</td>
+</tr>
+<tr>
+<td><code>SESSION_LOCKED</code></td>
+<td>session</td>
+<td><code>null</code></td>
+<td>顯示「結帳中無法加點」</td>
+</tr>
+<tr>
+<td><code>SESSION_CLOSED</code></td>
+<td>session、counter</td>
+<td><code>{sessionId}</code></td>
+<td>清除權杖，導回掃碼頁</td>
+</tr>
+<tr>
+<td><code>MENU_SOLD_OUT</code></td>
+<td>menu</td>
+<td><code>{menuItemId, name}</code></td>
+<td>菜單標灰 + 購物車標紅</td>
+</tr>
+<tr>
+<td><code>MENU_RESTOCKED</code></td>
+<td>menu</td>
+<td><code>{menuItemId, quantity}</code></td>
+<td>恢復可點</td>
+</tr>
+<tr>
+<td><code>SERVICE_CALL</code></td>
+<td>counter</td>
+<td><code>{callId, tableNo, type}</code></td>
+<td>跳出提示 + 音效</td>
+</tr>
+<tr>
+<td><code>TABLE_STATUS</code></td>
+<td>counter</td>
+<td><code>{tableId, tableNo, status}</code></td>
+<td>更新桌況色塊</td>
+</tr>
+<tr>
+<td><code>TABLE_OVERTIME</code></td>
+<td>counter</td>
+<td><code>{tableId, tableNo, minutes}</code></td>
+<td>標紅閃爍</td>
+</tr>
+<tr>
+<td><code>WAITLIST_CALLED</code></td>
+<td>waitlist</td>
+<td><code>{ticketNo, partySize}</code></td>
+<td>候位螢幕顯示叫號</td>
+</tr>
+<tr>
+<td><code>WAITLIST_UPDATED</code></td>
+<td>waitlist、counter</td>
+<td><code>{waitingCount}</code></td>
+<td>更新候位清單</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="35">3.5 兩條鐵律</h3>
+<ol>
+<li><strong>推播要在資料庫交易「提交之後」才發</strong>，否則前端收到通知去查卻查不到資料。</li>
+<li><strong>前端每次（重新）連上都要重抓一次完整資料</strong>。<a class="gloss" href="../tech/realtime/41-WebSocket與STOMP.html" title="看這個技術的白話說明">WebSocket</a> 保證「快」，不保證「不漏」。</li>
+</ol>
+<hr />
+<h2 id="4">4. 關鍵端點詳細規格</h2>
+<h3 id="41">4.1 查桌位狀態（掃碼後第一支）</h3>
+<pre><code class="language-json">GET /api/tables/A03/status
+200 OK
+{
+  &quot;tableNo&quot;: &quot;A03&quot;,
+  &quot;seats&quot;: 4,
+  &quot;status&quot;: &quot;OCCUPIED&quot;,
+  &quot;canJoin&quot;: true,
+  &quot;requireSessionCode&quot;: false,
+  &quot;message&quot;: null
+}
+</code></pre>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>桌位狀態</th>
+<th><code>canJoin</code></th>
+<th>前端顯示</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AVAILABLE</code></td>
+<td>false</td>
+<td>「請洽櫃檯帶位」</td>
+</tr>
+<tr>
+<td><code>RESERVED</code></td>
+<td>false</td>
+<td>「此桌已預約，請洽櫃檯」</td>
+</tr>
+<tr>
+<td><code>OCCUPIED</code></td>
+<td>true</td>
+<td>直接進入點餐</td>
+</tr>
+<tr>
+<td><code>CLEANING</code></td>
+<td>false</td>
+<td>「整理中，請稍候」</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="42">4.2 掃碼加入用餐</h3>
+<pre><code class="language-http">POST /api/dining-sessions/join
+{ &quot;tableNo&quot;: &quot;A03&quot; }          // 開桌碼開啟時再加 &quot;sessionCode&quot;: &quot;4821&quot;
+</code></pre>
+<pre><code class="language-json">201 Created
+{
+  &quot;sessionId&quot;: 1052,
+  &quot;sessionToken&quot;: &quot;eyJ0IjoxMDUyLi4u&quot;,
+  &quot;tableNo&quot;: &quot;A03&quot;,
+  &quot;adultCount&quot;: 2,
+  &quot;childCount&quot;: 1,
+  &quot;status&quot;: &quot;OPEN&quot;,
+  &quot;openedAt&quot;: &quot;2026-09-13T18:30:00+08:00&quot;,
+  &quot;soupBaseOrdered&quot;: false,
+  &quot;subtotal&quot;: 0.00
+}
+</code></pre>
+<p><code>soupBaseOrdered = false</code> → 前端跳到選鍋底頁。</p>
+<p><strong>錯誤</strong>：桌位不是 <code>OCCUPIED</code> → <code>409 TABLE_NOT_OPENED</code></p>
+<h3 id="43">4.3 櫃檯開桌</h3>
+<pre><code class="language-http">POST /api/admin/tables/3/open
+Authorization: Bearer &lt;員工 JWT&gt;
+{ &quot;adultCount&quot;: 2, &quot;childCount&quot;: 1 }
+</code></pre>
+<p>後端用<a class="gloss" href="../tech/database/28-鎖與併發.html" title="看這個技術的白話說明">悲觀鎖</a>（<code>SELECT ... FOR UPDATE</code>）避免同一桌開出兩張帳單。
+<strong>錯誤</strong>：<code>409 TABLE_OCCUPIED</code></p>
+<h3 id="44">4.4 品項詳情（含選項群組）</h3>
+<pre><code class="language-json">GET /api/menu/items/4
+{
+  &quot;id&quot;: 4,
+  &quot;name&quot;: &quot;鴛鴦鍋底&quot;,
+  &quot;price&quot;: 0.00,
+  &quot;isSoupBase&quot;: true,
+  &quot;soldOut&quot;: false,
+  &quot;isVegetarian&quot;: false,
+  &quot;containsBeef&quot;: false,
+  &quot;spicyLevel&quot;: 0,
+  &quot;optionGroups&quot;: [
+    {
+      &quot;id&quot;: 5, &quot;name&quot;: &quot;左鍋湯底&quot;, &quot;minSelect&quot;: 1, &quot;maxSelect&quot;: 1,
+      &quot;values&quot;: [
+        { &quot;id&quot;: 51, &quot;name&quot;: &quot;麻辣&quot;, &quot;priceDelta&quot;: 260.00 },
+        { &quot;id&quot;: 52, &quot;name&quot;: &quot;酸菜白肉&quot;, &quot;priceDelta&quot;: 230.00 },
+        { &quot;id&quot;: 53, &quot;name&quot;: &quot;昆布&quot;, &quot;priceDelta&quot;: 210.00 }
+      ]
+    },
+    { &quot;id&quot;: 6, &quot;name&quot;: &quot;右鍋湯底&quot;, &quot;minSelect&quot;: 1, &quot;maxSelect&quot;: 1, &quot;values&quot;: [ ... ] }
+  ]
+}
+</code></pre>
+<h3 id="45">4.5 送出點餐 ★最重要的一支</h3>
+<pre><code class="language-http">POST /api/dining-sessions/me/orders
+X-Session-Token: eyJ0IjoxMDUyLi4u
+
+{
+  &quot;items&quot;: [
+    { &quot;menuItemId&quot;: 4,  &quot;quantity&quot;: 1, &quot;optionValueIds&quot;: [51, 53] },
+    { &quot;menuItemId&quot;: 12, &quot;quantity&quot;: 2, &quot;optionValueIds&quot;: [12, 41], &quot;note&quot;: &quot;不要太熟&quot; }
+  ]
+}
+</code></pre>
+<pre><code class="language-json">201 Created
+{
+  &quot;ticketId&quot;: 3301,
+  &quot;sequenceNo&quot;: 1,
+  &quot;status&quot;: &quot;PENDING&quot;,
+  &quot;placedAt&quot;: &quot;2026-09-13T18:42:11+08:00&quot;,
+  &quot;items&quot;: [ ... ],
+  &quot;sessionSubtotal&quot;: 1210.00
+}
+</code></pre>
+<p><strong>失敗（庫存不足）</strong></p>
+<pre><code class="language-json">409 Conflict
+{
+  &quot;code&quot;: &quot;ITEM_SOLD_OUT&quot;,
+  &quot;message&quot;: &quot;部分品項已售完，請調整後重新送出&quot;,
+  &quot;details&quot;: [
+    { &quot;field&quot;: &quot;menuItemId&quot;, &quot;message&quot;: &quot;美國牛五花 庫存不足（剩 1）&quot;, &quot;value&quot;: 12 }
+  ]
+}
+</code></pre>
+<p><strong>後端實作要點</strong></p>
+<ol>
+<li>整個方法標 <a href="../tech/database/27-交易Transaction.html"><code>@Transactional</code></a></li>
+<li>驗證 session 狀態必須 <code>OPEN</code>，否則 <code>409 SESSION_LOCKED</code></li>
+<li><strong>鍋底規則</strong>：若這是第一張單且不含 <code>is_soup_base</code> 品項 → <code>400 SOUP_BASE_REQUIRED</code>（共鍋：<strong>每桌至少一份</strong>，不是每人一份）</li>
+<li>驗證每個品項的必選群組都有選、複選不超過 <code>max_select</code></li>
+<li><strong>依 <code>menuItemId</code> 排序後逐項扣庫存</strong>（避免<a class="gloss" href="../tech/database/28-鎖與併發.html" title="看這個技術的白話說明">死鎖</a>），<code>track_inventory=false</code> 的跳過</li>
+<li>用條件式 UPDATE 判斷影響筆數，<strong>任一項失敗整個交易 rollback</strong>，不可以只成立一部分</li>
+<li>建立 ticket + items + item options，寫入名稱與價格快照</li>
+<li>更新 <code>dining_session.subtotal</code></li>
+<li><strong>交易提交後</strong>才推 WebSocket（<code>/topic/session/{id}</code> 和 <code>/topic/kitchen</code>）</li>
+</ol>
+<h3 id="46">4.6 本桌訂單</h3>
+<pre><code class="language-json">GET /api/dining-sessions/me/orders
+{
+  &quot;sessionStatus&quot;: &quot;OPEN&quot;,
+  &quot;subtotal&quot;: 1210.00,
+  &quot;soupBaseOrdered&quot;: true,
+  &quot;tickets&quot;: [
+    {
+      &quot;ticketId&quot;: 3301, &quot;sequenceNo&quot;: 1, &quot;status&quot;: &quot;PREPARING&quot;,
+      &quot;placedAt&quot;: &quot;2026-09-13T18:42:11+08:00&quot;,
+      &quot;items&quot;: [
+        { &quot;id&quot;: 8801, &quot;name&quot;: &quot;鴛鴦鍋底&quot;, &quot;quantity&quot;: 1,
+          &quot;options&quot;: [&quot;左鍋湯底：麻辣&quot;, &quot;右鍋湯底：昆布&quot;],
+          &quot;lineTotal&quot;: 470.00, &quot;status&quot;: &quot;SERVED&quot; },
+        { &quot;id&quot;: 8802, &quot;name&quot;: &quot;美國牛五花&quot;, &quot;quantity&quot;: 2,
+          &quot;options&quot;: [&quot;份量：全份&quot;, &quot;加點配料：加蔥花&quot;],
+          &quot;note&quot;: &quot;不要太熟&quot;, &quot;lineTotal&quot;: 740.00, &quot;status&quot;: &quot;PENDING&quot; }
+      ]
+    }
+  ]
+}
+</code></pre>
+<blockquote>
+<p><strong>這支 API 有 WebSocket 還是要留</strong>：進頁面時要抓一次，斷線重連後也要抓一次。</p>
+</blockquote>
+<h3 id="47">4.7 服務鈴</h3>
+<pre><code class="language-http">POST /api/service-calls
+X-Session-Token: ...
+{ &quot;type&quot;: &quot;SOUP&quot; }          // SERVICE / SOUP / POT_CLEAN / CHECKOUT
+</code></pre>
+<pre><code class="language-json">201 Created
+{ &quot;callId&quot;: 771, &quot;type&quot;: &quot;SOUP&quot;, &quot;status&quot;: &quot;PENDING&quot;, &quot;createdAt&quot;: &quot;...&quot; }
+</code></pre>
+<p>同時推 <code>SERVICE_CALL</code> 到 <code>/topic/counter</code>。</p>
+<h3 id="48">4.8 結帳</h3>
+<pre><code class="language-json">POST /api/dining-sessions/me/checkout
+{
+  &quot;sessionId&quot;: 1052,
+  &quot;status&quot;: &quot;CHECKOUT_PENDING&quot;,
+  &quot;subtotal&quot;: 1420.00,
+  &quot;serviceFeeRate&quot;: 0.10,
+  &quot;serviceFee&quot;: 142.00,
+  &quot;discount&quot;: 0.00,
+  &quot;total&quot;: 1562.00,
+  &quot;peopleCount&quot;: 3,
+  &quot;perPersonReference&quot;: 520.67,
+  &quot;items&quot;: [ ... ]
+}
+</code></pre>
+<p><code>perPersonReference</code> 只是參考值（我們不做分帳功能）。
+同時推 <code>SESSION_LOCKED</code> 到 <code>/topic/session/{id}</code>，讓同桌其他裝置知道。</p>
+<h3 id="49">4.9 模擬付款</h3>
+<pre><code class="language-json">POST /api/payments
+{ &quot;diningSessionId&quot;: 1052, &quot;method&quot;: &quot;LINE_PAY&quot; }
+
+200 OK
+{
+  &quot;paymentId&quot;: 771,
+  &quot;status&quot;: &quot;SUCCESS&quot;,
+  &quot;transactionNo&quot;: &quot;MOCK-20260913-000771&quot;,
+  &quot;amount&quot;: 1562.00,
+  &quot;paidAt&quot;: &quot;2026-09-13T20:11:03+08:00&quot;,
+  &quot;pointsEarned&quot;: 15
+}
+</code></pre>
+<p>5% 機率 → <code>422 PAYMENT_FAILED</code>，訊息「銀行端驗證失敗，請重試或更換付款方式」，<strong>session 狀態不變，可重試</strong>。</p>
+<h3 id="410">4.10 訂位可訂時段</h3>
+<pre><code class="language-json">GET /api/reservations/availability?date=2026-09-20&amp;partySize=4
+{
+  &quot;date&quot;: &quot;2026-09-20&quot;,
+  &quot;diningMinutes&quot;: 100,
+  &quot;bufferMinutes&quot;: 15,
+  &quot;slots&quot;: [
+    { &quot;time&quot;: &quot;11:30&quot;, &quot;available&quot;: true,  &quot;remainingTables&quot;: 5 },
+    { &quot;time&quot;: &quot;12:00&quot;, &quot;available&quot;: true,  &quot;remainingTables&quot;: 3 },
+    { &quot;time&quot;: &quot;18:00&quot;, &quot;available&quot;: false, &quot;remainingTables&quot;: 0 },
+    { &quot;time&quot;: &quot;19:55&quot;, &quot;available&quot;: true,  &quot;remainingTables&quot;: 2 }
+  ]
+}
+</code></pre>
+<p>每 30 分鐘一格。<code>19:55</code> 可訂代表「剛好接續」不算衝突（判斷式用 <code>&lt;</code> 不是 <code>&lt;=</code>）。</p>
+<h3 id="411">4.11 建立訂位</h3>
+<pre><code class="language-http">POST /api/reservations
+{
+  &quot;startTime&quot;: &quot;2026-09-20T18:00:00+08:00&quot;,
+  &quot;adultCount&quot;: 3,
+  &quot;childCount&quot;: 1,
+  &quot;contactName&quot;: &quot;王小明&quot;,
+  &quot;contactPhone&quot;: &quot;0912345678&quot;
+}
+</code></pre>
+<pre><code class="language-json">201 Created
+{
+  &quot;reservationId&quot;: 442,
+  &quot;tableNo&quot;: &quot;A05&quot;,
+  &quot;seats&quot;: 4,
+  &quot;startTime&quot;: &quot;2026-09-20T18:00:00+08:00&quot;,
+  &quot;endTime&quot;: &quot;2026-09-20T19:55:00+08:00&quot;,
+  &quot;status&quot;: &quot;CONFIRMED&quot;,
+  &quot;cancellableUntil&quot;: &quot;2026-09-19T20:00:00+08:00&quot;
+}
+</code></pre>
+<p><strong>錯誤</strong>：<code>409 SLOT_UNAVAILABLE</code>（客滿）</p>
+<p>後端用悲觀鎖 + <code>UNIQUE(table_id, start_time)</code> 雙重保護，見 <a href="../tech/advanced/46-區間重疊與訂位排程.html">區間重疊與訂位排程</a>。</p>
+<h3 id="412-kds">4.12 KDS 看板</h3>
+<pre><code class="language-json">GET /api/admin/kitchen/tickets
+{
+  &quot;tickets&quot;: [
+    {
+      &quot;ticketId&quot;: 3298, &quot;tableNo&quot;: &quot;B02&quot;, &quot;sequenceNo&quot;: 1,
+      &quot;isPreorder&quot;: true,
+      &quot;placedAt&quot;: &quot;2026-09-13T18:20:00+08:00&quot;,
+      &quot;waitingMinutes&quot;: 22,
+      &quot;items&quot;: [
+        { &quot;id&quot;: 8790, &quot;name&quot;: &quot;麻辣鍋底&quot;, &quot;quantity&quot;: 1,
+          &quot;options&quot;: [&quot;辣度：大辣&quot;], &quot;note&quot;: null,
+          &quot;status&quot;: &quot;PENDING&quot;, &quot;cookOrder&quot;: 1 }
+      ]
+    }
+  ]
+}
+</code></pre>
+<p>排序：<code>is_preorder DESC, placed_at ASC</code>（預約優先，其次先到先做）。
+<code>cookOrder</code> 是出餐順序建議：鍋底 1、菜盤 2、火鍋料 3、肉品 4、主食 5、飲料甜點 6。</p>
+<hr />
+<h2 id="5">5. 前端呼叫封裝</h2>
+<p><strong>不要讓每個頁面各自寫 <code>fetch</code>。</strong> 統一封裝在 <code>src/api/client.js</code>，見 <a href="../tech/frontend/40-fetch串接API.html">fetch 串接後端 API</a>。</p>
+<p>錯誤處理靠 <code>err.code</code> 分流：</p>
+<pre><code class="language-js">catch (err) {
+  switch (err.code) {
+    case 'ITEM_SOLD_OUT':       markSoldOut(err.details); break;
+    case 'SOUP_BASE_REQUIRED':  navigate('/order/soup-base'); break;
+    case 'SESSION_LOCKED':      toast.error('結帳中無法加點'); break;
+    case 'INVALID_SESSION_TOKEN':
+      localStorage.removeItem('sessionToken');
+      navigate('/');
+      break;
+    default: toast.error(err.message);
+  }
+}
+</code></pre>
+<hr />
+<h2 id="6">6. 開發順序（後端）</h2>
+<ol>
+<li><code>GET /api/menu/categories</code> + <code>GET /api/menu/items</code> ← <strong>第 1 週要打通這兩支</strong>，前端才有東西接</li>
+<li><code>POST /api/admin/tables/{id}/open</code> + <code>POST /api/dining-sessions/join</code></li>
+<li><strong><code>POST /api/dining-sessions/me/orders</code></strong>（最複雜的一支，留給最有把握的人）</li>
+<li><code>GET /api/dining-sessions/me/orders</code> + WebSocket 推播</li>
+<li><code>GET /api/admin/kitchen/tickets</code> + <code>PATCH .../serve</code></li>
+<li>結帳與付款</li>
+<li>服務鈴、候位</li>
+<li>訂位與排程</li>
+<li>會員</li>
+</ol><div class="pager"><a href="../spec/03-資料庫設計.html"><div class="k">← 上一篇</div><div class="n">03 資料庫設計</div></a><a class="next" href="../spec/05-開發流程與分工.html"><div class="k">下一篇 →</div><div class="n">05 開發流程與時程</div></a></div>
+</article>
+<aside class="toc"><div class="tt">本頁目錄</div><a href="#1">1. 通用約定</a><a href="#2">2. 端點總表</a><a href="#3-websocket">3. WebSocket 事件規格 ★</a><a href="#4">4. 關鍵端點詳細規格</a><a href="#5">5. 前端呼叫封裝</a><a href="#6">6. 開發順序（後端）</a></aside>
+</div></div>
+</div>
+<script src="../vendor/mermaid.min.js"></script>
+<script>
+mermaid.initialize({
+  startOnLoad: true, securityLevel: 'loose', theme: 'base',
+  fontFamily: '"Noto Sans TC","PingFang TC",system-ui,sans-serif',
+  themeVariables: {
+    background:'#FFFFFF',
+    primaryColor:'#FBE8E3', primaryTextColor:'#2B211C', primaryBorderColor:'#C8442E',
+    secondaryColor:'#FCF0DC', secondaryBorderColor:'#E8A33D',
+    tertiaryColor:'#F5EFE5', tertiaryBorderColor:'#E6DED2',
+    lineColor:'#9C8E84', textColor:'#2B211C',
+    mainBkg:'#FBE8E3', nodeBorder:'#C8442E', clusterBkg:'#FBF7F0', clusterBorder:'#E6DED2',
+    titleColor:'#2B211C', edgeLabelBackground:'#FBF7F0',
+    actorBkg:'#FBE8E3', actorBorder:'#C8442E', actorTextColor:'#2B211C',
+    signalColor:'#6B5D54', signalTextColor:'#2B211C',
+    labelBoxBkgColor:'#FCF0DC', labelBoxBorderColor:'#E8A33D', labelTextColor:'#2B211C',
+    loopTextColor:'#2B211C', noteBkgColor:'#FCF0DC', noteBorderColor:'#E8A33D', noteTextColor:'#2B211C',
+    activationBkgColor:'#E6DED2', activationBorderColor:'#9C8E84', sequenceNumberColor:'#FFFFFF',
+    altBackground:'#F5EFE5',
+    taskBkgColor:'#FBE8E3', taskBorderColor:'#C8442E', taskTextColor:'#2B211C',
+    taskTextOutsideColor:'#2B211C', taskTextDarkColor:'#2B211C',
+    activeTaskBkgColor:'#E8A33D', activeTaskBorderColor:'#C9862A',
+    doneTaskBkgColor:'#E4EFE7', doneTaskBorderColor:'#3F7A4E',
+    critBkgColor:'#C8442E', critBorderColor:'#A63522',
+    gridColor:'#E6DED2', todayLineColor:'#B3261E',
+    sectionBkgColor:'#FBF7F0', sectionBkgColor2:'#F5EFE5', altSectionBkgColor:'#FFFFFF',
+    classText:'#2B211C',
+    attributeBackgroundColorOdd:'#FFFFFF', attributeBackgroundColorEven:'#F5EFE5'
+  },
+  gantt:{barHeight:18,barGap:5,topPadding:52,leftPadding:180,fontSize:12},
+  mindmap:{padding:12},
+  sequence:{actorMargin:42,boxTextMargin:6,noteMargin:10,messageMargin:32,width:150},
+  er:{entityPadding:12,minEntityWidth:110}
+});
+</script>
+<script>document.addEventListener('click',function(e){var sb=document.getElementById('sb');if(window.innerWidth<=940&&sb.classList.contains('open')&&!sb.contains(e.target)&&!e.target.closest('.menubtn')){sb.classList.remove('open');}});</script>
+</body>
+</html>

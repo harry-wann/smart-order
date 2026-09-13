@@ -1,0 +1,1385 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>03 資料庫設計 · 火鍋店點餐系統文件</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand-700:#A63522; --brand-600:#C8442E; --brand-500:#DB5B42; --brand-100:#FBE8E3;
+  --accent-500:#E8A33D; --accent-100:#FCF0DC;
+  --bg:#FBF7F0; --surface:#FFFFFF; --surface-2:#F5EFE5; --line:#E6DED2;
+  --t900:#2B211C; --t600:#6B5D54; --t400:#9C8E84;
+  --ok:#3F7A4E; --ok-bg:#E4EFE7; --warn:#D98324; --bad:#B3261E;
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --serif:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --shadow:0 1px 2px rgba(43,33,28,.06),0 4px 12px rgba(43,33,28,.05);
+  --sidebar:280px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:var(--bg);color:var(--t900);font-family:var(--sans);
+  font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased}
+
+.layout{display:flex;min-height:100vh;align-items:flex-start}
+.sidebar{width:var(--sidebar);flex:0 0 var(--sidebar);position:sticky;top:0;height:100vh;
+  overflow-y:auto;background:var(--surface);border-right:1px solid var(--line);padding:22px 0 48px}
+.brand{padding:0 20px 16px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.brand a{text-decoration:none;color:inherit;display:block}
+.brand .logo{font-family:var(--serif);font-weight:900;font-size:18px;line-height:1.35;color:var(--brand-600)}
+.brand .sub{font-size:11.5px;color:var(--t400);margin-top:4px;letter-spacing:.02em}
+.navgroup{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--t400);
+  padding:15px 20px 5px}
+.sidebar a.nav{display:block;padding:6px 20px;color:var(--t600);text-decoration:none;
+  font-size:14px;border-left:3px solid transparent;line-height:1.5}
+.sidebar a.nav:hover{background:var(--brand-100);color:var(--brand-700)}
+.sidebar a.nav.active{background:var(--brand-100);color:var(--brand-700);
+  border-left-color:var(--brand-600);font-weight:700}
+.sidebar details{border-top:1px solid transparent}
+.sidebar details>summary{list-style:none;cursor:pointer;font-size:11px;font-weight:700;
+  letter-spacing:.1em;color:var(--t400);padding:12px 20px 5px;user-select:none}
+.sidebar details>summary::-webkit-details-marker{display:none}
+.sidebar details>summary::before{content:"▸ ";font-size:10px}
+.sidebar details[open]>summary::before{content:"▾ "}
+.sidebar details>summary:hover{color:var(--brand-600)}
+.sidebar .foot{padding:18px 20px;margin-top:14px;border-top:1px solid var(--line);
+  font-size:11.5px;color:var(--t400);line-height:1.7}
+
+.main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 32px 96px}
+.wrap{width:100%;max-width:1140px;display:flex;gap:36px;align-items:flex-start}
+article{flex:1;min-width:0;max-width:880px;padding-top:40px}
+.toc{width:196px;flex:0 0 196px;position:sticky;top:24px;padding-top:52px;font-size:12.5px;
+  max-height:calc(100vh - 60px);overflow-y:auto}
+.toc .tt{font-size:10.5px;letter-spacing:.1em;color:var(--t400);font-weight:700;margin-bottom:9px}
+.toc a{display:block;color:var(--t600);text-decoration:none;padding:3px 0 3px 10px;
+  border-left:2px solid var(--line);line-height:1.5}
+.toc a:hover{color:var(--brand-600);border-left-color:var(--brand-500)}
+
+.topbar{display:none;position:sticky;top:0;z-index:40;background:var(--surface);
+  border-bottom:1px solid var(--line);padding:10px 16px;align-items:center;gap:12px}
+.topbar .logo{font-family:var(--serif);font-weight:900;color:var(--brand-600);font-size:16px}
+.menubtn{background:var(--brand-600);color:#fff;border:0;border-radius:8px;height:40px;
+  padding:0 14px;font-size:15px;font-family:inherit;cursor:pointer}
+
+article h1{font-family:var(--serif);font-weight:900;font-size:32px;line-height:1.35;margin:0 0 10px}
+article h1+p{color:var(--t600)}
+article h2{font-family:var(--serif);font-weight:700;font-size:24px;line-height:1.45;
+  margin:50px 0 14px;padding-bottom:9px;border-bottom:2px solid var(--line)}
+article h3{font-weight:700;font-size:18.5px;margin:30px 0 10px}
+article h4{font-weight:700;font-size:16px;margin:22px 0 8px;color:var(--t600)}
+article p{margin:0 0 16px}
+article ul,article ol{margin:0 0 16px;padding-left:24px}
+article li{margin:5px 0}
+article a{color:var(--brand-600);text-decoration:none;border-bottom:1px solid rgba(200,68,46,.3)}
+article a:hover{border-bottom-color:var(--brand-600)}
+article a.gloss{color:var(--t900);border-bottom:1px dashed var(--accent-500);
+  background:linear-gradient(transparent 72%,var(--accent-100) 72%)}
+article a.gloss:hover{color:var(--brand-700);border-bottom-color:var(--brand-500)}
+article strong{font-weight:700;color:var(--t900)}
+article hr{border:0;border-top:1px solid var(--line);margin:42px 0}
+article img{max-width:100%;border-radius:12px}
+article details{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:12px 16px;margin:0 0 18px}
+article details>summary{cursor:pointer;font-weight:700;color:var(--brand-600)}
+
+article code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.87em;
+  background:var(--surface-2);padding:2px 6px;border-radius:5px;color:var(--brand-700);
+  word-break:break-word}
+article pre{background:#2B211C;color:#F5EFE5;padding:18px 20px;border-radius:12px;
+  overflow-x:auto;margin:0 0 18px;line-height:1.65;font-size:13.5px}
+article pre code{background:none;color:inherit;padding:0;font-size:inherit}
+
+blockquote{margin:0 0 20px;padding:14px 18px;background:var(--accent-100);
+  border-left:4px solid var(--accent-500);border-radius:0 10px 10px 0;color:var(--t600)}
+blockquote p:last-child{margin-bottom:0}
+blockquote strong{color:var(--t900)}
+
+.tablewrap{overflow-x:auto;margin:0 0 20px;border:1px solid var(--line);
+  border-radius:12px;background:var(--surface);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:420px}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--surface-2);font-weight:700;white-space:nowrap;color:var(--t900)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--brand-100)}
+td code,th code{white-space:nowrap}
+article li input[type=checkbox]{width:16px;height:16px;margin-right:6px;accent-color:var(--brand-600)}
+
+pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:22px;text-align:center;overflow-x:auto;box-shadow:var(--shadow);margin:0 0 22px;color:inherit}
+pre.mermaid svg{max-width:100%;height:auto}
+
+.hero{padding:52px 0 32px;border-bottom:1px solid var(--line);margin-bottom:32px}
+.hero .eyebrow{display:inline-block;background:var(--brand-100);color:var(--brand-700);
+  font-size:12.5px;font-weight:700;padding:5px 13px;border-radius:999px;letter-spacing:.04em}
+.hero h1{font-family:var(--serif);font-weight:900;font-size:40px;line-height:1.25;margin:18px 0 12px}
+.hero p{font-size:17px;color:var(--t600);max-width:680px;margin:0}
+.facts{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:10px 16px;font-size:13px;box-shadow:var(--shadow)}
+.fact b{display:block;font-family:var(--serif);font-size:19px;color:var(--brand-600);font-weight:900}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:13px;margin:18px 0 8px}
+.card{display:block;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:16px;text-decoration:none;color:inherit;box-shadow:var(--shadow);transition:.15s}
+.card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(43,33,28,.12);border-color:var(--brand-500)}
+.card .k{font-size:10.5px;letter-spacing:.09em;color:var(--t400);font-weight:700}
+.card .n{font-family:var(--serif);font-weight:700;font-size:17px;margin:5px 0 6px;color:var(--t900)}
+.card .d{font-size:13px;color:var(--t600);line-height:1.6}
+.callout{background:var(--brand-100);border:1px solid var(--brand-500);border-radius:12px;
+  padding:18px 20px;margin:24px 0}
+.callout .h{font-family:var(--serif);font-weight:700;font-size:17px;margin-bottom:6px;color:var(--brand-700)}
+.callout p{margin:0;color:var(--t600);font-size:14.5px}
+.pending{background:var(--accent-100);border-color:var(--accent-500)}
+.pending .h{color:#8A5B12}
+
+.pager{display:flex;gap:12px;margin-top:52px;padding-top:22px;border-top:1px solid var(--line)}
+.pager a{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:13px 16px;text-decoration:none;color:inherit;box-shadow:var(--shadow)}
+.pager a:hover{border-color:var(--brand-500)}
+.pager .k{font-size:11px;color:var(--t400);letter-spacing:.06em}
+.pager .n{font-weight:700;color:var(--brand-600);margin-top:3px;font-size:14.5px}
+.pager .next{text-align:right}
+
+@media(max-width:1200px){ .toc{display:none} }
+@media(max-width:940px){
+  .topbar{display:flex}
+  .layout{display:block}
+  .sidebar{position:fixed;left:0;top:0;height:100vh;z-index:50;transform:translateX(-100%);
+    transition:transform .2s;box-shadow:0 0 40px rgba(43,33,28,.2);width:286px}
+  .sidebar.open{transform:translateX(0)}
+  .main{padding:0 16px 72px}
+  article{padding-top:24px}
+  .hero{padding:30px 0 24px}
+  .hero h1{font-size:30px}
+  article h1{font-size:26px}
+  article h2{font-size:21px;margin-top:38px}
+  .pager{flex-direction:column}
+}
+@media print{
+  .sidebar,.toc,.topbar,.pager{display:none!important}
+  body{background:#fff}
+  .main{padding:0}
+  article{max-width:none}
+  article h2{page-break-after:avoid}
+  .tablewrap,pre.mermaid{box-shadow:none;page-break-inside:avoid}
+  a.gloss{background:none!important;border:0!important}
+}
+</style>
+</head>
+<body>
+<div class="topbar"><button class="menubtn" onclick="document.getElementById('sb').classList.toggle('open')">☰ 目錄</button><span class="logo">火鍋店點餐系統</span></div>
+<div class="layout">
+<nav class="sidebar" id="sb"><div class="brand"><a href="../index.html"><div class="logo">火鍋店點餐系統</div><div class="sub">專案文件 · 69 頁</div></a></div><a class="nav" href="../index.html">首頁</a><div class="navgroup">規格文件</div><a class="nav" href="../spec/00-架構分層與技術選型.html">00 架構分層與技術選型</a><a class="nav" href="../spec/01-專案總覽.html">01 專案總覽</a><a class="nav" href="../spec/02-需求規格.html">02 需求規格：基礎與進階功能總表</a><a class="nav active" href="../spec/03-資料庫設計.html">03 資料庫設計</a><a class="nav" href="../spec/04-API規格.html">04 API 規格</a><a class="nav" href="../spec/05-開發流程與分工.html">05 開發流程與時程</a><a class="nav" href="../spec/06-圖表總覽.html">06 圖表總覽</a><div class="navgroup">模組規格</div><a class="nav" href="../spec/modules/M1-菜單與品項.html">M1 菜單與品項</a><a class="nav" href="../spec/modules/M2-桌位開桌與候位.html">M2 桌位、開桌與候位</a><a class="nav" href="../spec/modules/M3-點餐與服務鈴.html">M3 點餐與服務鈴</a><a class="nav" href="../spec/modules/M4-出菜看板.html">M4 出菜看板（KDS）</a><a class="nav" href="../spec/modules/M5-庫存.html">M5 庫存</a><a class="nav" href="../spec/modules/M6-結帳.html">M6 結帳</a><a class="nav" href="../spec/modules/M7-訂位.html">M7 訂位</a><a class="nav" href="../spec/modules/M8-會員.html">M8 會員</a><div class="navgroup">UI 文件</div><a class="nav" href="../ui/10-UI-UX規格.html">10 UI / UX 規格</a><a class="nav" href="../ui/11-設計系統.html">11 設計系統</a><a class="nav" href="../ui/12-AI-UI工具與提示詞.html">12 AI UI 工具與提示詞</a><div class="navgroup">技術總表</div><a class="nav" href="../tech/00-技術總表.html">00 技術總表</a><details><summary>技術 · 團隊與工具（5）</summary><a class="nav" href="../tech/team/01-命令列.html">01 命令列基本操作</a><a class="nav" href="../tech/team/02-Git是什麼.html">02 Git 是什麼</a><a class="nav" href="../tech/team/03-分支與合併.html">03 分支、合併與衝突</a><a class="nav" href="../tech/team/04-GitHub與PR.html">04 GitHub 與 Pull Request</a><a class="nav" href="../tech/team/05-Docker與Compose.html">05 Docker 與 Docker Compose</a></details><details><summary>技術 · 網頁運作原理（6）</summary><a class="nav" href="../tech/web/06-前端後端在做什麼.html">06 前端與後端各在做什麼</a><a class="nav" href="../tech/web/07-HTTP請求與回應.html">07 HTTP 請求與回應</a><a class="nav" href="../tech/web/08-HTTP狀態碼.html">08 HTTP 狀態碼</a><a class="nav" href="../tech/web/09-JSON.html">09 JSON</a><a class="nav" href="../tech/web/10-REST-API設計.html">10 REST API 設計</a><a class="nav" href="../tech/web/11-CORS跨來源.html">11 CORS 跨來源問題</a></details><details><summary>技術 · 後端（10）</summary><a class="nav" href="../tech/backend/12-Java與JDK.html">12 Java 與 JDK</a><a class="nav" href="../tech/backend/13-Maven.html">13 Maven 與相依套件</a><a class="nav" href="../tech/backend/14-SpringBoot是什麼.html">14 Spring Boot 是什麼</a><a class="nav" href="../tech/backend/15-依賴注入.html">15 依賴注入</a><a class="nav" href="../tech/backend/16-三層架構.html">16 Controller / Service / Repository</a><a class="nav" href="../tech/backend/17-Entity與DTO.html">17 Entity 與 DTO</a><a class="nav" href="../tech/backend/18-全域例外處理.html">18 全域例外處理</a><a class="nav" href="../tech/backend/19-Swagger.html">19 Swagger 自動產生 API 文件</a><a class="nav" href="../tech/backend/20-SpringSecurity.html">20 Spring Security 基礎</a><a class="nav" href="../tech/backend/21-JWT.html">21 JWT 與登入狀態</a></details><details><summary>技術 · 資料庫（8）</summary><a class="nav" href="../tech/database/22-關聯式資料庫與SQL.html">22 關聯式資料庫與 SQL</a><a class="nav" href="../tech/database/23-資料表設計.html">23 資料表設計</a><a class="nav" href="../tech/database/24-索引.html">24 索引是什麼</a><a class="nav" href="../tech/database/25-ORM與JPA.html">25 ORM 與 JPA</a><a class="nav" href="../tech/database/26-JPA關聯對應.html">26 JPA 關聯對應</a><a class="nav" href="../tech/database/27-交易Transaction.html">27 交易 Transaction</a><a class="nav" href="../tech/database/28-鎖與併發.html">28 鎖與併發（防超賣）</a><a class="nav" href="../tech/database/29-Flyway.html">29 Flyway 資料庫版本控管</a></details><details><summary>技術 · 前端（11）</summary><a class="nav" href="../tech/frontend/30-現代JavaScript.html">30 現代 JavaScript 速成</a><a class="nav" href="../tech/frontend/31-非同步與async.html">31 非同步與 async/await</a><a class="nav" href="../tech/frontend/32-npm與套件.html">32 npm 與 node_modules</a><a class="nav" href="../tech/frontend/33-Vite.html">33 Vite</a><a class="nav" href="../tech/frontend/34-React與JSX.html">34 React 與 JSX</a><a class="nav" href="../tech/frontend/35-Props與State.html">35 Props 與 State</a><a class="nav" href="../tech/frontend/36-useState.html">36 useState</a><a class="nav" href="../tech/frontend/37-useEffect.html">37 useEffect</a><a class="nav" href="../tech/frontend/38-ReactRouter.html">38 React Router</a><a class="nav" href="../tech/frontend/39-Tailwind.html">39 Tailwind CSS</a><a class="nav" href="../tech/frontend/40-fetch串接API.html">40 fetch 串接後端 API</a></details><details><summary>技術 · 即時與排程（4）</summary><a class="nav" href="../tech/realtime/41-WebSocket與STOMP.html">41 WebSocket 與 STOMP</a><a class="nav" href="../tech/realtime/42-前端接WebSocket.html">42 前端接 WebSocket</a><a class="nav" href="../tech/realtime/43-排程與Cron.html">43 排程任務與 Cron</a><a class="nav" href="../tech/realtime/44-Redis.html">44 Redis</a></details><details><summary>技術 · 進階（2）</summary><a class="nav" href="../tech/advanced/45-訊息佇列RabbitMQ.html">45 訊息佇列 RabbitMQ</a><a class="nav" href="../tech/advanced/46-區間重疊與訂位排程.html">46 訂位排程的演算法</a></details><details><summary>技術 · 品質與部署（4）</summary><a class="nav" href="../tech/quality/47-單元測試.html">47 單元測試 JUnit + Mockito</a><a class="nav" href="../tech/quality/48-Testcontainers.html">48 Testcontainers</a><a class="nav" href="../tech/quality/49-GitHubActions.html">49 GitHub Actions CI</a><a class="nav" href="../tech/quality/50-部署上線.html">50 部署上線</a></details><div class="foot">由 Markdown 自動產生<br>改文件請編輯 <code>docs/</code> 下的 .md<br>再執行 <code>python3 docs/build_site.py</code></div></nav>
+<div class="main"><div class="wrap">
+<article>
+<h1 id="03">03 資料庫設計</h1>
+<blockquote>
+<p><a class="gloss" href="../tech/database/22-關聯式資料庫與SQL.html" title="看這個技術的白話說明">MySQL</a> 8.0 ／ <code>utf8mb4</code> ／ <code>utf8mb4_unicode_ci</code>
+ER 圖見 <a href="../spec/06-圖表總覽.html">06-圖表總覽</a>。本文件是欄位層級的定義，建表以此為準。
+<strong>所有建表與改表都透過 <a href="../tech/database/29-Flyway.html">Flyway</a></strong>，<code>ddl-auto</code> 設為 <code>validate</code>。</p>
+</blockquote>
+<h2 id="0">0. 通用約定</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>約定</th>
+<th>內容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>主鍵</td>
+<td>一律 <code>id BIGINT UNSIGNED AUTO_INCREMENT</code></td>
+</tr>
+<tr>
+<td>命名</td>
+<td>資料表單數 <code>snake_case</code>（<code>menu_item</code>），Java 端 <code>MenuItem</code></td>
+</tr>
+<tr>
+<td>時間</td>
+<td><code>created_at</code> / <code>updated_at</code> 全表皆有，<code>DATETIME(3)</code></td>
+</tr>
+<tr>
+<td><strong>金額</strong></td>
+<td><strong><code>DECIMAL(10,2)</code>，絕對不要用 <code>FLOAT</code>/<code>DOUBLE</code></strong></td>
+</tr>
+<tr>
+<td>布林</td>
+<td><code>TINYINT(1)</code></td>
+</tr>
+<tr>
+<td>列舉</td>
+<td>Java 用 <code>enum</code> + <code>@Enumerated(STRING)</code>；DB 用 <code>VARCHAR(20)</code></td>
+</tr>
+<tr>
+<td>軟刪除</td>
+<td>只有 <code>menu_item</code>、<code>menu_category</code>、<code>dining_table</code> 用 <code>active</code> 旗標</td>
+</tr>
+<tr>
+<td><strong>快照</strong></td>
+<td>訂單相關的名稱與價格<strong>必須存快照</strong>，否則改菜單會讓歷史帳單金額跟著變</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="flyway">Flyway 檔案規劃</h3>
+<pre><code>db/migration/
+├── V1__create_account_tables.sql       member, verification_code, staff
+├── V2__create_menu_tables.sql          menu_category, menu_item, option_group, option_value, menu_item_option_group
+├── V3__create_dining_tables.sql        dining_table, dining_session, order_ticket, order_item, order_item_option
+├── V4__create_inventory_tables.sql     inventory_item, inventory_log
+├── V5__create_payment_tables.sql       payment
+├── V6__create_reservation_tables.sql   reservation
+├── V7__create_service_and_waitlist.sql service_call, waitlist
+└── V8__create_member_benefit_tables.sql point_transaction, coupon, member_coupon   （進階）
+</code></pre>
+<p><strong>migration 檔案要指定唯一負責人</strong>（工作分配定案後指派），其他人要改表就開 issue 請他加。
+<strong>已經合併進 <code>develop</code> 的檔案永遠不能修改</strong>——別人的資料庫已經跑過那一版了，改了 <a class="gloss" href="../tech/database/29-Flyway.html" title="看這個技術的白話說明">Flyway</a> 會拒絕啟動。要改就寫一支新的。</p>
+<hr />
+<h2 id="1">1. 帳號與權限</h2>
+<h3 id="member"><code>member</code> 會員</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>型別</th>
+<th>約束</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>BIGINT</td>
+<td>PK</td>
+<td></td>
+</tr>
+<tr>
+<td>phone</td>
+<td>VARCHAR(20)</td>
+<td><strong>UNIQUE, NOT NULL</strong></td>
+<td>登入帳號 <code>09xxxxxxxx</code></td>
+</tr>
+<tr>
+<td>nickname</td>
+<td>VARCHAR(50)</td>
+<td>NULL</td>
+<td><strong>匿名轉會員時可為空</strong>，之後補</td>
+</tr>
+<tr>
+<td>gender</td>
+<td>VARCHAR(10)</td>
+<td>NULL</td>
+<td><code>MALE</code>/<code>FEMALE</code>/<code>OTHER</code>，供屬性推薦</td>
+</tr>
+<tr>
+<td>birth_date</td>
+<td>DATE</td>
+<td>NULL</td>
+<td>供年齡層推薦</td>
+</tr>
+<tr>
+<td>points</td>
+<td>INT</td>
+<td>DEFAULT 0</td>
+<td>點數餘額（快取欄位）</td>
+</tr>
+<tr>
+<td>profile_completed</td>
+<td>TINYINT(1)</td>
+<td>DEFAULT 0</td>
+<td>是否已補完資料</td>
+</tr>
+<tr>
+<td>status</td>
+<td>VARCHAR(20)</td>
+<td></td>
+<td><code>ACTIVE</code>/<code>SUSPENDED</code></td>
+</tr>
+<tr>
+<td>created_at, updated_at</td>
+<td>DATETIME(3)</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<p><a class="gloss" href="../tech/database/24-索引.html" title="看這個技術的白話說明">索引</a>：<code>UNIQUE(phone)</code></p>
+<blockquote>
+<p><strong><code>nickname</code> 可為 NULL 是刻意的</strong>：匿名客人在結帳頁輸入手機就綁定，這時只有手機號碼。等他真的想看紀錄時再補資料。</p>
+</blockquote>
+<h3 id="verification_code"><code>verification_code</code> 手機驗證碼</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>型別</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>BIGINT PK</td>
+<td></td>
+</tr>
+<tr>
+<td>phone</td>
+<td>VARCHAR(20) NOT NULL</td>
+<td></td>
+</tr>
+<tr>
+<td>code</td>
+<td>VARCHAR(6) NOT NULL</td>
+<td></td>
+</tr>
+<tr>
+<td>attempt_count</td>
+<td>INT DEFAULT 0</td>
+<td>滿 3 次作廢</td>
+</tr>
+<tr>
+<td>expires_at</td>
+<td>DATETIME(3)</td>
+<td>建立 +5 分鐘</td>
+</tr>
+<tr>
+<td>used_at</td>
+<td>DATETIME(3) NULL</td>
+<td></td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>DATETIME(3)</td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<p>索引：<code>INDEX(phone, created_at)</code></p>
+<blockquote>
+<p><strong>建議改用 <a href="../tech/realtime/44-Redis.html">Redis</a></strong>（<code>SET otp:&lt;phone&gt; &lt;code&gt; EX 300</code>），天生有 TTL，不用寫清理排程。這張表是還沒導入 <a class="gloss" href="../tech/realtime/44-Redis.html" title="看這個技術的白話說明">Redis</a> 時的後備方案。</p>
+</blockquote>
+<h3 id="staff"><code>staff</code> 員工</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>型別</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>BIGINT PK</td>
+<td></td>
+</tr>
+<tr>
+<td>username</td>
+<td>VARCHAR(50) <strong>UNIQUE</strong></td>
+<td></td>
+</tr>
+<tr>
+<td>password_hash</td>
+<td>VARCHAR(100)</td>
+<td><a class="gloss" href="../tech/backend/20-SpringSecurity.html" title="看這個技術的白話說明">BCrypt</a></td>
+</tr>
+<tr>
+<td>display_name</td>
+<td>VARCHAR(50)</td>
+<td></td>
+</tr>
+<tr>
+<td>role</td>
+<td>VARCHAR(20)</td>
+<td><code>COUNTER</code>/<code>KITCHEN</code>/<code>MANAGER</code></td>
+</tr>
+<tr>
+<td>active</td>
+<td>TINYINT(1) DEFAULT 1</td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>種子資料建三個帳號：<code>counter/1234</code>、<code>kitchen/1234</code>、<code>manager/1234</code>，<strong>並寫進 README</strong>，面試官才能登入看。</p>
+</blockquote>
+<hr />
+<h2 id="2">2. 菜單</h2>
+<h3 id="menu_category"><code>menu_category</code> 分類</h3>
+<p>id、name、sort_order、active</p>
+<p>種子：鍋底／肉品／海鮮／蔬菜／火鍋料／主食／飲料／酒 共 8 類。</p>
+<h3 id="menu_item"><code>menu_item</code> 品項</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>型別</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>BIGINT PK</td>
+<td></td>
+</tr>
+<tr>
+<td>category_id</td>
+<td>BIGINT FK</td>
+<td></td>
+</tr>
+<tr>
+<td>name</td>
+<td>VARCHAR(100)</td>
+<td></td>
+</tr>
+<tr>
+<td>description</td>
+<td>VARCHAR(255)</td>
+<td></td>
+</tr>
+<tr>
+<td>price</td>
+<td>DECIMAL(10,2)</td>
+<td>基礎價</td>
+</tr>
+<tr>
+<td>image_url</td>
+<td>VARCHAR(500)</td>
+<td></td>
+</tr>
+<tr>
+<td><strong>is_soup_base</strong></td>
+<td>TINYINT(1) DEFAULT 0</td>
+<td>是否為鍋底</td>
+</tr>
+<tr>
+<td><strong>is_required_on_open</strong></td>
+<td>TINYINT(1) DEFAULT 0</td>
+<td><strong>每桌至少一份</strong>（共鍋，非每人一份）</td>
+</tr>
+<tr>
+<td><strong>track_inventory</strong></td>
+<td>TINYINT(1) DEFAULT 1</td>
+<td><strong>false = 免費續加品，不扣庫存</strong></td>
+</tr>
+<tr>
+<td><strong>is_refill</strong></td>
+<td>TINYINT(1) DEFAULT 0</td>
+<td>菜單上歸類到「免費續加」區塊</td>
+</tr>
+<tr>
+<td>suitable_for</td>
+<td>VARCHAR(20)</td>
+<td><code>ALL</code>/<code>ADULT</code>/<code>CHILD</code></td>
+</tr>
+<tr>
+<td>spicy_level</td>
+<td>TINYINT</td>
+<td>0–3</td>
+</tr>
+<tr>
+<td>is_vegetarian</td>
+<td>TINYINT(1) DEFAULT 0</td>
+<td>素食標示</td>
+</tr>
+<tr>
+<td>contains_beef</td>
+<td>TINYINT(1) DEFAULT 0</td>
+<td>不吃牛的客人用</td>
+</tr>
+<tr>
+<td>sold_out</td>
+<td>TINYINT(1) DEFAULT 0</td>
+<td>由庫存自動維護</td>
+</tr>
+<tr>
+<td>sort_order</td>
+<td>INT</td>
+<td></td>
+</tr>
+<tr>
+<td>active</td>
+<td>TINYINT(1) DEFAULT 1</td>
+<td>下架用</td>
+</tr>
+</tbody>
+</table></div>
+<p>索引：<code>INDEX(category_id, active, sort_order)</code></p>
+<p><strong>鍋底的種子資料（共鍋 + 鴛鴦）</strong></p>
+<pre><code>麻辣鍋底      price 480  is_soup_base=1  is_required_on_open=1
+酸菜白肉鍋底  price 420  is_soup_base=1  is_required_on_open=1
+昆布鍋底      price 380  is_soup_base=1  is_required_on_open=1
+鴛鴦鍋底      price 0    is_soup_base=1  is_required_on_open=1
+  掛兩個群組：「左鍋湯底」「右鍋湯底」，各 min=1 max=1
+  選項價差：麻辣 +260 / 酸菜 +230 / 昆布 +210（約單鍋的 55%）
+</code></pre>
+<blockquote>
+<p><strong>鴛鴦不需要額外資料表。</strong> 「一桌幾個鍋」也不建模——想點兩鍋就點兩份。</p>
+</blockquote>
+<h3 id="option_group"><code>option_group</code> 選項群組</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id, name</td>
+<td>「份量」「辣度」「左鍋湯底」「加點配料」</td>
+</tr>
+<tr>
+<td>min_select</td>
+<td>0 = 非必選</td>
+</tr>
+<tr>
+<td>max_select</td>
+<td>1 = 單選；&gt;1 = 可複選</td>
+</tr>
+<tr>
+<td>sort_order</td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>群組不綁死在單一品項上</strong>，透過下面的關聯表共用。「辣度」建立一次可掛在 20 個品項上。</p>
+<h3 id="menu_item_option_group"><code>menu_item_option_group</code> 品項 ↔ 群組（多對多）</h3>
+<p><code>menu_item_id</code>、<code>option_group_id</code>、<code>sort_order</code>
+主鍵：<code>PRIMARY KEY(menu_item_id, option_group_id)</code></p>
+<blockquote>
+<p><strong>不要用 <code>@ManyToMany</code></strong>，因為中間表有 <code>sort_order</code>。做成獨立 Entity，見 <a href="../tech/database/26-JPA關聯對應.html">JPA 關聯對應</a>。</p>
+</blockquote>
+<h3 id="option_value"><code>option_value</code> 選項</h3>
+<p>id、option_group_id FK、name、<code>price_delta DECIMAL(10,2)</code>、sort_order、active</p>
+<hr />
+<h2 id="3">3. 桌位、用餐與點餐</h2>
+<h3 id="dining_table"><code>dining_table</code> 桌位</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>型別</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>BIGINT PK</td>
+<td></td>
+</tr>
+<tr>
+<td>table_no</td>
+<td>VARCHAR(10) <strong>UNIQUE</strong></td>
+<td>A01、A02、B01…</td>
+</tr>
+<tr>
+<td>seats</td>
+<td>INT</td>
+<td>2／4／6／8</td>
+</tr>
+<tr>
+<td>area</td>
+<td>VARCHAR(20)</td>
+<td>「大廳」「包廂」</td>
+</tr>
+<tr>
+<td>status</td>
+<td>VARCHAR(20)</td>
+<td><code>AVAILABLE</code>/<code>RESERVED</code>/<code>OCCUPIED</code>/<code>CLEANING</code></td>
+</tr>
+<tr>
+<td><strong>reservable</strong></td>
+<td>TINYINT(1) DEFAULT 1</td>
+<td>開放線上訂位（保留 30% 給現場）</td>
+</tr>
+<tr>
+<td>active</td>
+<td>TINYINT(1) DEFAULT 1</td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<p>種子：12 張桌（2 人 ×2、4 人 ×6、6 人 ×2、8 人 ×2），其中 8 張 <code>reservable = 1</code>。</p>
+<h3 id="dining_session"><code>dining_session</code> 用餐紀錄（＝帳單）★核心</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>型別</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>BIGINT PK</td>
+<td></td>
+</tr>
+<tr>
+<td>table_id</td>
+<td>BIGINT FK</td>
+<td></td>
+</tr>
+<tr>
+<td>member_id</td>
+<td>BIGINT FK <strong>NULL</strong></td>
+<td>匿名點餐時為 NULL</td>
+</tr>
+<tr>
+<td>reservation_id</td>
+<td>BIGINT FK NULL</td>
+<td>由訂位而來時填</td>
+</tr>
+<tr>
+<td>waitlist_id</td>
+<td>BIGINT FK NULL</td>
+<td>由候位而來時填</td>
+</tr>
+<tr>
+<td><strong>session_code</strong></td>
+<td>CHAR(4) <strong>NULL</strong></td>
+<td>開桌碼，<strong>預設不使用故可為 NULL</strong></td>
+</tr>
+<tr>
+<td>session_token</td>
+<td>VARCHAR(64) <strong>UNIQUE</strong></td>
+<td>顧客端 API 憑證</td>
+</tr>
+<tr>
+<td>adult_count / child_count</td>
+<td>INT</td>
+<td><strong>不參與金額計算</strong>（見下方說明）</td>
+</tr>
+<tr>
+<td>status</td>
+<td>VARCHAR(20)</td>
+<td><code>OPEN</code>/<code>CHECKOUT_PENDING</code>/<code>PAID</code>/<code>CANCELLED</code></td>
+</tr>
+<tr>
+<td>subtotal</td>
+<td>DECIMAL(10,2)</td>
+<td>品項小計</td>
+</tr>
+<tr>
+<td>service_fee</td>
+<td>DECIMAL(10,2)</td>
+<td>小計 × 10%</td>
+</tr>
+<tr>
+<td>discount</td>
+<td>DECIMAL(10,2) DEFAULT 0</td>
+<td>優惠券（進階）</td>
+</tr>
+<tr>
+<td>total</td>
+<td>DECIMAL(10,2)</td>
+<td>合計</td>
+</tr>
+<tr>
+<td>opened_at / closed_at</td>
+<td>DATETIME(3)</td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<p>索引：<code>INDEX(table_id, status)</code>、<code>INDEX(member_id, opened_at)</code>、<code>UNIQUE(session_token)</code></p>
+<blockquote>
+<p><strong>人數為什麼不參與金額計算？</strong>
+我們的計價是「一鍋一價 + 單點」、無低消。人數的用途是：座位安排、分帳均分的參考值、兒童友善推薦、客單價統計。
+<strong>這點一定要寫清楚</strong>，不然會有人自己加一個人頭費進去。</p>
+<p><strong>一張桌同時只能有一筆 <code>status = OPEN</code> 的 session。</strong> My<a class="gloss" href="../tech/database/22-關聯式資料庫與SQL.html" title="看這個技術的白話說明">SQL</a> 沒有部分唯一索引，這條規則在 Service 層用 <code>SELECT ... FOR UPDATE</code> 保證（見 <a href="../spec/modules/M2-桌位開桌與候位.html">M2 問題 2</a>）。</p>
+</blockquote>
+<h3 id="order_ticket"><code>order_ticket</code> 點餐單 ★核心</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>型別</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>BIGINT PK</td>
+<td></td>
+</tr>
+<tr>
+<td>dining_session_id</td>
+<td>BIGINT FK</td>
+<td></td>
+</tr>
+<tr>
+<td>sequence_no</td>
+<td>INT</td>
+<td>該次用餐的第幾單</td>
+</tr>
+<tr>
+<td>status</td>
+<td>VARCHAR(20)</td>
+<td><code>PENDING</code>/<code>PREPARING</code>/<code>SERVED</code>/<code>CANCELLED</code></td>
+</tr>
+<tr>
+<td><strong>is_preorder</strong></td>
+<td>TINYINT(1) DEFAULT 0</td>
+<td>訂位時先點的單，KDS 排最前</td>
+</tr>
+<tr>
+<td>source</td>
+<td>VARCHAR(20)</td>
+<td><code>CUSTOMER</code>／<code>STAFF</code>（櫃檯代點）</td>
+</tr>
+<tr>
+<td>placed_at</td>
+<td>DATETIME(3)</td>
+<td><strong>預約單用「開桌時間」而非「線上點餐時間」</strong></td>
+</tr>
+<tr>
+<td>cancel_reason</td>
+<td>VARCHAR(100) NULL</td>
+<td></td>
+</tr>
+<tr>
+<td>updated_at</td>
+<td>DATETIME(3)</td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<p>索引：<code>INDEX(dining_session_id, sequence_no)</code>、<code>INDEX(status, placed_at)</code></p>
+<h3 id="order_item"><code>order_item</code> 單品 ★核心</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>型別</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>BIGINT PK</td>
+<td></td>
+</tr>
+<tr>
+<td>order_ticket_id</td>
+<td>BIGINT FK</td>
+<td></td>
+</tr>
+<tr>
+<td>menu_item_id</td>
+<td>BIGINT FK</td>
+<td>供統計與推薦</td>
+</tr>
+<tr>
+<td><strong>item_name_snapshot</strong></td>
+<td>VARCHAR(100)</td>
+<td>下單當下的名稱</td>
+</tr>
+<tr>
+<td><strong>unit_price_snapshot</strong></td>
+<td>DECIMAL(10,2)</td>
+<td>下單當下的基礎價</td>
+</tr>
+<tr>
+<td>options_price</td>
+<td>DECIMAL(10,2) DEFAULT 0</td>
+<td>所有選項價差合計</td>
+</tr>
+<tr>
+<td>quantity</td>
+<td>INT</td>
+<td></td>
+</tr>
+<tr>
+<td>line_total</td>
+<td>DECIMAL(10,2)</td>
+<td><code>(unit_price + options_price) × quantity</code></td>
+</tr>
+<tr>
+<td>note</td>
+<td>VARCHAR(50) NULL</td>
+<td></td>
+</tr>
+<tr>
+<td>status</td>
+<td>VARCHAR(20)</td>
+<td><code>PENDING</code>/<code>SERVED</code>/<code>CANCELLED</code></td>
+</tr>
+<tr>
+<td>cancel_reason</td>
+<td>VARCHAR(100) NULL</td>
+<td>退菜原因</td>
+</tr>
+<tr>
+<td>served_at</td>
+<td>DATETIME(3) NULL</td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<p>索引：<code>INDEX(order_ticket_id)</code>、<strong><code>INDEX(menu_item_id)</code></strong>（推薦查詢會大量用到）</p>
+<h3 id="order_item_option"><code>order_item_option</code> 單品選項快照</h3>
+<p>id、order_item_id FK、<code>group_name_snapshot</code>、<code>value_name_snapshot</code>、<code>price_delta</code></p>
+<blockquote>
+<p>選項也要存快照，否則刪掉一個選項後歷史訂單會顯示空白。</p>
+</blockquote>
+<h3 id="service_call"><code>service_call</code> 服務鈴 ★新增</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>型別</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>BIGINT PK</td>
+<td></td>
+</tr>
+<tr>
+<td>dining_session_id</td>
+<td>BIGINT FK</td>
+<td></td>
+</tr>
+<tr>
+<td>table_id</td>
+<td>BIGINT FK</td>
+<td>冗餘存一份，櫃檯查詢方便</td>
+</tr>
+<tr>
+<td>type</td>
+<td>VARCHAR(20)</td>
+<td><code>SERVICE</code>／<code>SOUP</code>（加湯）／<code>POT_CLEAN</code>（換鍋撈渣）／<code>CHECKOUT</code></td>
+</tr>
+<tr>
+<td>status</td>
+<td>VARCHAR(20)</td>
+<td><code>PENDING</code>/<code>ACKNOWLEDGED</code>/<code>DONE</code></td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>DATETIME(3)</td>
+<td></td>
+</tr>
+<tr>
+<td>acknowledged_at</td>
+<td>DATETIME(3) NULL</td>
+<td></td>
+</tr>
+<tr>
+<td>staff_id</td>
+<td>BIGINT FK NULL</td>
+<td>誰處理的</td>
+</tr>
+</tbody>
+</table></div>
+<p>索引：<code>INDEX(status, created_at)</code></p>
+<blockquote>
+<p><strong>為什麼要存表而不是只推 <a class="gloss" href="../tech/realtime/41-WebSocket與STOMP.html" title="看這個技術的白話說明">WebSocket</a>？</strong> 櫃檯重新整理後還看得到未處理的、可以統計、可以標記已處理。</p>
+</blockquote>
+<hr />
+<h2 id="4">4. 候位 ★新增</h2>
+<h3 id="waitlist"><code>waitlist</code></h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>型別</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>BIGINT PK</td>
+<td></td>
+</tr>
+<tr>
+<td>ticket_no</td>
+<td>VARCHAR(10)</td>
+<td>A012、B003（依人數分組）</td>
+</tr>
+<tr>
+<td>contact_name</td>
+<td>VARCHAR(50)</td>
+<td></td>
+</tr>
+<tr>
+<td>contact_phone</td>
+<td>VARCHAR(20)</td>
+<td>末四碼即可</td>
+</tr>
+<tr>
+<td>adult_count / child_count</td>
+<td>INT</td>
+<td></td>
+</tr>
+<tr>
+<td>party_size</td>
+<td>INT</td>
+<td>總人數，供配桌用</td>
+</tr>
+<tr>
+<td>status</td>
+<td>VARCHAR(20)</td>
+<td><code>WAITING</code>/<code>CALLED</code>/<code>SEATED</code>/<code>ABANDONED</code>/<code>EXPIRED</code></td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>DATETIME(3)</td>
+<td></td>
+</tr>
+<tr>
+<td>called_at</td>
+<td>DATETIME(3) NULL</td>
+<td><strong>排程從這裡算 10 分鐘過號</strong></td>
+</tr>
+<tr>
+<td>seated_at</td>
+<td>DATETIME(3) NULL</td>
+<td></td>
+</tr>
+<tr>
+<td>dining_session_id</td>
+<td>BIGINT FK NULL</td>
+<td>報到後綁定</td>
+</tr>
+</tbody>
+</table></div>
+<p>索引：<code>INDEX(status, created_at)</code>、<code>INDEX(called_at)</code></p>
+<hr />
+<h2 id="5">5. 訂位</h2>
+<h3 id="reservation"><code>reservation</code></h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>型別</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>BIGINT PK</td>
+<td></td>
+</tr>
+<tr>
+<td>member_id</td>
+<td>BIGINT FK NULL</td>
+<td>非會員也能訂</td>
+</tr>
+<tr>
+<td>contact_name</td>
+<td>VARCHAR(50)</td>
+<td></td>
+</tr>
+<tr>
+<td>contact_phone</td>
+<td>VARCHAR(20)</td>
+<td></td>
+</tr>
+<tr>
+<td><strong>start_time</strong></td>
+<td>DATETIME(3) NOT NULL</td>
+<td>用餐開始</td>
+</tr>
+<tr>
+<td><strong>end_time</strong></td>
+<td>DATETIME(3) NOT NULL</td>
+<td><strong>= start + 100 分 + 15 分緩衝</strong></td>
+</tr>
+<tr>
+<td>adult_count / child_count</td>
+<td>INT</td>
+<td></td>
+</tr>
+<tr>
+<td>party_size</td>
+<td>INT</td>
+<td></td>
+</tr>
+<tr>
+<td>table_id</td>
+<td>BIGINT FK <strong>NULL</strong></td>
+<td>建立時指派；<strong>取消時設為 NULL 以釋放唯一約束</strong></td>
+</tr>
+<tr>
+<td>status</td>
+<td>VARCHAR(20)</td>
+<td><code>PENDING</code>/<code>CONFIRMED</code>/<code>SEATED</code>/<code>CANCELLED</code>/<code>NO_SHOW</code></td>
+</tr>
+<tr>
+<td>preorder_session_id</td>
+<td>BIGINT FK NULL</td>
+<td>預先點餐（進階）</td>
+</tr>
+<tr>
+<td>created_at / cancelled_at</td>
+<td>DATETIME(3)</td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>關鍵索引</strong></p>
+<pre><code class="language-sql">-- 資料庫層的保險：同一桌、同一開始時間不能有兩筆
+CREATE UNIQUE INDEX uk_reservation_table_start ON reservation (table_id, start_time);
+
+-- 區間重疊檢查用
+CREATE INDEX idx_reservation_table_time ON reservation (table_id, start_time, end_time);
+CREATE INDEX idx_reservation_start ON reservation (start_time, status);
+CREATE INDEX idx_reservation_phone ON reservation (contact_phone);
+</code></pre>
+<blockquote>
+<p><strong>重疊判斷式</strong>：<code>existing.start_time &lt; :newEnd AND :newStart &lt; existing.end_time</code>
+<strong>用 <code>&lt;</code> 不是 <code>&lt;=</code></strong>，因為「剛好接續」不算衝突。詳見 <a href="../tech/advanced/46-區間重疊與訂位排程.html">區間重疊與訂位排程</a>。</p>
+<p><strong>取消時把 <code>table_id</code> 設為 NULL</strong>，這樣唯一約束就不會擋住「取消後同一時段重新訂」。狀態紀錄仍然保留。</p>
+</blockquote>
+<hr />
+<h2 id="6">6. 付款</h2>
+<h3 id="payment"><code>payment</code></h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>型別</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>BIGINT PK</td>
+<td></td>
+</tr>
+<tr>
+<td>dining_session_id</td>
+<td>BIGINT FK NULL</td>
+<td>現場結帳</td>
+</tr>
+<tr>
+<td>reservation_id</td>
+<td>BIGINT FK NULL</td>
+<td>訂位預付（進階）</td>
+</tr>
+<tr>
+<td>method</td>
+<td>VARCHAR(20)</td>
+<td><code>APPLE_PAY</code>/<code>GOOGLE_PAY</code>/<code>LINE_PAY</code>/<code>CASH</code></td>
+</tr>
+<tr>
+<td>amount</td>
+<td>DECIMAL(10,2)</td>
+<td></td>
+</tr>
+<tr>
+<td>status</td>
+<td>VARCHAR(20)</td>
+<td><code>PENDING</code>/<code>SUCCESS</code>/<code>FAILED</code>/<code>REFUNDED</code></td>
+</tr>
+<tr>
+<td>transaction_no</td>
+<td>VARCHAR(50)</td>
+<td><code>MOCK-20260913-000123</code></td>
+</tr>
+<tr>
+<td>fail_reason</td>
+<td>VARCHAR(100) NULL</td>
+<td></td>
+</tr>
+<tr>
+<td>paid_at / refunded_at</td>
+<td>DATETIME(3) NULL</td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p><code>dining_session_id</code> 與 <code>reservation_id</code> 恰有一個不為 NULL，在 Service 層檢查。
+<strong>所有付款都是模擬的，不串接任何真實金流 API。</strong></p>
+</blockquote>
+<hr />
+<h2 id="7">7. 庫存</h2>
+<h3 id="inventory_item"><code>inventory_item</code></h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>型別</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>BIGINT PK</td>
+<td></td>
+</tr>
+<tr>
+<td>menu_item_id</td>
+<td>BIGINT FK <strong>UNIQUE</strong></td>
+<td>品項層級庫存（1:1）</td>
+</tr>
+<tr>
+<td>quantity</td>
+<td>INT NOT NULL</td>
+<td><strong><a class="gloss" href="../tech/database/28-鎖與併發.html" title="看這個技術的白話說明">防超賣</a>的關鍵欄位</strong></td>
+</tr>
+<tr>
+<td>unit</td>
+<td>VARCHAR(10)</td>
+<td>「份」「盤」「碗」</td>
+</tr>
+<tr>
+<td>low_threshold</td>
+<td>INT</td>
+<td>低於此值警示</td>
+</tr>
+<tr>
+<td>updated_at</td>
+<td>DATETIME(3)</td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>扣庫存的唯一正確寫法</strong></p>
+<pre><code class="language-sql">UPDATE inventory_item
+   SET quantity = quantity - :qty, updated_at = NOW(3)
+ WHERE menu_item_id = :itemId
+   AND quantity &gt;= :qty;
+-- 影響筆數 0 → 庫存不足，整張點餐單回滾並回 409
+</code></pre>
+<blockquote>
+<p><strong>不要先 <code>SELECT</code> 檢查再 <code>UPDATE</code>。</strong> 兩個人同時點最後一份時，兩邊的 SELECT 都會通過。
+這是整個專案最能展現「有想過並行問題」的地方，<strong>每位成員都要會講</strong>。詳見 <a href="../tech/database/28-鎖與併發.html">鎖與併發</a>。</p>
+<p><strong><code>track_inventory = false</code> 的品項（免費續加）跳過這段</strong>，不扣也不會被標售完。</p>
+</blockquote>
+<h3 id="inventory_log"><code>inventory_log</code></h3>
+<p>id、inventory_item_id FK、<code>change_qty</code>（正負）、<code>quantity_after</code>、<code>reason</code>（<code>ORDER</code>/<code>RESTOCK</code>/<code>ADJUST</code>/<code>CANCEL</code>/<code>WASTE</code>）、<code>ref_id</code>、<code>operator</code>、<code>created_at</code></p>
+<blockquote>
+<p>「叫貨統計」（進階）＝ 這張表依 <code>reason='ORDER'</code> 依日期／品項 group by，不需要額外資料表。</p>
+</blockquote>
+<hr />
+<h2 id="8">8. 會員權益（進階）</h2>
+<h3 id="point_transaction"><code>point_transaction</code></h3>
+<p>id、member_id、dining_session_id NULL、<code>change_amount</code>（正負）、<code>balance_after</code>、<code>type</code>（<code>EARN</code>/<code>REDEEM</code>/<code>EXPIRE</code>/<code>ADJUST</code>）、created_at</p>
+<blockquote>
+<p><code>member.points</code> 是快取欄位，真實來源是這張表的 <code>SUM(change_amount)</code>。</p>
+</blockquote>
+<h3 id="coupon-member_coupon"><code>coupon</code> / <code>member_coupon</code></h3>
+<p><code>coupon</code>：code、name、type（<code>AMOUNT</code>/<code>PERCENT</code>）、value、min_spend、valid_from、valid_to、active
+<code>member_coupon</code>：member_id、coupon_id、status（<code>UNUSED</code>/<code>USED</code>/<code>EXPIRED</code>）、used_at、dining_session_id</p>
+<hr />
+<h2 id="9">9. 索引總表</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>資料表</th>
+<th>索引</th>
+<th>為什麼</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>member</td>
+<td><code>UNIQUE(phone)</code></td>
+<td>登入查詢</td>
+</tr>
+<tr>
+<td>dining_table</td>
+<td><code>UNIQUE(table_no)</code></td>
+<td></td>
+</tr>
+<tr>
+<td>dining_session</td>
+<td><code>(table_id, status)</code></td>
+<td>桌況頁高頻查詢</td>
+</tr>
+<tr>
+<td>dining_session</td>
+<td><code>UNIQUE(session_token)</code></td>
+<td>每次顧客端請求都要驗</td>
+</tr>
+<tr>
+<td>order_ticket</td>
+<td><code>(dining_session_id, sequence_no)</code></td>
+<td>本桌訂單</td>
+</tr>
+<tr>
+<td>order_ticket</td>
+<td><code>(status, placed_at)</code></td>
+<td>KDS 看板</td>
+</tr>
+<tr>
+<td>order_item</td>
+<td><code>(menu_item_id)</code></td>
+<td><strong>人氣推薦統計</strong></td>
+</tr>
+<tr>
+<td>service_call</td>
+<td><code>(status, created_at)</code></td>
+<td>櫃檯未處理清單</td>
+</tr>
+<tr>
+<td>waitlist</td>
+<td><code>(status, created_at)</code>、<code>(called_at)</code></td>
+<td>候位清單與過號排程</td>
+</tr>
+<tr>
+<td>reservation</td>
+<td><code>UNIQUE(table_id, start_time)</code></td>
+<td><strong>防重複訂位</strong></td>
+</tr>
+<tr>
+<td>reservation</td>
+<td><code>(table_id, start_time, end_time)</code></td>
+<td><strong><a class="gloss" href="../tech/advanced/46-區間重疊與訂位排程.html" title="看這個技術的白話說明">區間重疊</a>檢查</strong></td>
+</tr>
+<tr>
+<td>reservation</td>
+<td><code>(start_time, status)</code></td>
+<td>排程掃描</td>
+</tr>
+<tr>
+<td>inventory_item</td>
+<td><code>UNIQUE(menu_item_id)</code></td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="10-1">10. 種子資料策略 ★第 1 週必做</h2>
+<blockquote>
+<p><strong>最容易被忽略、但最容易在 demo 當天翻車的一件事。</strong> 推薦、報表、備貨預測在空資料庫上全是空白。</p>
+</blockquote>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>資料</th>
+<th>數量</th>
+<th>備註</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>分類</td>
+<td>8</td>
+<td>鍋底／肉品／海鮮／蔬菜／火鍋料／主食／飲料／酒</td>
+</tr>
+<tr>
+<td>品項</td>
+<td>約 60</td>
+<td>含 4 種鍋底（3 單味 + 1 鴛鴦）、3～4 個免費續加品</td>
+</tr>
+<tr>
+<td>選項群組</td>
+<td>6～7 組</td>
+<td>份量、辣度、熟度、加點配料、左鍋湯底、右鍋湯底、冰塊</td>
+</tr>
+<tr>
+<td>桌位</td>
+<td>12 張</td>
+<td>2×2、4×6、6×2、8×2；其中 8 張 <code>reservable=1</code></td>
+</tr>
+<tr>
+<td>員工</td>
+<td>3</td>
+<td>counter / kitchen / manager</td>
+</tr>
+<tr>
+<td>會員</td>
+<td>40</td>
+<td><strong>性別各半、年齡分佈 20～65 歲</strong>（否則屬性推薦看不出效果）</td>
+</tr>
+<tr>
+<td>歷史用餐</td>
+<td>約 400 場（過去 90 天）</td>
+<td>平日／假日量要有差異</td>
+</tr>
+<tr>
+<td>歷史點餐單</td>
+<td>約 1200 張</td>
+<td>平均每場 3 張</td>
+</tr>
+<tr>
+<td>歷史單品</td>
+<td>約 5000 筆</td>
+<td><strong>要有明顯的熱門／冷門差異</strong></td>
+</tr>
+<tr>
+<td>庫存</td>
+<td>每品項 20～100</td>
+<td><strong>刻意留 2～3 個品項庫存 = 0</strong> 用來 demo 售完</td>
+</tr>
+<tr>
+<td>未來訂位</td>
+<td>未來 7 天約 20 筆</td>
+<td></td>
+</tr>
+<tr>
+<td>候位</td>
+<td>3～5 筆等待中</td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="_1">實作建議</h3>
+<ul>
+<li>表結構用 <a href="../tech/database/29-Flyway.html">Flyway</a>（<code>V</code> 開頭）</li>
+<li><strong>種子資料用程式產生</strong>（<code>CommandLineRunner</code> + <code>@Profile("local")</code>），不要手寫 SQL——5000 筆手寫不完</li>
+<li>亂數要有規律：週五六人多、<strong>每桌必定至少一份鍋底</strong>、肉品機率高於甜點</li>
+<li>保留一組「乾淨的 demo 桌」（例如 A01）</li>
+</ul>
+<h3 id="demo">Demo 前的重置腳本</h3>
+<p>準備 <code>reset-demo.sh</code>：清掉當日的 session 與 order，保留歷史資料與菜單。<strong>Demo 前 10 分鐘跑一次。</strong> 這個腳本救過很多組。</p><div class="pager"><a href="../spec/02-需求規格.html"><div class="k">← 上一篇</div><div class="n">02 需求規格：基礎與進階功能總表</div></a><a class="next" href="../spec/04-API規格.html"><div class="k">下一篇 →</div><div class="n">04 API 規格</div></a></div>
+</article>
+<aside class="toc"><div class="tt">本頁目錄</div><a href="#0">0. 通用約定</a><a href="#1">1. 帳號與權限</a><a href="#2">2. 菜單</a><a href="#3">3. 桌位、用餐與點餐</a><a href="#4">4. 候位 ★新增</a><a href="#5">5. 訂位</a><a href="#6">6. 付款</a><a href="#7">7. 庫存</a><a href="#8">8. 會員權益（進階）</a><a href="#9">9. 索引總表</a><a href="#10-1">10. 種子資料策略 ★第 1 週必做</a></aside>
+</div></div>
+</div>
+<script src="../vendor/mermaid.min.js"></script>
+<script>
+mermaid.initialize({
+  startOnLoad: true, securityLevel: 'loose', theme: 'base',
+  fontFamily: '"Noto Sans TC","PingFang TC",system-ui,sans-serif',
+  themeVariables: {
+    background:'#FFFFFF',
+    primaryColor:'#FBE8E3', primaryTextColor:'#2B211C', primaryBorderColor:'#C8442E',
+    secondaryColor:'#FCF0DC', secondaryBorderColor:'#E8A33D',
+    tertiaryColor:'#F5EFE5', tertiaryBorderColor:'#E6DED2',
+    lineColor:'#9C8E84', textColor:'#2B211C',
+    mainBkg:'#FBE8E3', nodeBorder:'#C8442E', clusterBkg:'#FBF7F0', clusterBorder:'#E6DED2',
+    titleColor:'#2B211C', edgeLabelBackground:'#FBF7F0',
+    actorBkg:'#FBE8E3', actorBorder:'#C8442E', actorTextColor:'#2B211C',
+    signalColor:'#6B5D54', signalTextColor:'#2B211C',
+    labelBoxBkgColor:'#FCF0DC', labelBoxBorderColor:'#E8A33D', labelTextColor:'#2B211C',
+    loopTextColor:'#2B211C', noteBkgColor:'#FCF0DC', noteBorderColor:'#E8A33D', noteTextColor:'#2B211C',
+    activationBkgColor:'#E6DED2', activationBorderColor:'#9C8E84', sequenceNumberColor:'#FFFFFF',
+    altBackground:'#F5EFE5',
+    taskBkgColor:'#FBE8E3', taskBorderColor:'#C8442E', taskTextColor:'#2B211C',
+    taskTextOutsideColor:'#2B211C', taskTextDarkColor:'#2B211C',
+    activeTaskBkgColor:'#E8A33D', activeTaskBorderColor:'#C9862A',
+    doneTaskBkgColor:'#E4EFE7', doneTaskBorderColor:'#3F7A4E',
+    critBkgColor:'#C8442E', critBorderColor:'#A63522',
+    gridColor:'#E6DED2', todayLineColor:'#B3261E',
+    sectionBkgColor:'#FBF7F0', sectionBkgColor2:'#F5EFE5', altSectionBkgColor:'#FFFFFF',
+    classText:'#2B211C',
+    attributeBackgroundColorOdd:'#FFFFFF', attributeBackgroundColorEven:'#F5EFE5'
+  },
+  gantt:{barHeight:18,barGap:5,topPadding:52,leftPadding:180,fontSize:12},
+  mindmap:{padding:12},
+  sequence:{actorMargin:42,boxTextMargin:6,noteMargin:10,messageMargin:32,width:150},
+  er:{entityPadding:12,minEntityWidth:110}
+});
+</script>
+<script>document.addEventListener('click',function(e){var sb=document.getElementById('sb');if(window.innerWidth<=940&&sb.classList.contains('open')&&!sb.contains(e.target)&&!e.target.closest('.menubtn')){sb.classList.remove('open');}});</script>
+</body>
+</html>
