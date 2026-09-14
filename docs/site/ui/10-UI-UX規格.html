@@ -206,6 +206,14 @@ pre.mermaid svg{max-width:100%;height:auto}
 <td><strong>每個操作都有回饋</strong></td>
 <td>按下去要有狀態變化。載入中要有骨架屏，不要只有空白</td>
 </tr>
+<tr>
+<td><strong>裝置對應固定</strong></td>
+<td>顧客點餐畫面只做<strong>手機直式</strong>；櫃檯、廚房、管理畫面只做<strong>橫式平板或電腦</strong>。兩邊都不做全斷點，詳見 §5</td>
+</tr>
+<tr>
+<td><strong>圖片佔位必須標註</strong></td>
+<td>設計稿與 HTML 草稿裡<strong>不准出現沒有說明的灰色方塊</strong>。每個放圖的位置都要寫明「放哪一種圖 + 尺寸比例 + 搜尋關鍵字」，詳見 <code>11-設計系統.md</code> §6.4</td>
+</tr>
 </tbody>
 </table></div>
 <h3 id="_1">三態規則（每個資料頁面都必須處理）</h3>
@@ -780,11 +788,48 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 </tbody>
 </table></div>
-<ul>
-<li>顧客端：<strong>只做 375px～640px</strong>，更寬時內容置中、最大寬度 480px（模擬手機）</li>
-<li>店家端：<strong>只做 ≥1024px</strong>，明確標示「請使用平板或電腦操作」</li>
-<li>不要兩邊都做全斷點，時間不夠而且沒必要</li>
-</ul>
+<h3 id="51">5.1 兩種裝置，各做一種，不做中間</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>顧客端</th>
+<th>店家端</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>裝置</strong></td>
+<td>手機<strong>直式</strong></td>
+<td><strong>橫式</strong>平板或電腦</td>
+</tr>
+<tr>
+<td><strong>畫面代號</strong></td>
+<td>C-01 ～ C-21</td>
+<td>S-01 ～ S-12</td>
+</tr>
+<tr>
+<td><strong>設計稿畫框</strong></td>
+<td><strong>375 × 812</strong></td>
+<td><strong>1280 × 800</strong></td>
+</tr>
+<tr>
+<td><strong>實作範圍</strong></td>
+<td>375px ～ 640px</td>
+<td>≥ 1024px</td>
+</tr>
+<tr>
+<td><strong>超出範圍時</strong></td>
+<td>內容置中、最大寬度 480px（模擬手機）</td>
+<td>顯示「請將裝置橫放，或改用電腦操作」</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>例外</strong>：C-02 開桌設定人數雖然編號在顧客端，但實際是<strong>櫃檯操作的畫面</strong>，用 1280×800 畫框。</p>
+<p><strong>例外</strong>：S-04 出菜看板 KDS 假設是<strong>固定橫式大螢幕</strong>，不做任何 RWD，直接鎖 1920×1080。</p>
+<blockquote>
+<p>不要兩邊都做全斷點。時間不夠，而且真實店裡也不會有人拿直式平板在櫃檯結帳。</p>
+</blockquote>
 <hr />
 <h2 id="6">6. 無障礙與友善設計檢查表</h2>
 <p>實作完每個頁面後逐條檢查：</p>

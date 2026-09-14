@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>設計系統預覽｜火鍋點餐系統</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+--brand-700:#A63522;--brand-600:#C8442E;--brand-500:#DB5B42;--brand-100:#FBE8E3;
+--accent-600:#C9862A;--accent-500:#E8A33D;--accent-100:#FCF0DC;
+--bg:#FBF7F0;--surface:#FFFFFF;--surface-2:#F5EFE5;--border:#E6DED2;
+--text-900:#2B211C;--text-600:#6B5D54;--text-400:#9C8E84;
+--success:#3F7A4E;--success-bg:#E4EFE7;--warning:#D98324;--warning-bg:#FCF0DC;
+--danger:#B3261E;--danger-bg:#FBE8E3;--info:#2F6F8F;--info-bg:#E5EFF4;
+--table-available:#E6DED2;--table-occupied:#C8442E;--table-reserved:#E8A33D;--table-cleaning:#9C8E84;
+--shadow-card:0 1px 2px rgba(43,33,28,.06),0 4px 12px rgba(43,33,28,.05);
+--shadow-pop:0 8px 24px rgba(43,33,28,.12);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text-900);
+font-family:"Noto Sans TC",system-ui,sans-serif;font-size:16px;line-height:1.75}
+.wrap{max-width:1080px;margin:0 auto;padding:40px 16px 96px}
+h1,h2,h3.serif{font-family:"Noto Serif TC",serif}
+h1{font-size:32px;line-height:1.3;font-weight:900;margin:0 0 8px}
+h2{font-size:22px;line-height:1.5;font-weight:700;margin:56px 0 4px;
+padding-bottom:10px;border-bottom:2px solid var(--border)}
+.lede{color:var(--text-600);margin:0 0 4px}
+.note{font-size:13px;line-height:1.6;color:var(--text-600)}
+.sub{font-size:14px;color:var(--text-600);margin:24px 0 10px;font-weight:700;letter-spacing:.04em}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+padding:20px;box-shadow:var(--shadow-card)}
+.grid{display:grid;gap:12px}
+.sw{border-radius:12px;overflow:hidden;border:1px solid var(--border);background:var(--surface)}
+.sw .chip{height:76px}
+.sw .meta{padding:10px 12px}
+.sw .nm{font-size:13px;font-weight:700}
+.sw .hx{font-size:12px;color:var(--text-600);font-variant-numeric:tabular-nums}
+table{width:100%;border-collapse:collapse;font-size:14px;background:var(--surface);
+border:1px solid var(--border);border-radius:12px;overflow:hidden}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border)}
+th{background:var(--surface-2);font-size:13px;letter-spacing:.04em}
+tr:last-child td{border-bottom:0}
+.btn{border:0;cursor:pointer;border-radius:8px;font-family:inherit;font-weight:500;
+transition:all .15s;display:inline-flex;align-items:center;justify-content:center}
+.btn:active{transform:scale(.98)}
+.btn-lg{height:52px;font-size:18px;padding:0 24px}
+.btn-md{height:44px;font-size:16px;padding:0 20px}
+.btn-sm{height:36px;font-size:14px;padding:0 14px}
+.btn-primary{background:var(--brand-600);color:#fff}
+.btn-primary:hover{background:var(--brand-500)}
+.btn-secondary{background:#fff;color:var(--brand-600);border:1.5px solid var(--brand-600)}
+.btn-secondary:hover{background:var(--brand-100)}
+.btn-ghost{background:transparent;color:var(--text-600)}
+.btn-ghost:hover{color:var(--brand-600)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn[disabled]{opacity:.4;cursor:not-allowed;transform:none}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.ph{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;
+display:flex;align-items:center;justify-content:center;color:var(--text-400);
+font-size:12px;flex:none}
+.mi{display:flex;gap:14px;align-items:center;padding:16px;background:var(--surface);
+border:1px solid var(--border);border-radius:12px;min-height:96px}
+.mi .body{flex:1;min-width:0}
+.mi .nm{font-size:18px;font-weight:700;line-height:1.6}
+.mi .ds{font-size:14px;color:var(--text-600);line-height:1.7;
+display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.price{font-size:20px;font-weight:700;color:var(--brand-600);font-variant-numeric:tabular-nums}
+.plus{width:44px;height:44px;border-radius:50%;background:var(--brand-600);color:#fff;
+border:0;font-size:22px;cursor:pointer;flex:none}
+.sold .ph{filter:grayscale(1) opacity(.6)}
+.sold .nm,.sold .ds{color:var(--text-400)}
+.sold .price{color:var(--text-400);text-decoration:line-through}
+.stamp{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-14deg);
+border:3px solid var(--danger);color:var(--danger);font-family:"Noto Serif TC",serif;
+font-weight:900;font-size:20px;padding:2px 12px;border-radius:4px;opacity:.9;
+background:rgba(255,255,255,.72);letter-spacing:.1em}
+.step{display:inline-flex;align-items:center;border:1px solid var(--border);
+border-radius:999px;background:var(--surface);overflow:hidden}
+.step button{width:44px;height:44px;border:0;background:transparent;cursor:pointer;
+font-size:20px;color:var(--brand-600)}
+.step .n{width:48px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+.opt{display:flex;align-items:center;gap:12px;min-height:56px;padding:12px 16px;
+border:1px solid var(--border);border-radius:12px;background:var(--surface);cursor:pointer}
+.opt.on{background:var(--brand-100);border:1.5px solid var(--brand-600)}
+.opt .gap{flex:1}
+.opt .df{font-size:14px;color:var(--text-600);font-variant-numeric:tabular-nums}
+.opt .ck{color:var(--brand-600);font-weight:700;font-size:18px}
+.bx{width:24px;height:24px;border:1.5px solid var(--border);border-radius:6px;flex:none}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:1.6;
+padding:2px 10px;border-radius:999px;font-weight:500}
+.b-rec{background:var(--accent-500);color:var(--text-900)}
+.b-pri{background:var(--accent-500);color:var(--text-900);box-shadow:0 0 0 1.5px var(--accent-600) inset}
+.b-sold{background:var(--danger);color:#fff}
+.b-done{background:var(--success);color:#fff}
+.b-hot{background:#fff;color:var(--danger);box-shadow:0 0 0 1px var(--danger) inset}
+.toast{display:flex;align-items:center;gap:10px;padding:12px 18px;border-radius:8px;
+color:#fff;box-shadow:var(--shadow-pop);font-size:15px}
+.t-ok{background:var(--success)}.t-bad{background:var(--danger)}.t-n{background:var(--text-900)}
+.sk{background:var(--surface-2);border-radius:8px;animation:br 1.4s ease-in-out infinite}
+@keyframes br{0%,100%{opacity:1}50%{opacity:.5}}
+.kds{background:#241C18;color:#fff;border-radius:12px;padding:20px}
+.kds .no{font-size:32px;font-weight:900;line-height:1.2;font-variant-numeric:tabular-nums}
+.kds .it{font-size:16px;color:#E6DED2;line-height:1.8}
+.tbl{aspect-ratio:1;border-radius:12px;display:flex;flex-direction:column;
+align-items:center;justify-content:center;font-weight:700;gap:2px}
+.tbl small{font-size:12px;font-weight:400;opacity:.85}
+.chk td:first-child{width:38px;text-align:center;font-weight:700;color:var(--text-400)}
+.no{color:var(--danger);font-weight:500}
+.yes{color:var(--success);font-weight:500}
+.pill{display:inline-block;font-size:12px;padding:2px 10px;border-radius:999px;
+background:var(--surface-2);color:var(--text-600);border:1px solid var(--border)}
+.imgph{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+background:var(--surface-2);border:1px dashed var(--border);border-radius:12px;
+color:var(--text-400);font-size:12px;line-height:1.6;text-align:center;padding:12px}
+.imgph b{font-size:14px;color:var(--text-600)}
+.imgph code{font-size:11px;background:var(--bg);padding:1px 6px;border-radius:4px;border:1px solid var(--border)}
+.warnbox{background:var(--warning-bg);border-left:4px solid var(--warning);
+padding:14px 18px;border-radius:0 8px 8px 0;font-size:15px;margin:16px 0}
+@media(max-width:600px){h1{font-size:26px}.wrap{padding:24px 16px 64px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<p class="pill">docs/ui/11-設計系統.md　實際渲染</p>
+<h1>火鍋點餐系統　設計系統</h1>
+<p class="lede">熱氣、紅湯、白瓷、木桌、鐵鍋、台式老店的親切</p>
+<p class="note">像一本印得不錯的紙本菜單被搬到手機上，而不是像一個 SaaS 後台。<br>
+中高價位、多人共鍋，但視覺維持台式暖感——差別在執行精準度，不在色票。</p>
+
+<h2>1　色彩</h2>
+
+<div class="sub">主色 — 紅湯</div>
+<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">
+<div class="sw"><div class="chip" style="background:#A63522"></div><div class="meta"><div class="nm">brand-700</div><div class="hx">#A63522　按下</div></div></div>
+<div class="sw"><div class="chip" style="background:#C8442E"></div><div class="meta"><div class="nm">brand-600</div><div class="hx">#C8442E　主按鈕・價格</div></div></div>
+<div class="sw"><div class="chip" style="background:#DB5B42"></div><div class="meta"><div class="nm">brand-500</div><div class="hx">#DB5B42　hover</div></div></div>
+<div class="sw"><div class="chip" style="background:#FBE8E3"></div><div class="meta"><div class="nm">brand-100</div><div class="hx">#FBE8E3　選中底</div></div></div>
+</div>
+
+<div class="sub">輔色 — 金黃湯頭</div>
+<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">
+<div class="sw"><div class="chip" style="background:#C9862A"></div><div class="meta"><div class="nm">accent-600</div><div class="hx">#C9862A</div></div></div>
+<div class="sw"><div class="chip" style="background:#E8A33D"></div><div class="meta"><div class="nm">accent-500</div><div class="hx">#E8A33D　徽章</div></div></div>
+<div class="sw"><div class="chip" style="background:#FCF0DC"></div><div class="meta"><div class="nm">accent-100</div><div class="hx">#FCF0DC</div></div></div>
+</div>
+
+<div class="sub">中性 — 暖色調，不是灰色</div>
+<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">
+<div class="sw"><div class="chip" style="background:#FBF7F0"></div><div class="meta"><div class="nm">bg</div><div class="hx">#FBF7F0　★不用純白</div></div></div>
+<div class="sw"><div class="chip" style="background:#FFFFFF"></div><div class="meta"><div class="nm">surface</div><div class="hx">#FFFFFF　卡片</div></div></div>
+<div class="sw"><div class="chip" style="background:#F5EFE5"></div><div class="meta"><div class="nm">surface-2</div><div class="hx">#F5EFE5</div></div></div>
+<div class="sw"><div class="chip" style="background:#E6DED2"></div><div class="meta"><div class="nm">border</div><div class="hx">#E6DED2</div></div></div>
+<div class="sw"><div class="chip" style="background:#2B211C"></div><div class="meta"><div class="nm">text-900</div><div class="hx">#2B211C　暖黑</div></div></div>
+<div class="sw"><div class="chip" style="background:#6B5D54"></div><div class="meta"><div class="nm">text-600</div><div class="hx">#6B5D54</div></div></div>
+<div class="sw"><div class="chip" style="background:#9C8E84"></div><div class="meta"><div class="nm">text-400</div><div class="hx">#9C8E84</div></div></div>
+</div>
+
+<div class="sub">語意色</div>
+<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">
+<div class="sw"><div class="chip" style="background:#3F7A4E"></div><div class="meta"><div class="nm">success</div><div class="hx">#3F7A4E　已出餐</div></div></div>
+<div class="sw"><div class="chip" style="background:#D98324"></div><div class="meta"><div class="nm">warning</div><div class="hx">#D98324　庫存低</div></div></div>
+<div class="sw"><div class="chip" style="background:#B3261E"></div><div class="meta"><div class="nm">danger</div><div class="hx">#B3261E　售完・錯誤</div></div></div>
+<div class="sw"><div class="chip" style="background:#2F6F8F"></div><div class="meta"><div class="nm">info</div><div class="hx">#2F6F8F</div></div></div>
+</div>
+
+<div class="warnbox"><strong>紅色是主色，所以錯誤色要用更暗的紅（#B3261E）才分得出來。</strong>
+上面兩塊放一起看：brand-600 <span style="display:inline-block;width:14px;height:14px;background:#C8442E;border-radius:3px;vertical-align:-2px"></span>
+與 danger <span style="display:inline-block;width:14px;height:14px;background:#B3261E;border-radius:3px;vertical-align:-2px"></span>
+——這是整套色票裡最需要你點頭的一組。</div>
+
+<div class="sub">桌況專用</div>
+<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(110px,1fr));max-width:520px">
+<div class="tbl" style="background:var(--table-available);color:var(--text-900)">A1<small>空桌</small></div>
+<div class="tbl" style="background:var(--table-occupied);color:#fff">A2<small>用餐中</small></div>
+<div class="tbl" style="background:var(--table-reserved);color:var(--text-900)">A3<small>已預約</small></div>
+<div class="tbl" style="background:var(--table-cleaning);color:#fff">A4<small>整理中</small></div>
+</div>
+
+<h2>2　字體階層</h2>
+<p class="note">標題用 <strong>Noto Serif TC 明體</strong>，內文用 Noto Sans TC。
+這是脫離 AI 感最有效的一招——AI 生成的介面幾乎清一色無襯線。</p>
+
+<div class="card" style="margin-top:16px">
+<div style="font-family:'Noto Serif TC',serif;font-size:32px;line-height:1.3;font-weight:900">合計 NT$ 2,480</div>
+<div class="note">display　32 / 1.3　Serif 900　結帳合計</div>
+<hr style="border:0;border-top:1px solid var(--border);margin:18px 0">
+<div style="font-family:'Noto Serif TC',serif;font-size:28px;line-height:1.4;font-weight:700">今日菜單</div>
+<div class="note">h1　28 / 1.4　Serif 700　頁面主標題</div>
+<hr style="border:0;border-top:1px solid var(--border);margin:18px 0">
+<div style="font-family:'Noto Serif TC',serif;font-size:22px;line-height:1.5;font-weight:700">肉品・海鮮</div>
+<div class="note">h2　22 / 1.5　Serif 700　區塊標題、分類名</div>
+<hr style="border:0;border-top:1px solid var(--border);margin:18px 0">
+<div style="font-size:18px;line-height:1.6;font-weight:700">安格斯霜降牛五花</div>
+<div class="note">h3　18 / 1.6　Sans 700　品項名稱</div>
+<hr style="border:0;border-top:1px solid var(--border);margin:18px 0">
+<div style="font-size:16px;line-height:1.75">厚切 3mm，涮 8 秒最好吃。油花分布均勻，是我們賣最好的一款。</div>
+<div class="note">body　16 / 1.75　Sans 400　<strong>內文最小值，不得更小</strong></div>
+<hr style="border:0;border-top:1px solid var(--border);margin:18px 0">
+<div style="font-size:14px;line-height:1.7;color:var(--text-600)">已選：大辣・加麵・不要香菜</div>
+<div class="note">body-sm　14 / 1.7　Sans 400　次要資訊</div>
+<hr style="border:0;border-top:1px solid var(--border);margin:18px 0">
+<div style="font-size:13px;line-height:1.6;color:var(--text-600)">18:42 送出</div>
+<div class="note">caption　13 / 1.6　<strong>僅用於非關鍵資訊</strong></div>
+<hr style="border:0;border-top:1px solid var(--border);margin:18px 0">
+<div class="price">NT$ 380</div>
+<div class="note">price　20 / 1.4　Sans 700 tabular-nums</div>
+</div>
+<p class="note" style="margin-top:12px"><strong>中文行高一律 ≥ 1.6。</strong></p>
+
+<h2>3　間距・圓角・陰影</h2>
+<div class="sub">8px 基準：4 / 8 / 12 / 16 / 24 / 32 / 48 / 64</div>
+<div class="row" style="align-items:flex-end">
+<div style="text-align:center"><div style="width:4px;height:40px;background:var(--brand-600)"></div><div class="note">4</div></div>
+<div style="text-align:center"><div style="width:8px;height:40px;background:var(--brand-600)"></div><div class="note">8</div></div>
+<div style="text-align:center"><div style="width:12px;height:40px;background:var(--brand-600)"></div><div class="note">12</div></div>
+<div style="text-align:center"><div style="width:16px;height:40px;background:var(--brand-600)"></div><div class="note">16</div></div>
+<div style="text-align:center"><div style="width:24px;height:40px;background:var(--brand-600)"></div><div class="note">24</div></div>
+<div style="text-align:center"><div style="width:32px;height:40px;background:var(--brand-600)"></div><div class="note">32</div></div>
+<div style="text-align:center"><div style="width:48px;height:40px;background:var(--brand-600)"></div><div class="note">48</div></div>
+<div style="text-align:center"><div style="width:64px;height:40px;background:var(--brand-600)"></div><div class="note">64</div></div>
+</div>
+
+<div class="sub">圓角分層級 — 不要全部同一個大圓角</div>
+<div class="row">
+<div style="text-align:center"><div class="ph" style="width:88px;height:64px;border-radius:12px">12px</div><div class="note">卡片・圖片</div></div>
+<div style="text-align:center"><div class="ph" style="width:88px;height:64px;border-radius:8px">8px</div><div class="note">按鈕・輸入框</div></div>
+<div style="text-align:center"><div class="ph" style="width:88px;height:64px;border-radius:999px">999px</div><div class="note">標籤・徽章</div></div>
+<div style="text-align:center"><div class="ph" style="width:88px;height:64px;border-radius:20px 20px 0 0">20px</div><div class="note">底部彈出</div></div>
+</div>
+
+<div class="sub">陰影只有兩級，都很淡，用暖黑不用純黑</div>
+<div class="row">
+<div class="card" style="width:200px;box-shadow:var(--shadow-card)">shadow-card<div class="note">一般卡片</div></div>
+<div class="card" style="width:200px;box-shadow:var(--shadow-pop)">shadow-pop<div class="note">彈出・hover</div></div>
+</div>
+<p class="note"><strong>禁止</strong>：彩色光暈、發光效果、大面積模糊陰影。</p>
+
+<h2>4　元件（只寫這 8 個，其他用組合）</h2>
+
+<div class="sub">4.1　Button</div>
+<div class="card">
+<div class="row" style="margin-bottom:14px">
+<button class="btn btn-primary btn-lg">加入購物車</button>
+<button class="btn btn-secondary btn-lg">繼續點餐</button>
+<button class="btn btn-ghost btn-lg">稍後再說</button>
+<button class="btn btn-danger btn-lg">取消訂單</button>
+</div>
+<div class="row" style="margin-bottom:14px">
+<button class="btn btn-primary btn-lg">lg 52px</button>
+<button class="btn btn-primary btn-md">md 44px</button>
+<button class="btn btn-primary btn-sm">sm 36px</button>
+<button class="btn btn-primary btn-md" disabled>disabled</button>
+<button class="btn btn-primary btn-md" disabled>處理中…</button>
+</div>
+<p class="note"><strong>主要行動一律用 lg（52px）</strong>——長輩友善。全寬按鈕固定在底部安全區內。</p>
+</div>
+
+<div class="sub">4.2　MenuItemRow　★最常出現的元件</div>
+<div class="grid" style="gap:12px">
+<div class="mi">
+<div class="ph" style="width:80px;height:80px">照片 80×80</div>
+<div class="body">
+<div class="nm">安格斯霜降牛五花 <span class="badge b-rec">人氣</span></div>
+<div class="ds">厚切 3mm，涮 8 秒最好吃。油花分布均勻，是我們賣最好的一款。</div>
+<div class="price">NT$ 380</div>
+</div>
+<button class="plus">+</button>
+</div>
+<div class="mi">
+<div class="ph" style="width:80px;height:80px">照片 80×80</div>
+<div class="body">
+<div class="nm">蔬菜綜合拼盤</div>
+<div class="ds">當日鮮採，六種時蔬。</div>
+<div class="price">NT$ 220</div>
+</div>
+<div class="step"><button>−</button><div class="n">2</div><button>+</button></div>
+</div>
+<div class="mi sold" style="position:relative">
+<div class="ph" style="width:80px;height:80px">照片 80×80</div>
+<div class="body">
+<div class="nm">和牛肋眼 <span class="badge b-sold">售完</span></div>
+<div class="ds">今日限量 20 份。</div>
+<div class="price">NT$ 880</div>
+</div>
+<button class="plus" style="background:var(--text-400)" disabled>+</button>
+<div class="stamp">售完</div>
+</div>
+</div>
+<p class="note">售完態：照片灰階、價格劃線、紅色印章斜蓋（不是灰化了事）、整列停用。</p>
+
+<div class="sub">4.3　OptionCard</div>
+<div class="grid" style="gap:10px;max-width:520px">
+<div class="opt on"><span>麻辣鍋</span><span class="gap"></span><span class="df">+NT$ 60</span><span class="ck">✓</span></div>
+<div class="opt"><span>養生蔬菜鍋</span><span class="gap"></span><span class="ck" style="visibility:hidden">✓</span></div>
+<div class="opt"><span class="bx"></span><span>加麵</span><span class="gap"></span><span class="df">+NT$ 40</span></div>
+<div class="opt"><span class="bx" style="background:var(--brand-600);border-color:var(--brand-600)"></span><span>不要香菜</span><span class="gap"></span></div>
+</div>
+
+<div class="sub">4.4　Badge</div>
+<div class="row">
+<span class="badge b-rec">人氣推薦</span>
+<span class="badge b-pri">預約優先</span>
+<span class="badge b-sold">售完</span>
+<span class="badge b-done">已出餐</span>
+<span class="badge b-hot">大辣</span>
+</div>
+
+<div class="sub">4.5　Toast　（禁止用瀏覽器 alert()）</div>
+<div class="grid" style="gap:10px;max-width:420px">
+<div class="toast t-ok">已送出 3 項餐點</div>
+<div class="toast t-bad">庫存不足，和牛肋眼已售完</div>
+<div class="toast t-n">已同步其他裝置</div>
+</div>
+
+<div class="sub">4.6　Skeleton　（用色塊呼吸，不要轉圈圈）</div>
+<div class="mi">
+<div class="sk" style="width:80px;height:80px;border-radius:12px"></div>
+<div class="body">
+<div class="sk" style="height:20px;width:60%;margin-bottom:10px"></div>
+<div class="sk" style="height:14px;width:85%;margin-bottom:6px"></div>
+<div class="sk" style="height:22px;width:30%"></div>
+</div>
+</div>
+
+<div class="sub">4.7　唯一的深色例外：出菜看板 KDS</div>
+<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">
+<div class="kds"><div class="no">A3　<span style="font-size:16px;color:#E8A33D">08:42</span></div>
+<div class="it">牛五花 ×2<br>蔬菜拼盤 ×1<br>麻辣鍋底 ×1</div></div>
+<div class="kds" style="box-shadow:0 0 0 3px var(--warning) inset"><div class="no">B1　<span style="font-size:16px;color:#D98324">14:20 ⚠</span></div>
+<div class="it">豬梅花 ×3<br>手工丸子 ×2</div></div>
+</div>
+<p class="note">廚房光線強、距離遠，深底高對比最清楚。<strong>其他所有頁面一律亮色。</strong></p>
+
+<h2>5　圖片佔位　★ 新增規範</h2>
+<p class="note"><strong>設計稿與 HTML 草稿裡不准出現沒有說明的灰色方塊。</strong>
+每個要放圖的位置都要當場寫清楚三件事：放哪一種圖、尺寸比例、建議搜尋關鍵字。
+實作的人照著標註去 Unsplash / Pexels 搜就好，不用回頭問。</p>
+
+<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(260px,1fr));margin-top:16px">
+<div class="imgph" style="aspect-ratio:16/9"><b>餐廳形象 banner</b><span>1600×900・16:9</span><code>taiwanese hotpot restaurant interior</code></div>
+<div class="imgph" style="aspect-ratio:16/9"><b>主打菜色情境照</b><span>640×360・16:9</span><code>hot pot table spread</code></div>
+<div class="imgph" style="aspect-ratio:16/9"><b>餐廳環境／包廂</b><span>1600×900・16:9</span><code>asian restaurant private room</code></div>
+</div>
+<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr));margin-top:12px">
+<div class="imgph" style="aspect-ratio:1"><b>肉盤</b><span>320×320・1:1</span><code>sliced beef platter</code></div>
+<div class="imgph" style="aspect-ratio:1"><b>菜盤</b><span>320×320・1:1</span><code>vegetable platter hotpot</code></div>
+<div class="imgph" style="aspect-ratio:1"><b>海鮮盤</b><span>320×320・1:1</span><code>seafood platter hot pot</code></div>
+<div class="imgph" style="aspect-ratio:1"><b>火鍋料</b><span>320×320・1:1</span><code>fish balls tofu</code></div>
+<div class="imgph" style="aspect-ratio:1"><b>麻辣鍋湯頭</b><span>320×320・1:1</span><code>mala broth top view</code></div>
+</div>
+
+<div class="sub">灌進 Figma 後，圖層名稱要保留這個資訊</div>
+<p class="note">前端在 Inspect 面板點到佔位框就看得到，不必另外問設計：</p>
+<table>
+<tr><th style="width:280px">Figma 圖層名</th><th>前端看到後就知道</th></tr>
+<tr><td><code>IMG／餐廳形象-banner／16-9</code></td><td>放餐廳形象照，16:9</td></tr>
+<tr><td><code>IMG／肉盤／1-1</code></td><td>放肉盤照片，正方形</td></tr>
+<tr><td><code>IMG／麻辣鍋湯頭／1-1</code></td><td>放麻辣鍋湯頭俯拍，正方形</td></tr>
+</table>
+<div class="warnbox"><strong>食物是主角。</strong>排版順序是「先替照片留夠大的空間，再去排文字」。
+反過來做，最後一定會變成文字很滿、圖很小的 AI 感版面。<br>
+另外：一律挑<strong>亞洲／台式</strong>的照片，同畫面內<strong>色溫要一致</strong>——這是中高價位跟路邊店的差別所在。</div>
+
+<h2>6　★ 不要有 AI 感：十一個必檢項目</h2>
+<table class="chk">
+<tr><th></th><th>AI 感來源</th><th>我們的做法</th></tr>
+<tr><td>1</td><td class="no">頁面底色用純白 #FFFFFF</td><td class="yes">暖米白 #FBF7F0</td></tr>
+<tr><td>2</td><td class="no">Tailwind 預設 gray / slate（偏冷偏藍）</td><td class="yes">暖灰 #E6DED2 / #6B5D54 / #2B211C</td></tr>
+<tr><td>3</td><td class="no">靛藍到紫的漸層（最經典的 AI 標記）</td><td class="yes">全站禁用紫色與藍紫漸層</td></tr>
+<tr><td>4</td><td class="no">標題用 Inter 或系統預設無襯線</td><td class="yes">標題用 Noto Serif TC 明體</td></tr>
+<tr><td>5</td><td class="no">三張等寬圓角卡片並排</td><td class="yes">左圖右文列表 / 橫向捲動，避免對稱三欄</td></tr>
+<tr><td>6</td><td class="no">所有元素同一個 rounded-2xl</td><td class="yes">卡片 12 / 按鈕 8 / 標籤 999，分層級</td></tr>
+<tr><td>7</td><td class="no">細線 icon 當主視覺</td><td class="yes">主視覺用真實食物照片，icon 只在次要位置</td></tr>
+<tr><td>8</td><td class="no">「輕鬆點餐，美味享受」</td><td class="yes">「厚切 3mm，涮 8 秒最好吃」</td></tr>
+<tr><td>9</td><td class="no">AI 生成的食物插圖</td><td class="yes">Unsplash / Pexels 真實照片</td></tr>
+<tr><td>10</td><td class="no">用 emoji 當 icon 🍲🔥✨</td><td class="yes">lucide 圖示或自製 SVG</td></tr>
+<tr><td>11</td><td class="no">沒有說明的灰色佔位方塊，或乾脆不留放圖的空間</td><td class="yes">每個佔位標註「放什麼圖 + 尺寸 + 關鍵字」</td></tr>
+</table>
+
+<div class="sub">三個「只有這家店有」的細節</div>
+<table>
+<tr><td style="width:180px"><strong>手寫感木牌</strong></td><td>菜單推薦區用木紋底 + 手寫字體的「今日推薦」小標</td></tr>
+<tr><td><strong>鍋子載入動畫</strong></td><td>火鍋冒泡泡，不是通用轉圈</td></tr>
+<tr><td><strong>售完印章</strong></td><td>斜蓋在照片上的紅色方框印章（上面 4.2 已示範）</td></tr>
+</table>
+
+<h2>7　畫面清單　33 張</h2>
+<table style="margin-bottom:18px">
+<tr><th></th><th>顧客端</th><th>店家端</th></tr>
+<tr><td style="width:110px"><strong>裝置</strong></td><td>手機<strong>直式</strong></td><td><strong>橫式</strong>平板或電腦</td></tr>
+<tr><td><strong>設計稿畫框</strong></td><td><strong>375 × 812</strong></td><td><strong>1280 × 800</strong></td></tr>
+<tr><td><strong>實作範圍</strong></td><td>375 – 640px</td><td>≥ 1024px</td></tr>
+<tr><td><strong>超出範圍</strong></td><td>置中、最大寬 480px</td><td>「請將裝置橫放，或改用電腦操作」</td></tr>
+</table>
+<p class="note"><strong>例外</strong>：C-02 開桌設定人數雖然編號在顧客端，實際是櫃檯畫面，用 1280×800。
+S-04 出菜看板 KDS 假設固定橫式大螢幕，鎖 1920×1080，不做 RWD。</p>
+<div class="sub">顧客端　手機直式 375×812　21 張</div>
+<table>
+<tr><th style="width:70px">ID</th><th>畫面</th><th style="width:230px">路由</th></tr>
+<tr><td>C-01</td><td>掃碼進入／桌號確認</td><td>/t/:tableNo</td></tr>
+<tr><td>C-02</td><td>開桌設定人數（櫃檯端・1280×800）</td><td>/t/:tableNo/open</td></tr>
+<tr><td>C-02b</td><td>輸入開桌碼加入</td><td>/t/:tableNo/join</td></tr>
+<tr><td>C-03</td><td>選鍋底（開桌後強制）</td><td>/order/soup-base</td></tr>
+<tr><td>C-04</td><td>菜單主頁　★最重要</td><td>/order/menu</td></tr>
+<tr><td>C-05</td><td>品項詳情與選項</td><td>/order/items/:id</td></tr>
+<tr><td>C-06</td><td>購物車</td><td>/order/cart</td></tr>
+<tr><td>C-07</td><td>送出成功</td><td>/order/submitted</td></tr>
+<tr><td>C-08</td><td>本桌訂單與出菜進度　★多裝置同步</td><td>/order/tickets</td></tr>
+<tr><td>C-09</td><td>結帳明細</td><td>/checkout</td></tr>
+<tr><td>C-10</td><td>付款方式選擇</td><td>/checkout/pay</td></tr>
+<tr><td>C-11</td><td>付款完成</td><td>/checkout/done</td></tr>
+<tr><td>C-12</td><td>會員登入（手機驗證）</td><td>/auth/login</td></tr>
+<tr><td>C-13</td><td>會員註冊補資料</td><td>/auth/register</td></tr>
+<tr><td>C-14</td><td>會員中心</td><td>/member</td></tr>
+<tr><td>C-15</td><td>消費紀錄</td><td>/member/history</td></tr>
+<tr><td>C-16</td><td>預約 1 日期時段人數</td><td>/reserve</td></tr>
+<tr><td>C-17</td><td>預約 2 預先點餐</td><td>/reserve/preorder</td></tr>
+<tr><td>C-18</td><td>預約 3 付款完成</td><td>/reserve/done</td></tr>
+<tr><td>C-19</td><td>我的預約</td><td>/member/reservations</td></tr>
+<tr><td>C-21</td><td>服務鈴面板</td><td>彈出層</td></tr>
+</table>
+
+<div class="sub">店家端　橫式平板／電腦 1280×800　12 張</div>
+<table>
+<tr><th style="width:70px">ID</th><th>畫面</th><th style="width:230px">路由</th></tr>
+<tr><td>S-01</td><td>員工登入</td><td>/admin/login</td></tr>
+<tr><td>S-02</td><td>桌況總覽　★櫃檯主畫面</td><td>/admin/tables</td></tr>
+<tr><td>S-03</td><td>桌位詳情</td><td>/admin/tables/:id</td></tr>
+<tr><td>S-04</td><td>出菜看板 KDS　★廚房主畫面・1920×1080</td><td>/admin/kitchen</td></tr>
+<tr><td>S-05</td><td>菜單管理</td><td>/admin/menu</td></tr>
+<tr><td>S-06</td><td>選項群組管理</td><td>/admin/menu/options</td></tr>
+<tr><td>S-07</td><td>預約管理</td><td>/admin/reservations</td></tr>
+<tr><td>S-08</td><td>座位管理</td><td>/admin/tables-config</td></tr>
+<tr><td>S-09</td><td>庫存管理</td><td>/admin/inventory</td></tr>
+<tr><td>S-10</td><td>候位管理</td><td>/admin/waitlist</td></tr>
+<tr><td>S-11</td><td>服務鈴通知面板</td><td>固定右上</td></tr>
+<tr><td>S-12</td><td>報表　<span class="pill">進階</span></td><td>/admin/reports</td></tr>
+</table>
+
+</div>
+</body>
+</html>

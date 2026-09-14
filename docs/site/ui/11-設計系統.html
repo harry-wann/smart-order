@@ -722,6 +722,190 @@ export default {
 <li>一律 <code>loading="lazy"</code>（首屏除外）</li>
 <li><strong>全部圖片要有 <code>alt</code></strong></li>
 </ul>
+<h3 id="64">6.4 ★ 圖片佔位一定要標註「放什麼圖」</h3>
+<p>設計稿和 HTML 草稿裡，<strong>不准出現沒有說明的灰色方塊</strong>。每一個要放圖的位置，都必須當場寫清楚三件事：</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>要寫什麼</th>
+<th>例子</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>放哪一種圖</strong></td>
+<td>「這邊放一個肉盤的圖片」「這邊放一個菜盤的圖片」「這邊放餐廳的 banner」</td>
+</tr>
+<tr>
+<td><strong>尺寸與比例</strong></td>
+<td><code>1600×900・16:9</code></td>
+</tr>
+<tr>
+<td><strong>建議搜尋關鍵字</strong></td>
+<td><code>taiwanese hotpot restaurant interior</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>為什麼要做到這個程度：</p>
+<ol>
+<li><strong>實作的人不用猜。</strong> 拿到設計稿的人照著標註去 Unsplash / Pexels 搜，十分鐘就能把圖補完，不用回頭問。</li>
+<li><strong>沒標註的空框會被當成留白。</strong> 實作時很容易被直接無視，或隨手塞一張不對調性的圖——這是整個畫面掉價最快的方式。</li>
+</ol>
+<p><strong>HTML 草稿的寫法</strong></p>
+<pre><code class="language-html">&lt;!-- 圖片佔位：三行說明一行都不能少 --&gt;
+&lt;div class=&quot;img-ph&quot; style=&quot;aspect-ratio:16/9&quot;&gt;
+  &lt;b&gt;餐廳形象 banner&lt;/b&gt;
+  &lt;span&gt;1600×900・16:9&lt;/span&gt;
+  &lt;span&gt;搜尋 taiwanese hotpot restaurant interior&lt;/span&gt;
+&lt;/div&gt;
+</code></pre>
+<pre><code class="language-css">.img-ph{
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  background:var(--surface-2); border:1px dashed var(--border); border-radius:12px;
+  color:var(--text-400); font-size:12px; line-height:1.6; text-align:center; padding:12px;
+}
+.img-ph b{ font-size:14px; color:var(--text-600); }
+</code></pre>
+<p><strong>Figma 圖層命名</strong></p>
+<p>灌進 Figma 之後，佔位框的圖層名稱要保留這個資訊——前端在 Inspect 面板點到它就看得到，不必另外問：</p>
+<pre><code>IMG／餐廳形象-banner／16-9
+IMG／肉盤／1-1
+IMG／麻辣鍋湯頭／1-1
+</code></pre>
+<blockquote>
+<p><strong>食物是主角。</strong> 排版順序是「先替照片留夠大的空間，再去排文字」。反過來做，最後一定會變成文字很滿、圖很小的 AI 感版面。</p>
+</blockquote>
+<hr />
+<h3 id="65">6.5 本專案圖片對照表</h3>
+<p><strong>依畫面</strong></p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>畫面</th>
+<th>位置</th>
+<th>放什麼圖</th>
+<th>尺寸・比例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C-01 掃碼進入</td>
+<td>頁面上方</td>
+<td>餐廳形象 banner</td>
+<td>1600×900・16:9</td>
+</tr>
+<tr>
+<td>C-03 選鍋底</td>
+<td>每個鍋底卡片</td>
+<td>湯頭俯拍特寫</td>
+<td>320×320・1:1</td>
+</tr>
+<tr>
+<td>C-04 菜單主頁</td>
+<td>頂部推薦區</td>
+<td>主打菜色情境照（橫向捲動）</td>
+<td>640×360・16:9</td>
+</tr>
+<tr>
+<td>C-04 菜單主頁</td>
+<td>分類標籤</td>
+<td>分類封面</td>
+<td>640×360・16:9</td>
+</tr>
+<tr>
+<td>C-04 菜單主頁</td>
+<td>每一列品項</td>
+<td>品項縮圖</td>
+<td>320×320・1:1</td>
+</tr>
+<tr>
+<td>C-05 品項詳情</td>
+<td>頁面主圖</td>
+<td>該品項特寫</td>
+<td>1200×675・16:9</td>
+</tr>
+<tr>
+<td>C-07 / C-11 / C-18 完成頁</td>
+<td>中央</td>
+<td><strong>不放照片</strong>，用插圖或勾勾動畫</td>
+<td>—</td>
+</tr>
+<tr>
+<td>C-16 預約 步驟1</td>
+<td>頁面上方</td>
+<td>餐廳環境／包廂</td>
+<td>1600×900・16:9</td>
+</tr>
+<tr>
+<td>C-14 會員中心</td>
+<td>卡片底</td>
+<td>質感木桌紋理（弱化處理）</td>
+<td>800×400・2:1</td>
+</tr>
+<tr>
+<td>S-05 菜單管理</td>
+<td>列表縮圖</td>
+<td>沿用品項縮圖</td>
+<td>80×80・1:1</td>
+</tr>
+<tr>
+<td>其餘店家端畫面</td>
+<td>—</td>
+<td><strong>不放照片</strong>，管理介面以資訊密度為主</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>依品項分類</strong>（菜單縮圖與詳情圖都照這張表找）</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>分類</th>
+<th>放什麼圖</th>
+<th>搜尋關鍵字</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>肉品</td>
+<td>肉盤：牛五花／豬梅花／羊肉片，捲成花擺盤</td>
+<td><code>sliced beef platter hotpot</code>、<code>pork belly slices plate</code></td>
+</tr>
+<tr>
+<td>海鮮</td>
+<td>海鮮盤：蝦、蛤蜊、魚片</td>
+<td><code>seafood platter hot pot</code>、<code>shrimp clams plate</code></td>
+</tr>
+<tr>
+<td>蔬菜</td>
+<td>菜盤：時蔬拼盤、菇類</td>
+<td><code>vegetable platter hotpot</code>、<code>mushroom plate asian</code></td>
+</tr>
+<tr>
+<td>火鍋料</td>
+<td>丸子、豆皮、餃類拼盤</td>
+<td><code>fish balls tofu hotpot ingredients</code></td>
+</tr>
+<tr>
+<td>主食</td>
+<td>麵、冬粉、白飯</td>
+<td><code>noodles bowl asian</code>、<code>steamed rice bowl</code></td>
+</tr>
+<tr>
+<td>飲料</td>
+<td>茶、汽水、啤酒</td>
+<td><code>iced tea glass</code>、<code>beer glass restaurant</code></td>
+</tr>
+<tr>
+<td>湯底</td>
+<td>湯頭俯拍：麻辣／昆布／番茄／藥膳</td>
+<td><code>mala hot pot broth top view</code>、<code>kombu broth pot</code></td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>再提醒一次：一律挑<strong>亞洲／台式</strong>的照片。搜 <code>hot pot</code> 會大量出現歐美 fusion 風格，混進來非常出戲。同一個畫面裡的照片還要<strong>色溫一致</strong>——這是中高價位與路邊店的差別所在。</p>
+</blockquote>
 <hr />
 <h2 id="7-ai">7. ★「不要有 AI 感」檢查表</h2>
 <blockquote>
@@ -787,6 +971,11 @@ AI 生成的介面之所以一眼就看得出來，是因為模型在沒有明�
 <td>10</td>
 <td>用 emoji 當 icon（🍲🔥✨）</td>
 <td>用 lucide 圖示或自製 SVG。emoji 在不同裝置長得不一樣</td>
+</tr>
+<tr>
+<td>11</td>
+<td>沒有說明的灰色佔位方塊，或乾脆不留放圖的空間</td>
+<td>每個佔位都標註「放什麼圖 + 尺寸 + 搜尋關鍵字」，見 §6.4</td>
 </tr>
 </tbody>
 </table></div>
