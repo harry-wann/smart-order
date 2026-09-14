@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>S-01｜員工登入</title>
+<link rel="stylesheet" href="_shared.css">
+</head>
+<body>
+<!-- #thumbmode：總覽頁用 iframe 取縮圖時，只留第一個畫框 -->
+<span id="thumbmode"></span>
+<div class="stage">
+
+<div>
+  <p class="meta"><b>S-01｜員工登入</b><code>1280 × 800</code><code>/admin/login</code></p>
+  <div class="frame f-desk">
+    <div class="c fill" style="align-items:center;justify-content:center">
+      <div class="center" style="margin-bottom:32px">
+        <div class="serif" style="font-size:30px;font-weight:900;line-height:1.4">鼎沸鍋物</div>
+        <div class="t-cap" style="letter-spacing:.22em">SMART ORDER　員工後台</div>
+      </div>
+
+      <div class="card" style="width:400px;padding:32px">
+        <label class="field">
+          <span class="label">員工帳號</span>
+          <div class="input on r g8"><svg class="ic ic-sm dim" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>meimei</span></div>
+        </label>
+        <label class="field">
+          <span class="label">密碼</span>
+          <div class="input r g8"><svg class="ic ic-sm dim" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span class="dim">••••••••</span></div>
+        </label>
+        <button class="btn btn-primary btn-lg btn-block mt8">登入</button>
+        <p class="hint center">忘記密碼請找店長重設</p>
+      </div>
+
+      <div class="card card-tight card-flat mt24" style="width:400px;background:var(--surface-2);border-style:dashed">
+        <div class="t-cap" style="margin-bottom:8px">三種角色，後端擋權限（不是前端把按鈕藏起來）</div>
+        <div class="r g8 wrap">
+          <span class="badge b-plain">店長　全部</span>
+          <span class="badge b-plain">外場　桌況・點餐・結帳・預約</span>
+          <span class="badge b-plain">廚房　只有出菜看板</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div>
+  <p class="meta"></p>
+<div class="sidenote">
+  <b>錯誤與安全</b>
+  <dl style="margin:0">
+    <dt>帳密錯</dt>
+    <dd>「帳號或密碼不對」<br>不分開講是哪個錯 — 避免被猜帳號</dd>
+    <dt>密碼</dt>
+    <dd>BCrypt 雜湊，資料庫看不到明碼</dd>
+    <dt>登入後</dt>
+    <dd>發 JWT；每支 /api/admin/** 都要角色檢查，<br>用低權限 token 打必須回 403</dd>
+    <dt>廚房帳號</dt>
+    <dd>登入後直接進 S-04，側邊欄只剩出菜看板</dd>
+  </dl>
+</div>
+</div>
+
+</div>
+</body>
+</html>

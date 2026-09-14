@@ -1,0 +1,517 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@700;900&display=swap');
+
+/* ==========================================================================
+   火鍋點餐系統 — 設計稿共用樣式
+   依據 docs/ui/11-設計系統.md　與　docs/ui/10-UI-UX規格.md
+   用途：docs/ui/mockups/ 底下 33 張 HTML 施工架。這不是前端原始碼。
+   ========================================================================== */
+
+:root{
+  /* 主色 — 紅湯 */
+  --brand-700:#A63522; --brand-600:#C8442E; --brand-500:#DB5B42; --brand-100:#FBE8E3;
+  /* 輔色 — 金黃湯頭 */
+  --accent-600:#C9862A; --accent-500:#E8A33D; --accent-100:#FCF0DC;
+  /* 中性 — 暖色調，不是灰色 */
+  --bg:#FBF7F0; --surface:#FFFFFF; --surface-2:#F5EFE5; --border:#E6DED2;
+  --text-900:#2B211C; --text-600:#6B5D54; --text-400:#9C8E84;
+  /* 語意色 */
+  --success:#3F7A4E; --success-bg:#E4EFE7;
+  --warning:#D98324; --warning-bg:#FCF0DC;
+  --danger:#B3261E;  --danger-bg:#FBE8E3;
+  --info:#2F6F8F;    --info-bg:#E5EFF4;
+  /* 桌況 */
+  --table-available:#E6DED2; --table-occupied:#C8442E;
+  --table-reserved:#E8A33D;  --table-cleaning:#9C8E84;
+  /* 陰影：只有兩級，用暖黑 */
+  --shadow-card:0 1px 2px rgba(43,33,28,.06),0 4px 12px rgba(43,33,28,.05);
+  --shadow-pop:0 8px 24px rgba(43,33,28,.12);
+  /* KDS 深色（全站唯一例外） */
+  --kds-bg:#241C18; --kds-card:#33261F; --kds-line:#4A3A31; --kds-text:#F3EAE0;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; padding:32px 24px 64px;
+  background:#EDE4D6;
+  color:var(--text-900);
+  font-family:"Noto Sans TC",system-ui,sans-serif;
+  font-size:16px; line-height:1.75;
+}
+button{font-family:inherit;font-size:inherit;color:inherit}
+
+/* ---------- 預覽舞台與畫框（匯入 Figma 後 .stage/.meta 可刪） ------------ */
+.stage{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start;justify-content:center;max-width:100%}
+.meta{margin:0 0 8px;font-size:13px;line-height:1.6;color:var(--text-600);
+  display:flex;flex-wrap:wrap;gap:8px 12px;align-items:baseline}
+.meta b{font-family:"Noto Serif TC",serif;font-size:16px;font-weight:700;color:var(--text-900)}
+.meta code{font-size:12px;background:rgba(255,255,255,.65);border:1px solid #DED2C0;
+  padding:2px 10px;border-radius:999px;font-family:inherit}
+.frame{position:relative;overflow:hidden;background:var(--bg);
+  display:flex;flex-direction:column;box-shadow:0 6px 28px rgba(43,33,28,.16)}
+.f-mobile{width:375px;height:812px}
+.f-desk  {width:1280px;height:800px}
+.f-kds   {width:1920px;height:1080px;background:var(--kds-bg);color:var(--kds-text)}
+/* 總覽頁用的等比縮圖 */
+.thumb{width:280px;height:176px;overflow:hidden;position:relative;background:var(--bg);
+  border-bottom:1px solid var(--border)}
+.thumb iframe{position:absolute;top:0;left:0;border:0;transform-origin:0 0;pointer-events:none}
+.thumb{background:var(--surface-2)}
+.thumb.m iframe{width:375px;height:812px;transform:scale(.2167);left:99px}
+.thumb.d iframe{width:1280px;height:800px;transform:scale(.21875)}
+.thumb.k iframe{width:1920px;height:1080px;transform:scale(.14583);top:9px}
+
+/* 被 index.html 用 iframe#thumbmode 嵌進來時：去掉舞台留白，只留第一個畫框 */
+body:has(#thumbmode:target){padding:0;background:var(--bg)}
+body:has(#thumbmode:target) .stage{gap:0;justify-content:flex-start;align-items:flex-start}
+body:has(#thumbmode:target) .stage > *:not(:first-child){display:none}
+body:has(#thumbmode:target) .meta,
+body:has(#thumbmode:target) .sidenote{display:none}
+body:has(#thumbmode:target) .frame{box-shadow:none}
+
+/* ---------------------------- 字級階層 ---------------------------------- */
+.serif{font-family:"Noto Serif TC",serif}
+.display{font-family:"Noto Serif TC",serif;font-size:32px;line-height:1.3;font-weight:900}
+.h1{font-family:"Noto Serif TC",serif;font-size:28px;line-height:1.4;font-weight:700;margin:0}
+.h2{font-family:"Noto Serif TC",serif;font-size:22px;line-height:1.5;font-weight:700;margin:0}
+.h3{font-size:18px;line-height:1.6;font-weight:700;margin:0}
+.t-sm{font-size:14px;line-height:1.7;color:var(--text-600)}
+.t-cap{font-size:13px;line-height:1.6;color:var(--text-600)}
+.num{font-variant-numeric:tabular-nums}
+.price{font-size:20px;line-height:1.4;font-weight:700;color:var(--brand-600);font-variant-numeric:tabular-nums}
+.muted{color:var(--text-600)}
+.dim{color:var(--text-400)}
+
+/* ------------------------------ 版面工具 -------------------------------- */
+.r{display:flex;align-items:center}
+.c{display:flex;flex-direction:column}
+.fill{flex:1;min-width:0}
+.wrap{flex-wrap:wrap}
+.g4{gap:4px}.g8{gap:8px}.g12{gap:12px}.g16{gap:16px}.g24{gap:24px}.g32{gap:32px}.g48{gap:48px}
+.mt4{margin-top:4px}.mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}
+.mt24{margin-top:24px}.mt32{margin-top:32px}.mt48{margin-top:48px}.mt64{margin-top:64px}
+.mb4{margin-bottom:4px}.mb8{margin-bottom:8px}.mb12{margin-bottom:12px}
+.mb16{margin-bottom:16px}.mb24{margin-bottom:24px}
+.pad16{padding:16px}.pad20{padding:20px}.pad24{padding:24px}
+.px16{padding-left:16px;padding-right:16px}
+.center{text-align:center}
+.right{text-align:right}
+.sep{height:1px;background:var(--border);border:0;margin:0}
+.scroll{flex:1;overflow:hidden}            /* 設計稿：超出畫框即裁切，等同真實螢幕 */
+.hs{display:flex;gap:12px;overflow:hidden} /* 橫向捲動區 */
+
+/* ------------------------------- 圖示 ----------------------------------- */
+.ic{width:22px;height:22px;flex:none;stroke:currentColor;fill:none;
+  stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+.ic-sm{width:18px;height:18px}
+.ic-lg{width:28px;height:28px}
+.ic-xl{width:40px;height:40px}
+
+/* ---------------------- 5.1 Button ------------------------------------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  border:0;border-radius:8px;font-weight:500;cursor:pointer;
+  transition:background .15s,color .15s,box-shadow .15s;white-space:nowrap}
+.btn:active{transform:scale(.98)}
+.btn-lg{height:52px;font-size:18px;padding:0 24px}
+.btn-md{height:44px;font-size:16px;padding:0 20px}
+.btn-sm{height:36px;font-size:14px;padding:0 14px}
+.btn-block{display:flex;width:100%}
+.btn-primary{background:var(--brand-600);color:#fff}
+.btn-primary:hover{background:var(--brand-500)}
+.btn-secondary{background:var(--surface);color:var(--brand-600);box-shadow:inset 0 0 0 1.5px var(--brand-600)}
+.btn-secondary:hover{background:var(--brand-100)}
+.btn-ghost{background:transparent;color:var(--text-600)}
+.btn-ghost:hover{color:var(--brand-600)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn[disabled],.btn.is-disabled{opacity:.4;cursor:not-allowed;transform:none}
+.iconbtn{width:44px;height:44px;flex:none;border:0;background:transparent;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;color:var(--text-900);cursor:pointer;position:relative}
+.iconbtn:hover{background:var(--surface-2)}
+.dot{position:absolute;top:7px;right:7px;width:9px;height:9px;border-radius:50%;
+  background:var(--danger);box-shadow:0 0 0 2px var(--surface)}
+
+/* ---------------------- 5.2 Card --------------------------------------- */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:20px;box-shadow:var(--shadow-card)}
+.card-tight{padding:16px}
+.card-flat{box-shadow:none}
+.sub-block{background:var(--surface-2);border-radius:12px;padding:16px}
+
+/* ---------------------- 5.3 MenuItemRow -------------------------------- */
+.mi{display:flex;gap:16px;align-items:center;min-height:96px;padding:16px;
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;position:relative}
+.mi .thumb80{width:80px;height:80px;flex:none}
+/* 375px 寬放不下「左圖／文字／右控制」三欄，控制項改放文字欄的最後一列 */
+.mi .body{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.mi .nm{font-size:18px;line-height:1.5;font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mi .ds{font-size:14px;line-height:1.6;color:var(--text-600);
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.mi .foot{display:flex;align-items:center;gap:8px}
+.mi .step{margin-left:auto}
+.mi .step .n{width:34px}
+.mi .foot .price,.mi .foot .t-cap{flex:none;white-space:nowrap}
+.plus{width:44px;height:44px;flex:none;border:0;border-radius:50%;background:var(--brand-600);
+  color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.mi.sold .img-ph{filter:grayscale(1) opacity(.55)}
+.mi.sold .nm,.mi.sold .ds{color:var(--text-400)}
+.mi.sold .price{color:var(--text-400);text-decoration:line-through}
+.mi.sold .plus{background:var(--text-400);cursor:not-allowed}
+/* 售完印章：斜蓋上去，不是灰化了事 */
+.stamp{position:absolute;left:54px;top:50%;transform:translate(-50%,-50%) rotate(-14deg);
+  border:3px solid var(--danger);color:var(--danger);background:rgba(255,255,255,.74);
+  font-family:"Noto Serif TC",serif;font-weight:900;font-size:17px;letter-spacing:.12em;
+  padding:2px 8px;border-radius:4px;opacity:.92;pointer-events:none}
+
+/* ---------------------- 5.4 Stepper ------------------------------------ */
+.step{display:inline-flex;align-items:center;flex:none;background:var(--surface);
+  border:1px solid var(--border);border-radius:999px;overflow:hidden}
+.step button{width:44px;height:44px;border:0;background:transparent;color:var(--brand-600);
+  display:flex;align-items:center;justify-content:center;cursor:pointer}
+.step button:disabled{color:var(--text-400);cursor:not-allowed}
+.step .n{width:48px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+.step-lg button{width:56px;height:56px}
+.step-lg .n{width:72px;font-size:28px;font-family:"Noto Serif TC",serif;font-weight:900}
+
+/* ---------------------- 5.5 OptionCard --------------------------------- */
+.opt{display:flex;align-items:center;gap:12px;min-height:56px;padding:12px 16px;
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;cursor:pointer}
+.opt.on{background:var(--brand-100);border-color:transparent;box-shadow:inset 0 0 0 1.5px var(--brand-600)}
+.opt.off{opacity:.45;cursor:not-allowed}
+.opt .df{font-size:14px;color:var(--text-600);font-variant-numeric:tabular-nums}
+.opt .ck{color:var(--brand-600)}
+.bx{width:24px;height:24px;flex:none;border:1.5px solid var(--border);border-radius:6px;
+  background:var(--surface);display:flex;align-items:center;justify-content:center;color:#fff}
+.bx.on{background:var(--brand-600);border-color:var(--brand-600)}
+.rd{width:24px;height:24px;flex:none;border:1.5px solid var(--border);border-radius:50%;background:var(--surface)}
+.rd.on{border:7px solid var(--brand-600)}
+
+/* ---------------------- 5.6 Badge -------------------------------------- */
+.badge{display:inline-flex;align-items:center;gap:4px;flex:none;
+  font-size:12px;line-height:1.6;font-weight:500;padding:2px 10px;border-radius:999px}
+.b-rec {background:var(--accent-500);color:var(--text-900)}
+.b-pri {background:var(--accent-500);color:var(--text-900);box-shadow:inset 0 0 0 1.5px var(--accent-600)}
+.b-sold{background:var(--danger);color:#fff}
+.b-done{background:var(--success);color:#fff}
+.b-wait{background:var(--warning-bg);color:#8A5214;box-shadow:inset 0 0 0 1px #E4C68C}
+.b-hot {background:var(--surface);color:var(--danger);box-shadow:inset 0 0 0 1px var(--danger)}
+.b-veg {background:var(--success-bg);color:var(--success);box-shadow:inset 0 0 0 1px #B7D3BE}
+.b-info{background:var(--info-bg);color:var(--info);box-shadow:inset 0 0 0 1px #BFD8E4}
+.b-plain{background:var(--surface-2);color:var(--text-600);box-shadow:inset 0 0 0 1px var(--border)}
+
+/* ---------------------- 5.7 Toast -------------------------------------- */
+.toast{display:flex;align-items:center;gap:8px;padding:12px 16px;border-radius:8px;
+  color:#fff;font-size:15px;box-shadow:var(--shadow-pop)}
+.t-ok{background:var(--success)} .t-bad{background:var(--danger)} .t-n{background:var(--text-900)}
+
+/* -------------- 5.8 EmptyState / Skeleton / ErrorState ------------------ */
+.sk{background:var(--surface-2);border-radius:8px;animation:breathe 1.4s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:1}50%{opacity:.45}}
+.state{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;gap:12px;padding:48px 32px}
+.state .msg{font-size:17px;font-weight:700}
+.state .sub{font-size:14px;color:var(--text-600);max-width:26em}
+/* 火鍋冒泡的載入動畫（不要通用轉圈） */
+.potload{position:relative;width:104px;height:86px}
+.potload .bub{position:absolute;bottom:34px;width:9px;height:9px;border-radius:50%;
+  background:var(--brand-500);opacity:0;animation:bubble 1.9s ease-in-out infinite}
+.potload .bub:nth-child(1){left:34px;animation-delay:0s}
+.potload .bub:nth-child(2){left:50px;width:12px;height:12px;animation-delay:.5s}
+.potload .bub:nth-child(3){left:66px;width:7px;height:7px;animation-delay:1s}
+@keyframes bubble{0%{transform:translateY(0) scale(.6);opacity:0}
+  25%{opacity:.85}100%{transform:translateY(-30px) scale(1);opacity:0}}
+
+/* ---------------------- 6.4 圖片佔位（必須三行標註） ------------------- */
+.img-ph{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  background:var(--surface-2);border:1px dashed #D6C9B6;border-radius:12px;overflow:hidden;
+  color:var(--text-400);font-size:11px;line-height:1.5;text-align:center;padding:8px}
+.img-ph b{font-size:13px;line-height:1.5;color:var(--text-600);font-weight:700}
+.img-ph span{display:block}
+.img-ph .kw{font-size:10px;color:var(--text-400);word-break:break-word}
+.img-ph.tiny{gap:0;padding:4px}
+.img-ph.tiny b{font-size:11px}
+.img-ph.tiny span{font-size:9px;line-height:1.35}
+
+/* ------------------------- 手機外殼（顧客端） --------------------------- */
+.appbar{flex:none;height:56px;display:flex;align-items:center;gap:4px;padding:0 8px;
+  background:var(--surface);border-bottom:1px solid var(--border)}
+.appbar .ttl{flex:1;min-width:0;font-size:17px;font-weight:700;line-height:1.3}
+.appbar .ttl small{display:block;font-size:12px;font-weight:400;color:var(--text-600);line-height:1.4}
+.bottombar{flex:none;background:var(--surface);border-top:1px solid var(--border);padding:12px 16px 24px}
+.cartbar{display:flex;align-items:center;gap:8px;height:56px;padding:0 16px;
+  background:var(--brand-600);color:#fff;border-radius:8px;font-size:17px;font-weight:500}
+.searchbar{flex:none;display:flex;align-items:center;gap:8px;height:44px;margin:12px 16px;
+  padding:0 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text-400)}
+.tabs{flex:none;display:flex;gap:24px;padding:0 16px;background:var(--surface);
+  border-bottom:1px solid var(--border);overflow:hidden}
+.tab{flex:none;height:48px;display:flex;align-items:center;font-size:16px;color:var(--text-600);
+  border-bottom:2.5px solid transparent;cursor:pointer}
+.tab.on{color:var(--brand-600);font-weight:700;border-bottom-color:var(--brand-600)}
+.secbar{display:flex;align-items:baseline;gap:8px;padding:16px 16px 8px}
+
+/* 手寫感木牌（「只有這家店有」的細節 1）
+   想更像手寫可換成 Klee One／jf 粉圓，目前維持兩種字體不混用 */
+.woodsign{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:5px;
+  background:#8A5A3B;color:#FFF3E2;font-family:"Noto Serif TC",serif;font-weight:900;
+  font-size:17px;letter-spacing:.1em;
+  background-image:repeating-linear-gradient(92deg,rgba(0,0,0,.13) 0 1px,rgba(255,255,255,.05) 1px 4px,
+    rgba(0,0,0,0) 4px 13px,rgba(0,0,0,.07) 13px 15px);
+  box-shadow:inset 0 0 0 2px rgba(255,236,210,.22),0 2px 0 rgba(43,33,28,.18)}
+
+/* 底部彈出面板（C-21 服務鈴等） */
+.scrim{position:absolute;inset:0;background:rgba(43,33,28,.48)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface);
+  border-radius:20px 20px 0 0;padding:8px 16px 24px;box-shadow:var(--shadow-pop)}
+.grabber{width:40px;height:4px;border-radius:999px;background:var(--border);margin:8px auto 16px}
+
+/* 預約步驟指示 */
+.steps{display:flex;align-items:center;gap:8px;font-size:13px;padding:16px;
+  background:var(--surface);border-bottom:1px solid var(--border)}
+.steps .s{display:flex;align-items:center;gap:8px;color:var(--text-400);flex:none}
+.steps .s.on{color:var(--brand-600);font-weight:700}
+.steps .s.done{color:var(--success)}
+.steps .n{width:22px;height:22px;border-radius:50%;box-shadow:inset 0 0 0 1.5px currentColor;
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+.steps .s.on .n{background:var(--brand-600);color:#fff;box-shadow:none}
+.steps .s.done .n{background:var(--success);color:#fff;box-shadow:none}
+.steps .bar{flex:1;height:1px;background:var(--border)}
+
+/* ------------------------------ 表單 ------------------------------------ */
+.field{display:block;margin-bottom:16px}
+.label{display:block;font-size:14px;font-weight:700;color:var(--text-600);margin-bottom:8px}
+.input{width:100%;height:48px;padding:0 16px;font:inherit;font-size:16px;color:var(--text-900);
+  background:var(--surface);border:1px solid var(--border);border-radius:8px}
+.input.ta{height:auto;padding:12px 16px;line-height:1.7;resize:none}
+.input.on{border-color:transparent;box-shadow:inset 0 0 0 1.5px var(--brand-600)}
+.ph-text{color:var(--text-400)}
+.hint{font-size:13px;color:var(--text-600);margin-top:8px}
+.errmsg{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--danger);margin-top:8px}
+.otp{display:flex;gap:8px}
+.otp i{flex:1;height:64px;border:1px solid var(--border);border-radius:8px;background:var(--surface);
+  display:flex;align-items:center;justify-content:center;font-style:normal;
+  font-size:28px;font-weight:700;font-variant-numeric:tabular-nums}
+.otp i.on{border-color:transparent;box-shadow:inset 0 0 0 1.5px var(--brand-600)}
+.switch{width:46px;height:26px;flex:none;border-radius:999px;background:var(--border);position:relative}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;
+  background:#fff;box-shadow:0 1px 2px rgba(43,33,28,.25)}
+.switch.on{background:var(--success)}
+.switch.on::after{left:23px}
+
+/* ---------------------------- 店家端外殼 -------------------------------- */
+.admin{flex:1;display:flex;min-height:0}
+.side{width:212px;flex:none;background:var(--surface-2);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;padding:16px 12px}
+.side .brand{font-family:"Noto Serif TC",serif;font-size:19px;font-weight:900;
+  padding:0 12px 16px;line-height:1.4}
+.side .brand small{display:block;font-family:"Noto Sans TC",sans-serif;font-size:11px;
+  font-weight:400;letter-spacing:.18em;color:var(--text-400)}
+.nav-item{display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;border-radius:8px;
+  color:var(--text-600);font-size:15px;margin-bottom:4px;cursor:pointer}
+.nav-item:hover{background:#EDE4D6}
+.nav-item.on{background:var(--brand-100);color:var(--brand-700);font-weight:700}
+.nav-sep{margin:12px 12px 8px;font-size:11px;letter-spacing:.16em;color:var(--text-400)}
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.topbar{flex:none;height:60px;display:flex;align-items:center;gap:16px;padding:0 24px;
+  background:var(--surface);border-bottom:1px solid var(--border)}
+.content{flex:1;overflow:hidden;padding:24px}
+/* 統計列：一條橫排數字，不是四張等寬卡片 */
+.statstrip{display:flex;align-items:center;gap:24px;padding:16px 20px;background:var(--surface);
+  border:1px solid var(--border);border-radius:12px}
+.statstrip .st{display:flex;align-items:baseline;gap:8px;flex:none;white-space:nowrap}
+.statstrip .st .v{font-family:"Noto Serif TC",serif;font-size:26px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1}
+.statstrip .st .k{font-size:13px;color:var(--text-600);white-space:nowrap}
+.statstrip .vr{width:1px;align-self:stretch;background:var(--border)}
+
+/* 資料表格 */
+.dt{width:100%;border-collapse:separate;border-spacing:0;background:var(--surface);
+  border:1px solid var(--border);border-radius:12px;overflow:hidden;font-size:14px}
+.dt th{text-align:left;padding:12px 16px;background:var(--surface-2);color:var(--text-600);
+  font-size:13px;font-weight:700;letter-spacing:.04em;border-bottom:1px solid var(--border);white-space:nowrap}
+.dt td{padding:12px 16px;border-bottom:1px solid var(--border);vertical-align:middle}
+.dt tr:last-child td{border-bottom:0}
+.dt tr.low td{background:var(--warning-bg)}
+.dt tr.out td{background:var(--danger-bg)}
+.dt .n{font-variant-numeric:tabular-nums}
+
+/* 桌況色塊 */
+.tt{border-radius:12px;padding:12px 16px;min-height:106px;display:flex;flex-direction:column;gap:4px}
+.tt .no{font-size:24px;font-weight:700;line-height:1.2;font-variant-numeric:tabular-nums}
+.tt .lb{align-self:flex-start;font-size:12px;padding:2px 10px;border-radius:999px;
+  background:rgba(255,255,255,.72);color:var(--text-900);margin-bottom:4px}
+.tt .mt{font-size:13px;line-height:1.6;font-variant-numeric:tabular-nums}
+.tt-av{background:var(--table-available);color:var(--text-900)}
+.tt-oc{background:var(--table-occupied);color:#fff}
+.tt-rv{background:var(--table-reserved);color:var(--text-900)}
+.tt-cl{background:var(--table-cleaning);color:#fff}
+.tt-oc .lb,.tt-cl .lb{background:rgba(255,255,255,.9)}
+.tt.over{box-shadow:inset 0 0 0 3px var(--danger)}
+
+/* 服務鈴通知卡（S-11 固定右上） */
+.bellpanel{width:300px;background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  box-shadow:var(--shadow-pop);overflow:hidden}
+.bellpanel .hd{display:flex;align-items:center;gap:8px;padding:12px 16px;
+  background:var(--surface-2);border-bottom:1px solid var(--border);font-weight:700;font-size:15px}
+.bellcard{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border)}
+.bellcard:last-child{border-bottom:0}
+.bellcard .tno{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;width:44px;flex:none}
+
+/* ---------------------------- KDS（唯一深色） --------------------------- */
+.f-kds .ktop{flex:none;height:76px;display:flex;align-items:center;gap:24px;padding:0 32px;
+  background:#1B1512;border-bottom:1px solid var(--kds-line)}
+.f-kds .kbody{flex:1;overflow:hidden;padding:24px 32px}
+.kcard{background:var(--kds-card);border-radius:12px;padding:20px;border:2px solid transparent;
+  display:flex;flex-direction:column;gap:16px}
+.kcard.pri{border-color:var(--accent-500)}
+.kcard.late{border-color:var(--danger)}
+.kcard.done{opacity:.42}
+.kno{font-size:32px;line-height:1.2;font-weight:900;font-variant-numeric:tabular-nums}
+.kmeta{font-size:17px;color:#C4B3A6;font-variant-numeric:tabular-nums}
+.kitem{display:flex;gap:16px;align-items:flex-start;font-size:20px;line-height:1.5}
+.kbox{width:40px;height:40px;flex:none;border:2px solid #6E594C;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;color:#fff}
+.kbox.on{background:var(--success);border-color:var(--success)}
+.kopt{font-size:15px;color:#A8968A;line-height:1.6}
+.kline{height:1px;background:var(--kds-line);border:0;margin:0}
+.kbtn{height:52px;border-radius:8px;border:0;background:#4A3A31;color:#fff;font-size:17px;
+  display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+
+/* 簡易長條圖（S-12 報表，含圖例） */
+.bars{display:flex;align-items:flex-end;gap:8px;height:150px}
+.bars .b{flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:8px;text-align:center}
+.bars .b i{display:block;background:var(--brand-600);border-radius:4px 4px 0 0}
+.bars .b.alt i{background:var(--accent-500)}
+.bars .b span{font-size:11px;color:var(--text-600)}
+.legend{display:flex;gap:16px;font-size:12px;color:var(--text-600);align-items:center}
+.legend i{width:12px;height:12px;border-radius:3px;display:inline-block;margin-right:4px;vertical-align:-1px}
+
+/* 動畫在 reduce 時全部關閉 */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+
+/* --------------------- 推薦卡（橫向捲動，避免對稱三欄） ----------------- */
+.reccard{width:168px;flex:none;background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;overflow:hidden}
+.reccard .img-ph{border:0;border-radius:0;border-bottom:1px dashed #D6C9B6}
+.reccard .cap{padding:8px 12px 12px}
+.reccard .nm{font-size:15px;font-weight:700;line-height:1.5;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.reccard .price{font-size:17px}
+
+/* 空／錯誤狀態的線稿插圖（只用在次要位置，主視覺仍是照片） */
+.art{width:92px;height:92px;stroke:var(--text-400);fill:none;stroke-width:2.2;
+  stroke-linecap:round;stroke-linejoin:round}
+.art-bad{stroke:var(--danger)}
+.circ{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+
+/* 結帳／金額列 */
+.sumrow{display:flex;align-items:baseline;justify-content:space-between;font-size:16px;padding:8px 0}
+.sumrow .v{font-variant-numeric:tabular-nums;font-weight:500}
+.sumrow.total{padding-top:16px;border-top:1px solid var(--border);margin-top:8px}
+.sumrow.total .k{font-family:"Noto Serif TC",serif;font-size:20px;font-weight:700}
+.sumrow.total .v{font-family:"Noto Serif TC",serif;font-size:32px;font-weight:900;color:var(--brand-600);line-height:1.3}
+
+/* 訂單／出餐進度列 */
+.tick{display:flex;gap:8px;align-items:flex-start;padding:8px 0}
+.tick + .tick{border-top:1px solid var(--border)}
+/* 高度配合 24px 行高，SVG 自動置中，不用 margin 微調 */
+.tick .st{width:22px;height:24px;flex:none}
+.tick .nm{font-size:16px;font-weight:500;line-height:1.5}
+.tick .op{font-size:13px;color:var(--text-600);line-height:1.6}
+
+/* 付款品牌按鈕（各自品牌樣式，不統一成同一顆） */
+.pay{display:flex;align-items:center;justify-content:center;gap:8px;height:56px;
+  border-radius:8px;font-size:17px;font-weight:500;cursor:pointer;border:0}
+.pay-apple{background:#000;color:#fff}
+.pay-google{background:#fff;color:#3C4043;box-shadow:inset 0 0 0 1px #DADCE0}
+.pay-line{background:#06C755;color:#fff}
+.pay-cash{background:var(--surface);color:var(--text-900);box-shadow:inset 0 0 0 1px var(--border)}
+
+/* 日曆（C-16 訂位） */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal .hd{text-align:center;font-size:12px;color:var(--text-600);padding:4px 0}
+.cal .d{height:42px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+  font-size:15px;font-variant-numeric:tabular-nums;background:var(--surface);border:1px solid var(--border)}
+.cal .d.off{background:transparent;border-color:transparent;color:var(--text-400)}
+.cal .d.on{background:var(--brand-600);color:#fff;border-color:var(--brand-600);font-weight:700}
+.cal .d.today{box-shadow:inset 0 0 0 1.5px var(--accent-500)}
+
+/* ------------------------- 各畫面共用的小零件 --------------------------- */
+.thumb64{width:64px;height:64px;flex:none}
+.thumb96{width:96px;height:96px;flex:none}
+.thumb110{width:110px;height:110px;flex:none}
+/* 形象照 + 深色遮罩（全站唯一允許的漸層：照片上的遮罩） */
+.hero{position:relative;flex:none;overflow:hidden}
+.hero .veil{position:absolute;left:0;right:0;bottom:0;height:60%;
+  background:linear-gradient(180deg,rgba(43,33,28,0) 0%,rgba(43,33,28,.74) 100%)}
+.hero .cap{position:absolute;left:20px;right:20px;bottom:16px;color:#fff}
+.hero .cap .nm{font-family:"Noto Serif TC",serif;font-size:26px;font-weight:900;line-height:1.35}
+.hero .cap .sb{font-size:13px;opacity:.88;line-height:1.6}
+.dots{position:absolute;left:0;right:0;bottom:12px;display:flex;gap:8px;justify-content:center}
+.dots i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.6)}
+.dots i.on{width:18px;border-radius:999px;background:#fff}
+/* 畫框旁的說明卡（預覽用，匯入 Figma 後可刪） */
+.sidenote{width:286px;background:rgba(255,255,255,.74);border:1px solid #DED2C0;border-radius:12px;
+  padding:16px;font-size:13px;line-height:1.85;color:var(--text-600)}
+.sidenote b{display:block;font-family:"Noto Serif TC",serif;font-size:15px;color:var(--text-900);margin-bottom:8px}
+.sidenote dt{font-weight:700;color:var(--text-900);margin-top:8px}
+.sidenote dd{margin:0}
+/* 選項群組標題 */
+.grouphd{display:flex;align-items:baseline;gap:8px;margin-bottom:12px}
+.req{flex:none;font-size:12px;font-weight:700;padding:2px 10px;border-radius:999px;
+  background:var(--brand-100);color:var(--brand-700)}
+.opt-n{flex:none;font-size:12px;font-weight:500;padding:2px 10px;border-radius:999px;
+  background:var(--surface-2);color:var(--text-600)}
+/* 購物車列 */
+.cartrow{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px}
+.cartrow .hd{display:flex;align-items:baseline;gap:8px}
+.cartrow .hd .nm{flex:1;min-width:0;font-size:17px;font-weight:700;line-height:1.5}
+.cartrow .sub{font-size:14px;line-height:1.7;color:var(--text-600)}
+.trash{width:44px;height:44px;flex:none;border:0;background:transparent;border-radius:8px;
+  color:var(--text-400);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.trash:hover{color:var(--danger);background:var(--danger-bg)}
+/* 大型步進器（櫃檯開桌） */
+.bigstep{display:flex;align-items:center;gap:16px}
+.bigstep button{width:56px;height:56px;flex:none;border:1.5px solid var(--brand-600);border-radius:50%;
+  background:var(--surface);color:var(--brand-600);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.bigstep .n{width:72px;text-align:center;font-family:"Noto Serif TC",serif;font-size:40px;
+  font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+/* 提示框 */
+.infobox{display:flex;gap:8px;padding:12px 16px;border-radius:8px;font-size:14px;line-height:1.7}
+.ib-info{background:var(--info-bg);color:#1F4E66}
+.ib-warn{background:var(--warning-bg);color:#7D4A12}
+.ib-ok{background:var(--success-bg);color:#2A5637}
+.ib-quiet{background:var(--surface-2);color:var(--text-600)}
+/* 勾勾完成圈 */
+.doneball{width:96px;height:96px;border-radius:50%;background:var(--success-bg);
+  display:flex;align-items:center;justify-content:center;color:var(--success)}
+.doneball svg{width:52px;height:52px;stroke-width:2.6}
+/* 時段／日期選擇鈕 */
+.slot{height:48px;border-radius:8px;background:var(--surface);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:16px;font-variant-numeric:tabular-nums;cursor:pointer}
+.slot.on{background:var(--brand-600);border-color:var(--brand-600);color:#fff;font-weight:700}
+.slot.full{background:var(--surface-2);color:var(--text-400);cursor:not-allowed;border-style:dashed}
+.gr2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.gr3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.gr4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.bars .b i.pre{background:var(--accent-500);border-radius:4px 4px 0 0}
+.bars .b i.pre + i{border-radius:0}
+.ratio{height:8px;border-radius:999px;background:var(--surface-2);overflow:hidden}
+.ratio i{display:block;height:100%;background:var(--brand-600);border-radius:999px}
+
+/* ------------------------------ 總覽頁 index --------------------------- */
+.idx{max-width:1288px;margin:0 auto}
+.idx .hd{margin-bottom:8px}
+.idx h1{font-family:"Noto Serif TC",serif;font-size:32px;font-weight:900;line-height:1.3;margin:0}
+.idx .sec{display:flex;align-items:baseline;gap:8px;margin:48px 0 16px;
+  padding-bottom:8px;border-bottom:2px solid #DED2C0}
+.idx .sec h2{font-family:"Noto Serif TC",serif;font-size:22px;font-weight:700;margin:0}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,280px);gap:24px;justify-content:start}
+.tcard{display:block;background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  overflow:hidden;text-decoration:none;color:inherit;box-shadow:var(--shadow-card);transition:box-shadow .15s}
+.tcard:hover{box-shadow:var(--shadow-pop)}
+.tinfo{padding:12px 16px 16px}
+.tinfo .code{font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--brand-600);font-variant-numeric:tabular-nums}
+.tinfo .nm{font-family:"Noto Serif TC",serif;font-size:17px;font-weight:700;line-height:1.5}
+.tinfo .rt{font-size:12px;line-height:1.6;color:var(--text-400);font-variant-numeric:tabular-nums;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tinfo .tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}

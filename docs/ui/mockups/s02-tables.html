@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>S-02｜桌況總覽</title>
+<link rel="stylesheet" href="_shared.css">
+</head>
+<body>
+<!-- #thumbmode：總覽頁用 iframe 取縮圖時，只留第一個畫框 -->
+<span id="thumbmode"></span>
+<div class="stage">
+
+<div>
+  <p class="meta"><b>S-02｜桌況總覽</b><code>1280 × 800</code><code>/admin/tables</code><code>正常態</code></p>
+  <div class="frame f-desk">
+    <div class="admin">
+        <aside class="side">
+        <div class="brand">鼎沸鍋物<small>SMART ORDER</small></div>
+        <div class="nav-item on"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg>桌況總覽</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M17 21H7V12.6a4.5 4.5 0 1 1 2.5-8.2 4 4 0 0 1 5 0A4.5 4.5 0 1 1 17 12.6z"/><path d="M7 17h10"/></svg>出菜看板</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M3 10h18M8 2.5v4M16 2.5v4"/></svg>預約管理</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>候位管理</div>
+        <div class="nav-sep">菜　單</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>菜單管理</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>選項群組</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>庫存管理</div>
+        <div class="nav-sep">設　定</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>座位管理</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M3 3v18h18M18 17V9M13 17V5M8 17v-3"/></svg>報表</div>
+        <div class="fill"></div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>小美・外場</div>
+        </aside>
+      <div class="main">
+        <header class="topbar"><div class="h2">桌況總覽</div>
+          <span class="badge b-plain">今天 9/13（日）</span>
+          <span class="fill"></span>
+          <div class="r g8" style="padding:0 12px;height:36px;border:1px solid var(--border);border-radius:8px;color:var(--success);font-size:13px;background:var(--success-bg)">
+            <span style="width:8px;height:8px;border-radius:50%;background:var(--success)"></span>即時同步中
+          </div>
+          <button class="btn btn-primary btn-md">櫃檯開桌</button>
+          <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="dot"></span></button></header>
+        <div class="content"><div class="r g24" style="height:100%;align-items:flex-start">
+          <div class="fill c g16" style="min-width:0">
+            <div class="statstrip">
+            <div class="st"><span class="v">4</span><span class="k">空桌</span></div>
+            <div class="vr"></div>
+            <div class="st"><span class="v" style="color:var(--brand-600)">6</span><span class="k">用餐中</span></div>
+            <div class="vr"></div>
+            <div class="st"><span class="v">2</span><span class="k">待清理</span></div>
+            <div class="vr"></div>
+            <div class="st"><span class="v" style="color:var(--accent-600)">3</span><span class="k">今日預約</span></div>
+            <div class="vr"></div>
+            <div class="st"><span class="v">3</span><span class="k">組候位中</span></div>
+            <span class="fill"></span>
+            <span class="t-cap">超過 100 分鐘的桌自動轉紅框（B01）</span>
+          </div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+            <div class="tt tt-av"><span class="lb">空桌</span><div class="no">A01</div></div>
+            <div class="tt tt-oc"><span class="lb">用餐中</span><div class="no">A02</div><div class="mt">2 大 0 小・38 分</div><div class="mt"><b>NT$ 1,860</b></div></div>
+            <div class="tt tt-oc"><span class="lb">用餐中</span><div class="no">A03</div><div class="mt">2 大 1 小・47 分</div><div class="mt"><b>NT$ 1,420</b></div></div>
+            <div class="tt tt-rv"><span class="lb">已預約 19:30</span><div class="no">A04</div><div class="mt">4 位・陳小姐</div></div>
+            <div class="tt tt-cl"><span class="lb">待清理</span><div class="no">A05</div><div class="mt">19:02 結帳</div></div>
+            <div class="tt tt-av"><span class="lb">空桌</span><div class="no">A06</div></div>
+            <div class="tt tt-oc over"><span class="lb">用餐中</span><div class="no">B01</div><div class="mt">4 大 0 小・112 分</div><div class="mt"><b>NT$ 3,240</b></div></div>
+            <div class="tt tt-av"><span class="lb">空桌</span><div class="no">B02</div></div>
+            <div class="tt tt-oc"><span class="lb">用餐中</span><div class="no">B03</div><div class="mt">2 大 2 小・21 分</div><div class="mt"><b>NT$ 980</b></div></div>
+            <div class="tt tt-rv"><span class="lb">已預約 20:00</span><div class="no">B04</div><div class="mt">2 位・林先生</div></div>
+            <div class="tt tt-oc"><span class="lb">用餐中</span><div class="no">C01</div><div class="mt">6 大 2 小・64 分</div><div class="mt"><b>NT$ 5,120</b></div></div>
+            <div class="tt tt-cl"><span class="lb">待清理</span><div class="no">C02</div><div class="mt">19:11 結帳</div></div>
+            </div>
+            <div class="card card-tight">
+              <div class="r g8">
+                <span class="h3">候位中</span><span class="badge b-plain">3 組</span>
+                <span class="t-cap">平均等 22 分</span>
+                <span class="fill"></span>
+                <button class="btn btn-secondary btn-sm">去候位管理</button>
+              </div>
+              <div class="r g12 mt10">
+                <div class="r g8" style="padding:8px 12px;background:var(--warning-bg);border-radius:999px">
+                  <b class="num">A13</b><span class="t-sm" style="margin:0">李・4 位</span><span class="badge b-wait">已叫號</span>
+                </div>
+                <div class="r g8" style="padding:8px 12px;background:var(--surface-2);border-radius:999px">
+                  <b class="num">A12</b><span class="t-sm" style="margin:0">王・2 位</span><span class="t-cap num">18 分</span>
+                </div>
+                <div class="r g8" style="padding:8px 12px;background:var(--surface-2);border-radius:999px">
+                  <b class="num">A14</b><span class="t-sm" style="margin:0">張・6 位</span><span class="t-cap num">4 分</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="bellpanel">
+            <div class="hd"><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>服務鈴<span class="fill"></span><span class="badge b-sold">3</span></div>
+            <div class="bellcard">
+              <span class="tno">A03</span>
+              <div class="fill"><div style="font-weight:700">加湯</div><div class="t-cap num">1 分鐘前</div></div>
+              <button class="btn btn-secondary btn-sm">已處理</button>
+            </div>
+            <div class="bellcard">
+              <span class="tno">B03</span>
+              <div class="fill"><div style="font-weight:700">呼叫服務生</div><div class="t-cap num">3 分鐘前</div></div>
+              <button class="btn btn-secondary btn-sm">已處理</button>
+            </div>
+            <div class="bellcard" style="background:var(--brand-100)">
+              <span class="tno">C01</span>
+              <div class="fill"><div style="font-weight:700">我要結帳</div><div class="t-cap num">4 分鐘前</div></div>
+              <button class="btn btn-primary btn-sm">去結帳</button>
+            </div>
+            <div class="bellcard" style="justify-content:center">
+              <span class="t-cap">今天已處理 14 則</span>
+            </div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div>
+  <p class="meta"><b>S-02｜桌況總覽</b><code>1280 × 800</code><code>載入中</code><code>骨架屏，不要轉圈圈</code></p>
+  <div class="frame f-desk">
+    <div class="admin">
+        <aside class="side">
+        <div class="brand">鼎沸鍋物<small>SMART ORDER</small></div>
+        <div class="nav-item on"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg>桌況總覽</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M17 21H7V12.6a4.5 4.5 0 1 1 2.5-8.2 4 4 0 0 1 5 0A4.5 4.5 0 1 1 17 12.6z"/><path d="M7 17h10"/></svg>出菜看板</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M3 10h18M8 2.5v4M16 2.5v4"/></svg>預約管理</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>候位管理</div>
+        <div class="nav-sep">菜　單</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>菜單管理</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>選項群組</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>庫存管理</div>
+        <div class="nav-sep">設　定</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>座位管理</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M3 3v18h18M18 17V9M13 17V5M8 17v-3"/></svg>報表</div>
+        <div class="fill"></div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>小美・外場</div>
+        </aside>
+      <div class="main">
+        <header class="topbar"><div class="h2">桌況總覽</div>
+          <span class="badge b-plain">今天 9/13（日）</span>
+          <span class="fill"></span>
+          <div class="r g8" style="padding:0 12px;height:36px;border:1px solid var(--border);border-radius:8px;color:var(--success);font-size:13px;background:var(--success-bg)">
+            <span style="width:8px;height:8px;border-radius:50%;background:var(--success)"></span>即時同步中
+          </div>
+          <button class="btn btn-primary btn-md">櫃檯開桌</button>
+          <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="dot"></span></button></header>
+        <div class="content"><div class="r g24" style="height:100%;align-items:flex-start">
+          <div class="fill c g16" style="min-width:0">
+            <div class="statstrip"><div class="sk" style="height:30px;width:100%"></div></div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+            <div class="sk" style="height:106px;border-radius:12px"></div>
+            <div class="sk" style="height:106px;border-radius:12px"></div>
+            <div class="sk" style="height:106px;border-radius:12px"></div>
+            <div class="sk" style="height:106px;border-radius:12px"></div>
+            <div class="sk" style="height:106px;border-radius:12px"></div>
+            <div class="sk" style="height:106px;border-radius:12px"></div>
+            <div class="sk" style="height:106px;border-radius:12px"></div>
+            <div class="sk" style="height:106px;border-radius:12px"></div>
+            <div class="sk" style="height:106px;border-radius:12px"></div>
+            <div class="sk" style="height:106px;border-radius:12px"></div>
+            <div class="sk" style="height:106px;border-radius:12px"></div>
+            <div class="sk" style="height:106px;border-radius:12px"></div>
+            </div>
+          </div>
+          <div class="bellpanel"><div class="hd"><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>服務鈴</div>
+            <div class="bellcard"><div class="sk fill" style="height:40px"></div></div>
+            <div class="bellcard"><div class="sk fill" style="height:40px"></div></div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div>
+  <p class="meta"><b>S-02｜桌況總覽</b><code>1280 × 800</code><code>空資料</code><code>插圖＋一句話＋一個行動</code></p>
+  <div class="frame f-desk">
+    <div class="admin">
+        <aside class="side">
+        <div class="brand">鼎沸鍋物<small>SMART ORDER</small></div>
+        <div class="nav-item on"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg>桌況總覽</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M17 21H7V12.6a4.5 4.5 0 1 1 2.5-8.2 4 4 0 0 1 5 0A4.5 4.5 0 1 1 17 12.6z"/><path d="M7 17h10"/></svg>出菜看板</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M3 10h18M8 2.5v4M16 2.5v4"/></svg>預約管理</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>候位管理</div>
+        <div class="nav-sep">菜　單</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>菜單管理</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>選項群組</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>庫存管理</div>
+        <div class="nav-sep">設　定</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>座位管理</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M3 3v18h18M18 17V9M13 17V5M8 17v-3"/></svg>報表</div>
+        <div class="fill"></div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>小美・外場</div>
+        </aside>
+      <div class="main">
+        <header class="topbar"><div class="h2">桌況總覽</div>
+          <span class="badge b-plain">今天 9/13（日）</span>
+          <span class="fill"></span>
+          <div class="r g8" style="padding:0 12px;height:36px;border:1px solid var(--border);border-radius:8px;color:var(--success);font-size:13px;background:var(--success-bg)">
+            <span style="width:8px;height:8px;border-radius:50%;background:var(--success)"></span>即時同步中
+          </div>
+          <button class="btn btn-primary btn-md">櫃檯開桌</button>
+          <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="dot"></span></button></header>
+        <div class="content"><div class="state" style="height:100%;justify-content:center">
+          <svg class="art" viewBox="0 0 96 96"><rect x="10" y="10" width="32" height="32" rx="4"/><rect x="54" y="10" width="32" height="32" rx="4" stroke-dasharray="4 6"/><rect x="10" y="54" width="32" height="32" rx="4" stroke-dasharray="4 6"/><rect x="54" y="54" width="32" height="32" rx="4" stroke-dasharray="4 6"/></svg>
+          <div class="msg">還沒有建立座位</div>
+          <div class="sub">先到「座位管理」把桌號、座位數、區域建起來，<br>這裡才會出現桌況色塊，桌上的 QR code 也才印得出來。</div>
+          <button class="btn btn-primary btn-lg mt8">去座位管理</button>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div>
+  <p class="meta"><b>S-02｜桌況總覽</b><code>1280 × 800</code><code>錯誤</code><code>中文訊息＋重試</code></p>
+  <div class="frame f-desk">
+    <div class="admin">
+        <aside class="side">
+        <div class="brand">鼎沸鍋物<small>SMART ORDER</small></div>
+        <div class="nav-item on"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg>桌況總覽</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M17 21H7V12.6a4.5 4.5 0 1 1 2.5-8.2 4 4 0 0 1 5 0A4.5 4.5 0 1 1 17 12.6z"/><path d="M7 17h10"/></svg>出菜看板</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M3 10h18M8 2.5v4M16 2.5v4"/></svg>預約管理</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>候位管理</div>
+        <div class="nav-sep">菜　單</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>菜單管理</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>選項群組</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>庫存管理</div>
+        <div class="nav-sep">設　定</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>座位管理</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M3 3v18h18M18 17V9M13 17V5M8 17v-3"/></svg>報表</div>
+        <div class="fill"></div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>小美・外場</div>
+        </aside>
+      <div class="main">
+        <header class="topbar"><div class="h2">桌況總覽</div>
+          <span class="badge b-plain">今天 9/13（日）</span>
+          <span class="fill"></span>
+          <div class="r g8" style="padding:0 12px;height:36px;border:1px solid var(--border);border-radius:8px;color:var(--success);font-size:13px;background:var(--success-bg)">
+            <span style="width:8px;height:8px;border-radius:50%;background:var(--success)"></span>即時同步中
+          </div>
+          <button class="btn btn-primary btn-md">櫃檯開桌</button>
+          <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="dot"></span></button></header>
+        <div class="content"><div class="c g16" style="height:100%">
+          <div class="infobox ib-warn"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 16v-4.5M12 8h.01"/></svg><div><b>目前顯示的是 19:18 的快取資料</b>，可能不是最新的。連線恢復後會自動重抓一次完整桌況。</div></div>
+          <div class="state fill" style="justify-content:center">
+            <div class="circ" style="background:var(--danger-bg)"><svg class="ic ic-xl art-bad" viewBox="0 0 24 24"><path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3"/><path d="M12 9.5v4"/><path d="M12 17.2h.01"/></svg></div>
+            <div class="msg">桌況讀不到</div>
+            <div class="sub">後端沒有回應。先確認店內網路，再按重試。<br>如果一直失敗，請通知負責的同學看伺服器。</div>
+            <div class="r g12 mt8">
+              <button class="btn btn-primary btn-lg"><svg class="ic" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.7 9.7 0 0 0-6.7 2.7L3 8"/><path d="M3 3.5V8h4.5"/></svg>重試</button>
+              <button class="btn btn-secondary btn-lg">改用離線快取</button>
+            </div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

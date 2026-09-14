@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>設計稿總覽｜火鍋點餐系統 33 張畫面</title>
+<link rel="stylesheet" href="_shared.css">
+</head>
+<body>
+<div class="idx">
+
+  <div class="hd">
+    <span class="badge b-plain">docs/ui/mockups</span>
+    <h1 class="mt8">火鍋點餐系統　設計稿總覽</h1>
+    <p class="t-sm" style="margin:8px 0 0">
+      33 張靜態稿，依 <b>10-UI-UX規格.md</b> 與 <b>11-設計系統.md</b> 產出。
+      這是給 Figma 用的施工架，不是前端原始碼，不要放進 <span class="num">src/</span>。
+    </p>
+  </div>
+
+  <div class="r g12 wrap mt16">
+    <a class="btn btn-secondary btn-md" href="../preview/design-system.html">設計系統預覽</a>
+    <a class="btn btn-ghost btn-md" href="../11-設計系統.md">11-設計系統.md</a>
+    <a class="btn btn-ghost btn-md" href="../10-UI-UX規格.md">10-UI-UX規格.md</a>
+  </div>
+
+  <div class="r g16 wrap mt24" style="align-items:stretch">
+    <div class="card fill" style="min-width:300px">
+      <div class="h3">畫框尺寸</div>
+      <table class="dt mt12" style="font-size:13px">
+        <tr><th>對象</th><th>畫框</th><th>實作範圍</th></tr>
+        <tr><td>顧客端 C-xx</td><td class="n"><b>375 × 812</b> 手機直式</td><td class="n">375–640px</td></tr>
+        <tr><td>店家端 S-xx</td><td class="n"><b>1280 × 800</b> 橫式</td><td class="n">≥ 1024px</td></tr>
+        <tr class="low"><td>C-02 開桌設定人數</td><td class="n">1280 × 800</td><td>櫃檯操作，編號在顧客端</td></tr>
+        <tr class="low"><td>S-04 出菜看板 KDS</td><td class="n">1920 × 1080</td><td>固定大螢幕，不做 RWD</td></tr>
+      </table>
+    </div>
+    <div class="card" style="width:420px;flex:none">
+      <div class="h3">看稿前先知道這四件事</div>
+      <ol class="t-sm" style="margin:8px 0 0;padding-left:24px;line-height:1.9">
+        <li><b>三態示範只做在 C-04 和 S-02</b>，其餘只有正常態。</li>
+        <li><b>每個圖片佔位都寫了三行</b>：放什麼圖、尺寸比例、搜尋關鍵字，
+            另外帶 <span class="num">data-layer="IMG／肉盤／1-1"</span> 供 Figma 圖層命名。</li>
+        <li><b>店家端管理畫面不放照片</b>，只有 S-05 的品項縮圖例外。</li>
+        <li><b>畫框外的標題列與說明卡是預覽用的</b>，匯入 Figma 後刪掉那兩層就好。</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="sec"><h2>顧客端</h2><span class="badge b-plain">21 張</span>
+    <span class="t-cap">手機直式 375 × 812</span></div>
+  <div class="tgrid">
+      <a class="tcard" href="c01-scan.html">
+        <div class="thumb m"><iframe src="c01-scan.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="C-01 掃碼進入／桌號確認"></iframe></div>
+        <div class="tinfo">
+          <div class="code">C-01</div>
+          <div class="nm">掃碼進入／桌號確認</div>
+          <div class="rt">/t/:tableNo</div>
+          
+        </div>
+      </a>
+      <a class="tcard" href="c02-open-table.html">
+        <div class="thumb d"><iframe src="c02-open-table.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="C-02 開桌設定人數"></iframe></div>
+        <div class="tinfo">
+          <div class="code">C-02</div>
+          <div class="nm">開桌設定人數</div>
+          <div class="rt">/t/:tableNo/open</div>
+          <div class="tags"><span class="badge b-wait">櫃檯畫面</span></div>
+        </div>
+      </a>
+      <a class="tcard" href="c02b-join-code.html">
+        <div class="thumb m"><iframe src="c02b-join-code.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="C-02b 輸入開桌碼加入"></iframe></div>
+        <div class="tinfo">
+          <div class="code">C-02b</div>
+          <div class="nm">輸入開桌碼加入</div>
+          <div class="rt">/t/:tableNo/join</div>
+          
+        </div>
+      </a>
+      <a class="tcard" href="c03-soup-base.html">
+        <div class="thumb m"><iframe src="c03-soup-base.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="C-03 選鍋底"></iframe></div>
+        <div class="tinfo">
+          <div class="code">C-03</div>
+          <div class="nm">選鍋底</div>
+          <div class="rt">/order/soup-base</div>
+          <div class="tags"><span class="badge b-plain">開桌後強制</span></div>
+        </div>
+      </a>
+      <a class="tcard" href="c04-menu.html">
+        <div class="thumb m"><iframe src="c04-menu.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="C-04 菜單主頁"></iframe></div>
+        <div class="tinfo">
+          <div class="code">C-04</div>
+          <div class="nm">菜單主頁</div>
+          <div class="rt">/order/menu</div>
+          <div class="tags"><span class="badge b-rec">最重要</span><span class="badge b-info">含三態</span></div>
+        </div>
+      </a>
+      <a class="tcard" href="c05-item-detail.html">
+        <div class="thumb m"><iframe src="c05-item-detail.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="C-05 品項詳情與選項"></iframe></div>
+        <div class="tinfo">
+          <div class="code">C-05</div>
+          <div class="nm">品項詳情與選項</div>
+          <div class="rt">/order/items/:id</div>
+          
+        </div>
+      </a>
+      <a class="tcard" href="c06-cart.html">
+        <div class="thumb m"><iframe src="c06-cart.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="C-06 購物車"></iframe></div>
+        <div class="tinfo">
+          <div class="code">C-06</div>
+          <div class="nm">購物車</div>
+          <div class="rt">/order/cart</div>
+          
+        </div>
+      </a>
+      <a class="tcard" href="c07-submitted.html">
+        <div class="thumb m"><iframe src="c07-submitted.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="C-07 送出成功"></iframe></div>
+        <div class="tinfo">
+          <div class="code">C-07</div>
+          <div class="nm">送出成功</div>
+          <div class="rt">/order/submitted</div>
+          
+        </div>
+      </a>
+      <a class="tcard" href="c08-tickets.html">
+        <div class="thumb m"><iframe src="c08-tickets.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="C-08 本桌訂單與出菜進度"></iframe></div>
+        <div class="tinfo">
+          <div class="code">C-08</div>
+          <div class="nm">本桌訂單與出菜進度</div>
+          <div class="rt">/order/tickets</div>
+          <div class="tags"><span class="badge b-info">多裝置同步</span></div>
+        </div>
+      </a>
+      <a class="tcard" href="c09-checkout.html">
+        <div class="thumb m"><iframe src="c09-checkout.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="C-09 結帳明細"></iframe></div>
+        <div class="tinfo">
+          <div class="code">C-09</div>
+          <div class="nm">結帳明細</div>
+          <div class="rt">/checkout</div>
+          
+        </div>
+      </a>
+      <a class="tcard" href="c10-payment.html">
+        <div class="thumb m"><iframe src="c10-payment.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="C-10 付款方式選擇"></iframe></div>
+        <div class="tinfo">
+          <div class="code">C-10</div>
+          <div class="nm">付款方式選擇</div>
+          <div class="rt">/checkout/pay</div>
+          <div class="tags"><span class="badge b-plain">模擬付款</span></div>
+        </div>
+      </a>
+      <a class="tcard" href="c11-paid.html">
+        <div class="thumb m"><iframe src="c11-paid.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="C-11 付款完成"></iframe></div>
+        <div class="tinfo">
+          <div class="code">C-11</div>
+          <div class="nm">付款完成</div>
+          <div class="rt">/checkout/done</div>
+          
+        </div>
+      </a>
+      <a class="tcard" href="c12-login.html">
+        <div class="thumb m"><iframe src="c12-login.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="C-12 會員登入"></iframe></div>
+        <div class="tinfo">
+          <div class="code">C-12</div>
+          <div class="nm">會員登入</div>
+          <div class="rt">/auth/login</div>
+          
+        </div>
+      </a>
+      <a class="tcard" href="c13-register.html">
+        <div class="thumb m"><iframe src="c13-register.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="C-13 會員註冊補資料"></iframe></div>
+        <div class="tinfo">
+          <div class="code">C-13</div>
+          <div class="nm">會員註冊補資料</div>
+          <div class="rt">/auth/register</div>
+          
+        </div>
+      </a>
+      <a class="tcard" href="c14-member.html">
+        <div class="thumb m"><iframe src="c14-member.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="C-14 會員中心"></iframe></div>
+        <div class="tinfo">
+          <div class="code">C-14</div>
+          <div class="nm">會員中心</div>
+          <div class="rt">/member</div>
+          
+        </div>
+      </a>
+      <a class="tcard" href="c15-history.html">
+        <div class="thumb m"><iframe src="c15-history.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="C-15 消費紀錄"></iframe></div>
+        <div class="tinfo">
+          <div class="code">C-15</div>
+          <div class="nm">消費紀錄</div>
+          <div class="rt">/member/history</div>
+          
+        </div>
+      </a>
+      <a class="tcard" href="c16-reserve-datetime.html">
+        <div class="thumb m"><iframe src="c16-reserve-datetime.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="C-16 預約 1　日期時段人數"></iframe></div>
+        <div class="tinfo">
+          <div class="code">C-16</div>
+          <div class="nm">預約 1　日期時段人數</div>
+          <div class="rt">/reserve</div>
+          
+        </div>
+      </a>
+      <a class="tcard" href="c17-reserve-preorder.html">
+        <div class="thumb m"><iframe src="c17-reserve-preorder.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="C-17 預約 2　預先點餐"></iframe></div>
+        <div class="tinfo">
+          <div class="code">C-17</div>
+          <div class="nm">預約 2　預先點餐</div>
+          <div class="rt">/reserve/preorder</div>
+          
+        </div>
+      </a>
+      <a class="tcard" href="c18-reserve-done.html">
+        <div class="thumb m"><iframe src="c18-reserve-done.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="C-18 預約 3　付款完成"></iframe></div>
+        <div class="tinfo">
+          <div class="code">C-18</div>
+          <div class="nm">預約 3　付款完成</div>
+          <div class="rt">/reserve/done</div>
+          
+        </div>
+      </a>
+      <a class="tcard" href="c19-my-reservations.html">
+        <div class="thumb m"><iframe src="c19-my-reservations.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="C-19 我的預約"></iframe></div>
+        <div class="tinfo">
+          <div class="code">C-19</div>
+          <div class="nm">我的預約</div>
+          <div class="rt">/member/reservations</div>
+          
+        </div>
+      </a>
+      <a class="tcard" href="c21-service-bell.html">
+        <div class="thumb m"><iframe src="c21-service-bell.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="C-21 服務鈴面板"></iframe></div>
+        <div class="tinfo">
+          <div class="code">C-21</div>
+          <div class="nm">服務鈴面板</div>
+          <div class="rt">彈出層</div>
+          
+        </div>
+      </a>
+  </div>
+
+  <div class="sec"><h2>店家端</h2><span class="badge b-plain">12 張</span>
+    <span class="t-cap">橫式平板／電腦 1280 × 800</span></div>
+  <div class="tgrid">
+      <a class="tcard" href="s01-login.html">
+        <div class="thumb d"><iframe src="s01-login.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="S-01 員工登入"></iframe></div>
+        <div class="tinfo">
+          <div class="code">S-01</div>
+          <div class="nm">員工登入</div>
+          <div class="rt">/admin/login</div>
+          
+        </div>
+      </a>
+      <a class="tcard" href="s02-tables.html">
+        <div class="thumb d"><iframe src="s02-tables.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="S-02 桌況總覽"></iframe></div>
+        <div class="tinfo">
+          <div class="code">S-02</div>
+          <div class="nm">桌況總覽</div>
+          <div class="rt">/admin/tables</div>
+          <div class="tags"><span class="badge b-rec">櫃檯主畫面</span><span class="badge b-info">含三態</span></div>
+        </div>
+      </a>
+      <a class="tcard" href="s03-table-detail.html">
+        <div class="thumb d"><iframe src="s03-table-detail.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="S-03 桌位詳情"></iframe></div>
+        <div class="tinfo">
+          <div class="code">S-03</div>
+          <div class="nm">桌位詳情</div>
+          <div class="rt">/admin/tables/:id</div>
+          
+        </div>
+      </a>
+      <a class="tcard" href="s04-kds.html">
+        <div class="thumb k"><iframe src="s04-kds.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="S-04 出菜看板 KDS"></iframe></div>
+        <div class="tinfo">
+          <div class="code">S-04</div>
+          <div class="nm">出菜看板 KDS</div>
+          <div class="rt">/admin/kitchen</div>
+          <div class="tags"><span class="badge b-plain">1920×1080</span><span class="badge b-plain">唯一深色</span></div>
+        </div>
+      </a>
+      <a class="tcard" href="s05-menu-admin.html">
+        <div class="thumb d"><iframe src="s05-menu-admin.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="S-05 菜單管理"></iframe></div>
+        <div class="tinfo">
+          <div class="code">S-05</div>
+          <div class="nm">菜單管理</div>
+          <div class="rt">/admin/menu</div>
+          
+        </div>
+      </a>
+      <a class="tcard" href="s06-option-groups.html">
+        <div class="thumb d"><iframe src="s06-option-groups.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="S-06 選項群組管理"></iframe></div>
+        <div class="tinfo">
+          <div class="code">S-06</div>
+          <div class="nm">選項群組管理</div>
+          <div class="rt">/admin/menu/options</div>
+          
+        </div>
+      </a>
+      <a class="tcard" href="s07-reservations.html">
+        <div class="thumb d"><iframe src="s07-reservations.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="S-07 預約管理"></iframe></div>
+        <div class="tinfo">
+          <div class="code">S-07</div>
+          <div class="nm">預約管理</div>
+          <div class="rt">/admin/reservations</div>
+          
+        </div>
+      </a>
+      <a class="tcard" href="s08-tables-config.html">
+        <div class="thumb d"><iframe src="s08-tables-config.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="S-08 座位管理"></iframe></div>
+        <div class="tinfo">
+          <div class="code">S-08</div>
+          <div class="nm">座位管理</div>
+          <div class="rt">/admin/tables-config</div>
+          
+        </div>
+      </a>
+      <a class="tcard" href="s09-inventory.html">
+        <div class="thumb d"><iframe src="s09-inventory.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="S-09 庫存管理"></iframe></div>
+        <div class="tinfo">
+          <div class="code">S-09</div>
+          <div class="nm">庫存管理</div>
+          <div class="rt">/admin/inventory</div>
+          
+        </div>
+      </a>
+      <a class="tcard" href="s10-waitlist.html">
+        <div class="thumb d"><iframe src="s10-waitlist.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="S-10 候位管理"></iframe></div>
+        <div class="tinfo">
+          <div class="code">S-10</div>
+          <div class="nm">候位管理</div>
+          <div class="rt">/admin/waitlist</div>
+          
+        </div>
+      </a>
+      <a class="tcard" href="s11-service-bell-panel.html">
+        <div class="thumb d"><iframe src="s11-service-bell-panel.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="S-11 服務鈴通知面板"></iframe></div>
+        <div class="tinfo">
+          <div class="code">S-11</div>
+          <div class="nm">服務鈴通知面板</div>
+          <div class="rt">固定右上</div>
+          
+        </div>
+      </a>
+      <a class="tcard" href="s12-reports.html">
+        <div class="thumb d"><iframe src="s12-reports.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="S-12 報表"></iframe></div>
+        <div class="tinfo">
+          <div class="code">S-12</div>
+          <div class="nm">報表</div>
+          <div class="rt">/admin/reports</div>
+          <div class="tags"><span class="badge b-plain">進階</span></div>
+        </div>
+      </a>
+  </div>
+
+  <p class="t-cap mt48" style="padding-bottom:48px">
+    縮圖是用 iframe 即時渲染的。如果全部空白，代表瀏覽器擋了 file:// 的 iframe —
+    在 <span class="num">docs/ui/mockups/</span> 下跑 <span class="num">python3 -m http.server</span> 再開就會出現，
+    或直接點卡片開單張。
+  </p>
+
+</div>
+</body>
+</html>

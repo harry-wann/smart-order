@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>S-10｜候位管理</title>
+<link rel="stylesheet" href="_shared.css">
+</head>
+<body>
+<!-- #thumbmode：總覽頁用 iframe 取縮圖時，只留第一個畫框 -->
+<span id="thumbmode"></span>
+<div class="stage">
+
+<div>
+  <p class="meta"><b>S-10｜候位管理</b><code>1280 × 800</code><code>/admin/waitlist</code></p>
+  <div class="frame f-desk">
+    <div class="admin">
+        <aside class="side">
+        <div class="brand">鼎沸鍋物<small>SMART ORDER</small></div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg>桌況總覽</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M17 21H7V12.6a4.5 4.5 0 1 1 2.5-8.2 4 4 0 0 1 5 0A4.5 4.5 0 1 1 17 12.6z"/><path d="M7 17h10"/></svg>出菜看板</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M3 10h18M8 2.5v4M16 2.5v4"/></svg>預約管理</div>
+        <div class="nav-item on"><svg class="ic" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>候位管理</div>
+        <div class="nav-sep">菜　單</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>菜單管理</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>選項群組</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>庫存管理</div>
+        <div class="nav-sep">設　定</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>座位管理</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M3 3v18h18M18 17V9M13 17V5M8 17v-3"/></svg>報表</div>
+        <div class="fill"></div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>小美・外場</div>
+        </aside>
+      <div class="main">
+        <header class="topbar"><div class="h2">候位管理</div>
+          <span class="badge b-plain">今天 9/13（日）</span>
+          <span class="fill"></span>
+          <span class="t-cap">候位螢幕已連線</span>
+          <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="dot"></span></button></header>
+        <div class="content"><div class="r g24" style="height:100%;align-items:flex-start">
+          <div class="c g16" style="width:320px;flex:none">
+            <div class="card">
+              <div class="h3">現場登記</div>
+              <p class="t-cap" style="margin:4px 0 16px">留末四碼就好，不留全號碼</p>
+              <label class="field">
+                <span class="label">怎麼稱呼</span>
+                <div class="input on r">陳</div>
+              </label>
+              <label class="field">
+                <span class="label">電話末四碼</span>
+                <div class="input r"><span class="num">6108</span></div>
+              </label>
+              <div class="field">
+                <span class="label">人數</span>
+                <div class="bigstep">
+                  <button><svg class="ic ic-lg" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+                  <div class="n">4</div>
+                  <button><svg class="ic ic-lg" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button>
+                </div>
+              </div>
+              <button class="btn btn-primary btn-lg btn-block">取號　下一號 A15</button>
+            </div>
+
+            <div class="infobox ib-quiet"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 16v-4.5M12 8h.01"/></svg>
+              <div>叫號後 10 分鐘沒報到，排程自動標成過號。<br>只有「已叫號」會被標，「等待中」不會。</div>
+            </div>
+          </div>
+
+          <div class="fill c g16" style="min-width:0">
+            <div class="statstrip">
+              <div class="st"><span class="v" style="color:var(--brand-600)">3</span><span class="k">組候位中</span></div>
+              <div class="vr"></div>
+              <div class="st"><span class="v" style="color:var(--warning)">1</span><span class="k">已叫號待報到</span></div>
+              <div class="vr"></div>
+              <div class="st"><span class="v">22</span><span class="k">分・平均等待</span></div>
+              <div class="vr"></div>
+              <div class="st"><span class="v">2</span><span class="k">今日過號</span></div>
+            </div>
+
+            <table class="dt">
+              <tr><th style="width:80px">號碼</th><th style="width:110px">姓名</th><th style="width:120px">電話</th>
+                  <th style="width:80px">人數</th><th style="width:90px">登記</th><th style="width:110px">等待</th>
+                  <th style="width:160px">狀態</th><th style="width:180px">操作</th></tr>
+              <tr style="background:var(--warning-bg)">
+              <td class="n" style="font-weight:700;font-size:17px">A13</td>
+              <td><b style="font-size:15px">李小姐</b></td>
+              <td class="n t-cap">末四碼 5210</td>
+              <td class="n">4 位</td>
+              <td class="n t-cap">18:52</td>
+              <td class="n">已等 3 分</td>
+              <td><span class="badge b-wait">已叫號・剩 7 分</span></td>
+              <td><div class="r g8"><button class="btn btn-primary btn-sm">報到開桌</button><button class="btn btn-ghost btn-sm">再叫一次</button></div></td>
+            </tr><tr>
+              <td class="n" style="font-weight:700;font-size:17px">A12</td>
+              <td><b style="font-size:15px">王先生</b></td>
+              <td class="n t-cap">末四碼 0338</td>
+              <td class="n">2 位</td>
+              <td class="n t-cap">18:37</td>
+              <td class="n">已等 18 分</td>
+              <td><span class="badge b-info">等待中</span></td>
+              <td><button class="btn btn-secondary btn-sm">叫號</button></td>
+            </tr><tr>
+              <td class="n" style="font-weight:700;font-size:17px">A14</td>
+              <td><b style="font-size:15px">張先生</b></td>
+              <td class="n t-cap">末四碼 7724</td>
+              <td class="n">6 位</td>
+              <td class="n t-cap">18:51</td>
+              <td class="n">已等 4 分</td>
+              <td><span class="badge b-info">等待中</span></td>
+              <td><button class="btn btn-secondary btn-sm">叫號</button></td>
+            </tr><tr style="opacity:.55">
+              <td class="n" style="font-weight:700;font-size:17px">A11</td>
+              <td><b style="font-size:15px">周小姐</b></td>
+              <td class="n t-cap">末四碼 9106</td>
+              <td class="n">2 位</td>
+              <td class="n t-cap">18:20</td>
+              <td class="n">18:44 入座</td>
+              <td><span class="badge b-done">已入座</span></td>
+              <td><span class="dim t-cap">—</span></td>
+            </tr><tr style="opacity:.55">
+              <td class="n" style="font-weight:700;font-size:17px">A10</td>
+              <td><b style="font-size:15px">蔡先生</b></td>
+              <td class="n t-cap">末四碼 4471</td>
+              <td class="n">4 位</td>
+              <td class="n t-cap">18:05</td>
+              <td class="n">18:31 過號</td>
+              <td><span class="badge b-plain">過號</span></td>
+              <td><span class="dim t-cap">—</span></td>
+            </tr>
+            </table>
+            <p class="hint">報到後直接帶著人數去 C-02 開桌，不用再輸入一次。</p>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

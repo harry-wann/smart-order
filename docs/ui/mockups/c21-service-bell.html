@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>C-21｜服務鈴面板</title>
+<link rel="stylesheet" href="_shared.css">
+</head>
+<body>
+<!-- #thumbmode：總覽頁用 iframe 取縮圖時，只留第一個畫框 -->
+<span id="thumbmode"></span>
+<div class="stage">
+
+<div>
+  <p class="meta"><b>C-21｜服務鈴面板</b><code>375 × 812</code><code>彈出層，不是獨立路由</code><code>疊在 C-04 上</code></p>
+  <div class="frame f-mobile">
+
+    <!-- 底下是 C-04 菜單主頁（被遮罩壓暗） -->
+    <header class="appbar">
+      <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+      <div class="ttl">A03 桌<small>2 大 1 小　18:32 入座</small></div>
+      <button class="iconbtn" style="background:var(--brand-100);color:var(--brand-600)">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+      </button>
+    </header>
+    <div class="searchbar">
+      <svg class="ic ic-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7.5"/><path d="m20.5 20.5-4.2-4.2"/></svg>
+      <span>搜尋菜色</span>
+    </div>
+    <nav class="tabs">
+      <div class="tab on">推薦</div><div class="tab">鍋底</div><div class="tab">肉品</div>
+      <div class="tab">海鮮</div><div class="tab">蔬菜</div><div class="tab">火鍋料</div>
+    </nav>
+    <div class="scroll">
+      <div class="secbar"><span class="woodsign">今日推薦</span><span class="t-cap">本店人氣 TOP 5</span></div>
+      <div class="hs" style="padding:0 16px">
+        <div class="reccard">
+          <div class="img-ph" style="aspect-ratio:16/9" data-layer="IMG／麻辣鍋湯頭／16-9">
+            <b>麻辣鍋湯頭俯拍</b><span>640×360・16:9</span><span class="kw">mala hot pot broth top view</span>
+          </div>
+          <div class="cap"><div class="nm">招牌麻辣鍋底</div><div class="price">NT$ 480</div></div>
+        </div>
+        <div class="reccard">
+          <div class="img-ph" style="aspect-ratio:16/9" data-layer="IMG／牛五花情境／16-9">
+            <b>牛五花擺盤情境</b><span>640×360・16:9</span><span class="kw">sliced beef platter hotpot</span>
+          </div>
+          <div class="cap"><div class="nm">安格斯霜降牛五花</div><div class="price">NT$ 380</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 遮罩 + 底部彈出面板 -->
+    <div class="scrim"></div>
+    <div class="sheet">
+      <div class="grabber"></div>
+      <div class="r g8" style="padding:0 4px 4px">
+        <span class="h2 fill">需要什麼？</span>
+        <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <p class="t-sm" style="margin:0 4px 16px">按下去櫃檯會馬上看到，不用舉手等人經過。</p>
+
+      <div class="c g12">
+        <div class="opt" style="min-height:64px">
+          <svg class="ic ic-lg" viewBox="0 0 24 24" style="color:var(--brand-600)"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <div class="fill"><div class="h3">呼叫服務生</div><div class="t-cap">有事情要問</div></div>
+          <svg class="ic dim" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+        </div>
+        <div class="opt" style="min-height:64px">
+          <svg class="ic ic-lg" viewBox="0 0 24 24" style="color:var(--brand-600)"><path d="M13 3v6M17 5v4M9 5v4"/><path d="M4 12h16v2a8 8 0 0 1-8 8 8 8 0 0 1-8-8z"/></svg>
+          <div class="fill"><div class="h3">加湯</div><div class="t-cap">湯底煮到剩一半了</div></div>
+          <svg class="ic dim" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+        </div>
+        <div class="opt" style="min-height:64px">
+          <svg class="ic ic-lg" viewBox="0 0 24 24" style="color:var(--brand-600)"><path d="M3 12a9 9 0 1 0 9-9 9.7 9.7 0 0 0-6.7 2.7L3 8"/><path d="M3 3.5V8h4.5"/></svg>
+          <div class="fill"><div class="h3">換鍋撈渣</div><div class="t-cap">湯變濁了想換一鍋</div></div>
+          <svg class="ic dim" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+        </div>
+        <div class="opt" style="min-height:64px">
+          <svg class="ic ic-lg" viewBox="0 0 24 24" style="color:var(--brand-600)"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+          <div class="fill"><div class="h3">我要結帳</div><div class="t-cap">按下後這桌不能再加點</div></div>
+          <svg class="ic dim" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="sidenote">
+  <b>按下去之後</b>
+  <dl style="margin:0">
+    <dt>回饋</dt>
+    <dd>面板收起 + 綠色 Toast<br>「已通知櫃檯，服務生馬上過來」</dd>
+    <dt>冷卻</dt>
+    <dd>同一種呼叫 60 秒內不能再按，<br>按鈕顯示「已通知（48 秒）」</dd>
+    <dt>我要結帳</dt>
+    <dd>先跳二次確認：「結帳後這桌就不能<br>再加點了，確定嗎？」</dd>
+    <dt>櫃檯端</dt>
+    <dd>S-11 右上角的通知面板即時跳出卡片，<br>含桌號與呼叫類型</dd>
+  </dl>
+</div>
+
+</div>
+</body>
+</html>

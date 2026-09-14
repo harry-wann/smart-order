@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>C-01｜掃碼進入</title>
+<link rel="stylesheet" href="_shared.css">
+</head>
+<body>
+<!-- #thumbmode：總覽頁用 iframe 取縮圖時，只留第一個畫框 -->
+<span id="thumbmode"></span>
+<div class="stage">
+
+<div>
+  <p class="meta"><b>C-01｜掃碼進入／桌號確認</b><code>375 × 812</code><code>/t/A03</code><code>桌位狀態＝使用中</code></p>
+  <div class="frame f-mobile">
+
+    <!-- 上半：店家形象照佔螢幕 40%（812 × 40% ≈ 325px），店名疊在照片上 -->
+    <div class="hero" style="height:325px">
+      <div class="img-ph" style="height:100%;border-radius:0;border:0" data-layer="IMG／餐廳形象-banner／16-9">
+        <b>餐廳形象 banner</b>
+        <span>1600×900・16:9（上下裁切）</span>
+        <span class="kw">taiwanese hotpot restaurant interior</span>
+      </div>
+      <div class="veil"></div>
+      <div class="cap">
+        <div class="nm">鼎沸鍋物</div>
+        <div class="sb">中山北路二段　共鍋 32 年</div>
+      </div>
+    </div>
+
+    <div class="scroll c" style="padding:24px 16px 0;align-items:center;text-align:center">
+      <span class="badge b-rec">用餐中</span>
+      <div class="display mt12" style="font-size:44px">A03 桌</div>
+      <p class="t-sm" style="margin:8px 0 0">2 大 1 小　18:32 入座</p>
+
+      <div class="infobox ib-ok mt24" style="text-align:left">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+        <div>這桌櫃檯已經開好了，直接開始點就可以。<br>同桌的人掃同一張碼會看到一樣的訂單。</div>
+      </div>
+
+      <button class="btn btn-primary btn-lg btn-block mt24">開始點餐</button>
+      <button class="btn btn-ghost btn-md mt8">有訂位？查詢我的預約</button>
+    </div>
+
+    <div class="bottombar" style="padding-bottom:16px">
+      <p class="t-cap center" style="margin:0">
+        桌上的 QR code 是固定的，每次來掃同一張就好
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<!-- 預覽用說明卡：其他三種桌位狀態的文案（同一個畫框，只換中下半段） -->
+<div class="sidenote">
+  <b>同一畫框的其他三種狀態</b>
+  <dl style="margin:0">
+    <dt>空桌 AVAILABLE</dt>
+    <dd>「請洽櫃檯帶位」<br>沒有開桌按鈕 — 開桌權在櫃檯</dd>
+    <dt>已預約 RESERVED</dt>
+    <dd>「此桌已預約，請洽櫃檯」<br>下方顯示預約時段</dd>
+    <dt>待清理 CLEANING</dt>
+    <dd>「整理中，請稍候」<br>附一句「大約 5 分鐘」</dd>
+    <dt>結帳後再掃</dt>
+    <dd>「本次用餐已結束，感謝光臨」</dd>
+    <dt>開桌碼開啟時</dt>
+    <dd>使用中狀態改導向 C-02b，先輸入 4 碼</dd>
+  </dl>
+</div>
+
+</div>
+</body>
+</html>

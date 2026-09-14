@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>S-06｜選項群組管理</title>
+<link rel="stylesheet" href="_shared.css">
+</head>
+<body>
+<!-- #thumbmode：總覽頁用 iframe 取縮圖時，只留第一個畫框 -->
+<span id="thumbmode"></span>
+<div class="stage">
+
+<div>
+  <p class="meta"><b>S-06｜選項群組管理</b><code>1280 × 800</code><code>/admin/menu/options</code></p>
+  <div class="frame f-desk">
+    <div class="admin">
+        <aside class="side">
+        <div class="brand">鼎沸鍋物<small>SMART ORDER</small></div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg>桌況總覽</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M17 21H7V12.6a4.5 4.5 0 1 1 2.5-8.2 4 4 0 0 1 5 0A4.5 4.5 0 1 1 17 12.6z"/><path d="M7 17h10"/></svg>出菜看板</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M3 10h18M8 2.5v4M16 2.5v4"/></svg>預約管理</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>候位管理</div>
+        <div class="nav-sep">菜　單</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>菜單管理</div>
+        <div class="nav-item on"><svg class="ic" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>選項群組</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>庫存管理</div>
+        <div class="nav-sep">設　定</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>座位管理</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M3 3v18h18M18 17V9M13 17V5M8 17v-3"/></svg>報表</div>
+        <div class="fill"></div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>小美・外場</div>
+        </aside>
+      <div class="main">
+        <header class="topbar"><div class="h2">選項群組</div>
+          <span class="badge b-plain">5 個群組</span>
+          <span class="fill"></span>
+          <button class="btn btn-primary btn-md"><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg>新增群組</button></header>
+        <div class="content"><div class="r g24" style="height:100%;align-items:flex-start">
+          <div class="c g12" style="width:280px;flex:none">
+            <div class="mi" style="min-height:auto;padding:12px 16px;background:var(--brand-100);border-color:var(--brand-600)">
+              <div class="body"><div class="nm" style="font-size:16px">份量</div>
+              <div class="t-cap">必選 單選・掛在 18 個品項</div></div>
+              <svg class="ic ic-sm dim" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+            </div>
+            <div class="mi" style="min-height:auto;padding:12px 16px;">
+              <div class="body"><div class="nm" style="font-size:16px">辣度</div>
+              <div class="t-cap">選填 單選・掛在 22 個品項</div></div>
+              <svg class="ic ic-sm dim" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+            </div>
+            <div class="mi" style="min-height:auto;padding:12px 16px;">
+              <div class="body"><div class="nm" style="font-size:16px">加點配料</div>
+              <div class="t-cap">選填 複選・掛在 26 個品項</div></div>
+              <svg class="ic ic-sm dim" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+            </div>
+            <div class="mi" style="min-height:auto;padding:12px 16px;">
+              <div class="body"><div class="nm" style="font-size:16px">左鍋湯底</div>
+              <div class="t-cap">必選 單選・掛在 1 個品項</div></div>
+              <svg class="ic ic-sm dim" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+            </div>
+            <div class="mi" style="min-height:auto;padding:12px 16px;">
+              <div class="body"><div class="nm" style="font-size:16px">右鍋湯底</div>
+              <div class="t-cap">必選 單選・掛在 1 個品項</div></div>
+              <svg class="ic ic-sm dim" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+            </div>
+          </div>
+          <div class="fill c g16" style="min-width:0">
+            <div class="card">
+              <div class="r g8">
+                <span class="h2">份量</span>
+                <span class="badge b-plain">必選 單選</span>
+                <span class="fill"></span>
+                <button class="btn btn-ghost btn-sm"><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M11 4H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-6"/><path d="M18.4 2.6a2 2 0 0 1 2.8 2.8L12 14.6 8 15.6l1-4z"/></svg>改名</button>
+              </div>
+              <div class="r g24 mt16">
+                <div><div class="t-cap">至少要選</div><div class="h3 num">1 項</div></div>
+                <div><div class="t-cap">最多可選</div><div class="h3 num">1 項</div></div>
+                <div><div class="t-cap">排序</div><div class="h3 num">1</div></div>
+                <span class="fill"></span>
+                <div class="infobox ib-info" style="font-size:13px"><svg class="ic ic-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 16v-4.5M12 8h.01"/></svg>
+                  <div>min=1 max=1 就是「必選・單選」。<br>兩個數字決定四種行為，不用改程式。</div></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="r g8" style="margin-bottom:12px">
+                <span class="h3 fill">選項值</span>
+                <button class="btn btn-secondary btn-sm"><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg>新增選項</button>
+              </div>
+              <table class="dt">
+                <tr><th>名稱</th><th style="width:100px">價差</th><th style="width:80px">排序</th>
+                    <th style="width:120px">狀態</th><th style="width:70px">操作</th></tr>
+                <tr><td><b style="font-size:15px">半份　約 120g</b></td><td class="n">+0</td><td class="n">1</td>
+      <td><div class="r g8"><span class="switch on"></span>
+      <span class="t-cap">啟用</span></div></td>
+      <td><button class="btn btn-ghost btn-sm"><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M11 4H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-6"/><path d="M18.4 2.6a2 2 0 0 1 2.8 2.8L12 14.6 8 15.6l1-4z"/></svg></button></td></tr>
+            <tr><td><b style="font-size:15px">全份　約 220g</b></td><td class="n">+80</td><td class="n">2</td>
+      <td><div class="r g8"><span class="switch on"></span>
+      <span class="t-cap">啟用</span></div></td>
+      <td><button class="btn btn-ghost btn-sm"><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M11 4H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-6"/><path d="M18.4 2.6a2 2 0 0 1 2.8 2.8L12 14.6 8 15.6l1-4z"/></svg></button></td></tr>
+            <tr><td><b style="font-size:15px">加大　約 320g</b></td><td class="n">+160</td><td class="n">3</td>
+      <td><div class="r g8"><span class="switch"></span>
+      <span class="t-cap">停用</span></div></td>
+      <td><button class="btn btn-ghost btn-sm"><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M11 4H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-6"/><path d="M18.4 2.6a2 2 0 0 1 2.8 2.8L12 14.6 8 15.6l1-4z"/></svg></button></td></tr>
+              </table>
+            </div>
+
+            <div class="card card-tight">
+              <div class="r g8">
+                <span class="h3">掛在這 18 個品項上</span>
+                <span class="fill"></span>
+                <span class="t-cap">改一次，18 個全部生效</span>
+              </div>
+              <div class="r g8 mt12 wrap"><span class="badge b-plain">安格斯霜降牛五花</span><span class="badge b-plain">伊比利豬梅花</span><span class="badge b-plain">台灣松阪豬</span><span class="badge b-plain">美國老饕牛小排</span><span class="badge b-plain">霜降牛舌</span><span class="badge b-plain">紐西蘭小羔羊肩</span><span class="badge b-plain">海鮮拼盤</span><span class="badge b-plain">時蔬八品</span><span class="badge b-plain">… 還有 10 個</span></div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>C-06｜購物車</title>
+<link rel="stylesheet" href="_shared.css">
+</head>
+<body>
+<!-- #thumbmode：總覽頁用 iframe 取縮圖時，只留第一個畫框 -->
+<span id="thumbmode"></span>
+<div class="stage">
+
+<div>
+  <p class="meta"><b>C-06｜購物車</b><code>375 × 812</code><code>/order/cart</code><code>6 項・NT$ 1,420</code></p>
+  <div class="frame f-mobile">
+
+    <header class="appbar">
+      <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+      <div class="ttl">購物車<small>A03 桌　這是第 2 單</small></div>
+      <button class="btn btn-ghost btn-sm">清空</button>
+    </header>
+
+    <div class="scroll">
+      <div class="c g12" style="padding:16px">
+
+        <div class="cartrow">
+          <div class="hd"><span class="nm">招牌麻辣鍋底</span><span class="price">NT$ 480</span></div>
+          <div class="r mt8">
+            <button class="trash"><svg class="ic" viewBox="0 0 24 24"><path d="M3.5 6h17M19 6v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8.5 6V4.2A2 2 0 0 1 10.5 2h3a2 2 0 0 1 2 2.2V6"/></svg></button>
+            <span class="fill"></span>
+            <div class="step">
+              <button><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+              <div class="n">1</div>
+              <button><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="cartrow">
+          <div class="hd"><span class="nm">安格斯霜降牛五花</span><span class="price">NT$ 460</span></div>
+          <div class="sub">全份・加蔥花</div>
+          <div class="sub">備註：不要太生</div>
+          <div class="r mt8">
+            <button class="trash"><svg class="ic" viewBox="0 0 24 24"><path d="M3.5 6h17M19 6v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8.5 6V4.2A2 2 0 0 1 10.5 2h3a2 2 0 0 1 2 2.2V6"/></svg></button>
+            <span class="fill"></span>
+            <div class="step">
+              <button><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+              <div class="n">1</div>
+              <button><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="cartrow">
+          <div class="hd"><span class="nm">伊比利豬梅花</span><span class="price">NT$ 320</span></div>
+          <div class="r mt8">
+            <button class="trash"><svg class="ic" viewBox="0 0 24 24"><path d="M3.5 6h17M19 6v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8.5 6V4.2A2 2 0 0 1 10.5 2h3a2 2 0 0 1 2 2.2V6"/></svg></button>
+            <span class="fill"></span>
+            <div class="step">
+              <button><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+              <div class="n">1</div>
+              <button><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="cartrow">
+          <div class="hd"><span class="nm">高麗菜</span><span class="price">NT$ 160</span></div>
+          <div class="r mt8">
+            <button class="trash"><svg class="ic" viewBox="0 0 24 24"><path d="M3.5 6h17M19 6v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8.5 6V4.2A2 2 0 0 1 10.5 2h3a2 2 0 0 1 2 2.2V6"/></svg></button>
+            <span class="fill"></span>
+            <div class="step">
+              <button><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+              <div class="n">1</div>
+              <button><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 免費續加品項：0 元、不扣庫存，但仍要出單 -->
+        <div class="cartrow">
+          <div class="hd"><span class="nm">白飯</span><span class="price" style="color:var(--success)">免費</span></div>
+          <div class="sub">續加品項，不扣庫存，一樣會出單給廚房</div>
+          <div class="r mt8">
+            <button class="trash"><svg class="ic" viewBox="0 0 24 24"><path d="M3.5 6h17M19 6v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8.5 6V4.2A2 2 0 0 1 10.5 2h3a2 2 0 0 1 2 2.2V6"/></svg></button>
+            <span class="fill"></span>
+            <div class="step">
+              <button><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+              <div class="n">2</div>
+              <button><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="bottombar">
+      <div class="r" style="padding-bottom:4px">
+        <span class="t-sm" style="margin:0">小計　6 項</span>
+        <span class="fill"></span>
+        <span class="price" style="font-size:22px">NT$ 1,420</span>
+      </div>
+      <p class="t-cap" style="margin:0 0 8px">服務費 10% 在結帳時才計算</p>
+      <button class="btn btn-primary btn-lg btn-block">送出點餐</button>
+    </div>
+
+  </div>
+</div>
+
+<div class="sidenote">
+  <b>刪除與空車</b>
+  <dl style="margin:0">
+    <dt>兩種刪除都要有</dt>
+    <dd>左滑顯示紅色刪除區塊，<br><b>同時</b>保留列上的垃圾桶按鈕 —<br>長輩不會左滑</dd>
+    <dt>空購物車</dt>
+    <dd>鍋子線稿插圖 + 「還沒點東西呢」<br>+ 主按鈕「去看看菜單」</dd>
+    <dt>送出後庫存不足</dt>
+    <dd>該列標紅 + 「已售完」，整張單不成立<br>回到這一頁讓客人自己調整</dd>
+    <dt>防重複送出</dt>
+    <dd>按下後按鈕停用並顯示「送出中…」</dd>
+  </dl>
+</div>
+
+</div>
+</body>
+</html>

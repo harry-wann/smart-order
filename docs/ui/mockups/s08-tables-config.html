@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>S-08｜座位管理</title>
+<link rel="stylesheet" href="_shared.css">
+</head>
+<body>
+<!-- #thumbmode：總覽頁用 iframe 取縮圖時，只留第一個畫框 -->
+<span id="thumbmode"></span>
+<div class="stage">
+
+<div>
+  <p class="meta"><b>S-08｜座位管理</b><code>1280 × 800</code><code>/admin/tables-config</code></p>
+  <div class="frame f-desk">
+    <div class="admin">
+        <aside class="side">
+        <div class="brand">鼎沸鍋物<small>SMART ORDER</small></div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg>桌況總覽</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M17 21H7V12.6a4.5 4.5 0 1 1 2.5-8.2 4 4 0 0 1 5 0A4.5 4.5 0 1 1 17 12.6z"/><path d="M7 17h10"/></svg>出菜看板</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M3 10h18M8 2.5v4M16 2.5v4"/></svg>預約管理</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>候位管理</div>
+        <div class="nav-sep">菜　單</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>菜單管理</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>選項群組</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>庫存管理</div>
+        <div class="nav-sep">設　定</div>
+        <div class="nav-item on"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>座位管理</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M3 3v18h18M18 17V9M13 17V5M8 17v-3"/></svg>報表</div>
+        <div class="fill"></div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>小美・外場</div>
+        </aside>
+      <div class="main">
+        <header class="topbar"><div class="h2">座位管理</div>
+          <span class="badge b-plain">18 桌・3 個區域</span>
+          <span class="fill"></span>
+          <button class="btn btn-secondary btn-md"><svg class="ic ic-sm" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14h1M14 20h1M20 20h1M17.5 20.5h.01"/></svg>列印全部 QR</button>
+          <button class="btn btn-primary btn-md"><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg>新增桌位</button></header>
+        <div class="content"><div class="c g16" style="height:100%">
+          <div class="statstrip">
+            <div class="st"><span class="v">18</span><span class="k">桌</span></div>
+            <div class="vr"></div>
+            <div class="st"><span class="v">76</span><span class="k">個座位</span></div>
+            <div class="vr"></div>
+            <div class="st"><span class="v" style="color:var(--accent-600)">13</span><span class="k">開放預約（70%）</span></div>
+            <div class="vr"></div>
+            <div class="st"><span class="v">3</span><span class="k">區域</span></div>
+            <span class="fill"></span>
+            <span class="t-cap">留 30% 給現場與候位客人，尖峰才不會整間都是空著等預約的桌</span>
+          </div>
+
+          <table class="dt">
+            <tr><th style="width:90px">桌號</th><th style="width:90px">座位數</th><th style="width:150px">區域</th>
+                <th style="width:170px">可否預約</th><th style="width:110px">目前狀態</th>
+                <th style="width:190px">QR code</th><th style="width:90px">操作</th></tr>
+            <tr>
+              <td class="n" style="font-weight:700;font-size:16px">A01</td>
+              <td class="n">2 人</td>
+              <td>A 區・窗邊</td>
+              <td><div class="r g8"><span class="switch on"></span><span class="t-cap">開放預約</span></div></td>
+              <td><span class="badge b-plain">空桌</span></td>
+              <td><div class="r g8"><span class="num t-cap">/t/A01</span>
+                  <button class="btn btn-ghost btn-sm"><svg class="ic ic-sm" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14h1M14 20h1M20 20h1M17.5 20.5h.01"/></svg>印 QR</button></div></td>
+              <td><button class="btn btn-ghost btn-sm"><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M11 4H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-6"/><path d="M18.4 2.6a2 2 0 0 1 2.8 2.8L12 14.6 8 15.6l1-4z"/></svg>編輯</button></td>
+            </tr><tr>
+              <td class="n" style="font-weight:700;font-size:16px">A02</td>
+              <td class="n">2 人</td>
+              <td>A 區・窗邊</td>
+              <td><div class="r g8"><span class="switch on"></span><span class="t-cap">開放預約</span></div></td>
+              <td><span class="badge b-sold">用餐中</span></td>
+              <td><div class="r g8"><span class="num t-cap">/t/A02</span>
+                  <button class="btn btn-ghost btn-sm"><svg class="ic ic-sm" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14h1M14 20h1M20 20h1M17.5 20.5h.01"/></svg>印 QR</button></div></td>
+              <td><button class="btn btn-ghost btn-sm"><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M11 4H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-6"/><path d="M18.4 2.6a2 2 0 0 1 2.8 2.8L12 14.6 8 15.6l1-4z"/></svg>編輯</button></td>
+            </tr><tr>
+              <td class="n" style="font-weight:700;font-size:16px">A03</td>
+              <td class="n">4 人</td>
+              <td>A 區・窗邊</td>
+              <td><div class="r g8"><span class="switch on"></span><span class="t-cap">開放預約</span></div></td>
+              <td><span class="badge b-sold">用餐中</span></td>
+              <td><div class="r g8"><span class="num t-cap">/t/A03</span>
+                  <button class="btn btn-ghost btn-sm"><svg class="ic ic-sm" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14h1M14 20h1M20 20h1M17.5 20.5h.01"/></svg>印 QR</button></div></td>
+              <td><button class="btn btn-ghost btn-sm"><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M11 4H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-6"/><path d="M18.4 2.6a2 2 0 0 1 2.8 2.8L12 14.6 8 15.6l1-4z"/></svg>編輯</button></td>
+            </tr><tr>
+              <td class="n" style="font-weight:700;font-size:16px">A04</td>
+              <td class="n">4 人</td>
+              <td>A 區・窗邊</td>
+              <td><div class="r g8"><span class="switch on"></span><span class="t-cap">開放預約</span></div></td>
+              <td><span class="badge b-wait">已預約</span></td>
+              <td><div class="r g8"><span class="num t-cap">/t/A04</span>
+                  <button class="btn btn-ghost btn-sm"><svg class="ic ic-sm" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14h1M14 20h1M20 20h1M17.5 20.5h.01"/></svg>印 QR</button></div></td>
+              <td><button class="btn btn-ghost btn-sm"><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M11 4H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-6"/><path d="M18.4 2.6a2 2 0 0 1 2.8 2.8L12 14.6 8 15.6l1-4z"/></svg>編輯</button></td>
+            </tr><tr>
+              <td class="n" style="font-weight:700;font-size:16px">A05</td>
+              <td class="n">4 人</td>
+              <td>A 區・走道</td>
+              <td><div class="r g8"><span class="switch on"></span><span class="t-cap">開放預約</span></div></td>
+              <td><span class="badge b-plain">待清理</span></td>
+              <td><div class="r g8"><span class="num t-cap">/t/A05</span>
+                  <button class="btn btn-ghost btn-sm"><svg class="ic ic-sm" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14h1M14 20h1M20 20h1M17.5 20.5h.01"/></svg>印 QR</button></div></td>
+              <td><button class="btn btn-ghost btn-sm"><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M11 4H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-6"/><path d="M18.4 2.6a2 2 0 0 1 2.8 2.8L12 14.6 8 15.6l1-4z"/></svg>編輯</button></td>
+            </tr><tr>
+              <td class="n" style="font-weight:700;font-size:16px">A06</td>
+              <td class="n">6 人</td>
+              <td>A 區・走道</td>
+              <td><div class="r g8"><span class="switch on"></span><span class="t-cap">開放預約</span></div></td>
+              <td><span class="badge b-plain">空桌</span></td>
+              <td><div class="r g8"><span class="num t-cap">/t/A06</span>
+                  <button class="btn btn-ghost btn-sm"><svg class="ic ic-sm" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14h1M14 20h1M20 20h1M17.5 20.5h.01"/></svg>印 QR</button></div></td>
+              <td><button class="btn btn-ghost btn-sm"><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M11 4H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-6"/><path d="M18.4 2.6a2 2 0 0 1 2.8 2.8L12 14.6 8 15.6l1-4z"/></svg>編輯</button></td>
+            </tr><tr>
+              <td class="n" style="font-weight:700;font-size:16px">B01</td>
+              <td class="n">4 人</td>
+              <td>B 區</td>
+              <td><div class="r g8"><span class="switch on"></span><span class="t-cap">開放預約</span></div></td>
+              <td><span class="badge b-sold">用餐中</span></td>
+              <td><div class="r g8"><span class="num t-cap">/t/B01</span>
+                  <button class="btn btn-ghost btn-sm"><svg class="ic ic-sm" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14h1M14 20h1M20 20h1M17.5 20.5h.01"/></svg>印 QR</button></div></td>
+              <td><button class="btn btn-ghost btn-sm"><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M11 4H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-6"/><path d="M18.4 2.6a2 2 0 0 1 2.8 2.8L12 14.6 8 15.6l1-4z"/></svg>編輯</button></td>
+            </tr><tr>
+              <td class="n" style="font-weight:700;font-size:16px">C01</td>
+              <td class="n">8 人</td>
+              <td>C 包廂</td>
+              <td><div class="r g8"><span class="switch on"></span><span class="t-cap">開放預約</span></div></td>
+              <td><span class="badge b-sold">用餐中</span></td>
+              <td><div class="r g8"><span class="num t-cap">/t/C01</span>
+                  <button class="btn btn-ghost btn-sm"><svg class="ic ic-sm" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14h1M14 20h1M20 20h1M17.5 20.5h.01"/></svg>印 QR</button></div></td>
+              <td><button class="btn btn-ghost btn-sm"><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M11 4H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-6"/><path d="M18.4 2.6a2 2 0 0 1 2.8 2.8L12 14.6 8 15.6l1-4z"/></svg>編輯</button></td>
+            </tr>
+          </table>
+          <p class="hint">桌上的 QR code 內容固定是 <span class="num">/t/{桌號}</span>，印一次貼著就好，永遠不用換。</p>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

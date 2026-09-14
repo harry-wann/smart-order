@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>C-12｜會員登入</title>
+<link rel="stylesheet" href="_shared.css">
+</head>
+<body>
+<!-- #thumbmode：總覽頁用 iframe 取縮圖時，只留第一個畫框 -->
+<span id="thumbmode"></span>
+<div class="stage">
+
+<div>
+  <p class="meta"><b>C-12｜會員登入（手機驗證）</b><code>375 × 812</code><code>/auth/login</code><code>步驟 2：輸入驗證碼</code></p>
+  <div class="frame f-mobile">
+
+    <header class="appbar">
+      <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+      <div class="ttl">會員登入</div>
+    </header>
+
+    <div class="scroll" style="padding:32px 16px 0">
+      <h1 class="h1">輸入驗證碼</h1>
+      <p class="t-sm mt8" style="margin-bottom:0">
+        已傳送 6 位數字到 <b class="num" style="color:var(--text-900)">0912-345-678</b>
+        <button class="btn btn-ghost btn-sm" style="height:auto;padding:0 0 0 8px;text-decoration:underline">改號碼</button>
+      </p>
+
+      <div class="otp mt24" style="gap:8px">
+        <i class="on">4</i><i class="on">8</i><i class="on">2</i><i class="on">9</i><i class="on">1</i><i>_</i>
+      </div>
+
+      <div class="r mt16">
+        <span class="t-cap num">04:32 後失效</span>
+        <span class="fill"></span>
+        <button class="btn btn-ghost btn-sm" disabled>重新傳送（52 秒）</button>
+      </div>
+
+      <!-- 8.2 模擬簡訊：測試模式直接把驗證碼顯示出來 -->
+      <div class="infobox ib-info mt24">
+        <svg class="ic" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2.5"/><path d="M11 18.5h2"/></svg>
+        <div><b>教學專題・模擬簡訊</b><br>
+          不串接真實簡訊閘道。驗證碼是 <b class="num">482913</b>，<br>直接顯示在這裡。</div>
+      </div>
+
+      <div class="infobox ib-quiet mt16">
+        <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 16v-4.5M12 8h.01"/></svg>
+        <div>驗證碼 5 分鐘內有效，連續錯 3 次會作廢，<br>重新要一次就好。</div>
+      </div>
+    </div>
+
+    <div class="bottombar">
+      <button class="btn btn-primary btn-lg btn-block" disabled>確認（還差 1 碼）</button>
+      <button class="btn btn-ghost btn-md btn-block mt8">先不登入，繼續點餐</button>
+    </div>
+
+  </div>
+</div>
+
+<div class="sidenote">
+  <b>步驟 1 與錯誤文案</b>
+  <dl style="margin:0">
+    <dt>步驟 1</dt>
+    <dd>同一畫框，換成手機號碼輸入框 +<br>「傳送驗證碼」，鍵盤鎖數字</dd>
+    <dt>格式錯</dt>
+    <dd>「請輸入 10 位數手機號碼」<br>不是「格式錯誤」</dd>
+    <dt>驗證碼錯</dt>
+    <dd>六格轉紅框 +「驗證碼不對，還可以試 2 次」</dd>
+    <dt>要太多次</dt>
+    <dd>10 分鐘內限 3 次，超過顯示<br>「請 10 分鐘後再試」</dd>
+  </dl>
+</div>
+
+</div>
+</body>
+</html>

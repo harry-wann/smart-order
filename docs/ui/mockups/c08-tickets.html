@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>C-08｜本桌訂單與出菜進度</title>
+<link rel="stylesheet" href="_shared.css">
+</head>
+<body>
+<!-- #thumbmode：總覽頁用 iframe 取縮圖時，只留第一個畫框 -->
+<span id="thumbmode"></span>
+<div class="stage">
+
+<div>
+  <p class="meta"><b>C-08｜本桌訂單與出菜進度</b><code>375 × 812</code><code>/order/tickets</code><code>★多裝置同步的展示舞台</code></p>
+  <div class="frame f-mobile">
+
+    <header class="appbar">
+      <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+      <div class="ttl">本桌訂單</div>
+      <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></button>
+    </header>
+
+    <!-- 連線狀態：斷線時整條換成暖黃「連線中斷，正在重新連線…」 -->
+    <div class="r g8" style="flex:none;padding:8px 16px;background:var(--success-bg);color:#2A5637;font-size:13px">
+      <span style="width:8px;height:8px;border-radius:50%;background:var(--success);flex:none"></span>
+      即時同步中　最後更新 19:19
+    </div>
+
+    <div class="scroll">
+      <div style="padding:16px 16px 0">
+        <div class="card card-tight">
+          <div class="r g8">
+            <span class="h2">A03 桌</span>
+            <span class="badge b-plain">3 位</span>
+            <span class="fill"></span>
+            <span class="price">NT$ 1,420</span>
+          </div>
+          <div class="r g8 mt4">
+            <span class="t-cap num">18:32 入座・已 47 分鐘</span>
+            <span class="fill"></span>
+            <span class="t-cap">目前金額（未含服務費）</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="c g12" style="padding:16px 16px 0">
+
+        <!-- 新單：從上方滑入 + 高亮 2 秒 -->
+        <div class="card card-tight" style="background:var(--brand-100);border-color:var(--brand-600)">
+          <div class="r g8">
+            <span class="h3">第 2 單</span>
+            <span class="badge b-rec">剛送出</span>
+            <span class="fill"></span>
+            <span class="t-cap num">18:51 送出</span>
+          </div>
+          <div class="tick">
+            <svg class="ic st" viewBox="0 0 24 24" style="color:var(--warning)"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5.2l3.2 1.8"/></svg>
+            <div class="fill">
+              <div class="nm">安格斯霜降牛五花 ×1</div>
+              <div class="op">全份・加蔥花・備註：不要太生</div>
+            </div>
+            <span class="badge b-wait">製作中</span>
+          </div>
+          <div class="tick">
+            <svg class="ic st" viewBox="0 0 24 24" style="color:var(--warning)"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5.2l3.2 1.8"/></svg>
+            <div class="fill"><div class="nm">白飯 ×2</div><div class="op">免費續加</div></div>
+            <span class="badge b-wait">製作中</span>
+          </div>
+        </div>
+
+        <div class="card card-tight">
+          <div class="r g8">
+            <span class="h3">第 1 單</span>
+            <span class="fill"></span>
+            <span class="t-cap num">18:32 送出</span>
+          </div>
+          <div class="tick">
+            <svg class="ic st" viewBox="0 0 24 24" style="color:var(--success)"><circle cx="12" cy="12" r="9.5"/><path d="m8 12.2 2.8 2.8L16 9.8"/></svg>
+            <div class="fill"><div class="nm">招牌麻辣鍋底 ×1</div></div>
+            <span class="badge b-done">已出餐</span>
+          </div>
+          <div class="tick">
+            <svg class="ic st" viewBox="0 0 24 24" style="color:var(--success)"><circle cx="12" cy="12" r="9.5"/><path d="m8 12.2 2.8 2.8L16 9.8"/></svg>
+            <div class="fill"><div class="nm">伊比利豬梅花 ×1</div></div>
+            <span class="badge b-done">已出餐</span>
+          </div>
+          <div class="tick">
+            <svg class="ic st" viewBox="0 0 24 24" style="color:var(--warning)"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5.2l3.2 1.8"/></svg>
+            <div class="fill"><div class="nm">高麗菜 ×1</div></div>
+            <span class="badge b-wait">製作中</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="bottombar">
+      <div class="r g12">
+        <button class="btn btn-primary btn-lg fill">繼續加點</button>
+        <button class="btn btn-secondary btn-lg">我要結帳</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="sidenote">
+  <b>連線與同步</b>
+  <dl style="margin:0">
+    <dt>斷線時</dt>
+    <dd>頂條換成暖黃底「連線中斷，正在重新連線…」<br>畫面資料維持，不清空</dd>
+    <dt>重新連上</dt>
+    <dd>自動重抓一次完整資料 —<br>WebSocket 保證快，不保證不漏</dd>
+    <dt>新單進來</dt>
+    <dd>卡片從上方滑入 + 高亮 2 秒（就是左邊<br>第 2 單那張的樣子），讓「同步」看得見</dd>
+    <dt>狀態不只靠顏色</dt>
+    <dd>圖示 + 文字標籤兩者都有</dd>
+  </dl>
+</div>
+
+</div>
+</body>
+</html>

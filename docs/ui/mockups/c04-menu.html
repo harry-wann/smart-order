@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>C-04｜菜單主頁</title>
+<link rel="stylesheet" href="_shared.css">
+</head>
+<body>
+<!-- #thumbmode：總覽頁用 iframe 取縮圖時，只留第一個畫框 -->
+<span id="thumbmode"></span>
+<div class="stage">
+
+<!-- ══════════════════ 正常態 ══════════════════ -->
+<div>
+  <p class="meta"><b>C-04｜菜單主頁</b><code>375 × 812</code><code>/order/menu</code><code>正常態</code></p>
+  <div class="frame f-mobile">
+
+    <header class="appbar">
+      <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+      <div class="ttl">A03 桌<small>2 大 1 小　18:32 入座</small></div>
+      <button class="iconbtn">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        <span class="dot"></span>
+      </button>
+    </header>
+
+    <div class="searchbar">
+      <svg class="ic ic-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7.5"/><path d="m20.5 20.5-4.2-4.2"/></svg>
+      <span>搜尋菜色</span>
+    </div>
+
+    <nav class="tabs">
+      <div class="tab on">推薦</div>
+      <div class="tab">鍋底</div>
+      <div class="tab">肉品</div>
+      <div class="tab">海鮮</div>
+      <div class="tab">蔬菜</div>
+      <div class="tab">火鍋料</div>
+      <div class="tab">主食</div>
+    </nav>
+
+    <div class="scroll">
+
+      <!-- 手寫感木牌：只有這家店有的細節 -->
+      <div class="secbar"><span class="woodsign">今日推薦</span><span class="t-cap">本店人氣 TOP 5</span></div>
+      <div class="hs" style="padding:0 16px">
+        <div class="reccard">
+          <div class="img-ph" style="aspect-ratio:16/9" data-layer="IMG／麻辣鍋湯頭／16-9">
+            <b>麻辣鍋湯頭俯拍</b><span>640×360・16:9</span><span class="kw">mala hot pot broth top view</span>
+          </div>
+          <div class="cap"><div class="nm">招牌麻辣鍋底</div><div class="price">NT$ 480</div></div>
+        </div>
+        <div class="reccard">
+          <div class="img-ph" style="aspect-ratio:16/9" data-layer="IMG／牛五花情境／16-9">
+            <b>牛五花擺盤情境</b><span>640×360・16:9</span><span class="kw">sliced beef platter hotpot</span>
+          </div>
+          <div class="cap"><div class="nm">安格斯霜降牛五花</div><div class="price">NT$ 380</div></div>
+        </div>
+        <div class="reccard">
+          <div class="img-ph" style="aspect-ratio:16/9" data-layer="IMG／海陸雙拼／16-9">
+            <b>海鮮拼盤情境</b><span>640×360・16:9</span><span class="kw">seafood platter hot pot</span>
+          </div>
+          <div class="cap"><div class="nm">極鮮海陸雙拼</div><div class="price">NT$ 560</div></div>
+        </div>
+      </div>
+
+      <div class="secbar"><h2 class="h2">肉品</h2><span class="t-cap">8 款・全部現切</span></div>
+      <div class="c g12" style="padding:0 16px">
+
+        <!-- 有必選選項（份量）→ 點整列進 C-05，右側是箭頭不是加號 -->
+        <div class="mi">
+          <div class="img-ph tiny thumb80" data-layer="IMG／牛五花／1-1">
+            <b>肉盤</b><span>320×320・1:1</span><span class="kw">sliced beef platter</span>
+          </div>
+          <div class="body">
+            <div class="nm">安格斯霜降牛五花 <span class="badge b-rec">人氣</span></div>
+            <div class="ds">厚切 3mm，涮 8 秒最好吃。油花分布均勻，是我們賣最好的一款。</div>
+            <div class="foot">
+              <span class="price">NT$ 380</span>
+              <span class="t-cap">需選份量</span>
+              <span class="fill"></span>
+              <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 售完：灰階 + 劃線 + 文字標籤 + 斜蓋印章，不只靠顏色 -->
+        <div class="mi sold">
+          <div class="img-ph tiny thumb80" data-layer="IMG／羊肉片／1-1">
+            <b>羊肉盤</b><span>320×320・1:1</span><span class="kw">lamb slices plate</span>
+          </div>
+          <div class="body">
+            <div class="nm">紐西蘭小羔羊肩 <span class="badge b-sold">售完</span></div>
+            <div class="ds">無騷味，附自製薄荷沾醬。今日備的 20 份已完售。</div>
+            <div class="foot">
+              <span class="price">NT$ 340</span>
+              <span class="t-cap">明天補貨</span>
+              <span class="fill"></span>
+              <button class="plus"><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button>
+            </div>
+          </div>
+          <span class="stamp">售完</span>
+        </div>
+
+        <!-- 已加入購物車 → 顯示步進器 -->
+        <div class="mi">
+          <div class="img-ph tiny thumb80" data-layer="IMG／豬梅花／1-1">
+            <b>豬肉盤</b><span>320×320・1:1</span><span class="kw">pork belly slices plate</span>
+          </div>
+          <div class="body">
+            <div class="nm">伊比利豬梅花 <span class="badge b-plain">兒童友善</span></div>
+            <div class="ds">頸肩帶油花的部位，久涮也不柴，小朋友咬得動。</div>
+            <div class="foot">
+              <span class="price">NT$ 320</span>
+              <span class="fill"></span>
+              <div class="step">
+              <button><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+              <div class="n">2</div>
+              <button><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button>
+            </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 無選項 → 直接加入購物車，少一次點擊 -->
+        <div class="mi">
+          <div class="img-ph tiny thumb80" data-layer="IMG／松阪豬／1-1">
+            <b>豬肉盤</b><span>320×320・1:1</span><span class="kw">pork jowl slices</span>
+          </div>
+          <div class="body">
+            <div class="nm">台灣松阪豬</div>
+            <div class="ds">一頭豬只有兩片的部位，脆度來自筋膜，涮 15 秒剛好。</div>
+            <div class="foot">
+              <span class="price">NT$ 300</span>
+              <span class="fill"></span>
+              <button class="plus"><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="bottombar">
+      <div class="cartbar">
+        <svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="20" r="1.3"/><circle cx="18" cy="20" r="1.3"/><path d="M2.5 3h2.2l2.5 11.6a1.8 1.8 0 0 0 1.8 1.4h8.6a1.8 1.8 0 0 0 1.76-1.4L21 7H6"/></svg>
+        <span>購物車 6 項</span>
+        <span class="fill"></span>
+        <b class="num">NT$ 1,420</b>
+        <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════ 載入中 ══════════════════ -->
+<div>
+  <p class="meta"><b>C-04｜菜單主頁</b><code>375 × 812</code><code>載入中</code><code>骨架屏＋火鍋冒泡，不用轉圈圈</code></p>
+  <div class="frame f-mobile">
+
+    <header class="appbar">
+      <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+      <div class="ttl">A03 桌<small>2 大 1 小　18:32 入座</small></div>
+      <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></button>
+    </header>
+
+    <div class="searchbar">
+      <svg class="ic ic-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7.5"/><path d="m20.5 20.5-4.2-4.2"/></svg>
+      <span>搜尋菜色</span>
+    </div>
+
+    <nav class="tabs">
+      <div class="sk" style="width:52px;height:18px;align-self:center"></div>
+      <div class="sk" style="width:52px;height:18px;align-self:center"></div>
+      <div class="sk" style="width:52px;height:18px;align-self:center"></div>
+      <div class="sk" style="width:52px;height:18px;align-self:center"></div>
+    </nav>
+
+    <div class="scroll">
+      <div class="c" style="align-items:center;padding:24px 0 8px">
+        <div class="potload">
+          <span class="bub"></span><span class="bub"></span><span class="bub"></span>
+          <svg class="art" viewBox="0 0 96 96" style="width:104px;height:86px;position:absolute;bottom:0;left:0">
+            <path d="M13 41v7a30 30 0 0 0 30 30h10a30 30 0 0 0 30-30v-7"/>
+            <path d="M8 41h80"/>
+            <path d="M83 47h6a5 5 0 0 1 0 10h-4"/>
+            <path d="M13 47H7a5 5 0 0 0 0 10h4"/>
+          </svg>
+        </div>
+        <p class="t-sm mt8" style="margin-bottom:0">正在準備今天的菜單</p>
+      </div>
+
+      <div class="c g12" style="padding:16px 16px 0">
+        <div class="mi">
+          <div class="sk" style="width:80px;height:80px;border-radius:12px;flex:none"></div>
+          <div class="body"><div class="sk" style="height:20px;width:58%"></div>
+            <div class="sk mt8" style="height:14px;width:88%"></div>
+            <div class="sk mt4" style="height:14px;width:64%"></div>
+            <div class="sk mt8" style="height:22px;width:30%"></div></div>
+        </div>
+        <div class="mi">
+          <div class="sk" style="width:80px;height:80px;border-radius:12px;flex:none"></div>
+          <div class="body"><div class="sk" style="height:20px;width:46%"></div>
+            <div class="sk mt8" style="height:14px;width:80%"></div>
+            <div class="sk mt4" style="height:14px;width:52%"></div>
+            <div class="sk mt8" style="height:22px;width:30%"></div></div>
+        </div>
+        <div class="mi">
+          <div class="sk" style="width:80px;height:80px;border-radius:12px;flex:none"></div>
+          <div class="body"><div class="sk" style="height:20px;width:64%"></div>
+            <div class="sk mt8" style="height:14px;width:84%"></div>
+            <div class="sk mt4" style="height:14px;width:44%"></div>
+            <div class="sk mt8" style="height:22px;width:30%"></div></div>
+        </div>
+        <div class="mi">
+          <div class="sk" style="width:80px;height:80px;border-radius:12px;flex:none"></div>
+          <div class="body"><div class="sk" style="height:20px;width:52%"></div>
+            <div class="sk mt8" style="height:14px;width:76%"></div>
+            <div class="sk mt8" style="height:22px;width:30%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottombar">
+      <button class="btn btn-primary btn-lg btn-block" disabled>菜單載入中…</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════ 空資料 ══════════════════ -->
+<div>
+  <p class="meta"><b>C-04｜菜單主頁</b><code>375 × 812</code><code>空資料</code><code>插圖＋一句話＋一個行動</code></p>
+  <div class="frame f-mobile">
+
+    <header class="appbar">
+      <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+      <div class="ttl">A03 桌<small>2 大 1 小　18:32 入座</small></div>
+      <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></button>
+    </header>
+
+    <div class="searchbar">
+      <svg class="ic ic-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7.5"/><path d="m20.5 20.5-4.2-4.2"/></svg>
+      <span>搜尋菜色</span>
+    </div>
+
+    <nav class="tabs">
+      <div class="tab">推薦</div><div class="tab">鍋底</div><div class="tab">肉品</div>
+      <div class="tab on">海鮮</div><div class="tab">蔬菜</div><div class="tab">火鍋料</div>
+    </nav>
+
+    <div class="scroll">
+      <div class="state" style="height:100%;justify-content:center">
+        <svg class="art" viewBox="0 0 96 96">
+          <path d="M13 41v7a30 30 0 0 0 30 30h10a30 30 0 0 0 30-30v-7"/>
+          <path d="M8 41h80"/>
+          <path d="M83 47h6a5 5 0 0 1 0 10h-4"/>
+          <path d="M13 47H7a5 5 0 0 0 0 10h4"/>
+          <path d="M36 60h24" stroke-dasharray="3 6"/>
+        </svg>
+        <div class="msg">海鮮今天沒有上架</div>
+        <div class="sub">今天的漁貨還沒進來，店家先把這一區收起來了。<br>肉品和蔬菜都是現切現備的，先看看那邊。</div>
+        <button class="btn btn-secondary btn-lg mt8">看看肉品</button>
+      </div>
+    </div>
+
+    <div class="bottombar">
+      <div class="cartbar">
+        <svg class="ic" viewBox="0 0 24 24"><circle cx="9" cy="20" r="1.3"/><circle cx="18" cy="20" r="1.3"/><path d="M2.5 3h2.2l2.5 11.6a1.8 1.8 0 0 0 1.8 1.4h8.6a1.8 1.8 0 0 0 1.76-1.4L21 7H6"/></svg>
+        <span>購物車 6 項</span><span class="fill"></span><b class="num">NT$ 1,420</b>
+        <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════ 錯誤 ══════════════════ -->
+<div>
+  <p class="meta"><b>C-04｜菜單主頁</b><code>375 × 812</code><code>錯誤</code><code>中文訊息＋重試，不給客人看錯誤碼</code></p>
+  <div class="frame f-mobile">
+
+    <header class="appbar">
+      <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+      <div class="ttl">A03 桌<small>2 大 1 小　18:32 入座</small></div>
+      <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></button>
+    </header>
+
+    <div class="searchbar">
+      <svg class="ic ic-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7.5"/><path d="m20.5 20.5-4.2-4.2"/></svg>
+      <span>搜尋菜色</span>
+    </div>
+
+    <div class="scroll">
+      <div class="state" style="height:100%;justify-content:center">
+        <div class="circ" style="background:var(--danger-bg)">
+          <svg class="ic ic-xl art-bad" viewBox="0 0 24 24" style="fill:none;stroke-width:1.8">
+            <path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3"/>
+            <path d="M12 9.5v4"/><path d="M12 17.2h.01"/>
+          </svg>
+        </div>
+        <div class="msg">菜單沒有載入成功</div>
+        <div class="sub">可能是店內 Wi-Fi 不穩。請重新整理一次；<br>如果還是不行，按右上角的鈴請店員幫忙。</div>
+        <button class="btn btn-primary btn-lg mt8">
+          <svg class="ic" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.7 9.7 0 0 0-6.7 2.7L3 8"/><path d="M3 3.5V8h4.5"/></svg>
+          重新載入
+        </button>
+        <button class="btn btn-ghost btn-md">按服務鈴找店員</button>
+      </div>
+    </div>
+
+    <div class="bottombar">
+      <div class="toast t-bad">
+        <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3"/><path d="M12 9.5v4"/><path d="M12 17.2h.01"/></svg>
+        連線不穩，請再試一次
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</div>
+</body>
+</html>
