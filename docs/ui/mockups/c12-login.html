@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>C-12｜會員登入</title>
+<title>C-12｜會員登入／註冊</title>
 <link rel="stylesheet" href="_shared.css">
 </head>
 <body>
@@ -12,63 +12,59 @@
 <div class="stage">
 
 <div>
-  <p class="meta"><b>C-12｜會員登入（手機驗證）</b><code>375 × 812</code><code>/auth/login</code><code>步驟 2：輸入驗證碼</code></p>
+  <p class="meta"><b>C-12｜會員登入／註冊</b><code>375 × 812</code><code>/auth</code><code>登入與註冊同一條路，不讓客人先選</code></p>
   <div class="frame f-mobile">
 
     <header class="appbar">
       <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
-      <div class="ttl">會員登入</div>
+      <div class="ttl">會員</div>
     </header>
 
-    <div class="scroll" style="padding:32px 16px 0">
-      <h1 class="h1">輸入驗證碼</h1>
-      <p class="t-sm mt8" style="margin-bottom:0">
-        已傳送 6 位數字到 <b class="num" style="color:var(--text-900)">0912-345-678</b>
-        <button class="btn btn-ghost btn-sm" style="height:auto;padding:0 0 0 8px;text-decoration:underline">改號碼</button>
-      </p>
+    <div class="scroll" style="padding:24px 16px 0">
 
-      <div class="otp mt24" style="gap:8px">
-        <i class="on">4</i><i class="on">8</i><i class="on">2</i><i class="on">9</i><i class="on">1</i><i>_</i>
+      <h1 class="h1">用手機號碼就好</h1>
+      <p class="t-sm" style="margin:8px 0 0">不用設密碼。每次登入都發一次驗證碼。</p>
+
+      <div class="mt24">
+        <div class="t-cap">手機號碼</div>
+        <div class="input ph-text mt8" style="display:flex;align-items:center;font-size:20px;letter-spacing:.04em">0912-345-678</div>
       </div>
 
-      <div class="r mt16">
-        <span class="t-cap num">04:32 後失效</span>
-        <span class="fill"></span>
-        <button class="btn btn-ghost btn-sm" disabled>重新傳送（52 秒）</button>
-      </div>
+      <button class="btn btn-primary btn-lg btn-block mt24">傳送驗證碼</button>
 
-      <!-- 8.2 模擬簡訊：測試模式直接把驗證碼顯示出來 -->
-      <div class="infobox ib-info mt24">
-        <svg class="ic" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2.5"/><path d="M11 18.5h2"/></svg>
-        <div><b>教學專題・模擬簡訊</b><br>
-          不串接真實簡訊閘道。驗證碼是 <b class="num">482913</b>，<br>直接顯示在這裡。</div>
-      </div>
-
-      <div class="infobox ib-quiet mt16">
+      <div class="infobox ib-quiet mt24">
         <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 16v-4.5M12 8h.01"/></svg>
-        <div>驗證碼 5 分鐘內有效，連續錯 3 次會作廢，<br>重新要一次就好。</div>
+        <div><b>第一次來也是按這裡。</b>號碼沒登記過，驗證完會直接帶你填姓名與生日，
+          不用先分「登入」還是「註冊」。</div>
       </div>
-    </div>
 
-    <div class="bottombar">
-      <button class="btn btn-primary btn-lg btn-block" disabled>確認（還差 1 碼）</button>
-      <button class="btn btn-ghost btn-md btn-block mt8">先不登入，繼續點餐</button>
+      <div class="card card-tight mt24">
+        <div class="t-cap">會員能做什麼</div>
+        <div class="c g8" style="padding-top:8px">
+          <div class="r g8"><svg class="ic ic-sm" style="color:var(--brand-600)" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span class="t-sm" style="margin:0">消費累點，100 元 1 點</span></div>
+          <div class="r g8"><svg class="ic ic-sm" style="color:var(--brand-600)" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span class="t-sm" style="margin:0">訂位不用每次重填姓名電話</span></div>
+          <div class="r g8"><svg class="ic ic-sm" style="color:var(--brand-600)" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span class="t-sm" style="margin:0">調得出每一次的消費紀錄與收據</span></div>
+        </div>
+      </div>
+
+      <button class="btn btn-ghost btn-md btn-block mt16">先不登入，繼續</button>
+
     </div>
 
   </div>
 </div>
 
 <div class="sidenote">
-  <b>步驟 1 與錯誤文案</b>
+  <b>為什麼不分登入／註冊</b>
   <dl style="margin:0">
-    <dt>步驟 1</dt>
-    <dd>同一畫框，換成手機號碼輸入框 +<br>「傳送驗證碼」，鍵盤鎖數字</dd>
-    <dt>格式錯</dt>
-    <dd>「請輸入 10 位數手機號碼」<br>不是「格式錯誤」</dd>
-    <dt>驗證碼錯</dt>
-    <dd>六格轉紅框 +「驗證碼不對，還可以試 2 次」</dd>
-    <dt>要太多次</dt>
-    <dd>10 分鐘內限 3 次，超過顯示<br>「請 10 分鐘後再試」</dd>
+    <dt>問題</dt>
+    <dd>客人記不得自己註冊過沒有。<br>先叫他選，一半的人會選錯。</dd>
+    <dt>做法</dt>
+    <dd>只問手機號碼。驗證通過後<br>後端查有沒有這個號碼：<br>有 → 直接登入；沒有 → C-13 補資料。</dd>
+    <dt>進來的地方</dt>
+    <dd>C-00 會員登入、C-09 結帳前累點、<br>C-16 訂位入口。三個入口<br>完成後都回到原本那一頁。</dd>
+    <dt>先不登入</dt>
+    <dd>從結帳或訂位進來的人可以跳過，<br>但點數就不留了。</dd>
   </dl>
 </div>
 

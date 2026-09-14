@@ -54,7 +54,7 @@
 | 409 | `SLOT_UNAVAILABLE` | 訂位時段已客滿 | 重新載入可訂時段 |
 | 409 | `ALREADY_ATTACHED` | 此次用餐已綁定會員 | — |
 | 422 | `PAYMENT_FAILED` | 模擬付款失敗（5%） | 顯示原因 + 重試按鈕 |
-| 429 | `TOO_MANY_ATTEMPTS` | 驗證碼／開桌碼太頻繁 | 顯示倒數 |
+| 429 | `TOO_MANY_ATTEMPTS` | 驗證碼太頻繁 | 顯示倒數 |
 | 500 | `INTERNAL_ERROR` | 未預期錯誤 | 通用錯誤訊息，**去看後端日誌** |
 
 ### 1.4 認證
@@ -257,7 +257,7 @@ GET /api/tables/A03/status
 
 ```http
 POST /api/dining-sessions/join
-{ "tableNo": "A03" }          // 開桌碼開啟時再加 "sessionCode": "4821"
+{ "tableNo": "A03" }
 ```
 
 ```json

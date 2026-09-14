@@ -39,7 +39,7 @@ redisTemplate.opsForValue().set("otp:0912345678", "482913", Duration.ofMinutes(5
 // 5 分鐘後這筆資料自己消失，不用寫程式去刪
 ```
 
-**驗證碼、開桌碼天生就需要這個。** 存在 MySQL 的話你還要寫一個排程去清過期的；存在 Redis 就自動消失。
+**驗證碼天生就需要這個。** 存在 MySQL 的話你還要寫一個排程去清過期的；存在 Redis 就自動消失。
 
 **③ 它超快**
 
@@ -47,7 +47,7 @@ redisTemplate.opsForValue().set("otp:0912345678", "482913", Duration.ofMinutes(5
 
 ## 我們專案的四個用途
 
-### ① 驗證碼與開桌碼（最自然的切入點）
+### ① 驗證碼（最自然的切入點）
 
 ```java
 @Service

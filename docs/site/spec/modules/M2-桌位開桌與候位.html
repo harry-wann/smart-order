@@ -235,54 +235,48 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td>2.7</td>
-<td>開桌碼（可關閉）</td>
-<td>預設關閉；開啟時需輸入 4 碼才能加入</td>
-<td>☐</td>
-</tr>
-<tr>
-<td>2.8</td>
 <td>關桌</td>
 <td>結帳後轉「待清理」，token 立刻失效</td>
 <td>☐</td>
 </tr>
 <tr>
-<td>2.9</td>
+<td>2.8</td>
 <td>桌況總覽</td>
 <td>色塊網格 + 文字標籤，<a class="gloss" href="../../tech/realtime/41-WebSocket與STOMP.html" title="看這個技術的白話說明">WebSocket</a> 即時更新</td>
 <td>☐</td>
 </tr>
 <tr>
-<td>2.10</td>
+<td>2.9</td>
 <td>用餐計時</td>
 <td>顯示已用餐分鐘數，超過 100 分鐘標紅</td>
 <td>☐</td>
 </tr>
 <tr>
-<td>2.11</td>
+<td>2.10</td>
 <td>候位登記</td>
 <td>姓名、電話末四碼、人數 → 取號</td>
 <td>☐</td>
 </tr>
 <tr>
-<td>2.12</td>
+<td>2.11</td>
 <td>候位清單與叫號</td>
 <td>櫃檯可叫號，WebSocket 推到候位螢幕</td>
 <td>☐</td>
 </tr>
 <tr>
-<td>2.13</td>
+<td>2.12</td>
 <td>候位報到</td>
 <td>叫到號 → 報到 → 直接帶入人數開桌</td>
 <td>☐</td>
 </tr>
 <tr>
-<td>2.14</td>
+<td>2.13</td>
 <td>候位過號</td>
 <td>叫號後 10 分鐘未報到，排程自動標記 <code>EXPIRED</code></td>
 <td>☐</td>
 </tr>
 <tr>
-<td>2.15</td>
+<td>2.14</td>
 <td>取消該次用餐</td>
 <td>客人未消費就離開，櫃檯可取消</td>
 <td>☐</td>
@@ -357,11 +351,6 @@ pre.mermaid svg{max-width:100%;height:auto}
 <td>★★☆☆☆</td>
 </tr>
 <tr>
-<td><a href="../../tech/realtime/44-Redis.html">Redis</a></td>
-<td>開桌碼的 TTL（選配）</td>
-<td>★★★☆☆</td>
-</tr>
-<tr>
 <td><a href="../../tech/backend/20-SpringSecurity.html">Spring Security</a></td>
 <td>用餐權杖驗證</td>
 <td>★★★★☆</td>
@@ -412,7 +401,8 @@ pre.mermaid svg{max-width:100%;height:auto}
 <li>優點：不用印、櫃檯掌握帶位、人數由櫃檯輸入比較準</li>
 <li>風險：隔壁桌的人也能掃到 → 但<strong>中高價位有服務生帶位，而且要走到那張桌才掃得到</strong>，風險可接受</li>
 </ul>
-<p><strong>我們的決定</strong>：做法 B，開桌碼做成可開關的安全設定，預設關閉。</p>
+<p><strong>我們的決定</strong>：做法 B。原本還想加一道可開關的開桌碼當第二層，後來拿掉了 ——
+有服務生帶位，人要走到那張桌前才掃得到，多一道四碼輸入只是讓正常客人多按幾下。</p>
 <hr />
 <h3 id="2_1">問題 2：兩支手機同時對同一桌開桌會怎樣？</h3>
 <p><strong>情境</strong>

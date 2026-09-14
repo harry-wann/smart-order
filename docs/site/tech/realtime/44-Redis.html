@@ -199,11 +199,11 @@ pre.mermaid svg{max-width:100%;height:auto}
 <pre><code class="language-java">redisTemplate.opsForValue().set(&quot;otp:0912345678&quot;, &quot;482913&quot;, Duration.ofMinutes(5));
 // 5 分鐘後這筆資料自己消失，不用寫程式去刪
 </code></pre>
-<p><strong>驗證碼、開桌碼天生就需要這個。</strong> 存在 MySQL 的話你還要寫一個排程去清過期的；存在 Redis 就自動消失。</p>
+<p><strong>驗證碼天生就需要這個。</strong> 存在 MySQL 的話你還要寫一個排程去清過期的；存在 Redis 就自動消失。</p>
 <p><strong>③ 它超快</strong></p>
 <p>因為在記憶體裡，讀寫大約是 MySQL 的幾十到幾百倍快。</p>
 <h2 id="_4">我們專案的四個用途</h2>
-<h3 id="1">① 驗證碼與開桌碼（最自然的切入點）</h3>
+<h3 id="1">① 驗證碼（最自然的切入點）</h3>
 <pre><code class="language-java">@Service
 @RequiredArgsConstructor
 public class OtpService {
