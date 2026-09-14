@@ -41,13 +41,52 @@ SPACING_EXCEPTIONS = {
     'margin-top:2px':    '例外4 光學對齊',
 }
 
-FRAME_SPEC = {'f-mobile': (375, 812), 'f-desk': (1280, 800), 'f-kds': (1920, 1080)}
+FRAME_SPEC = {'f-mobile': (375, 812), 'f-desk': (1280, 800),
+              'f-kds': (1920, 1080), 'f-ds': (1280, 1200)}
+# 編號在顧客端、但實際是櫃檯操作的畫面。Figma 放到店家端那頁，
+# 前端做櫃檯功能時才找得到，不用在顧客端那頁翻。
+# 顧客端在 Figma 上一條流程排一列，方便一眼看完整條動線。
+# 這裡是唯一的分組來源：frames.json 帶著它、外掛照它排版。
+# 新增顧客端畫面時一定要順手加進來，verify() 會擋住漏掉的。
+FLOW = [
+    # 01 Design System
+    ('基礎', ['ds01-tokens.html', 'ds02-button.html']),
+    ('輸入', ['ds03-input.html', 'ds04-choice.html']),
+    ('內容', ['ds05-badge-card.html', 'ds06-row-notify.html']),
+    ('狀態與店家端', ['ds07-states.html', 'ds08-admin.html']),
+    # 02 顧客端
+    ('入口', ['c00-entry.html']),
+    ('點餐', ['c01-scan.html', 'c04-menu.html', 'c04b-menu-notify.html', 'c04c-menu-notify-order.html',
+              'c05-item-detail.html',
+              'c06-cart.html', 'c07-submitted.html', 'c08-tickets.html', 'c21-service-bell.html']),
+    ('結帳', ['c09-checkout.html', 'c10-payment.html', 'c11-paid.html']),
+    ('會員', ['c12-login.html', 'c12b-otp.html', 'c13-register.html',
+              'c14-member.html', 'c15-history.html']),
+    ('預約', ['c16-reserve-entry.html', 'c16b-reserve-guest.html', 'c16c-reserve-datetime.html',
+              'c17-reserve-preorder.html', 'c18-reserve-done.html', 'c19-my-reservations.html']),
+    # 店家端：一個功能一列。列的先後同時也是代號遞增的順序，兩種讀法都對得上。
+    ('員工登入', ['s01-login.html']),
+    ('現場桌況', ['s02-tables.html', 's02b-open-table.html', 's03-table-detail.html']),
+    ('出菜', ['s04-kds.html']),
+    ('菜單管理', ['s05-menu-admin.html', 's06-option-groups.html']),
+    ('預約管理', ['s07-reservations.html']),
+    ('座位設定', ['s08-tables-config.html']),
+    ('庫存', ['s09-inventory.html']),
+    ('候位', ['s10-waitlist.html']),
+    ('服務鈴', ['s11-service-bell-panel.html']),
+    ('報表', ['s12-reports.html']),
+    ('狀態示範', ['c04-menu-states.html', 's02-tables-states.html']),
+]
+FLOW_OF = {}
+for _i, (_name, _files) in enumerate(FLOW):
+    for _j, _f in enumerate(_files):
+        FLOW_OF[_f] = (_i, _name, _j)
+
 SIZE_EXCEPTION = {
-    'c02-open-table.html': ('f-desk', '編號在顧客端，實際是櫃檯畫面'),
     's04-kds.html':        ('f-kds',  '固定橫式大螢幕，不做 RWD'),
 }
 
-TITLE_RE = re.compile(r'<title>\s*([CS]-\d{2}b?｜[^<]+?)\s*</title>')
+TITLE_RE = re.compile(r'<title>\s*((?:DS|[CS])-\d{2}[a-z]?｜[^<]+?)\s*</title>')
 FRAME_OPEN_RE = re.compile(r'<div class="frame (f-[a-z]+)"[^>]*>')
 META_RE = re.compile(r'<p class="meta">(.*?)</p>', re.S)
 CODE_RE = re.compile(r'<code>(.*?)</code>', re.S)
@@ -113,8 +152,12 @@ FONT_LINKS = (
 IMPORT_OVERRIDE = """
 /* 匯入用覆寫：畫框就是頁面本身，不要舞台留白與陰影 */
 html,body{margin:0;padding:0;background:var(--bg)}
-body{display:flex;flex-wrap:wrap;align-items:flex-start;gap:0}
-.frame{box-shadow:none}
+/* width:max-content + flex:none 是關鍵。
+   畫框是 flex item，預設 flex-shrink:1 會被視窗寬度壓縮 ——
+   匯入工具若用比畫框窄的 viewport（例如 1280 的畫框在 360 視窗），
+   寫死的 width 會失效，frame 就以錯誤寬度被匯進 Figma。 */
+body{display:flex;flex-wrap:nowrap;align-items:flex-start;gap:0;width:max-content}
+.frame{box-shadow:none;flex:none}
 """
 
 
@@ -205,7 +248,8 @@ def lint_file(path, css):
     classes = {c for c, _ in frames}
     expected = SIZE_EXCEPTION.get(path.name, (None, None))[0]
     if expected is None:
-        expected = 'f-desk' if path.name.startswith('s') else 'f-mobile'
+        expected = ('f-ds' if path.name.startswith('ds')
+                    else 'f-desk' if path.name.startswith('s') else 'f-mobile')
     if classes != {expected}:
         res.fail('畫框尺寸', '用了 %s，應該是 %s' % (sorted(classes), expected))
     for cls in classes:
@@ -329,10 +373,13 @@ def plan(frames_by_file):
         frames = frames_by_file[name]
         cls = frames[0][0]
         states = frame_states(src, len(frames))
-        page = '02 顧客端' if name.startswith('c') else '03 店家端'
+        page = ('01 Design System' if name.startswith('ds')
+                else '03 店家端' if name.startswith('s') else '02 顧客端')
         stem = name[:-5]
 
-        if cls == 'f-mobile':
+        if name.startswith('ds'):
+            batch = '00-design-system'
+        elif cls == 'f-mobile':
             batch = '01-customer-375'
         elif cls == 'f-kds':
             batch = '04-admin-1920'
@@ -344,12 +391,18 @@ def plan(frames_by_file):
         items.append(dict(stem=stem, src=name, title=title, page=page, batch=batch,
                           cls=cls, blocks=[frames[0][1]], frame_names=[title]))
         if len(frames) > 1:
-            extra = ['%s・%s' % (title, s or '狀態%d' % (i + 2))
+            # 只留「編號｜狀態」：Figma 的畫框名是固定字級，手機框只有 375 寬，
+            # 縮小檢視時長名字會被截成「C-04｜菜單主…」，四張狀態看起來一模一樣。
+            # 把辨識用的狀態名往前挪，截斷也還認得出是哪一張。
+            code = title.split('｜')[0]
+            extra = ['%s｜%s' % (code, s or '狀態%d' % (i + 2))
                      for i, s in enumerate(states[1:])]
             # 三態檔的 viewport 要跟本體一樣，不能混在同一批
             sb = '05-states-375' if cls == 'f-mobile' else '06-states-1280'
-            items.append(dict(stem=stem + '-states', src=name, title='%s・三態' % title,
-                              page=page, batch=sb, cls=cls,
+            # 狀態示範是規格材料不是畫面，跟元件總表一起放 01 Design System，
+            # 顧客端／店家端那兩頁只留真正的畫面
+            items.append(dict(stem=stem + '-states', src=name, title='%s・狀態' % title,
+                              page='01 Design System', batch=sb, cls=cls,
                               blocks=[b for _, b in frames[1:]], frame_names=extra))
     return items, css
 
@@ -378,25 +431,27 @@ def stale_files(items, batches):
     """列出 dist 裡不是這次產生的檔案（上一版殘留），交給人決定要不要刪。"""
     want = {DIST / 'B-inlined' / (it['stem'] + '.html') for it in items}
     want |= {DIST / 'A-zip' / (b + '.zip') for b in batches}
-    want |= {DIST / '匯入操作清單.md', DIST / 'frame命名對照表.md', DIST / 'lint-report.md'}
+    want |= {DIST / '匯入操作清單.md', DIST / 'frame命名對照表.md',
+             DIST / 'lint-report.md', DIST / 'frames.json'}
     found = set()
     for sub, pat in (('A-zip', '*.zip'), ('B-inlined', '*.html')):
         found |= set((DIST / sub).glob(pat))
-    found |= set(DIST.glob('*.md'))
+    found |= set(DIST.glob('*.md')) | set(DIST.glob('*.json'))
     return sorted(found - want)
 
 
 # ── 3 & 4. 文件 ─────────────────────────────────────────────────────────────
 
 BATCH_META = {
+    '00-design-system':   ('01 Design System', 1280, '元件總表，含各種狀態'),
     '01-customer-375':    ('02 顧客端', 375,  '顧客端手機直式'),
-    '02-customer-1280':   ('02 顧客端', 1280, 'C-02 是櫃檯畫面，尺寸例外'),
+    '02-customer-1280':   ('02 顧客端', 1280, '顧客端橫式（目前沒有畫面用到）'),
     '03-admin-1280':      ('03 店家端', 1280, '店家端橫式'),
     '04-admin-1920':      ('03 店家端', 1920, 'S-04 KDS 固定大螢幕，尺寸例外'),
-    '05-states-375':    ('02 顧客端', 375,  '選配：C-04 菜單主頁的載入中／空資料／錯誤'),
-    '06-states-1280':   ('03 店家端', 1280, '選配：S-02 桌況總覽的載入中／空資料／錯誤'),
+    '05-states-375':    ('01 Design System', 375,  'C-04 菜單主頁的載入中／空資料／錯誤／已送出結帳'),
+    '06-states-1280':   ('01 Design System', 1280, 'S-02 桌況總覽的載入中／空資料／錯誤'),
 }
-ORDER = ['01-customer-375', '02-customer-1280', '03-admin-1280',
+ORDER = ['00-design-system', '01-customer-375', '02-customer-1280', '03-admin-1280',
          '04-admin-1920', '05-states-375', '06-states-1280']
 OPTIONAL = {'05-states-375', '06-states-1280'}
 
@@ -442,8 +497,14 @@ def write_import_guide(items):
         L.append('')
 
     main_n = sum(len(i['frame_names']) for i in items if i['batch'] not in OPTIONAL)
+    per = Counter()
+    for i in items:
+        if i['batch'] not in OPTIONAL:
+            per[i['page']] += len(i['frame_names'])
     L += ['## 匯完檢查\n',
-          '- [ ] `02 顧客端` 21 個 frame、`03 店家端` 12 個 frame（共 %d 個）' % main_n,
+          '- [ ] `01 Design System` %d 個、`02 顧客端` %d 個、`03 店家端` %d 個 frame（共 %d 個）'
+          % (per.get('01 Design System', 0), per.get('02 顧客端', 0),
+             per.get('03 店家端', 0), main_n),
           '- [ ] 每個 frame 寬度是 375 / 1280 / 1920，沒有被 viewport 拉成別的數字',
           '- [ ] frame 名稱照 `frame命名對照表.md` 改好',
           '- [ ] 圖片佔位框的圖層名是 `IMG／肉盤／1-1` 這種格式',
@@ -476,6 +537,23 @@ def write_name_table(items):
         L.append('| `%s` | %d |' % (l, c))
     L.append('\n搜尋關鍵字寫在佔位框第三行，以及 `11-設計系統.md` §6.5 的兩張對照表。\n')
     (DIST / 'frame命名對照表.md').write_text('\n'.join(L), encoding='utf-8')
+
+
+def write_frames_json(items):
+    """畫框命名的單一來源。抽取器與外掛都讀這份，避免命名各寫一套。"""
+    import json
+    data = []
+    for it in items:
+        e = {'file': it['stem'] + '.html', 'title': it['title'], 'page': it['page'],
+             'batch': it['batch'], 'cls': it['cls'],
+             'w': FRAME_SPEC[it['cls']][0], 'h': FRAME_SPEC[it['cls']][1],
+             'frames': it['frame_names']}
+        fl = FLOW_OF.get(it['stem'] + '.html')
+        if fl:
+            e['flow'], e['flow_name'], e['flow_i'] = fl[0], fl[1], fl[2]
+        data.append(e)
+    (DIST / 'frames.json').write_text(
+        json.dumps(data, ensure_ascii=False, indent=1), encoding='utf-8')
 
 
 def write_lint_report(results):
@@ -531,6 +609,9 @@ def verify(items):
             problems.append('%s 沒有畫框' % p.name)
         if 'id="thumbmode"' in t:
             problems.append('%s 還留著縮圖開關' % p.name)
+        # 畫框不能被 flex 壓縮，否則窄 viewport 匯入時寬度會失效
+        if 'flex:none' not in t.split('IMPORT_OVERRIDE')[-1] and '.frame{box-shadow:none;flex:none}' not in t:
+            problems.append('%s 的畫框沒有 flex:none，窄 viewport 下寬度會被壓縮' % p.name)
 
     for z in sorted((DIST / 'A-zip').glob('*.zip')):
         with zipfile.ZipFile(z) as zf:
@@ -557,10 +638,24 @@ def verify(items):
     for it in items:
         if it['batch'] not in OPTIONAL:
             per_page[it['page']] += len(it['frame_names'])
-    if per_page.get('02 顧客端') != 21:
-        problems.append('顧客端 frame 數是 %s，應為 21' % per_page.get('02 顧客端'))
-    if per_page.get('03 店家端') != 12:
-        problems.append('店家端 frame 數是 %s，應為 12' % per_page.get('03 店家端'))
+    # C-02b（輸入開桌碼加入）已隨開桌碼功能一起移除；C-00（入口頁）補上訂位與登入的起點；
+    # 原本的 C-02 開桌設定人數已改名 S-02b，「編號在顧客端卻是櫃檯畫面」的例外消失了
+    if per_page.get('01 Design System') != 8:
+        problems.append('設計系統 frame 數是 %s，應為 8' % per_page.get('01 Design System'))
+    if per_page.get('02 顧客端') != 24:
+        problems.append('顧客端 frame 數是 %s，應為 24' % per_page.get('02 顧客端'))
+    if per_page.get('03 店家端') != 13:
+        problems.append('店家端 frame 數是 %s，應為 13' % per_page.get('03 店家端'))
+
+    # 每張都要歸在某一條流程，不然外掛排版時會掉進「其他」那一列
+    for it in items:
+        f = it['stem'] + '.html'
+        if f not in FLOW_OF:
+            problems.append('%s 沒有歸到任何一條流程，請加進 figma_prep.py 的 FLOW' % f)
+    known = {f for _, fs in FLOW for f in fs}
+    have = {it['stem'] + '.html' for it in items}
+    for f in sorted(known - have):
+        problems.append('FLOW 裡的 %s 已經不存在，請從 FLOW 移除' % f)
     return problems
 
 
@@ -587,6 +682,7 @@ def main():
     batches = build(items, css)
     write_import_guide(items)
     write_name_table(items)
+    write_frames_json(items)
     write_lint_report(results)
 
     print('\n── 打包 ' + '─' * 54)
@@ -609,7 +705,14 @@ def main():
 
     main_n = sum(len(i['frame_names']) for i in items if i['batch'] not in OPTIONAL)
     opt_n = sum(len(i['frame_names']) for i in items if i['batch'] in OPTIONAL)
-    print('\n主批 %d 個 frame（顧客端 21 + 店家端 12），選配三態 %d 個' % (main_n, opt_n))
+    main_pages = Counter()
+    for i in items:
+        if i['batch'] not in OPTIONAL:
+            main_pages[i['page']] += len(i['frame_names'])
+    # 數字別寫死，不然改畫面時這行會偷偷變成假的
+    print('\n主批 %d 個 frame（設計系統 %d + 顧客端 %d + 店家端 %d），選配狀態 %d 個'
+          % (main_n, main_pages.get('01 Design System', 0),
+             main_pages.get('02 顧客端', 0), main_pages.get('03 店家端', 0), opt_n))
     print('輸出：%s' % DIST)
     return 1 if (n_fail or problems) else 0
 

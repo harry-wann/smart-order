@@ -1,0 +1,120 @@
+<style>
+  body{margin:0;padding:16px;font:13px/1.7 "Noto Sans TC",-apple-system,system-ui,sans-serif;color:#2B211C;background:#FBF7F0}
+  h1{font-size:15px;font-weight:700;margin:0 0 2px}
+  .sub{font-size:11px;color:#6B5D54;margin-bottom:14px}
+  label{display:flex;align-items:flex-start;gap:8px;padding:9px 10px;border:1px solid #E6DED2;
+        border-radius:8px;background:#fff;margin-bottom:8px;cursor:pointer}
+  label.off{opacity:.45;cursor:not-allowed}
+  label b{font-weight:700}
+  label .d{font-size:11px;color:#6B5D54}
+  input[type=checkbox]{margin-top:3px}
+  .row{display:flex;gap:8px;margin:14px 0 10px}
+  button{flex:1;height:34px;border:0;border-radius:8px;font:inherit;font-weight:500;cursor:pointer}
+  #go{background:#C8442E;color:#fff}
+  #go:disabled{opacity:.4;cursor:not-allowed}
+  #cancel{background:#fff;color:#6B5D54;box-shadow:inset 0 0 0 1px #E6DED2;flex:0 0 80px}
+  .bar{height:6px;border-radius:999px;background:#F5EFE5;overflow:hidden;margin-bottom:6px}
+  .bar i{display:block;height:100%;width:0;background:#C8442E;transition:width .15s}
+  #status{font-size:11px;color:#6B5D54;min-height:16px}
+  #log{margin-top:10px;height:150px;overflow:auto;background:#fff;border:1px solid #E6DED2;
+       border-radius:8px;padding:8px 10px;font-size:11px;line-height:1.8;white-space:pre-wrap}
+  .find{display:flex;gap:6px;margin:10px 0}
+  .find input{flex:1;height:30px;border:1px solid #E6DED2;border-radius:8px;padding:0 9px;
+              font:inherit;font-size:12px;background:#fff;color:#2B211C}
+  .find button{flex:0 0 92px;height:30px;background:#fff;color:#6B5D54;
+               box-shadow:inset 0 0 0 1px #E6DED2}
+  .warn{background:#FCF0DC;border-color:#E4C68C;color:#7D4A12;padding:8px 10px;border-radius:8px;
+        font-size:11px;margin-bottom:10px}
+</style>
+
+<h1>設計稿匯入</h1>
+<div class="sub">火鍋點餐系統 · 由 HTML 施工架產生</div>
+
+<div id="pagewarn" class="warn" style="display:none"></div>
+
+<label id="l-d"><input type="checkbox" id="g-d" checked>
+  <span><b>設計系統</b> <span id="n-d"></span><br><span class="d">1280 × 1200 元件總表，含各種狀態</span></span></label>
+<label id="l-c"><input type="checkbox" id="g-c" checked>
+  <span><b>顧客端</b> <span id="n-c"></span><br><span class="d">375 × 812 手機直式</span></span></label>
+<label id="l-s"><input type="checkbox" id="g-s" checked>
+  <span><b>店家端</b> <span id="n-s"></span><br><span class="d">1280 × 800 橫式（含 S-04 KDS 1920）</span></span></label>
+<label id="l-t"><input type="checkbox" id="g-t">
+  <span><b>狀態示範</b> <span id="n-t"></span><br><span class="d">C-04 與 S-02 的載入中／空資料／錯誤，放在 01 Design System</span></span></label>
+
+<div class="row">
+  <button id="go">開始匯入</button>
+  <button id="cancel" style="display:none">停止</button>
+</div>
+
+<div class="bar"><i id="fill"></i></div>
+<div id="status">等待開始</div>
+<div class="find">
+  <input id="q" placeholder="輸入畫面上的文字，例如：送出點餐">
+  <button id="jump">放大檢視</button>
+</div>
+<div id="log"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+let GROUPS = {};
+
+onmessage = e => {
+  const m = e.data.pluginMessage;
+  if (!m) return;
+  if (m.type === 'init') {
+    GROUPS = m.groups;
+    const ds = ['00-design-system'];
+    const cust = ['01-customer-375'];
+    const admin = ['03-admin-1280','04-admin-1920'];
+    const states = Object.keys(m.groups).filter(k => k.indexOf('states') >= 0);
+    const sum = ks => ks.reduce((a,k) => a + (m.groups[k]||0), 0);
+    $('n-d').textContent = sum(ds) + ' 張';
+    $('n-c').textContent = sum(cust) + ' 張';
+    $('n-s').textContent = sum(admin) + ' 張';
+    $('n-t').textContent = sum(states) + ' 張';
+    const bad = Object.keys(m.pages).filter(p => !m.pages[p]);
+    if (bad.length) {
+      $('pagewarn').style.display = 'block';
+      $('pagewarn').textContent = '這個檔案裡找不到頁面：' + bad.join('、')
+        + '。請先建好同名的 page，否則那批會被跳過。';
+    }
+  } else if (m.type === 'log') {
+    $('log').textContent += m.msg + '\n';
+    $('log').scrollTop = $('log').scrollHeight;
+  } else if (m.type === 'progress') {
+    const pct = m.total ? Math.round(m.done / m.total * 100) : 0;
+    $('fill').style.width = pct + '%';
+    $('status').textContent = pct + '%　' + (m.label || '');
+  } else if (m.type === 'done') {
+    $('go').disabled = false;
+    $('cancel').style.display = 'none';
+    $('status').textContent = m.error ? '中止' : '完成';
+    if (!m.error) $('fill').style.width = '100%';
+  }
+};
+
+$('go').onclick = () => {
+  const groups = [];
+  if ($('g-d').checked) groups.push('00-design-system');
+  if ($('g-c').checked) groups.push('01-customer-375');
+  if ($('g-s').checked) groups.push('03-admin-1280','04-admin-1920');
+  if ($('g-t').checked) groups.push('states');
+  if (!groups.length) return;
+  $('go').disabled = true;
+  $('cancel').style.display = 'block';
+  $('log').textContent = '';
+  $('fill').style.width = '0';
+  parent.postMessage({ pluginMessage: { type:'run', groups: groups } }, '*');
+};
+$('cancel').onclick = () => parent.postMessage({ pluginMessage: { type:'cancel' } }, '*');
+
+// 匯入後要檢查某個元件長怎樣時，用文字找到它並把畫布縮放過去。
+// 背景操作沒辦法在 Figma 畫布上點選，只能靠外掛自己選取＋縮放。
+function jump() {
+  const q = $('q').value.trim();
+  if (!q) return;
+  parent.postMessage({ pluginMessage: { type:'focus', q: q } }, '*');
+}
+$('jump').onclick = jump;
+$('q').onkeydown = e => { if (e.key === 'Enter') jump(); };
+</script>

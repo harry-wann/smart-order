@@ -14,6 +14,11 @@
 docs/ui/mockups/dist/A-zip/
 docs/ui/mockups/dist/B-inlined/
 
+# Figma 外掛的 code.js 是 layout.json + code.template.js 合成的，
+# 跑 tools/figma-plugin/build_plugin.py 一秒就重建。
+# layout.json 本身要進版控 —— 它是量測結果，沒有 Playwright 的人重現不出來。
+docs/ui/mockups/tools/figma-plugin/code.js
+
 # ─────────────────────────────────────────────────────────────
 # Java / Spring Boot
 # ─────────────────────────────────────────────────────────────

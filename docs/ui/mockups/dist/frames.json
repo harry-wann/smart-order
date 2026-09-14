@@ -1,0 +1,712 @@
+[
+ {
+  "file": "c00-entry.html",
+  "title": "C-00｜入口頁",
+  "page": "02 顧客端",
+  "batch": "01-customer-375",
+  "cls": "f-mobile",
+  "w": 375,
+  "h": 812,
+  "frames": [
+   "C-00｜入口頁"
+  ],
+  "flow": 4,
+  "flow_name": "入口",
+  "flow_i": 0
+ },
+ {
+  "file": "c01-scan.html",
+  "title": "C-01｜掃碼進入",
+  "page": "02 顧客端",
+  "batch": "01-customer-375",
+  "cls": "f-mobile",
+  "w": 375,
+  "h": 812,
+  "frames": [
+   "C-01｜掃碼進入"
+  ],
+  "flow": 5,
+  "flow_name": "點餐",
+  "flow_i": 0
+ },
+ {
+  "file": "c04-menu.html",
+  "title": "C-04｜菜單主頁",
+  "page": "02 顧客端",
+  "batch": "01-customer-375",
+  "cls": "f-mobile",
+  "w": 375,
+  "h": 812,
+  "frames": [
+   "C-04｜菜單主頁"
+  ],
+  "flow": 5,
+  "flow_name": "點餐",
+  "flow_i": 1
+ },
+ {
+  "file": "c04-menu-states.html",
+  "title": "C-04｜菜單主頁・狀態",
+  "page": "01 Design System",
+  "batch": "05-states-375",
+  "cls": "f-mobile",
+  "w": 375,
+  "h": 812,
+  "frames": [
+   "C-04｜載入中",
+   "C-04｜空資料",
+   "C-04｜錯誤",
+   "C-04｜已送出結帳"
+  ],
+  "flow": 19,
+  "flow_name": "狀態示範",
+  "flow_i": 0
+ },
+ {
+  "file": "c04b-menu-notify.html",
+  "title": "C-04b｜同桌通知・有人加購物車",
+  "page": "02 顧客端",
+  "batch": "01-customer-375",
+  "cls": "f-mobile",
+  "w": 375,
+  "h": 812,
+  "frames": [
+   "C-04b｜同桌通知・有人加購物車"
+  ],
+  "flow": 5,
+  "flow_name": "點餐",
+  "flow_i": 2
+ },
+ {
+  "file": "c04c-menu-notify-order.html",
+  "title": "C-04c｜同桌通知・有人送出訂單",
+  "page": "02 顧客端",
+  "batch": "01-customer-375",
+  "cls": "f-mobile",
+  "w": 375,
+  "h": 812,
+  "frames": [
+   "C-04c｜同桌通知・有人送出訂單"
+  ],
+  "flow": 5,
+  "flow_name": "點餐",
+  "flow_i": 3
+ },
+ {
+  "file": "c05-item-detail.html",
+  "title": "C-05｜品項詳情與選項",
+  "page": "02 顧客端",
+  "batch": "01-customer-375",
+  "cls": "f-mobile",
+  "w": 375,
+  "h": 812,
+  "frames": [
+   "C-05｜品項詳情與選項"
+  ],
+  "flow": 5,
+  "flow_name": "點餐",
+  "flow_i": 4
+ },
+ {
+  "file": "c06-cart.html",
+  "title": "C-06｜購物車",
+  "page": "02 顧客端",
+  "batch": "01-customer-375",
+  "cls": "f-mobile",
+  "w": 375,
+  "h": 812,
+  "frames": [
+   "C-06｜購物車"
+  ],
+  "flow": 5,
+  "flow_name": "點餐",
+  "flow_i": 5
+ },
+ {
+  "file": "c07-submitted.html",
+  "title": "C-07｜送出成功",
+  "page": "02 顧客端",
+  "batch": "01-customer-375",
+  "cls": "f-mobile",
+  "w": 375,
+  "h": 812,
+  "frames": [
+   "C-07｜送出成功"
+  ],
+  "flow": 5,
+  "flow_name": "點餐",
+  "flow_i": 6
+ },
+ {
+  "file": "c08-tickets.html",
+  "title": "C-08｜本桌訂單與出菜進度",
+  "page": "02 顧客端",
+  "batch": "01-customer-375",
+  "cls": "f-mobile",
+  "w": 375,
+  "h": 812,
+  "frames": [
+   "C-08｜本桌訂單與出菜進度"
+  ],
+  "flow": 5,
+  "flow_name": "點餐",
+  "flow_i": 7
+ },
+ {
+  "file": "c09-checkout.html",
+  "title": "C-09｜結帳明細",
+  "page": "02 顧客端",
+  "batch": "01-customer-375",
+  "cls": "f-mobile",
+  "w": 375,
+  "h": 812,
+  "frames": [
+   "C-09｜結帳明細"
+  ],
+  "flow": 6,
+  "flow_name": "結帳",
+  "flow_i": 0
+ },
+ {
+  "file": "c10-payment.html",
+  "title": "C-10｜付款方式選擇",
+  "page": "02 顧客端",
+  "batch": "01-customer-375",
+  "cls": "f-mobile",
+  "w": 375,
+  "h": 812,
+  "frames": [
+   "C-10｜付款方式選擇"
+  ],
+  "flow": 6,
+  "flow_name": "結帳",
+  "flow_i": 1
+ },
+ {
+  "file": "c11-paid.html",
+  "title": "C-11｜付款完成",
+  "page": "02 顧客端",
+  "batch": "01-customer-375",
+  "cls": "f-mobile",
+  "w": 375,
+  "h": 812,
+  "frames": [
+   "C-11｜付款完成"
+  ],
+  "flow": 6,
+  "flow_name": "結帳",
+  "flow_i": 2
+ },
+ {
+  "file": "c12-login.html",
+  "title": "C-12｜會員登入／註冊",
+  "page": "02 顧客端",
+  "batch": "01-customer-375",
+  "cls": "f-mobile",
+  "w": 375,
+  "h": 812,
+  "frames": [
+   "C-12｜會員登入／註冊"
+  ],
+  "flow": 7,
+  "flow_name": "會員",
+  "flow_i": 0
+ },
+ {
+  "file": "c12b-otp.html",
+  "title": "C-12b｜輸入驗證碼",
+  "page": "02 顧客端",
+  "batch": "01-customer-375",
+  "cls": "f-mobile",
+  "w": 375,
+  "h": 812,
+  "frames": [
+   "C-12b｜輸入驗證碼"
+  ],
+  "flow": 7,
+  "flow_name": "會員",
+  "flow_i": 1
+ },
+ {
+  "file": "c13-register.html",
+  "title": "C-13｜會員註冊補資料",
+  "page": "02 顧客端",
+  "batch": "01-customer-375",
+  "cls": "f-mobile",
+  "w": 375,
+  "h": 812,
+  "frames": [
+   "C-13｜會員註冊補資料"
+  ],
+  "flow": 7,
+  "flow_name": "會員",
+  "flow_i": 2
+ },
+ {
+  "file": "c14-member.html",
+  "title": "C-14｜會員中心",
+  "page": "02 顧客端",
+  "batch": "01-customer-375",
+  "cls": "f-mobile",
+  "w": 375,
+  "h": 812,
+  "frames": [
+   "C-14｜會員中心"
+  ],
+  "flow": 7,
+  "flow_name": "會員",
+  "flow_i": 3
+ },
+ {
+  "file": "c15-history.html",
+  "title": "C-15｜消費紀錄",
+  "page": "02 顧客端",
+  "batch": "01-customer-375",
+  "cls": "f-mobile",
+  "w": 375,
+  "h": 812,
+  "frames": [
+   "C-15｜消費紀錄"
+  ],
+  "flow": 7,
+  "flow_name": "會員",
+  "flow_i": 4
+ },
+ {
+  "file": "c16-reserve-entry.html",
+  "title": "C-16｜線上訂位入口",
+  "page": "02 顧客端",
+  "batch": "01-customer-375",
+  "cls": "f-mobile",
+  "w": 375,
+  "h": 812,
+  "frames": [
+   "C-16｜線上訂位入口"
+  ],
+  "flow": 8,
+  "flow_name": "預約",
+  "flow_i": 0
+ },
+ {
+  "file": "c16b-reserve-guest.html",
+  "title": "C-16b｜匿名訂位填資料",
+  "page": "02 顧客端",
+  "batch": "01-customer-375",
+  "cls": "f-mobile",
+  "w": 375,
+  "h": 812,
+  "frames": [
+   "C-16b｜匿名訂位填資料"
+  ],
+  "flow": 8,
+  "flow_name": "預約",
+  "flow_i": 1
+ },
+ {
+  "file": "c16c-reserve-datetime.html",
+  "title": "C-16c｜預約 1 日期時段人數",
+  "page": "02 顧客端",
+  "batch": "01-customer-375",
+  "cls": "f-mobile",
+  "w": 375,
+  "h": 812,
+  "frames": [
+   "C-16c｜預約 1 日期時段人數"
+  ],
+  "flow": 8,
+  "flow_name": "預約",
+  "flow_i": 2
+ },
+ {
+  "file": "c17-reserve-preorder.html",
+  "title": "C-17｜預約 2 預先點餐",
+  "page": "02 顧客端",
+  "batch": "01-customer-375",
+  "cls": "f-mobile",
+  "w": 375,
+  "h": 812,
+  "frames": [
+   "C-17｜預約 2 預先點餐"
+  ],
+  "flow": 8,
+  "flow_name": "預約",
+  "flow_i": 3
+ },
+ {
+  "file": "c18-reserve-done.html",
+  "title": "C-18｜預約 3 付款完成",
+  "page": "02 顧客端",
+  "batch": "01-customer-375",
+  "cls": "f-mobile",
+  "w": 375,
+  "h": 812,
+  "frames": [
+   "C-18｜預約 3 付款完成"
+  ],
+  "flow": 8,
+  "flow_name": "預約",
+  "flow_i": 4
+ },
+ {
+  "file": "c19-my-reservations.html",
+  "title": "C-19｜我的預約",
+  "page": "02 顧客端",
+  "batch": "01-customer-375",
+  "cls": "f-mobile",
+  "w": 375,
+  "h": 812,
+  "frames": [
+   "C-19｜我的預約"
+  ],
+  "flow": 8,
+  "flow_name": "預約",
+  "flow_i": 5
+ },
+ {
+  "file": "c21-service-bell.html",
+  "title": "C-21｜服務鈴面板",
+  "page": "02 顧客端",
+  "batch": "01-customer-375",
+  "cls": "f-mobile",
+  "w": 375,
+  "h": 812,
+  "frames": [
+   "C-21｜服務鈴面板"
+  ],
+  "flow": 5,
+  "flow_name": "點餐",
+  "flow_i": 8
+ },
+ {
+  "file": "ds01-tokens.html",
+  "title": "DS-01｜色彩與字級",
+  "page": "01 Design System",
+  "batch": "00-design-system",
+  "cls": "f-ds",
+  "w": 1280,
+  "h": 1200,
+  "frames": [
+   "DS-01｜色彩與字級"
+  ],
+  "flow": 0,
+  "flow_name": "基礎",
+  "flow_i": 0
+ },
+ {
+  "file": "ds02-button.html",
+  "title": "DS-02｜按鈕",
+  "page": "01 Design System",
+  "batch": "00-design-system",
+  "cls": "f-ds",
+  "w": 1280,
+  "h": 1200,
+  "frames": [
+   "DS-02｜按鈕"
+  ],
+  "flow": 0,
+  "flow_name": "基礎",
+  "flow_i": 1
+ },
+ {
+  "file": "ds03-input.html",
+  "title": "DS-03｜輸入元件",
+  "page": "01 Design System",
+  "batch": "00-design-system",
+  "cls": "f-ds",
+  "w": 1280,
+  "h": 1200,
+  "frames": [
+   "DS-03｜輸入元件"
+  ],
+  "flow": 1,
+  "flow_name": "輸入",
+  "flow_i": 0
+ },
+ {
+  "file": "ds04-choice.html",
+  "title": "DS-04｜選擇元件",
+  "page": "01 Design System",
+  "batch": "00-design-system",
+  "cls": "f-ds",
+  "w": 1280,
+  "h": 1200,
+  "frames": [
+   "DS-04｜選擇元件"
+  ],
+  "flow": 1,
+  "flow_name": "輸入",
+  "flow_i": 1
+ },
+ {
+  "file": "ds05-badge-card.html",
+  "title": "DS-05｜標籤與容器",
+  "page": "01 Design System",
+  "batch": "00-design-system",
+  "cls": "f-ds",
+  "w": 1280,
+  "h": 1200,
+  "frames": [
+   "DS-05｜標籤與容器"
+  ],
+  "flow": 2,
+  "flow_name": "內容",
+  "flow_i": 0
+ },
+ {
+  "file": "ds06-row-notify.html",
+  "title": "DS-06｜品項列與通知",
+  "page": "01 Design System",
+  "batch": "00-design-system",
+  "cls": "f-ds",
+  "w": 1280,
+  "h": 1200,
+  "frames": [
+   "DS-06｜品項列與通知"
+  ],
+  "flow": 2,
+  "flow_name": "內容",
+  "flow_i": 1
+ },
+ {
+  "file": "ds07-states.html",
+  "title": "DS-07｜三態與回饋",
+  "page": "01 Design System",
+  "batch": "00-design-system",
+  "cls": "f-ds",
+  "w": 1280,
+  "h": 1200,
+  "frames": [
+   "DS-07｜三態與回饋"
+  ],
+  "flow": 3,
+  "flow_name": "狀態與店家端",
+  "flow_i": 0
+ },
+ {
+  "file": "ds08-admin.html",
+  "title": "DS-08｜店家端元件",
+  "page": "01 Design System",
+  "batch": "00-design-system",
+  "cls": "f-ds",
+  "w": 1280,
+  "h": 1200,
+  "frames": [
+   "DS-08｜店家端元件"
+  ],
+  "flow": 3,
+  "flow_name": "狀態與店家端",
+  "flow_i": 1
+ },
+ {
+  "file": "s01-login.html",
+  "title": "S-01｜員工登入",
+  "page": "03 店家端",
+  "batch": "03-admin-1280",
+  "cls": "f-desk",
+  "w": 1280,
+  "h": 800,
+  "frames": [
+   "S-01｜員工登入"
+  ],
+  "flow": 9,
+  "flow_name": "員工登入",
+  "flow_i": 0
+ },
+ {
+  "file": "s02-tables.html",
+  "title": "S-02｜桌況總覽",
+  "page": "03 店家端",
+  "batch": "03-admin-1280",
+  "cls": "f-desk",
+  "w": 1280,
+  "h": 800,
+  "frames": [
+   "S-02｜桌況總覽"
+  ],
+  "flow": 10,
+  "flow_name": "現場桌況",
+  "flow_i": 0
+ },
+ {
+  "file": "s02-tables-states.html",
+  "title": "S-02｜桌況總覽・狀態",
+  "page": "01 Design System",
+  "batch": "06-states-1280",
+  "cls": "f-desk",
+  "w": 1280,
+  "h": 800,
+  "frames": [
+   "S-02｜載入中",
+   "S-02｜空資料",
+   "S-02｜錯誤"
+  ],
+  "flow": 19,
+  "flow_name": "狀態示範",
+  "flow_i": 1
+ },
+ {
+  "file": "s02b-open-table.html",
+  "title": "S-02b｜開桌設定人數",
+  "page": "03 店家端",
+  "batch": "03-admin-1280",
+  "cls": "f-desk",
+  "w": 1280,
+  "h": 800,
+  "frames": [
+   "S-02b｜開桌設定人數"
+  ],
+  "flow": 10,
+  "flow_name": "現場桌況",
+  "flow_i": 1
+ },
+ {
+  "file": "s03-table-detail.html",
+  "title": "S-03｜桌位詳情",
+  "page": "03 店家端",
+  "batch": "03-admin-1280",
+  "cls": "f-desk",
+  "w": 1280,
+  "h": 800,
+  "frames": [
+   "S-03｜桌位詳情"
+  ],
+  "flow": 10,
+  "flow_name": "現場桌況",
+  "flow_i": 2
+ },
+ {
+  "file": "s04-kds.html",
+  "title": "S-04｜出菜看板 KDS",
+  "page": "03 店家端",
+  "batch": "04-admin-1920",
+  "cls": "f-kds",
+  "w": 1920,
+  "h": 1080,
+  "frames": [
+   "S-04｜出菜看板 KDS"
+  ],
+  "flow": 11,
+  "flow_name": "出菜",
+  "flow_i": 0
+ },
+ {
+  "file": "s05-menu-admin.html",
+  "title": "S-05｜菜單管理",
+  "page": "03 店家端",
+  "batch": "03-admin-1280",
+  "cls": "f-desk",
+  "w": 1280,
+  "h": 800,
+  "frames": [
+   "S-05｜菜單管理"
+  ],
+  "flow": 12,
+  "flow_name": "菜單管理",
+  "flow_i": 0
+ },
+ {
+  "file": "s06-option-groups.html",
+  "title": "S-06｜選項群組管理",
+  "page": "03 店家端",
+  "batch": "03-admin-1280",
+  "cls": "f-desk",
+  "w": 1280,
+  "h": 800,
+  "frames": [
+   "S-06｜選項群組管理"
+  ],
+  "flow": 12,
+  "flow_name": "菜單管理",
+  "flow_i": 1
+ },
+ {
+  "file": "s07-reservations.html",
+  "title": "S-07｜預約管理",
+  "page": "03 店家端",
+  "batch": "03-admin-1280",
+  "cls": "f-desk",
+  "w": 1280,
+  "h": 800,
+  "frames": [
+   "S-07｜預約管理"
+  ],
+  "flow": 13,
+  "flow_name": "預約管理",
+  "flow_i": 0
+ },
+ {
+  "file": "s08-tables-config.html",
+  "title": "S-08｜座位管理",
+  "page": "03 店家端",
+  "batch": "03-admin-1280",
+  "cls": "f-desk",
+  "w": 1280,
+  "h": 800,
+  "frames": [
+   "S-08｜座位管理"
+  ],
+  "flow": 14,
+  "flow_name": "座位設定",
+  "flow_i": 0
+ },
+ {
+  "file": "s09-inventory.html",
+  "title": "S-09｜庫存管理",
+  "page": "03 店家端",
+  "batch": "03-admin-1280",
+  "cls": "f-desk",
+  "w": 1280,
+  "h": 800,
+  "frames": [
+   "S-09｜庫存管理"
+  ],
+  "flow": 15,
+  "flow_name": "庫存",
+  "flow_i": 0
+ },
+ {
+  "file": "s10-waitlist.html",
+  "title": "S-10｜候位管理",
+  "page": "03 店家端",
+  "batch": "03-admin-1280",
+  "cls": "f-desk",
+  "w": 1280,
+  "h": 800,
+  "frames": [
+   "S-10｜候位管理"
+  ],
+  "flow": 16,
+  "flow_name": "候位",
+  "flow_i": 0
+ },
+ {
+  "file": "s11-service-bell-panel.html",
+  "title": "S-11｜服務鈴通知面板",
+  "page": "03 店家端",
+  "batch": "03-admin-1280",
+  "cls": "f-desk",
+  "w": 1280,
+  "h": 800,
+  "frames": [
+   "S-11｜服務鈴通知面板"
+  ],
+  "flow": 17,
+  "flow_name": "服務鈴",
+  "flow_i": 0
+ },
+ {
+  "file": "s12-reports.html",
+  "title": "S-12｜報表",
+  "page": "03 店家端",
+  "batch": "03-admin-1280",
+  "cls": "f-desk",
+  "w": 1280,
+  "h": 800,
+  "frames": [
+   "S-12｜報表"
+  ],
+  "flow": 18,
+  "flow_name": "報表",
+  "flow_i": 0
+ }
+]
