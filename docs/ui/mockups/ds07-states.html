@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DS-07｜三態與回饋</title>
+<link rel="stylesheet" href="_shared.css">
+</head>
+<body>
+<!-- #thumbmode：總覽頁用 iframe 取縮圖時，只留第一個畫框 -->
+<span id="thumbmode"></span>
+<div class="stage">
+
+<div>
+  <p class="meta"><b>DS-07｜三態與回饋</b><code>1280 × 1200</code><code>載入中、空資料、錯誤、鎖定、完成</code></p>
+  <div class="frame f-ds">
+    <div class="sp">
+      <div class="sp-hd"><span class="t">三態與回饋</span><span class="s">每個會讀資料的畫面都要備這三態</span></div>
+      <div class="sp-grid" style="grid-template-columns:1fr 1fr 1fr">
+        <div class="sp-sec"><div class="t">載入中　骨架屏，不用轉圈圈</div>
+          <div class="state" style="padding:24px 0">
+            <div class="potload"><i class="bub"></i><i class="bub"></i><i class="bub"></i></div>
+            <div class="msg">正在讀菜單…</div>
+          </div>
+          <div class="sp-col" style="gap:12px">
+            <div class="r g12"><div class="sk" style="width:96px;height:96px;border-radius:12px"></div>
+              <div class="c g8 fill"><div class="sk" style="height:20px;width:70%"></div><div class="sk" style="height:16px;width:90%"></div><div class="sk" style="height:16px;width:40%"></div></div></div>
+            <div class="r g12"><div class="sk" style="width:96px;height:96px;border-radius:12px"></div>
+              <div class="c g8 fill"><div class="sk" style="height:20px;width:55%"></div><div class="sk" style="height:16px;width:80%"></div><div class="sk" style="height:16px;width:35%"></div></div></div>
+          </div>
+          <span class="sp-lb">sk 色塊用 surface-2 ＋呼吸動畫</span>
+        </div>
+        <div class="sp-sec"><div class="t">空資料　插圖＋一句話＋一個行動</div>
+          <div class="state">
+            <div class="circ" style="background:var(--surface-2)">
+              <svg class="ic ic-xl art" viewBox="0 0 24 24" style="fill:none;stroke-width:1.6"><path d="M4 8h16l-1.5 11a2 2 0 0 1-2 1.8H7.5a2 2 0 0 1-2-1.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+            </div>
+            <div class="msg">購物車還是空的</div>
+            <div class="sub">挑一樣喜歡的加進來，這桌的人都看得到。</div>
+            <button class="btn btn-primary btn-lg">去看菜單</button>
+          </div>
+        </div>
+        <div class="sp-sec"><div class="t">錯誤　中文訊息＋重試，不給客人看錯誤碼</div>
+          <div class="state">
+            <div class="circ" style="background:var(--danger-bg)">
+              <svg class="ic ic-xl art-bad" viewBox="0 0 24 24" style="fill:none;stroke-width:1.8"><path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3"/><path d="M12 9.5v4"/><path d="M12 17.2h.01"/></svg>
+            </div>
+            <div class="msg">菜單讀不到</div>
+            <div class="sub">網路好像不太穩。再試一次通常就好了，還是不行請找服務生。</div>
+            <button class="btn btn-primary btn-lg"><svg class="ic" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.7 9.7 0 0 0-6.7 2.7L3 8"/><path d="M3 3.5V8h4.5"/></svg>重試</button>
+          </div>
+        </div>
+      </div>
+      <div class="sp-grid" style="grid-template-columns:1fr 1fr">
+        <div class="sp-sec"><div class="t">鎖定　按下結帳後整桌不能再加點</div>
+          <div class="infobox ib-quiet" style="margin:0">
+            <svg class="ic" viewBox="0 0 24 24"><rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>
+            <div><b>這桌已經送出結帳，不能再加點了。</b><br>還想吃的話請按服務鈴，請服務生取消結帳。</div>
+          </div>
+          <span class="sp-lb">同時內容整個壓淡、分類頁籤停用、購物車列消失</span>
+        </div>
+        <div class="sp-sec"><div class="t">完成　勾勾描邊 0.6 秒後停住</div>
+          <div class="sp-row" style="justify-content:center">
+            <div class="doneball"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+          </div>
+          <span class="sp-lb">只用在送出成功、付款完成、訂位完成這三處</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sidenote">
+  <b>三態</b>
+  <dl style="margin:0">
+    <dt>不要轉圈圈</dt>
+    <dd>骨架屏讓人知道「等一下會<br>長出什麼」，轉圈只說「在忙」。<br>載入動畫用火鍋冒泡。</dd>
+    <dt>空資料要有出口</dt>
+    <dd>一句話說清楚為什麼空的，<br>再給一個按鈕讓他離開這裡。</dd>
+    <dt>錯誤不給錯誤碼</dt>
+    <dd>客人看不懂 500。<br>講人話 ＋ 重試 ＋ 找服務生。</dd>
+  </dl>
+</div>
+
+</div>
+</body>
+</html>

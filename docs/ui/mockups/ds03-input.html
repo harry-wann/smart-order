@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DS-03｜輸入元件</title>
+<link rel="stylesheet" href="_shared.css">
+</head>
+<body>
+<!-- #thumbmode：總覽頁用 iframe 取縮圖時，只留第一個畫框 -->
+<span id="thumbmode"></span>
+<div class="stage">
+
+<div>
+  <p class="meta"><b>DS-03｜輸入元件</b><code>1280 × 1200</code><code>輸入框、驗證碼、步進器、開關的各種狀態</code></p>
+  <div class="frame f-ds">
+    <div class="sp">
+      <div class="sp-hd"><span class="t">輸入元件</span><span class="s">每一種都含空、已填、停用</span></div>
+      <div class="sp-grid" style="grid-template-columns:1fr 1fr">
+        <div class="sp-col">
+          <div class="sp-sec"><div class="t">輸入框</div>
+            <div class="sp-col">
+          <div class="sp-item"><div class="input ph-text" style="display:flex;align-items:center">請輸入手機號碼</div><span class="sp-lb">空　placeholder 用 ph-text</span></div>
+          <div class="sp-item"><div class="input" style="display:flex;align-items:center">陳小美</div><span class="sp-lb">已填</span></div>
+          <div class="sp-item"><div class="input on" style="display:flex;align-items:center">0912-345-678</div><span class="sp-lb">聚焦　.on</span></div>
+          <div class="sp-item"><div class="input ta">備註：不要太生，謝謝</div><span class="sp-lb">多行　.ta</span></div>
+            </div>
+          </div>
+          <div class="sp-sec"><div class="t">驗證碼</div>
+            <div class="otp"><i class="on">4</i><i class="on">8</i><i class="on">2</i><i class="on">9</i><i class="on">1</i><i></i></div>
+            <span class="sp-lb">填過的格子 on（brand-600 內框），待輸入的格子維持 border</span>
+          </div>
+          <div class="sp-sec"><div class="t">搜尋列</div>
+            <div class="searchbar" style="margin:0">
+              <svg class="ic ic-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7.5"/><path d="m20.5 20.5-4.2-4.2"/></svg>
+              <span>搜尋菜色</span>
+            </div>
+          </div>
+        </div>
+        <div class="sp-col">
+          <div class="sp-sec"><div class="t">步進器　※ 低於 48×48 的刻意例外，見 §5.4</div>
+            <div class="sp-row">
+          <div class="sp-item"><div class="step"><button><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button><div class="n">2</div><button><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button></div><span class="sp-lb">一般 102×30</span></div>
+          <div class="sp-item"><div class="step"><button><svg class="ic" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button><div class="n">1</div><button><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button></div><span class="sp-lb">數量 1　減號變垃圾桶</span></div>
+          <div class="sp-item"><div class="step"><button><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button><div class="n">10</div><button disabled><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button></div><span class="sp-lb">達上限　加號停用</span></div>
+            </div>
+            <div class="sp-row">
+          <div class="sp-item"><div class="step step-lg"><button><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button><div class="n">2</div><button><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button></div><span class="sp-lb">step-lg　櫃檯開桌用 56×56</span></div>
+          <div class="sp-item"><button class="plus"><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button><span class="sp-lb">plus　無選項品項直接加入</span></div>
+            </div>
+          </div>
+          <div class="sp-sec"><div class="t">開關與時段</div>
+            <div class="sp-row">
+          <div class="sp-item"><div class="switch"></div><span class="sp-lb">關</span></div>
+          <div class="sp-item"><div class="switch on"></div><span class="sp-lb">開　.on</span></div>
+            </div>
+            <div class="gr3">
+              <div class="slot">17:00</div><div class="slot on">18:00</div><div class="slot full">18:30</div>
+            </div>
+            <span class="sp-lb">slot 正常／已選 on／額滿 full（虛線框、不可點）</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sidenote">
+  <b>輸入元件</b>
+  <dl style="margin:0">
+    <dt>placeholder</dt>
+    <dd>用 ph-text（text-400），<br>跟真的填了的字明顯不同色 ——<br>不然客人分不出填了沒。</dd>
+    <dt>步進器</dt>
+    <dd>數量 1 時減號換成垃圾桶，<br>不要讓人按到 0 再消失。<br>達上限時加號停用而不是消失。</dd>
+    <dt>額滿時段</dt>
+    <dd>虛線框 + 灰字，還是看得到，<br>但明確不可點。<br>不要直接把它藏起來。</dd>
+  </dl>
+</div>
+
+</div>
+</body>
+</html>

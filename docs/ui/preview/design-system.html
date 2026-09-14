@@ -396,14 +396,11 @@ padding:14px 18px;border-radius:0 8px 8px 0;font-size:15px;margin:16px 0}
 <tr><td><strong>實作範圍</strong></td><td>375 – 640px</td><td>≥ 1024px</td></tr>
 <tr><td><strong>超出範圍</strong></td><td>置中、最大寬 480px</td><td>「請將裝置橫放，或改用電腦操作」</td></tr>
 </table>
-<p class="note"><strong>例外</strong>：C-02 開桌設定人數雖然編號在顧客端，實際是櫃檯畫面，用 1280×800。
-S-04 出菜看板 KDS 假設固定橫式大螢幕，鎖 1920×1080，不做 RWD。</p>
+<p class="note"><strong>例外</strong>：S-04 出菜看板 KDS 用 1920×1080 固定橫式大螢幕，不做 RWD。</p>
 <div class="sub">顧客端　手機直式 375×812　21 張</div>
 <table>
 <tr><th style="width:70px">ID</th><th>畫面</th><th style="width:230px">路由</th></tr>
 <tr><td>C-01</td><td>掃碼進入／桌號確認</td><td>/t/:tableNo</td></tr>
-<tr><td>C-02</td><td>開桌設定人數（櫃檯端・1280×800）</td><td>/t/:tableNo/open</td></tr>
-<tr><td>C-02b</td><td>輸入開桌碼加入</td><td>/t/:tableNo/join</td></tr>
 <tr><td>C-03</td><td>選鍋底（開桌後強制）</td><td>/order/soup-base</td></tr>
 <tr><td>C-04</td><td>菜單主頁　★最重要</td><td>/order/menu</td></tr>
 <tr><td>C-05</td><td>品項詳情與選項</td><td>/order/items/:id</td></tr>

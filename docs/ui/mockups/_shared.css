@@ -52,6 +52,8 @@ button{font-family:inherit;font-size:inherit;color:inherit}
 .f-mobile{width:375px;height:812px}
 .f-desk  {width:1280px;height:800px}
 .f-kds   {width:1920px;height:1080px;background:var(--kds-bg);color:var(--kds-text)}
+/* 設計系統總表不是畫面，是規格板 —— 不必遷就裝置尺寸，高度給夠才不用硬塞 */
+.f-ds    {width:1280px;height:1200px}
 /* 總覽頁用的等比縮圖 */
 .thumb{width:280px;height:176px;overflow:hidden;position:relative;background:var(--bg);
   border-bottom:1px solid var(--border)}
@@ -146,11 +148,16 @@ body:has(#thumbmode:target) .frame{box-shadow:none}
 .mi .nm{font-size:18px;line-height:1.5;font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .mi .ds{font-size:14px;line-height:1.6;color:var(--text-600);
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.mi .foot{display:flex;align-items:center;gap:8px}
+/* 最後一列的高度必須固定。不固定的話，這一列放什麼控制項就決定了整張卡片
+   的高度 —— 步進器 30、圓形 + 28、箭頭 44 —— 同一排卡片會一張一張不一樣高，
+   右欄文字的垂直位置也跟著跑（C-04 曾經出現 157.78 / 143.78 / 141.78 三種高度）。
+   32 是能裝下最高控制項（步進器 30）的 8 的倍數。 */
+.mi .foot{display:flex;align-items:center;gap:8px;min-height:32px}
+.mi .foot .iconbtn{width:32px;height:32px}
 .mi .step{margin-left:auto}
-.mi .step .n{width:34px}
+.mi .step .n{width:24px}
 .mi .foot .price,.mi .foot .t-cap{flex:none;white-space:nowrap}
-.plus{width:44px;height:44px;flex:none;border:0;border-radius:50%;background:var(--brand-600);
+.plus{width:28px;height:28px;flex:none;border:0;border-radius:50%;background:var(--brand-600);
   color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .mi.sold .img-ph{filter:grayscale(1) opacity(.55)}
 .mi.sold .nm,.mi.sold .ds{color:var(--text-400)}
@@ -162,13 +169,38 @@ body:has(#thumbmode:target) .frame{box-shadow:none}
   font-family:"Noto Serif TC",serif;font-weight:900;font-size:17px;letter-spacing:.12em;
   padding:2px 8px;border-radius:4px;opacity:.92;pointer-events:none}
 
+/* ---------------------- 5.3b 同桌通知條 ---------------------------------- */
+/* 同桌其他人加購物車、送出訂單時從上方滑下來的通知，像手機的推播。
+   蓋在 appbar 上、幾秒後自己收回去，不佔版面也不需要使用者關掉。
+   這個元件取代了原本掛在鈴鐺上的紅點 —— 紅點只說「有事」，
+   通知條直接說「誰做了什麼」，而且不用客人去點開才看得到。 */
+.notify{position:absolute;left:8px;right:8px;top:8px;z-index:40;
+  display:flex;align-items:center;gap:12px;padding:12px 16px;
+  background:var(--surface);border-radius:14px;
+  box-shadow:0 10px 28px rgba(43,33,28,.18),0 2px 6px rgba(43,33,28,.10)}
+.notify .av{width:32px;height:32px;flex:none;border-radius:50%;
+  background:var(--brand-100);color:var(--brand-600);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700}
+.notify .bd{flex:1;min-width:0}
+.notify .bd .h{font-size:14px;font-weight:700;line-height:1.5}
+.notify .bd .t{font-size:13px;line-height:1.5;color:var(--text-600);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.notify .tm{flex:none;font-size:12px;color:var(--text-400)}
+.notify .grip{position:absolute;left:50%;bottom:5px;transform:translateX(-50%);
+  width:32px;height:3px;border-radius:999px;background:var(--border)}
+
 /* ---------------------- 5.4 Stepper ------------------------------------ */
+/* 按鈕 28×28、加號 28×28。這是 11-設計系統.md §5.4 的例外：
+   低於「可點擊區 ≥ 48×48」那條規則，換取版面不被步進器吃掉。
+   步進器旁邊就是空白，實際可按範圍比 28px 大，誤觸風險低。
+   註：這是整組第二次縮一階（44 → 36 → 28），再往下就真的按不到了。 */
 .step{display:inline-flex;align-items:center;flex:none;background:var(--surface);
   border:1px solid var(--border);border-radius:999px;overflow:hidden}
-.step button{width:44px;height:44px;border:0;background:transparent;color:var(--brand-600);
+.step button{width:28px;height:28px;border:0;background:transparent;color:var(--brand-600);
   display:flex;align-items:center;justify-content:center;cursor:pointer}
 .step button:disabled{color:var(--text-400);cursor:not-allowed}
-.step .n{width:48px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+.step .n{width:32px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
 .step-lg button{width:56px;height:56px}
 .step-lg .n{width:72px;font-size:28px;font-family:"Noto Serif TC",serif;font-weight:900}
 
@@ -353,6 +385,31 @@ body:has(#thumbmode:target) .frame{box-shadow:none}
 .bellcard{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border)}
 .bellcard:last-child{border-bottom:0}
 .bellcard .tno{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;width:44px;flex:none}
+
+/* ------------- 設計系統總表專用版面（只有 ds*.html 用得到；前綴用 sp 不用 ds，
+   因為 .ds 已經是 MenuItemRow 的描述文字類別，撞名會把全站的品項描述撐開） --------------- */
+/* 這幾個類別不是產品元件，是「展示元件的展示櫃」。
+   放在這裡而不是另開一個檔，是因為總表必須跟畫面吃同一份 CSS ——
+   不然總表上的按鈕和真正畫面上的按鈕會慢慢長成兩個東西。 */
+.sp{padding:32px;overflow:hidden;display:flex;flex-direction:column;gap:24px}
+.sp-hd{display:flex;align-items:baseline;gap:12px}
+.sp-hd .t{font-family:"Noto Serif TC",serif;font-size:26px;font-weight:900;line-height:1.3}
+.sp-hd .s{font-size:13px;color:var(--text-600)}
+.sp-grid{display:grid;gap:16px;align-content:start}
+.sp-sec{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;
+  display:flex;flex-direction:column;gap:16px;min-width:0}
+.sp-sec>.t{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--text-400)}
+/* 規格列一律靠下對齊：一列裡的樣本高度本來就不一樣（lg 52 / md 44 / sm 36），
+   置中的話樣本上緣、下方說明文字全都各差幾 px，看起來像沒對齊。
+   靠下對齊之後，說明文字落在同一條線上，樣本往上長。 */
+.sp-row{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap}
+/* 反過來的情況：樣本一樣大、說明文字長短不一（色票就是），這時要靠上，
+   讓色塊排成一條線，說明往下長。 */
+.sp-row.sp-top{align-items:flex-start}
+.sp-col{display:flex;flex-direction:column;gap:12px}
+.sp-item{display:flex;flex-direction:column;gap:8px;align-items:flex-start;min-width:0}
+.sp-lb{font-size:12px;color:var(--text-400);font-variant-numeric:tabular-nums;line-height:1.5}
+.sp-sw{width:100%;height:44px;border-radius:8px;border:1px solid rgba(43,33,28,.08)}
 
 /* ---------------------------- KDS（唯一深色） --------------------------- */
 .f-kds .ktop{flex:none;height:76px;display:flex;align-items:center;gap:24px;padding:0 32px;

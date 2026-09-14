@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DS-05｜標籤與容器</title>
+<link rel="stylesheet" href="_shared.css">
+</head>
+<body>
+<!-- #thumbmode：總覽頁用 iframe 取縮圖時，只留第一個畫框 -->
+<span id="thumbmode"></span>
+<div class="stage">
+
+<div>
+  <p class="meta"><b>DS-05｜標籤與容器</b><code>1280 × 1200</code><code>膠囊標籤、提示框、卡片、圖片佔位</code></p>
+  <div class="frame f-ds">
+    <div class="sp">
+      <div class="sp-hd"><span class="t">標籤與容器</span><span class="s">標籤九種、提示框四種語氣、卡片三種</span></div>
+      <div class="sp-grid" style="grid-template-columns:1fr 1fr">
+        <div class="sp-col">
+          <div class="sp-sec"><div class="t">BADGE　膠囊標籤　12px　padding 2px 10px</div>
+            <div class="sp-row">
+<span class="badge b-rec">推薦</span><span class="badge b-hot">大辣</span><span class="badge b-veg">素食</span><span class="badge b-sold">售完</span><span class="badge b-done">已出餐</span><span class="badge b-wait">製作中</span><span class="badge b-pri">預約優先</span><span class="badge b-info">含三態</span><span class="badge b-plain">櫃檯畫面</span>            </div>
+          </div>
+          <div class="sp-sec"><div class="t">INFOBOX　四種語氣</div>
+            <div class="sp-col" style="gap:8px">
+              <div class="infobox ib-ok"><svg class="ic" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><div>這桌櫃檯已經開好了，直接開始點就可以。</div></div>
+              <div class="infobox ib-warn"><svg class="ic" viewBox="0 0 24 24"><path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3"/><path d="M12 9.5v4M12 17.2h.01"/></svg><div>已進入結帳，這桌不能再加點了。</div></div>
+              <div class="infobox ib-info"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 16v-4.5M12 8h.01"/></svg><div>教學專題・模擬簡訊。驗證碼是 482913，直接顯示在這裡。</div></div>
+              <div class="infobox ib-quiet"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 16v-4.5M12 8h.01"/></svg><div>驗證碼 5 分鐘內有效，連續錯 3 次會作廢。</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="sp-col">
+          <div class="sp-sec"><div class="t">CARD　內距 20px，列表列是 16px，兩者不一樣</div>
+            <div class="card"><div class="h3">card　一塊獨立資訊</div><p class="t-sm" style="margin:8px 0 0">白底、1px border、12px 圓角、shadow-card、20px 內距。</p></div>
+            <div class="card card-tight"><div class="t-cap">card-tight　內距縮到 16px</div><div class="h3" style="margin-top:8px">用在一串同類卡片</div></div>
+            <div class="card card-flat"><div class="h3">card-flat　沒有陰影</div><p class="t-sm" style="margin:8px 0 0">用在已經有底色的區塊裡，避免疊兩層陰影。</p></div>
+          </div>
+          <div class="sp-sec"><div class="t">圖片佔位　三行缺一不可</div>
+            <div class="sp-row">
+              <div class="img-ph" style="width:200px;height:112px" data-layer="IMG／麻辣鍋湯頭／16-9"><b>麻辣鍋湯頭俯拍</b><span>640×360・16:9</span><span class="kw">mala hot pot broth top view</span></div>
+              <div class="img-ph tiny thumb96" data-layer="IMG／肉盤／1-1"><b>肉盤</b><span>320×320・1:1</span><span class="kw">sliced beef platter</span></div>
+            </div>
+            <span class="sp-lb">要什麼圖／尺寸與比例／英文搜尋關鍵字</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sidenote">
+  <b>標籤與容器</b>
+  <dl style="margin:0">
+    <dt>標籤不能只靠顏色</dt>
+    <dd>售完要有「售完」兩個字，<br>不能只把整列變灰 ——<br>色弱的人看不出差別。</dd>
+    <dt>卡片 20 / 列 16</dt>
+    <dd>卡片是「一塊獨立資訊」，<br>列是「一串裡的一筆」，<br>呼吸感本來就不一樣。</dd>
+    <dt>圖片佔位三行</dt>
+    <dd>少一行，之後找圖的人<br>就得回來問。</dd>
+  </dl>
+</div>
+
+</div>
+</body>
+</html>

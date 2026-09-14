@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DS-04｜選擇元件</title>
+<link rel="stylesheet" href="_shared.css">
+</head>
+<body>
+<!-- #thumbmode：總覽頁用 iframe 取縮圖時，只留第一個畫框 -->
+<span id="thumbmode"></span>
+<div class="stage">
+
+<div>
+  <p class="meta"><b>DS-04｜選擇元件</b><code>1280 × 1200</code><code>單選、複選、頁籤、側欄、步驟指示</code></p>
+  <div class="frame f-ds">
+    <div class="sp">
+      <div class="sp-hd"><span class="t">選擇元件</span><span class="s">每一種都含未選、已選、停用</span></div>
+      <div class="sp-grid" style="grid-template-columns:1fr 1fr">
+        <div class="sp-col">
+          <div class="sp-sec"><div class="t">OPTIONCARD　單選</div>
+            <div class="sp-col" style="gap:8px">
+              <div class="opt"><div class="rd"></div><div class="fill"><div class="h3">半份　約 120g</div></div><span class="df">+NT$ 0</span></div>
+              <div class="opt on"><div class="rd on"></div><div class="fill"><div class="h3">全份　約 220g</div></div><span class="df">+NT$ 80</span></div>
+              <div class="opt off"><div class="rd"></div><div class="fill"><div class="h3">雙份　約 440g</div><div class="t-cap">今日已售完</div></div></div>
+            </div>
+            <span class="sp-lb">正常／選中 .on（brand-100 底＋brand-600 內框）／停用 .off</span>
+          </div>
+          <div class="sp-sec"><div class="t">OPTIONCARD　複選</div>
+            <div class="sp-col" style="gap:8px">
+              <div class="opt on"><div class="bx on"><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div><div class="fill"><div class="h3">加蔥花</div></div><span class="df">+NT$ 10</span></div>
+              <div class="opt"><div class="bx"></div><div class="fill"><div class="h3">加蒜泥</div></div><span class="df">+NT$ 10</span></div>
+            </div>
+            <span class="sp-lb">左側方形勾選框 24×24，價差 0 元不顯示</span>
+          </div>
+        </div>
+        <div class="sp-col">
+          <div class="sp-sec"><div class="t">分類頁籤</div>
+            <nav class="tabs" style="margin:0"><div class="tab on">推薦</div><div class="tab">鍋底</div><div class="tab">肉品</div><div class="tab">海鮮</div><div class="tab">蔬菜</div></nav>
+            <span class="sp-lb">on：brand-600 文字＋底線；捲動時自動高亮目前分類</span>
+          </div>
+          <div class="sp-sec"><div class="t">店家端側欄</div>
+            <div class="side" style="width:200px;padding:8px 0;border-radius:8px;border:1px solid var(--border)">
+              <div class="nav-item on"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>桌況總覽</div>
+              <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/></svg>出菜看板</div>
+              <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>預約管理</div>
+            </div>
+            <span class="sp-lb">nav-item 正常／.on（brand-100 底＋brand-600 文字）</span>
+          </div>
+          <div class="sp-sec"><div class="t">步驟指示</div>
+            <div class="steps" style="border:0;padding:0;background:transparent">
+              <div class="s done"><span class="n"><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span>選時間</div><span class="sep" style="flex:1;height:1px;background:var(--border)"></span>
+              <div class="s on"><span class="n">2</span>先點餐</div><span class="sep" style="flex:1;height:1px;background:var(--border)"></span>
+              <div class="s"><span class="n">3</span>完成</div>
+            </div>
+            <span class="sp-lb">已完成 .done 綠／目前 .on brand-600／未到 灰</span>
+          </div>
+        </div>
+      </div>
+      <div class="sp-grid" style="grid-template-columns:1fr 1fr">
+        <div class="sp-sec"><div class="t">日曆　可訂 明天起 30 天內</div>
+          <div class="cal">
+            <div class="hd">日</div><div class="hd">一</div><div class="hd">二</div><div class="hd">三</div><div class="hd">四</div><div class="hd">五</div><div class="hd">六</div>
+            <div class="d off">13</div><div class="d">14</div><div class="d">15</div><div class="d">16</div><div class="d">17</div><div class="d">18</div><div class="d">19</div><div class="d">20</div><div class="d on">21</div><div class="d">22</div><div class="d">23</div><div class="d">24</div><div class="d">25</div><div class="d">26</div>
+          </div>
+          <span class="sp-lb">今天 .today（不可訂）／可訂 正常／已選 .on／不可訂 .off</span>
+        </div>
+        <div class="sp-sec"><div class="t">選擇元件的共同規則</div>
+          <div class="sp-col" style="gap:8px">
+            <div class="sp-row"><span class="sp-lb" style="width:96px">點擊區</span><div class="fill"><span class="t-sm" style="margin:0">整列可點，不是只有那顆圓鈕</span></div></div>
+            <div class="sp-row"><span class="sp-lb" style="width:96px">選中訊號</span><div class="fill"><span class="t-sm" style="margin:0">底色＋邊框兩個一起換，不只靠顏色</span></div></div>
+            <div class="sp-row"><span class="sp-lb" style="width:96px">停用</span><div class="fill"><span class="t-sm" style="margin:0">留在畫面上變淡，不要整個藏起來</span></div></div>
+            <div class="sp-row"><span class="sp-lb" style="width:96px">價差</span><div class="fill"><span class="t-sm" style="margin:0">0 元不顯示</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sidenote">
+  <b>選擇元件</b>
+  <dl style="margin:0">
+    <dt>整列可點</dt>
+    <dd>不是只有那顆圓鈕可點，<br>整張 opt 都是點擊區 ——<br>手指按不準小圓圈。</dd>
+    <dt>選中要有兩個訊號</dt>
+    <dd>底色換掉＋邊框變色。<br>只靠一個訊號，色弱的人看不出來。</dd>
+    <dt>價差 0 不顯示</dt>
+    <dd>寫「+NT$ 0」只是噪音。</dd>
+  </dl>
+</div>
+
+</div>
+</body>
+</html>

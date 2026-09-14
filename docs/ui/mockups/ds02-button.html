@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DS-02｜按鈕</title>
+<link rel="stylesheet" href="_shared.css">
+</head>
+<body>
+<!-- #thumbmode：總覽頁用 iframe 取縮圖時，只留第一個畫框 -->
+<span id="thumbmode"></span>
+<div class="stage">
+
+<div>
+  <p class="meta"><b>DS-02｜按鈕</b><code>1280 × 1200</code><code>四種變體 × 三種尺寸 × 停用態</code></p>
+  <div class="frame f-ds">
+    <div class="sp">
+      <div class="sp-hd"><span class="t">按鈕</span><span class="s">主要行動一律用 lg（52px），長輩友善</span></div>
+      <div class="sp-grid" style="grid-template-columns:1fr 1fr">
+        <div class="sp-col">
+          <div class="sp-sec"><div class="t">PRIMARY　主要行動，一個畫面只會有一個</div>
+        <div class="sp-row">
+          <div class="sp-item"><button class="btn btn-primary btn-lg">開始點餐</button><span class="sp-lb">lg　52px</span></div>
+          <div class="sp-item"><button class="btn btn-primary btn-md">查看明細</button><span class="sp-lb">md　44px</span></div>
+          <div class="sp-item"><button class="btn btn-primary btn-sm">清空</button><span class="sp-lb">sm　36px</span></div>
+          <div class="sp-item"><button class="btn btn-primary btn-lg" disabled>送出點餐</button><span class="sp-lb">disabled</span></div>
+        </div>
+          </div>
+          <div class="sp-sec"><div class="t">SECONDARY　次要行動</div>
+        <div class="sp-row">
+          <div class="sp-item"><button class="btn btn-secondary btn-lg">開始點餐</button><span class="sp-lb">lg　52px</span></div>
+          <div class="sp-item"><button class="btn btn-secondary btn-md">查看明細</button><span class="sp-lb">md　44px</span></div>
+          <div class="sp-item"><button class="btn btn-secondary btn-sm">清空</button><span class="sp-lb">sm　36px</span></div>
+          <div class="sp-item"><button class="btn btn-secondary btn-lg" disabled>送出點餐</button><span class="sp-lb">disabled</span></div>
+        </div>
+          </div>
+        </div>
+        <div class="sp-col">
+          <div class="sp-sec"><div class="t">GHOST　可以跳過的動作</div>
+        <div class="sp-row">
+          <div class="sp-item"><button class="btn btn-ghost btn-lg">開始點餐</button><span class="sp-lb">lg　52px</span></div>
+          <div class="sp-item"><button class="btn btn-ghost btn-md">查看明細</button><span class="sp-lb">md　44px</span></div>
+          <div class="sp-item"><button class="btn btn-ghost btn-sm">清空</button><span class="sp-lb">sm　36px</span></div>
+          <div class="sp-item"><button class="btn btn-ghost btn-lg" disabled>送出點餐</button><span class="sp-lb">disabled</span></div>
+        </div>
+          </div>
+          <div class="sp-sec"><div class="t">DANGER　不可逆的動作</div>
+        <div class="sp-row">
+          <div class="sp-item"><button class="btn btn-danger btn-lg">開始點餐</button><span class="sp-lb">lg　52px</span></div>
+          <div class="sp-item"><button class="btn btn-danger btn-md">查看明細</button><span class="sp-lb">md　44px</span></div>
+          <div class="sp-item"><button class="btn btn-danger btn-sm">清空</button><span class="sp-lb">sm　36px</span></div>
+          <div class="sp-item"><button class="btn btn-danger btn-lg" disabled>送出點餐</button><span class="sp-lb">disabled</span></div>
+        </div>
+          </div>
+          <div class="sp-sec"><div class="t">圖示鈕與全寬</div>
+            <div class="sp-row">
+          <div class="sp-item"><button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button><span class="sp-lb">iconbtn 44</span></div>
+          <div class="sp-item"><button class="plus"><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button><span class="sp-lb">plus 28</span></div>
+          <div class="sp-item"><button class="trash"><svg class="ic" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button><span class="sp-lb">trash</span></div>
+            </div>
+            <button class="btn btn-primary btn-lg btn-block">btn-block　全寬，固定在底欄</button>
+          </div>
+        </div>
+      </div>
+      <div class="sp-grid" style="grid-template-columns:1fr 1fr">
+        <div class="sp-sec"><div class="t">真實情境　底欄一主一次</div>
+          <div class="bottombar" style="position:static;border-radius:8px;border:1px solid var(--border)">
+            <button class="btn btn-primary btn-lg btn-block">下一步，選時間</button>
+            <button class="btn btn-ghost btn-md btn-block mt8">改用會員身分訂</button>
+          </div>
+          <span class="sp-lb">主行動全寬在上，可跳過的動作用 ghost 放下面 —— 不要兩顆紅的並排</span>
+        </div>
+        <div class="sp-sec"><div class="t">互動態</div>
+          <div class="sp-col" style="gap:8px">
+            <div class="sp-row"><span class="sp-lb" style="width:88px">hover</span><div class="fill"><span class="t-sm" style="margin:0">底色加深 8%</span></div></div>
+            <div class="sp-row"><span class="sp-lb" style="width:88px">active</span><div class="fill"><span class="t-sm" style="margin:0">縮放 0.98，按下去要有回饋</span></div></div>
+            <div class="sp-row"><span class="sp-lb" style="width:88px">disabled</span><div class="fill"><span class="t-sm" style="margin:0">不透明度 0.4 ＋ cursor not-allowed</span></div></div>
+            <div class="sp-row"><span class="sp-lb" style="width:88px">loading</span><div class="fill"><span class="t-sm" style="margin:0">顯示轉圈並停用，防重複送出</span></div></div>
+          </div>
+          <div class="infobox ib-quiet" style="margin:0"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 16v-4.5M12 8h.01"/></svg><div>靜態設計稿畫不出 hover 與 active，這裡用文字把規則定死，前端照著做。</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sidenote">
+  <b>按鈕規則</b>
+  <dl style="margin:0">
+    <dt>一個畫面一個 primary</dt>
+    <dd>兩個紅按鈕並排，客人會愣住。<br>次要動作用 secondary 或 ghost。</dd>
+    <dt>尺寸</dt>
+    <dd>lg 52 / md 44 / sm 36。<br>主要行動一律 lg，不因版面擠<br>就降級。</dd>
+    <dt>停用</dt>
+    <dd>不透明度 0.4 + not-allowed，<br>不要把按鈕整顆藏起來 ——<br>客人要看得到「還差什麼」。</dd>
+  </dl>
+</div>
+
+</div>
+</body>
+</html>
