@@ -22,6 +22,7 @@ import sys
 
 try:
     import markdown
+    import markdown.extensions.toc
 except ImportError:
     sys.exit("請先安裝：pip3 install markdown")
 
@@ -43,6 +44,10 @@ GROUPS = [
     ("技術 · 進階",         "tech/advanced", True),
     ("技術 · 品質與部署",   "tech/quality",  True),
 ]
+
+# 首頁的團隊與設計稿連結（docs/README.md 也有同一份，改名單或網址時兩邊一起改）
+TEAM = ["Harry", "Clara", "Vincent", "YiTing", "ting chiu"]
+FIGMA_URL = ("https://www.figma.com/design/AFqSmBl4P5HUHTI7oKAPZt/%E7%81%AB%E9%8D%8B%E9%BB%9E%E9%A4%90%E7%B3%BB%E7%B5%B1?node-id=8-55&t=OF0duX9j7OTqzk9b-1")
 
 H1_RE = re.compile(r"^#\s+(.+?)\s*$", re.M)
 MERMAID_RE = re.compile(r'<pre><code class="language-mermaid">(.*?)</code></pre>', re.S)
@@ -342,7 +347,7 @@ def sidebar_html(pages, depth, current_html):
     out.append(
         '<div class="brand"><a href="%sindex.html">'
         '<div class="logo">火鍋店點餐系統</div>'
-        '<div class="sub">專案文件 · 69 頁</div></a></div>' % up)
+        '<div class="sub">專案文件 · %d 頁</div></a></div>' % (up, len(pages)))
     out.append('<a class="nav%s" href="%sindex.html">首頁</a>'
                % (" active" if current_html == "index.html" else "", up))
 
@@ -394,8 +399,10 @@ def page_shell(title, depth, current_html, sidebar, body, toc="", pager=""):
 
 
 def convert(md_text):
+    # slugify_unicode：標題 id 保留中文（跟 GitHub 一樣），文件裡的 #中文錨點 才連得到
     md = markdown.Markdown(extensions=["extra", "toc", "sane_lists"],
-                           extension_configs={"toc": {"permalink": False}})
+                           extension_configs={"toc": {"permalink": False,
+                                                      "slugify": markdown.extensions.toc.slugify_unicode}})
     out = md.convert(md_text)
     out = MERMAID_RE.sub(lambda m: '<pre class="mermaid">' + html.unescape(m.group(1)) + "</pre>", out)
     out = out.replace("<table>", '<div class="tablewrap"><table>').replace("</table>", "</table></div>")
@@ -470,13 +477,19 @@ def build_index(pages):
         '<span class="eyebrow">結業專題 · 規格文件</span>',
         "<h1>火鍋店點餐系統</h1>",
         "<p>中高價位、多人共鍋的台式火鍋店線上點餐系統。顧客掃桌上的 QR code 自助點餐、加點、"
-        "按服務鈴、結帳；店家端有桌況、候位、出菜看板與庫存管理。</p>",
+        "按服務鈴，用完餐到櫃檯結帳；店家端有桌況、開桌、訂位、候位、出菜看板與防超賣的庫存扣減。</p>",
         '<div class="facts">',
         '<div class="fact"><b>5 人</b>團隊規模</div>',
         '<div class="fact"><b>6 週</b>開發時程</div>',
         '<div class="fact"><b>8 個</b>功能模組</div>',
         '<div class="fact"><b>50 頁</b>技術教學</div>',
         "</div></section>",
+        '<div class="callout"><div class="h">團隊與設計稿</div>'
+        "<p><strong>組員</strong>：" + "、".join(html.escape(n) for n in TEAM) + "</p>"
+        '<p style="margin-top:6px"><strong>UI 設計稿</strong>：<a href="%s" target="_blank" rel="noopener">'
+        "Figma・火鍋點餐系統</a>（01 Design System／02 顧客端／03 店家端）。"
+        'HTML 施工架在 <a href="../ui/mockups/index.html">ui/mockups/index.html</a>，'
+        "共 42 張畫面＋8 張元件總表。</p></div>" % html.escape(FIGMA_URL),
         '<div class="callout"><div class="h">先讀這一篇</div>'
         '<p><a href="spec/00-架構分層與技術選型.html">00 架構分層與技術選型</a> —— '
         "兩個定位、基礎／進階分層原則、為什麼保留 WebSocket 與排程、不建議花時間的事。"
