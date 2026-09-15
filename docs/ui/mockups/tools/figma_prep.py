@@ -4,15 +4,19 @@
 figma_prep.py — HTML → Figma 匯入前的準備與檢查
 
 1. Lint：逐檔檢查是否符合 10-UI-UX規格.md §5 與 11-設計系統.md §4 §6.4 §7
-2. 打包：產出兩種匯入用 bundle（A = zip + 外部 CSS，B = 單檔內聯 CSS）
-3. 產出匯入操作清單
-4. 產出 frame 命名對照表
+2. 打包：dist/B-inlined（單檔內聯 CSS，給 extract_layout.py 量測）；
+   dist/A-zip（zip + 外部 CSS）是舊的手動上傳備援，外掛流程用不到
+3. 產出 dist/frames.json（畫框名、所屬頁、流程列、級別、13 的說明卡）
+4. 產出匯入操作清單、frame 命名對照表、lint 報告
+5. 自我驗證：畫面數、FLOW、13 的說明卡、10 的級別欄是否對得上
 
-匯入本身沒辦法寫腳本：Figma REST API 的四個寫入 scope
-（comments / dev_resources / variables / webhooks）都不能建立設計節點。
-最後一定是人在瀏覽器裡用 html.to.design 或 Code to canvas 手動上傳。
+Figma REST API 的寫入 scope（comments / dev_resources / variables / webhooks）
+都不能建立設計節點，所以匯入靠自己寫的 Figma 外掛（tools/figma-plugin/）：
+  figma_prep.py → extract_layout.py 量出 layout.json → build_plugin.py 產 code.js
+  → node test_plugin.js 實跑 → 在 Figma 桌面版執行外掛。細節見 tools/README.md。
 
 用法：python3 docs/ui/mockups/tools/figma_prep.py [--lint]
+  --lint 只做第 1 步、只印結果，不寫 dist/。
 只用標準函式庫。
 """
 
@@ -46,11 +50,9 @@ SPACING_EXCEPTIONS = {
 
 FRAME_SPEC = {'f-mobile': (375, 812), 'f-desk': (1280, 800),
               'f-kds': (1920, 1080), 'f-ds': (1280, 1200)}
-# 編號在顧客端、但實際是櫃檯操作的畫面。Figma 放到店家端那頁，
-# 前端做櫃檯功能時才找得到，不用在顧客端那頁翻。
 # 顧客端在 Figma 上一條流程排一列，方便一眼看完整條動線。
 # 這裡是唯一的分組來源：frames.json 帶著它、外掛照它排版。
-# 新增顧客端畫面時一定要順手加進來，verify() 會擋住漏掉的。
+# 新增畫面（顧客端、店家端都一樣）時一定要順手加進來，verify() 會擋住漏掉的。
 FLOW = [
     # 01 Design System
     ('基礎', ['ds01-tokens.html', 'ds02-button.html']),
@@ -63,22 +65,24 @@ FLOW = [
               'c05-item-detail.html',
               'c06-cart.html', 'c07-submitted.html', 'c08-tickets.html', 'c21-service-bell.html']),
     ('結帳', ['c09-checkout.html', 'c10-payment.html', 'c11-paid.html']),
+    # C-20 是進階 A6，跟 C-15 一樣從 C-14 進去，排在同一列的最後
     ('會員', ['c12-login.html', 'c12b-otp.html', 'c13-register.html',
-              'c14-member.html', 'c15-history.html']),
+              'c14-member.html', 'c15-history.html', 'c20-points-coupons.html']),
     # 排序就是流程順序：選時段 → 訂位完成 → （可選）預先點餐。
     # C-17 排在 C-18 後面不是筆誤，代號沿用不重編（見 ui/10 的編號規則）。
     ('預約', ['c16-reserve-entry.html', 'c16b-reserve-guest.html', 'c16c-reserve-datetime.html',
               'c18-reserve-done.html', 'c17-reserve-preorder.html', 'c19-my-reservations.html']),
     # 店家端：一個功能一列。列的先後同時也是代號遞增的順序，兩種讀法都對得上。
+    # S-07b／S-10b 是從人出發的選桌開桌對話框，各自排在母畫面後面。
     ('員工登入', ['s01-login.html']),
     ('現場桌況', ['s02-tables.html', 's02b-open-table.html', 's02c-open-waitlist.html',
                  's02d-open-reservation.html', 's03-table-detail.html']),
     ('出菜', ['s04-kds.html']),
     ('菜單管理', ['s05-menu-admin.html', 's06-option-groups.html']),
-    ('預約管理', ['s07-reservations.html']),
+    ('預約管理', ['s07-reservations.html', 's07b-reservation-seat.html']),
     ('座位設定', ['s08-tables-config.html']),
     ('庫存', ['s09-inventory.html']),
-    ('候位', ['s10-waitlist.html']),
+    ('候位', ['s10-waitlist.html', 's10b-waitlist-seat.html']),
     ('服務鈴', ['s11-service-bell-panel.html']),
     ('報表', ['s12-reports.html']),
     ('狀態示範', ['c04-menu-states.html', 's02-tables-states.html']),
@@ -454,8 +458,8 @@ BATCH_META = {
     '02-customer-1280':   ('02 顧客端', 1280, '顧客端橫式（目前沒有畫面用到）'),
     '03-admin-1280':      ('03 店家端', 1280, '店家端橫式'),
     '04-admin-1920':      ('03 店家端', 1920, 'S-04 KDS 固定大螢幕，尺寸例外'),
-    '05-states-375':    ('01 Design System', 375,  'C-04 菜單主頁的載入中／空資料／錯誤／已送出結帳'),
-    '06-states-1280':   ('01 Design System', 1280, 'S-02 桌況總覽的載入中／空資料／錯誤'),
+    '05-states-375':    ('01 Design System', 375,  'C-04 菜單主頁的載入中／空資料／錯誤／已結帳'),
+    '06-states-1280':   ('01 Design System', 1280, 'S-02 桌況總覽的待清理確認框／載入中／空資料／錯誤'),
 }
 ORDER = ['00-design-system', '01-customer-375', '02-customer-1280', '03-admin-1280',
          '04-admin-1920', '05-states-375', '06-states-1280']
@@ -466,22 +470,24 @@ def write_import_guide(items):
     L = ['# Figma 匯入操作清單\n',
          '> 由 `tools/figma_prep.py` 產生，不要手改。改完 HTML 重跑一次。\n',
          '目標檔案：**🔥 火鍋點餐系統**　`AFqSmBl4P5HUHTI7oKAPZt`\n',
-         '```\n🔥 火鍋點餐系統\n├─ 01 Design System\n├─ 02 顧客端        ← C-01 ～ C-21\n'
-         '└─ 03 店家端        ← S-01 ～ S-12\n```\n',
-         '## 為什麼這一步不能自動化\n',
-         'Figma REST API 只有四個寫入 scope（comments / dev_resources / variables / webhooks），'
-         '沒有一個能建立設計節點。所以沒有任何腳本可以把 HTML 變成 frame，'
-         '最後一定是人在瀏覽器裡上傳。\n',
-         '| 工具 | 怎麼用 | 順序 |\n|---|---|---|',
-         '| **html.to.design** | Figma 外掛 → Import → Upload，免費版可傳本地 `.html` / `.zip` | 先試這個 |',
-         '| **Code to canvas** | Chrome 擴充套件擷取網頁 → 貼進 Figma | 上面吃不到 CSS 時 |\n',
-         '## 先試 A，不行換 B\n',
-         '| | 位置 | 說明 |\n|---|---|---|',
-         '| **A** | `dist/A-zip/*.zip` | 每包都含 `_shared.css`，檔案小 |',
-         '| **B** | `dist/B-inlined/*.html` | CSS 內聯進單檔，工具讀不到外部 CSS 時用 |\n',
-         '> 字體用 Google Fonts 的 Noto Sans TC / Noto Serif TC，Figma 內建這兩套，不用另外裝。\n',
-         '## 匯入批次\n',
-         '**每一批的 viewport 寬度不一樣，換批一定要改。**viewport 沒改，畫框寬度就會跑掉。\n']
+         '```\n🔥 火鍋點餐系統\n├─ 01 Design System   ← DS-01 ～ DS-08、C-04／S-02 的狀態示範\n'
+         '├─ 02 顧客端        ← C-00 ～ C-21\n'
+         '└─ 03 店家端        ← S-01 ～ S-12（含 S-02b～d、S-07b、S-10b）\n```\n',
+         '## 怎麼匯入\n',
+         'Figma REST API 的寫入 scope（comments / dev_resources / variables / webhooks）'
+         '都不能建立設計節點，所以匯入靠自己寫的外掛 `tools/figma-plugin/`：\n',
+         '1. `python3 docs/ui/mockups/tools/figma_prep.py`（產 `dist/B-inlined/` 與 `dist/frames.json`）',
+         '2. `python3 docs/ui/mockups/tools/extract_layout.py docs/ui/mockups/dist/B-inlined '
+         'docs/ui/mockups/tools/figma-plugin/layout.json docs/ui/mockups/dist/frames.json`',
+         '3. `python3 docs/ui/mockups/tools/figma-plugin/build_plugin.py`',
+         '4. `node docs/ui/mockups/tools/figma-plugin/test_plugin.js docs/ui/mockups/tools/figma-plugin/code.js`',
+         '5. Figma 桌面版 → Plugins → Development → 執行外掛，勾要匯入的組別\n',
+         '> `dist/A-zip/` 是早期給 html.to.design 手動上傳的備援包，外掛流程用不到。\n',
+         '> 字體：Figma 要有 Noto Sans TC（Regular／Medium／Bold／Black）與 Noto Serif TC（Bold／Black），'
+         '缺了外掛會直接停下來。\n',
+         '## 組別\n',
+         '外掛的四個組別（設計系統／顧客端／店家端／狀態示範）由下面這些批次組成。'
+         '`extract_layout.py` 用 2400 寬的視窗一次量完，畫框靠 `flex:none` 維持原本寬度。\n']
 
     for bi, batch in enumerate(ORDER, 1):
         group = [i for i in items if i['batch'] == batch]
@@ -491,7 +497,7 @@ def write_import_guide(items):
         n_frames = sum(len(i['frame_names']) for i in group)
         L += ['### 第 %d 批　`%s`\n' % (bi, batch),
               '- **匯入到**：`%s` 頁' % page,
-              '- **viewport 寬度**：`%d`' % vw,
+              '- **畫框寬度**：`%d`' % vw,
               '- **檔案**：%d 個 → **%d 個 frame**' % (len(group), n_frames),
               '- **說明**：%s\n' % why,
               '| # | 檔案 | frame 名稱 |\n|---|---|---|']
@@ -511,8 +517,8 @@ def write_import_guide(items):
           '- [ ] `01 Design System` %d 個、`02 顧客端` %d 個、`03 店家端` %d 個 frame（共 %d 個）'
           % (per.get('01 Design System', 0), per.get('02 顧客端', 0),
              per.get('03 店家端', 0), main_n),
-          '- [ ] 每個 frame 寬度是 375 / 1280 / 1920，沒有被 viewport 拉成別的數字',
-          '- [ ] frame 名稱照 `frame命名對照表.md` 改好',
+          '- [ ] 每個 frame 寬度是 375 / 1280 / 1920，沒有被量測視窗拉成別的數字',
+          '- [ ] frame 名稱跟 `frame命名對照表.md` 一致（外掛會照 frames.json 命名，不用手改）',
           '- [ ] 圖片佔位框的圖層名是 `IMG／肉盤／1-1` 這種格式',
           '- [ ] 標題是思源宋體、底色 #FBF7F0，沒有變成系統無襯線與純白\n']
     (DIST / '匯入操作清單.md').write_text('\n'.join(L), encoding='utf-8')
@@ -521,8 +527,8 @@ def write_import_guide(items):
 def write_name_table(items):
     L = ['# Figma frame 命名對照表\n',
          '> 由 `tools/figma_prep.py` 產生，不要手改。\n',
-         '匯入工具不一定會拿 `<title>` 當 frame 名稱，常常變成 `Frame 123`。'
-         '匯完照這張表改一次，前端在 Inspect 面板才找得到東西。\n',
+         '外掛照 `frames.json` 替畫框命名，名稱就是這張表。'
+         '前端在 Inspect 面板用這些名字找畫面。\n',
          '## 畫框\n',
          '| 檔名 | Figma frame 名稱 | 放哪一頁 | 尺寸 |\n|---|---|---|---|']
     for it in sorted(items, key=lambda x: (x['batch'], x['stem'])):
@@ -713,14 +719,14 @@ def verify(items):
     for it in items:
         if it['batch'] not in OPTIONAL:
             per_page[it['page']] += len(it['frame_names'])
-    # C-02b（輸入開桌碼加入）已隨開桌碼功能一起移除；C-00（入口頁）補上訂位與登入的起點；
-    # 原本的 C-02 開桌設定人數已改名 S-02b，「編號在顧客端卻是櫃檯畫面」的例外消失了
+    # 數字要跟 10-UI-UX規格.md 的兩張頁面表一致（C-02、C-03 空號）。
+    # 2026-09-15 第二批：新增 C-20（進階 A6）、S-07b／S-10b（選桌開桌對話框）。
     if per_page.get('01 Design System') != 8:
         problems.append('設計系統 frame 數是 %s，應為 8' % per_page.get('01 Design System'))
-    if per_page.get('02 顧客端') != 24:
-        problems.append('顧客端 frame 數是 %s，應為 24' % per_page.get('02 顧客端'))
-    if per_page.get('03 店家端') != 15:
-        problems.append('店家端 frame 數是 %s，應為 15' % per_page.get('03 店家端'))
+    if per_page.get('02 顧客端') != 25:
+        problems.append('顧客端 frame 數是 %s，應為 25' % per_page.get('02 顧客端'))
+    if per_page.get('03 店家端') != 17:
+        problems.append('店家端 frame 數是 %s，應為 17' % per_page.get('03 店家端'))
 
     # 每張都要歸在某一條流程，不然外掛排版時會掉進「其他」那一列
     for it in items:

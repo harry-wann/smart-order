@@ -2,7 +2,7 @@
 
 > 由 `tools/figma_prep.py` 產生，不要手改。
 
-匯入工具不一定會拿 `<title>` 當 frame 名稱，常常變成 `Frame 123`。匯完照這張表改一次，前端在 Inspect 面板才找得到東西。
+外掛照 `frames.json` 替畫框命名，名稱就是這張表。前端在 Inspect 面板用這些名字找畫面。
 
 ## 畫框
 
@@ -39,6 +39,7 @@
 | `c17-reserve-preorder.html` | `C-17｜預先點餐／調整餐點` | 02 顧客端 | 375 × 812 |
 | `c18-reserve-done.html` | `C-18｜訂位完成` | 02 顧客端 | 375 × 812 |
 | `c19-my-reservations.html` | `C-19｜我的預約` | 02 顧客端 | 375 × 812 |
+| `c20-points-coupons.html` | `C-20｜點數與優惠券` | 02 顧客端 | 375 × 812 |
 | `c21-service-bell.html` | `C-21｜服務鈴面板` | 02 顧客端 | 375 × 812 |
 | `s01-login.html` | `S-01｜員工登入` | 03 店家端 | 1280 × 800 |
 | `s02-tables.html` | `S-02｜桌況總覽` | 03 店家端 | 1280 × 800 |
@@ -49,16 +50,18 @@
 | `s05-menu-admin.html` | `S-05｜菜單管理` | 03 店家端 | 1280 × 800 |
 | `s06-option-groups.html` | `S-06｜選項群組管理` | 03 店家端 | 1280 × 800 |
 | `s07-reservations.html` | `S-07｜預約管理` | 03 店家端 | 1280 × 800 |
+| `s07b-reservation-seat.html` | `S-07b｜預約報到・選桌開桌` | 03 店家端 | 1280 × 800 |
 | `s08-tables-config.html` | `S-08｜座位管理` | 03 店家端 | 1280 × 800 |
 | `s09-inventory.html` | `S-09｜庫存管理` | 03 店家端 | 1280 × 800 |
 | `s10-waitlist.html` | `S-10｜候位管理` | 03 店家端 | 1280 × 800 |
+| `s10b-waitlist-seat.html` | `S-10b｜候位報到・選桌開桌` | 03 店家端 | 1280 × 800 |
 | `s11-service-bell-panel.html` | `S-11｜服務鈴通知面板` | 03 店家端 | 1280 × 800 |
 | `s12-reports.html` | `S-12｜報表` | 03 店家端 | 1280 × 800 |
 | `s04-kds.html` | `S-04｜出菜看板 KDS` | 03 店家端 | 1920 × 1080 |
 | `c04-menu-states.html` | `C-04｜載入中` | 01 Design System | 375 × 812 |
 | `c04-menu-states.html` | `C-04｜空資料` | 01 Design System | 375 × 812 |
 | `c04-menu-states.html` | `C-04｜錯誤` | 01 Design System | 375 × 812 |
-| `c04-menu-states.html` | `C-04｜已送出結帳` | 01 Design System | 375 × 812 |
+| `c04-menu-states.html` | `C-04｜已結帳` | 01 Design System | 375 × 812 |
 | `s02-tables-states.html` | `S-02｜待清理確認框` | 01 Design System | 1280 × 800 |
 | `s02-tables-states.html` | `S-02｜載入中` | 01 Design System | 1280 × 800 |
 | `s02-tables-states.html` | `S-02｜空資料` | 01 Design System | 1280 × 800 |

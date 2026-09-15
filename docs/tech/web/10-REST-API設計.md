@@ -82,9 +82,9 @@ GET /api/menu/items?categoryId=2&keyword=牛&page=0&size=20
 這時候可以在資源後面加一個動作：
 
 ```
-POST /api/admin/tables/3/open          開桌
-POST /api/dining-sessions/me/checkout  要求結帳
-PATCH /api/admin/order-items/8801/serve 勾選已出餐
+POST  /api/admin/tables/3/open                開桌
+POST  /api/admin/dining-sessions/1052/settle  櫃檯結清
+PATCH /api/admin/order-items/8801/serve       勾選已出餐
 ```
 
 **用 `POST` 或 `PATCH`，不要用 `GET`。** 這些都會改資料。
@@ -95,16 +95,18 @@ PATCH /api/admin/order-items/8801/serve 勾選已出餐
 GET    /api/menu/categories                  分類清單
 GET    /api/menu/items?categoryId=2          品項清單
 GET    /api/menu/items/12                    品項詳情（含選項群組）
-POST   /api/dining-sessions                  開桌
 POST   /api/dining-sessions/join             掃碼加入
 GET    /api/dining-sessions/me               我這桌的狀態
 POST   /api/dining-sessions/me/orders        送出點餐
 GET    /api/dining-sessions/me/orders        本桌所有點餐單
-POST   /api/dining-sessions/me/checkout      要求結帳
 POST   /api/service-calls                    按服務鈴
 GET    /api/admin/tables                     桌況總覽
+POST   /api/admin/tables/3/open              櫃檯開桌
+POST   /api/admin/dining-sessions/1052/settle 櫃檯結清（現金／模擬支付）
 GET    /api/admin/kitchen/tickets            出菜看板
 ```
+
+（開桌和結帳都在櫃檯做。客人在手機上自己付款是進階 A5，基礎版一律到櫃檯結帳。）
 
 看得出規律嗎？**看到網址就大概知道它在做什麼**，這就是 REST 的價值。
 

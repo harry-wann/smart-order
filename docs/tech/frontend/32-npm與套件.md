@@ -101,7 +101,7 @@ frontend-admin/package.json       ← 要加套件先在群組說一聲
 |---|---|
 | `react` / `react-dom` | 本體 |
 | `react-router-dom` | [換頁](38-ReactRouter.md) |
-| `@stomp/stompjs` + `sockjs-client` | [接 WebSocket](../realtime/42-前端接WebSocket.md) |
+| `@stomp/stompjs` | [接 WebSocket](../realtime/42-前端接WebSocket.md)（原生 WebSocket，不用 `sockjs-client`） |
 | `tailwindcss` | [樣式](39-Tailwind.md) |
 | `lucide-react` | 圖示 |
 

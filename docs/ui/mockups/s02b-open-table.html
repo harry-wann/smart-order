@@ -12,7 +12,7 @@
 <div class="stage">
 
 <div>
-  <p class="meta"><b>S-02b｜開桌　現場</b><code>1280 × 800</code><code>/admin/tables/A06/open</code><code>從 S-02 點某一張空桌進來</code></p>
+  <p class="meta"><b>S-02b｜開桌・現場</b><code>1280 × 800</code><code>/admin/tables/A06/open</code><code>從 S-02 點某一張空桌進來</code></p>
   <div class="frame f-desk">
     <div class="admin">
 
@@ -36,7 +36,7 @@
         <header class="topbar">
           <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
           <div class="h2">A06 桌　開桌</div>
-          <span class="badge b-plain">4 人桌・窗邊區</span>
+          <span class="badge b-plain">6 人桌・走道區</span>
           <span class="fill"></span>
           <span class="t-cap num">今天 18:32</span>
           <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="dot"></span></button>
@@ -88,7 +88,7 @@
               <div class="r g12 mt24" style="padding:16px 20px;background:var(--brand-100);border-radius:12px">
                 <span class="h2">共 3 位</span>
                 <span class="fill"></span>
-                <span class="t-sm" style="margin:0">A06 是 4 人桌，座位夠</span>
+                <span class="t-sm" style="margin:0">A06 是 6 人桌，座位夠</span>
               </div>
 
               <div class="r g12 mt24">
@@ -113,21 +113,19 @@
         櫃檯只要記一個動作：<br>
         點桌 → 選頁籤 → 開桌。</dd>
     <dt>預設停在哪一頁</dt>
-    <dd>這張桌有保留 → 保留對象那一頁<br>
-        否則有可報到的預約 → 預約<br>
+    <dd>有可報到的預約 → 預約<br>
         否則有候位 → 候位<br>
         都沒有 → 現場</dd>
   </dl>
-  <b class="mt16" style="display:block">兩個動作：開桌與保留</b>
+  <b class="mt16" style="display:block">從人出發的另一個入口</b>
   <dl style="margin:0">
-    <dt>開桌</dt>
-    <dd>客人已經到了，直接入座。</dd>
-    <dt>保留</dt>
-    <dd>客人還沒到但要先把桌留起來。<br>
-        桌位轉保留，訂位／候位的狀態不變。</dd>
-    <dt>現場這一頁</dt>
-    <dd>「只保留這張桌」不指定對象，<br>
-        只是把桌先留著（可以加備註）。</dd>
+    <dt>S-07b／S-10b</dt>
+    <dd>在預約管理、候位管理按「報到開桌」，<br>
+        跳出選桌對話框。後端是同一組開桌 API，<br>
+        這一頁是「從桌子出發」的入口。</dd>
+    <dt>手動保留是延伸功能</dt>
+    <dd>M2 的 2.E5，基礎不做。<br>
+        桌位狀態只有空桌、用餐中、待清理。</dd>
   </dl>
   <b class="mt16" style="display:block">頂部那條黃字</b>
   <dl style="margin:0">

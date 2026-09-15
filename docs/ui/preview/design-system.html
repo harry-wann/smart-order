@@ -22,25 +22,25 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text-900);
 font-family:"Noto Sans TC",system-ui,sans-serif;font-size:16px;line-height:1.75}
-.wrap{max-width:1080px;margin:0 auto;padding:40px 16px 96px}
+.wrap{max-width:1080px;margin:0 auto;padding:48px 16px 64px}
 h1,h2,h3.serif{font-family:"Noto Serif TC",serif}
 h1{font-size:32px;line-height:1.3;font-weight:900;margin:0 0 8px}
-h2{font-size:22px;line-height:1.5;font-weight:700;margin:56px 0 4px;
-padding-bottom:10px;border-bottom:2px solid var(--border)}
+h2{font-size:22px;line-height:1.5;font-weight:700;margin:48px 0 4px;
+padding-bottom:8px;border-bottom:2px solid var(--border)}
 .lede{color:var(--text-600);margin:0 0 4px}
 .note{font-size:13px;line-height:1.6;color:var(--text-600)}
-.sub{font-size:14px;color:var(--text-600);margin:24px 0 10px;font-weight:700;letter-spacing:.04em}
+.sub{font-size:14px;color:var(--text-600);margin:24px 0 8px;font-weight:700;letter-spacing:.04em}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;
 padding:20px;box-shadow:var(--shadow-card)}
 .grid{display:grid;gap:12px}
 .sw{border-radius:12px;overflow:hidden;border:1px solid var(--border);background:var(--surface)}
 .sw .chip{height:76px}
-.sw .meta{padding:10px 12px}
+.sw .meta{padding:8px 12px}
 .sw .nm{font-size:13px;font-weight:700}
 .sw .hx{font-size:12px;color:var(--text-600);font-variant-numeric:tabular-nums}
 table{width:100%;border-collapse:collapse;font-size:14px;background:var(--surface);
 border:1px solid var(--border);border-radius:12px;overflow:hidden}
-th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border)}
+th,td{text-align:left;padding:12px 16px;border-bottom:1px solid var(--border)}
 th{background:var(--surface-2);font-size:13px;letter-spacing:.04em}
 tr:last-child td{border-bottom:0}
 .btn{border:0;cursor:pointer;border-radius:8px;font-family:inherit;font-weight:500;
@@ -61,15 +61,15 @@ transition:all .15s;display:inline-flex;align-items:center;justify-content:cente
 .ph{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;
 display:flex;align-items:center;justify-content:center;color:var(--text-400);
 font-size:12px;flex:none}
-.mi{display:flex;gap:14px;align-items:center;padding:16px;background:var(--surface);
+.mi{display:flex;gap:16px;align-items:center;padding:16px;background:var(--surface);
 border:1px solid var(--border);border-radius:12px;min-height:96px}
 .mi .body{flex:1;min-width:0}
 .mi .nm{font-size:18px;font-weight:700;line-height:1.6}
 .mi .ds{font-size:14px;color:var(--text-600);line-height:1.7;
 display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .price{font-size:20px;font-weight:700;color:var(--brand-600);font-variant-numeric:tabular-nums}
-.plus{width:44px;height:44px;border-radius:50%;background:var(--brand-600);color:#fff;
-border:0;font-size:22px;cursor:pointer;flex:none}
+.plus{width:28px;height:28px;border-radius:50%;background:var(--brand-600);color:#fff;
+border:0;font-size:18px;line-height:1;cursor:pointer;flex:none}
 .sold .ph{filter:grayscale(1) opacity(.6)}
 .sold .nm,.sold .ds{color:var(--text-400)}
 .sold .price{color:var(--text-400);text-decoration:line-through}
@@ -79,15 +79,15 @@ font-weight:900;font-size:20px;padding:2px 12px;border-radius:4px;opacity:.9;
 background:rgba(255,255,255,.72);letter-spacing:.1em}
 .step{display:inline-flex;align-items:center;border:1px solid var(--border);
 border-radius:999px;background:var(--surface);overflow:hidden}
-.step button{width:44px;height:44px;border:0;background:transparent;cursor:pointer;
-font-size:20px;color:var(--brand-600)}
-.step .n{width:48px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+.step button{width:28px;height:28px;border:0;background:transparent;cursor:pointer;
+font-size:18px;line-height:1;color:var(--brand-600)}
+.step .n{width:32px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
 .opt{display:flex;align-items:center;gap:12px;min-height:56px;padding:12px 16px;
 border:1px solid var(--border);border-radius:12px;background:var(--surface);cursor:pointer}
 .opt.on{background:var(--brand-100);border:1.5px solid var(--brand-600)}
 .opt .gap{flex:1}
 .opt .df{font-size:14px;color:var(--text-600);font-variant-numeric:tabular-nums}
-.opt .ck{color:var(--brand-600);font-weight:700;font-size:18px}
+.opt .ck{color:var(--brand-600);display:flex}
 .bx{width:24px;height:24px;border:1.5px solid var(--border);border-radius:6px;flex:none}
 .badge{display:inline-flex;align-items:center;gap:4px;font-size:12px;line-height:1.6;
 padding:2px 10px;border-radius:999px;font-weight:500}
@@ -96,13 +96,13 @@ padding:2px 10px;border-radius:999px;font-weight:500}
 .b-sold{background:var(--danger);color:#fff}
 .b-done{background:var(--success);color:#fff}
 .b-hot{background:#fff;color:var(--danger);box-shadow:0 0 0 1px var(--danger) inset}
-.toast{display:flex;align-items:center;gap:10px;padding:12px 18px;border-radius:8px;
+.toast{display:flex;align-items:center;gap:8px;padding:12px 16px;border-radius:8px;
 color:#fff;box-shadow:var(--shadow-pop);font-size:15px}
 .t-ok{background:var(--success)}.t-bad{background:var(--danger)}.t-n{background:var(--text-900)}
 .sk{background:var(--surface-2);border-radius:8px;animation:br 1.4s ease-in-out infinite}
 @keyframes br{0%,100%{opacity:1}50%{opacity:.5}}
 .kds{background:#241C18;color:#fff;border-radius:12px;padding:20px}
-.kds .no{font-size:32px;font-weight:900;line-height:1.2;font-variant-numeric:tabular-nums}
+.kds .no{font-size:32px;font-weight:900;line-height:1.2;font-variant-numeric:tabular-nums;color:#F3EAE0}
 .kds .it{font-size:16px;color:#E6DED2;line-height:1.8}
 .tbl{aspect-ratio:1;border-radius:12px;display:flex;flex-direction:column;
 align-items:center;justify-content:center;font-weight:700;gap:2px}
@@ -116,10 +116,10 @@ background:var(--surface-2);color:var(--text-600);border:1px solid var(--border)
 background:var(--surface-2);border:1px dashed var(--border);border-radius:12px;
 color:var(--text-400);font-size:12px;line-height:1.6;text-align:center;padding:12px}
 .imgph b{font-size:14px;color:var(--text-600)}
-.imgph code{font-size:11px;background:var(--bg);padding:1px 6px;border-radius:4px;border:1px solid var(--border)}
+.imgph code{font-size:11px;background:var(--bg);padding:2px 8px;border-radius:4px;border:1px solid var(--border)}
 .warnbox{background:var(--warning-bg);border-left:4px solid var(--warning);
-padding:14px 18px;border-radius:0 8px 8px 0;font-size:15px;margin:16px 0}
-@media(max-width:600px){h1{font-size:26px}.wrap{padding:24px 16px 64px}}
+padding:12px 16px;border-radius:0 8px 8px 0;font-size:15px;margin:16px 0}
+@media(max-width:600px){h1{font-size:26px}.wrap{padding:24px 16px 64px}table{display:block;overflow-x:auto}}
 </style>
 </head>
 <body>
@@ -174,11 +174,11 @@ padding:14px 18px;border-radius:0 8px 8px 0;font-size:15px;margin:16px 0}
 
 <div class="sub">桌況專用</div>
 <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(110px,1fr));max-width:520px">
-<div class="tbl" style="background:var(--table-available);color:var(--text-900)">A1<small>空桌</small></div>
-<div class="tbl" style="background:var(--table-occupied);color:#fff">A2<small>用餐中</small></div>
-<div class="tbl" style="background:var(--table-held);color:var(--text-900);opacity:.55">A3<small>保留（進階）</small></div>
-<div class="tbl" style="background:var(--table-cleaning);color:#fff">A4<small>整理中</small></div>
+<div class="tbl" style="background:var(--table-available);color:var(--text-900)">A01<small>空桌</small></div>
+<div class="tbl" style="background:var(--table-occupied);color:#fff">A02<small>用餐中</small></div>
+<div class="tbl" style="background:var(--table-cleaning);color:#fff">A05<small>待清理</small></div>
 </div>
+<p class="note">桌位狀態只有這三種，沒有「已預約」「結帳中」。<code>--table-held</code>（#E8A33D）留給延伸功能 M2 2.E5 的手動保留，基礎不畫。</p>
 
 <h2>2　字體階層</h2>
 <p class="note">標題用 <strong>Noto Serif TC 明體</strong>，內文用 Noto Sans TC。
@@ -187,25 +187,25 @@ padding:14px 18px;border-radius:0 8px 8px 0;font-size:15px;margin:16px 0}
 <div class="card" style="margin-top:16px">
 <div style="font-family:'Noto Serif TC',serif;font-size:32px;line-height:1.3;font-weight:900">合計 NT$ 2,480</div>
 <div class="note">display　32 / 1.3　Serif 900　結帳合計</div>
-<hr style="border:0;border-top:1px solid var(--border);margin:18px 0">
+<hr style="border:0;border-top:1px solid var(--border);margin:16px 0">
 <div style="font-family:'Noto Serif TC',serif;font-size:28px;line-height:1.4;font-weight:700">今日菜單</div>
 <div class="note">h1　28 / 1.4　Serif 700　頁面主標題</div>
-<hr style="border:0;border-top:1px solid var(--border);margin:18px 0">
+<hr style="border:0;border-top:1px solid var(--border);margin:16px 0">
 <div style="font-family:'Noto Serif TC',serif;font-size:22px;line-height:1.5;font-weight:700">肉品・海鮮</div>
 <div class="note">h2　22 / 1.5　Serif 700　區塊標題、分類名</div>
-<hr style="border:0;border-top:1px solid var(--border);margin:18px 0">
+<hr style="border:0;border-top:1px solid var(--border);margin:16px 0">
 <div style="font-size:18px;line-height:1.6;font-weight:700">安格斯霜降牛五花</div>
 <div class="note">h3　18 / 1.6　Sans 700　品項名稱</div>
-<hr style="border:0;border-top:1px solid var(--border);margin:18px 0">
+<hr style="border:0;border-top:1px solid var(--border);margin:16px 0">
 <div style="font-size:16px;line-height:1.75">厚切 3mm，涮 8 秒最好吃。油花分布均勻，是我們賣最好的一款。</div>
 <div class="note">body　16 / 1.75　Sans 400　<strong>內文最小值，不得更小</strong></div>
-<hr style="border:0;border-top:1px solid var(--border);margin:18px 0">
+<hr style="border:0;border-top:1px solid var(--border);margin:16px 0">
 <div style="font-size:14px;line-height:1.7;color:var(--text-600)">已選：大辣・加麵・不要香菜</div>
 <div class="note">body-sm　14 / 1.7　Sans 400　次要資訊</div>
-<hr style="border:0;border-top:1px solid var(--border);margin:18px 0">
+<hr style="border:0;border-top:1px solid var(--border);margin:16px 0">
 <div style="font-size:13px;line-height:1.6;color:var(--text-600)">18:42 送出</div>
 <div class="note">caption　13 / 1.6　<strong>僅用於非關鍵資訊</strong></div>
-<hr style="border:0;border-top:1px solid var(--border);margin:18px 0">
+<hr style="border:0;border-top:1px solid var(--border);margin:16px 0">
 <div class="price">NT$ 380</div>
 <div class="note">price　20 / 1.4　Sans 700 tabular-nums</div>
 </div>
@@ -243,13 +243,13 @@ padding:14px 18px;border-radius:0 8px 8px 0;font-size:15px;margin:16px 0}
 
 <div class="sub">4.1　Button</div>
 <div class="card">
-<div class="row" style="margin-bottom:14px">
+<div class="row" style="margin-bottom:16px">
 <button class="btn btn-primary btn-lg">加入購物車</button>
 <button class="btn btn-secondary btn-lg">繼續點餐</button>
 <button class="btn btn-ghost btn-lg">稍後再說</button>
 <button class="btn btn-danger btn-lg">取消訂單</button>
 </div>
-<div class="row" style="margin-bottom:14px">
+<div class="row" style="margin-bottom:16px">
 <button class="btn btn-primary btn-lg">lg 52px</button>
 <button class="btn btn-primary btn-md">md 44px</button>
 <button class="btn btn-primary btn-sm">sm 36px</button>
@@ -293,9 +293,9 @@ padding:14px 18px;border-radius:0 8px 8px 0;font-size:15px;margin:16px 0}
 <p class="note">售完態：照片灰階、價格劃線、紅色印章斜蓋（不是灰化了事）、整列停用。</p>
 
 <div class="sub">4.3　OptionCard</div>
-<div class="grid" style="gap:10px;max-width:520px">
-<div class="opt on"><span>麻辣鍋</span><span class="gap"></span><span class="df">+NT$ 60</span><span class="ck">✓</span></div>
-<div class="opt"><span>養生蔬菜鍋</span><span class="gap"></span><span class="ck" style="visibility:hidden">✓</span></div>
+<div class="grid" style="gap:8px;max-width:520px">
+<div class="opt on"><span>麻辣鍋</span><span class="gap"></span><span class="df">+NT$ 60</span><span class="ck"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
+<div class="opt"><span>養生蔬菜鍋</span><span class="gap"></span><span class="ck" style="visibility:hidden"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></div>
 <div class="opt"><span class="bx"></span><span>加麵</span><span class="gap"></span><span class="df">+NT$ 40</span></div>
 <div class="opt"><span class="bx" style="background:var(--brand-600);border-color:var(--brand-600)"></span><span>不要香菜</span><span class="gap"></span></div>
 </div>
@@ -310,30 +310,38 @@ padding:14px 18px;border-radius:0 8px 8px 0;font-size:15px;margin:16px 0}
 </div>
 
 <div class="sub">4.5　Toast　（禁止用瀏覽器 alert()）</div>
-<div class="grid" style="gap:10px;max-width:420px">
+<div class="grid" style="gap:8px;max-width:420px">
 <div class="toast t-ok">已送出 3 項餐點</div>
 <div class="toast t-bad">庫存不足，和牛肋眼已售完</div>
 <div class="toast t-n">已同步其他裝置</div>
 </div>
 
-<div class="sub">4.6　Skeleton　（用色塊呼吸，不要轉圈圈）</div>
+<div class="sub">4.6　Notify 同桌通知　（從上方滑下，停 4 秒自己收回，不堆疊）</div>
+<div class="card" style="max-width:420px;display:flex;gap:12px;align-items:center;padding:12px 16px;box-shadow:var(--shadow-pop)">
+<div style="width:32px;height:32px;border-radius:50%;background:var(--brand-100);color:var(--brand-600);display:flex;align-items:center;justify-content:center;font-weight:700;flex:none">美</div>
+<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;line-height:1.5">陳小美 加了一樣東西</div><div class="note">安格斯霜降牛五花 ×1・全份</div></div>
+<div class="note" style="flex:none">剛剛</div>
+</div>
+<p class="note">取代服務鈴上的紅點：直接說誰做了什麼。出現在 C-04、C-05、C-06、C-08；結帳頁不出現。</p>
+
+<div class="sub">4.7　Skeleton　（用色塊呼吸，不要轉圈圈）</div>
 <div class="mi">
 <div class="sk" style="width:80px;height:80px;border-radius:12px"></div>
 <div class="body">
-<div class="sk" style="height:20px;width:60%;margin-bottom:10px"></div>
-<div class="sk" style="height:14px;width:85%;margin-bottom:6px"></div>
+<div class="sk" style="height:20px;width:60%;margin-bottom:8px"></div>
+<div class="sk" style="height:14px;width:85%;margin-bottom:8px"></div>
 <div class="sk" style="height:22px;width:30%"></div>
 </div>
 </div>
 
-<div class="sub">4.7　唯一的深色例外：出菜看板 KDS</div>
+<div class="sub">4.8　唯一的深色例外：出菜看板 KDS</div>
 <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">
-<div class="kds"><div class="no">A3　<span style="font-size:16px;color:#E8A33D">08:42</span></div>
+<div class="kds"><div class="no">A03　<span style="font-size:16px;color:#E8A33D">8 分</span></div>
 <div class="it">牛五花 ×2<br>蔬菜拼盤 ×1<br>麻辣鍋底 ×1</div></div>
-<div class="kds" style="box-shadow:0 0 0 3px var(--warning) inset"><div class="no">B1　<span style="font-size:16px;color:#D98324">14:20 ⚠</span></div>
+<div class="kds" style="box-shadow:0 0 0 3px var(--danger) inset"><div class="no">B01　<span style="font-size:16px;color:#F08A80">18 分・久候</span></div>
 <div class="it">豬梅花 ×3<br>手工丸子 ×2</div></div>
 </div>
-<p class="note">廚房光線強、距離遠，深底高對比最清楚。<strong>其他所有頁面一律亮色。</strong></p>
+<p class="note">廚房光線強、距離遠，深底高對比最清楚。等待超過 15 分鐘卡片轉紅框。<strong>其他所有頁面一律亮色。</strong></p>
 
 <h2>5　圖片佔位　★ 新增規範</h2>
 <p class="note"><strong>設計稿與 HTML 草稿裡不准出現沒有說明的灰色方塊。</strong>
@@ -388,8 +396,8 @@ padding:14px 18px;border-radius:0 8px 8px 0;font-size:15px;margin:16px 0}
 <tr><td><strong>售完印章</strong></td><td>斜蓋在照片上的紅色方框印章（上面 4.2 已示範）</td></tr>
 </table>
 
-<h2>7　畫面清單　33 張</h2>
-<table style="margin-bottom:18px">
+<h2>7　畫面清單　42 張</h2>
+<table style="margin-bottom:16px">
 <tr><th></th><th>顧客端</th><th>店家端</th></tr>
 <tr><td style="width:110px"><strong>裝置</strong></td><td>手機<strong>直式</strong></td><td><strong>橫式</strong>平板或電腦</td></tr>
 <tr><td><strong>設計稿畫框</strong></td><td><strong>375 × 812</strong></td><td><strong>1280 × 800</strong></td></tr>
@@ -397,48 +405,57 @@ padding:14px 18px;border-radius:0 8px 8px 0;font-size:15px;margin:16px 0}
 <tr><td><strong>超出範圍</strong></td><td>置中、最大寬 480px</td><td>「請將裝置橫放，或改用電腦操作」</td></tr>
 </table>
 <p class="note"><strong>例外</strong>：S-04 出菜看板 KDS 用 1920×1080 固定橫式大螢幕，不做 RWD。</p>
-<div class="sub">顧客端　手機直式 375×812　21 張</div>
+<p class="note">唯一來源是 <code>10-UI-UX規格.md</code> 的兩張頁面表；另有 8 張元件總表 DS-01～DS-08（1280×1200）。C-02、C-03 是空號（C-03 選鍋底已併進 C-04 的分類頁籤）。進階 8 張有空才做。</p>
+<div class="sub">顧客端　手機直式 375×812　25 張</div>
 <table>
-<tr><th style="width:70px">ID</th><th>畫面</th><th style="width:230px">路由</th></tr>
-<tr><td>C-01</td><td>掃碼進入／桌號確認</td><td>/t/:tableNo</td></tr>
-<tr><td>C-03</td><td>選鍋底（開桌後強制）</td><td>/order/soup-base</td></tr>
-<tr><td>C-04</td><td>菜單主頁　★最重要</td><td>/order/menu</td></tr>
-<tr><td>C-05</td><td>品項詳情與選項</td><td>/order/items/:id</td></tr>
-<tr><td>C-06</td><td>購物車</td><td>/order/cart</td></tr>
-<tr><td>C-07</td><td>送出成功</td><td>/order/submitted</td></tr>
-<tr><td>C-08</td><td>本桌訂單與出菜進度　★多裝置同步</td><td>/order/tickets</td></tr>
-<tr><td>C-09</td><td>結帳明細</td><td>/checkout</td></tr>
-<tr><td>C-10</td><td>付款方式選擇</td><td>/checkout/pay</td></tr>
-<tr><td>C-11</td><td>付款完成</td><td>/checkout/done</td></tr>
-<tr><td>C-12</td><td>會員登入（手機驗證）</td><td>/auth/login</td></tr>
-<tr><td>C-13</td><td>會員註冊補資料</td><td>/auth/register</td></tr>
-<tr><td>C-14</td><td>會員中心</td><td>/member</td></tr>
-<tr><td>C-15</td><td>消費紀錄</td><td>/member/history</td></tr>
-<tr><td>C-16c</td><td>選日期時段人數（送出即成立）</td><td>/reserve/when</td></tr>
-<tr><td>C-18</td><td>訂位完成（在這裡才問要不要先點餐）</td><td>/reserve/:id/done</td></tr>
-<tr><td>C-17</td><td>預先點餐／調整餐點（進階）</td><td>/reserve/:id/preorder</td></tr>
-<tr><td>C-19</td><td>我的預約</td><td>/member/reservations</td></tr>
-<tr><td>C-21</td><td>服務鈴面板</td><td>彈出層</td></tr>
+<tr><th style="width:88px;white-space:nowrap">ID</th><th>畫面</th><th style="width:104px">級別</th><th style="width:240px">路由</th></tr>
+<tr><td style="white-space:nowrap">C-00</td><td>入口頁（店外進來的起點）</td><td>基礎</td><td>/</td></tr>
+<tr><td style="white-space:nowrap">C-01</td><td>掃碼進入／桌號確認</td><td>基礎</td><td>/t/:tableNo</td></tr>
+<tr><td style="white-space:nowrap">C-04</td><td>菜單主頁（含鍋底分類）　★最重要</td><td>基礎</td><td>/order/menu</td></tr>
+<tr><td style="white-space:nowrap">C-04b</td><td>同桌通知・有人加購物車</td><td>基礎</td><td>覆蓋層</td></tr>
+<tr><td style="white-space:nowrap">C-04c</td><td>同桌通知・有人送出訂單</td><td>基礎</td><td>覆蓋層</td></tr>
+<tr><td style="white-space:nowrap">C-05</td><td>品項詳情與選項</td><td>基礎</td><td>/order/items/:id</td></tr>
+<tr><td style="white-space:nowrap">C-06</td><td>購物車</td><td>基礎</td><td>/order/cart</td></tr>
+<tr><td style="white-space:nowrap">C-07</td><td>送出成功</td><td>基礎</td><td>/order/submitted</td></tr>
+<tr><td style="white-space:nowrap">C-08</td><td>本桌訂單與出菜進度　★多裝置同步</td><td>基礎</td><td>/order/tickets</td></tr>
+<tr><td style="white-space:nowrap">C-09</td><td>結帳明細</td><td><span class="pill">進階 A5</span></td><td>/checkout</td></tr>
+<tr><td style="white-space:nowrap">C-10</td><td>付款方式選擇</td><td><span class="pill">進階 A5</span></td><td>/checkout/pay</td></tr>
+<tr><td style="white-space:nowrap">C-11</td><td>付款完成</td><td><span class="pill">進階 A5</span></td><td>/checkout/done</td></tr>
+<tr><td style="white-space:nowrap">C-12</td><td>會員登入／註冊（輸入手機）</td><td>基礎</td><td>/auth</td></tr>
+<tr><td style="white-space:nowrap">C-12b</td><td>輸入驗證碼</td><td>基礎</td><td>/auth/otp</td></tr>
+<tr><td style="white-space:nowrap">C-13</td><td>會員註冊補資料</td><td>基礎</td><td>/auth/register</td></tr>
+<tr><td style="white-space:nowrap">C-14</td><td>會員中心</td><td>基礎</td><td>/member</td></tr>
+<tr><td style="white-space:nowrap">C-15</td><td>消費紀錄</td><td><span class="pill">進階 A1</span></td><td>/member/history</td></tr>
+<tr><td style="white-space:nowrap">C-16</td><td>線上訂位入口（會員／匿名）</td><td>基礎</td><td>/reserve</td></tr>
+<tr><td style="white-space:nowrap">C-16b</td><td>匿名訂位填資料</td><td>基礎</td><td>/reserve/guest</td></tr>
+<tr><td style="white-space:nowrap">C-16c</td><td>選日期時段人數（送出即成立）</td><td>基礎</td><td>/reserve/when</td></tr>
+<tr><td style="white-space:nowrap">C-18</td><td>訂位完成（在這裡才問要不要先點餐）</td><td>基礎</td><td>/reserve/:id/done</td></tr>
+<tr><td style="white-space:nowrap">C-17</td><td>預先點餐／調整餐點</td><td><span class="pill">進階 A2</span></td><td>/reserve/:id/preorder</td></tr>
+<tr><td style="white-space:nowrap">C-19</td><td>我的預約</td><td>基礎</td><td>/member/reservations</td></tr>
+<tr><td style="white-space:nowrap">C-20</td><td>點數與優惠券</td><td><span class="pill">進階 A6</span></td><td>/member/wallet</td></tr>
+<tr><td style="white-space:nowrap">C-21</td><td>服務鈴面板</td><td>基礎</td><td>彈出層</td></tr>
 </table>
 
-<div class="sub">店家端　橫式平板／電腦 1280×800　15 張</div>
+<div class="sub">店家端　橫式平板／電腦 1280×800　17 張</div>
 <table>
-<tr><th style="width:70px">ID</th><th>畫面</th><th style="width:230px">路由</th></tr>
-<tr><td>S-01</td><td>員工登入</td><td>/admin/login</td></tr>
-<tr><td>S-02</td><td>桌況總覽　★櫃檯主畫面</td><td>/admin/tables</td></tr>
-<tr><td>S-02b</td><td>開桌・現場（填人數）</td><td>/admin/tables/:tableNo/open</td></tr>
-<tr><td>S-02c</td><td>開桌・候位（頁籤）</td><td>同上</td></tr>
-<tr><td>S-02d</td><td>開桌・預約（頁籤）</td><td>同上</td></tr>
-<tr><td>S-03</td><td>桌位詳情</td><td>/admin/tables/:id</td></tr>
-<tr><td>S-04</td><td>出菜看板 KDS　★廚房主畫面・1920×1080</td><td>/admin/kitchen</td></tr>
-<tr><td>S-05</td><td>菜單管理</td><td>/admin/menu</td></tr>
-<tr><td>S-06</td><td>選項群組管理</td><td>/admin/menu/options</td></tr>
-<tr><td>S-07</td><td>預約管理</td><td>/admin/reservations</td></tr>
-<tr><td>S-08</td><td>座位管理</td><td>/admin/tables-config</td></tr>
-<tr><td>S-09</td><td>庫存管理</td><td>/admin/inventory</td></tr>
-<tr><td>S-10</td><td>候位管理</td><td>/admin/waitlist</td></tr>
-<tr><td>S-11</td><td>服務鈴通知面板</td><td>固定右上</td></tr>
-<tr><td>S-12</td><td>報表　<span class="pill">進階</span></td><td>/admin/reports</td></tr>
+<tr><th style="width:88px;white-space:nowrap">ID</th><th>畫面</th><th style="width:104px">級別</th><th style="width:240px">路由</th></tr>
+<tr><td style="white-space:nowrap">S-01</td><td>員工登入</td><td>基礎</td><td>/admin/login</td></tr>
+<tr><td style="white-space:nowrap">S-02</td><td>桌況總覽　★櫃檯主畫面</td><td>基礎</td><td>/admin/tables</td></tr>
+<tr><td style="white-space:nowrap">S-02b</td><td>開桌・現場（填人數）</td><td>基礎</td><td>/admin/tables/:tableNo/open</td></tr>
+<tr><td style="white-space:nowrap">S-02c</td><td>開桌・候位（頁籤）</td><td>基礎</td><td>同上</td></tr>
+<tr><td style="white-space:nowrap">S-02d</td><td>開桌・預約（頁籤）</td><td>基礎</td><td>同上</td></tr>
+<tr><td style="white-space:nowrap">S-03</td><td>桌位詳情（含櫃檯結帳）</td><td>基礎</td><td>/admin/tables/:tableNo</td></tr>
+<tr><td style="white-space:nowrap">S-04</td><td>出菜看板 KDS　★廚房主畫面・1920×1080</td><td>基礎</td><td>/admin/kitchen</td></tr>
+<tr><td style="white-space:nowrap">S-05</td><td>菜單管理</td><td>基礎</td><td>/admin/menu</td></tr>
+<tr><td style="white-space:nowrap">S-06</td><td>選項群組管理</td><td>基礎</td><td>/admin/menu/options</td></tr>
+<tr><td style="white-space:nowrap">S-07</td><td>預約管理</td><td>基礎</td><td>/admin/reservations</td></tr>
+<tr><td style="white-space:nowrap">S-07b</td><td>預約報到・選桌開桌</td><td>基礎</td><td>對話框，疊在 S-07 上</td></tr>
+<tr><td style="white-space:nowrap">S-08</td><td>座位管理</td><td>基礎</td><td>/admin/tables-config</td></tr>
+<tr><td style="white-space:nowrap">S-09</td><td>庫存管理</td><td><span class="pill">進階 A3</span></td><td>/admin/inventory</td></tr>
+<tr><td style="white-space:nowrap">S-10</td><td>候位管理</td><td>基礎</td><td>/admin/waitlist</td></tr>
+<tr><td style="white-space:nowrap">S-10b</td><td>候位報到・選桌開桌</td><td>基礎</td><td>對話框，疊在 S-10 上</td></tr>
+<tr><td style="white-space:nowrap">S-11</td><td>服務鈴通知面板</td><td>基礎</td><td>固定右上</td></tr>
+<tr><td style="white-space:nowrap">S-12</td><td>報表</td><td><span class="pill">進階 A4</span></td><td>/admin/reports</td></tr>
 </table>
 
 </div>

@@ -320,9 +320,9 @@
   </div>
 </div>
 
-<!-- ══════════════════ 已送出結帳 ══════════════════ -->
+<!-- ══════════════════ 已結帳 ══════════════════ -->
 <div>
-  <p class="meta"><b>C-04｜菜單主頁</b><code>375 × 812</code><code>已送出結帳</code><code>按下結帳後整桌鎖住，不能再加點</code></p>
+  <p class="meta"><b>C-04｜菜單主頁</b><code>375 × 812</code><code>已結帳</code><code>櫃檯結清後整桌收到 SESSION_CLOSED</code></p>
   <div class="frame f-mobile">
 
     <header class="appbar">
@@ -338,7 +338,7 @@
       <span>搜尋菜色</span>
     </div>
 
-    <nav class="tabs" style="opacity:.45">
+    <nav class="tabs">
       <div class="tab on">推薦</div>
       <div class="tab">鍋底</div>
       <div class="tab">肉品</div>
@@ -348,7 +348,7 @@
       <div class="tab">主食</div>
     </nav>
 
-    <div class="scroll" style="opacity:.45;filter:grayscale(.35)">
+    <div class="scroll">
 
       <!-- 手寫感木牌：只有這家店有的細節 -->
       <div class="secbar"><span class="woodsign">今日推薦</span><span class="t-cap">本店人氣 TOP 5</span></div>
@@ -450,11 +450,18 @@
       </div>
     </div>
 
-    <div class="bottombar">
-      <div class="infobox ib-quiet" style="margin:0">
-        <svg class="ic" viewBox="0 0 24 24"><rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>
-        <div><b>這桌已經送出結帳，不能再加點了。</b><br>還想吃的話請按服務鈴，請服務生取消結帳。</div>
+    <!-- 收到 SESSION_CLOSED：整頁壓暗、權杖清掉，只留一個出口 -->
+    <div class="scrim"></div>
+    <div class="sheet" style="padding:32px 16px 24px">
+      <div class="c" style="align-items:center;text-align:center">
+        <div class="doneball">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+        <h2 class="h1 mt16">這桌已經結帳完成</h2>
+        <p class="t-sm mt8" style="margin-bottom:0">謝謝光臨，歡迎再來</p>
+        <p class="t-cap mt4" style="margin-bottom:0">A03 桌・19:24 在櫃檯結清</p>
       </div>
+      <button class="btn btn-primary btn-lg btn-block mt24">回到首頁</button>
     </div>
 
   </div>

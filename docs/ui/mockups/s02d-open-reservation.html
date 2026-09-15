@@ -12,7 +12,7 @@
 <div class="stage">
 
 <div>
-  <p class="meta"><b>S-02d｜開桌　預約</b><code>1280 × 800</code><code>/admin/tables/A06/open</code><code>同一個路由的第三個頁籤</code></p>
+  <p class="meta"><b>S-02d｜開桌・預約</b><code>1280 × 800</code><code>/admin/tables/A06/open</code><code>同一個路由的第三個頁籤</code></p>
   <div class="frame f-desk">
     <div class="admin">
 
@@ -36,7 +36,7 @@
         <header class="topbar">
           <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
           <div class="h2">A06 桌　開桌</div>
-          <span class="badge b-plain">4 人桌・窗邊區</span>
+          <span class="badge b-plain">6 人桌・走道區</span>
           <span class="fill"></span>
           <span class="t-cap num">今天 18:32</span>
           <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="dot"></span></button>
@@ -59,13 +59,13 @@
             <div class="card" style="padding:24px">
               <div class="r g8" style="margin-bottom:16px">
                 <span class="h2 fill">現在可以報到的預約</span>
-                <span class="t-cap">現在 −15 分 ～ +45 分・4 位以內坐得下</span>
+                <span class="t-cap">用餐時間在現在 −10 分 ～ +45 分・6 位以內坐得下</span>
               </div>
 
               <div class="c g12">
               <div class="cartrow" style="">
                 <div class="r g16">
-                  <span class="h2 num" style="min-width:72px">18:00</span>
+                  <span class="h2 num" style="min-width:72px">18:30</span>
                   <div class="fill">
                     <div class="r g8" style="flex-wrap:wrap">
                       <b style="font-size:17px">陳怡君</b>
@@ -79,7 +79,7 @@
               </div>
               <div class="cartrow" style="margin-bottom:0;">
                 <div class="r g16">
-                  <span class="h2 num" style="min-width:72px">18:30</span>
+                  <span class="h2 num" style="min-width:72px">19:00</span>
                   <div class="fill">
                     <div class="r g8" style="flex-wrap:wrap">
                       <b style="font-size:17px">黃先生</b>
@@ -113,8 +113,13 @@
   <dl style="margin:0">
     <dt>清單條件</dt>
     <dd>status = CONFIRMED<br>
-        用餐時間在現在 −15 ～ +45 分<br>
+        用餐時間在現在 −10 ～ +45 分<br>
         party_size ≤ 這張桌的座位數</dd>
+    <dt>晚到超過 10 分鐘就不列</dt>
+    <dd>訂位只保留 10 分鐘，逾時視同未到，<br>
+        只能現場登記候位。不等 NO_SHOW 排程<br>
+        （它最多晚 5 分鐘），清單自己看時間；<br>
+        報到 API 也會擋：409 RESERVATION_EXPIRED</dd>
     <dt>不看訂位時配到哪張桌</dt>
     <dd>客人被帶到別張桌是現場常態。<br>
         「訂位時配到 A08」只是附帶資訊。</dd>
@@ -134,7 +139,7 @@
         與 reservation_id 這一組。<br>
         兩個欄位回答兩個不同的問題。</dd>
   </dl>
-  <b class="mt16" style="display:block">手動保留是進階</b>
+  <b class="mt16" style="display:block">手動保留是延伸功能</b>
   <dl style="margin:0">
     <dt>M2 的 2.E5</dt>
     <dd>要做的話，每一列再多一顆<br>

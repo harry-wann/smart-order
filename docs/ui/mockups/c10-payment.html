@@ -12,7 +12,7 @@
 <div class="stage">
 
 <div>
-  <p class="meta"><b>C-10｜付款方式選擇</b><code>375 × 812</code><code>/checkout/pay</code><code>模擬付款・95% 成功</code></p>
+  <p class="meta"><b>C-10｜付款方式選擇</b><code>375 × 812</code><code>/checkout/pay</code><code>進階 A5</code><code>模擬付款・95% 成功</code></p>
   <div class="frame f-mobile">
 
     <header class="appbar">
@@ -45,11 +45,10 @@
 
       <hr class="sep mt24">
 
-      <button class="pay pay-cash mt24" style="width:100%">
-        <svg class="ic" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-        請櫃檯代收現金
-      </button>
-      <p class="hint center">按下後櫃檯會收到通知，請到櫃檯結清</p>
+      <div class="r g8 mt24" style="justify-content:center;color:var(--text-600)">
+        <svg class="ic ic-sm" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+        <span class="t-sm" style="margin:0">要付現金，請直接到櫃檯結帳</span>
+      </div>
 
       <div class="infobox ib-warn mt24" style="margin-bottom:24px">
         <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 16v-4.5M12 8h.01"/></svg>
@@ -75,8 +74,17 @@
     <dd>進 C-11 付款完成</dd>
     <dt>失敗（5%）</dt>
     <dd>紅色 Toast「付款沒有成功，請再試一次<br>或換一種付款方式」，留在本頁可重試</dd>
-    <dt>防重複付款</dt>
-    <dd>同一筆帳單第二次送出直接擋掉</dd>
+    <dt>付款請求</dt>
+    <dd>POST /api/payments<br>{ diningSessionId, method, expectedTotal }<br>expectedTotal 就是上面那個金額</dd>
+    <dt>409 BILL_CHANGED</dt>
+    <dd>付款前有人加點。回 C-09 並提示<br>「剛剛有人加點，金額更新了，請再確認一次」</dd>
+    <dt>409 SESSION_CLOSED</dt>
+    <dd>櫃檯已經先結清了，不會重複收款。<br>畫面改成 C-04 的「已結帳」</dd>
+  </dl>
+  <b class="mt16" style="display:block">進階 A5</b>
+  <dl style="margin:0">
+    <dt>付現金不在這裡</dt>
+    <dd>這頁只有線上付款。付現金走基礎流程：<br>客人到櫃檯，櫃檯在 S-03 標記已結清</dd>
   </dl>
 </div>
 

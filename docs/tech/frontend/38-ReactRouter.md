@@ -34,13 +34,15 @@ import { Routes, Route } from 'react-router-dom';
 function App() {
   return (
     <Routes>
+      {/* 節錄幾條，完整清單見本頁「我們的路由表」 */}
+      <Route path="/"                element={<EntryPage />} />
       <Route path="/t/:tableNo"      element={<TableEntryPage />} />
-      <Route path="/order/soup-base" element={<SoupBasePage />} />
       <Route path="/order/menu"      element={<MenuPage />} />
       <Route path="/order/items/:id" element={<ItemDetailPage />} />
       <Route path="/order/cart"      element={<CartPage />} />
+      <Route path="/order/submitted" element={<SubmittedPage />} />
       <Route path="/order/tickets"   element={<TicketsPage />} />
-      <Route path="/checkout"        element={<CheckoutPage />} />
+      <Route path="/reserve"         element={<ReserveEntryPage />} />
       <Route path="*"                element={<NotFoundPage />} />
     </Routes>
   );
@@ -101,7 +103,7 @@ function ItemDetailPage() {
     <Route path="tables"      element={<TablesPage />} />
     <Route path="kitchen"     element={<KitchenPage />} />
     <Route path="menu"        element={<MenuAdminPage />} />
-    <Route path="inventory"   element={<InventoryPage />} />
+    <Route path="waitlist"    element={<WaitlistPage />} />
   </Route>
 </Routes>
 ```
@@ -135,20 +137,38 @@ function RequireStaff({ children }) {
 
 ## 我們的路由表
 
-| 網址 | 頁面 |
-|---|---|
-| `/t/:tableNo` | 掃碼進入 |
-| `/order/soup-base` | 選鍋底 |
-| `/order/menu` | 菜單主頁 |
-| `/order/items/:id` | 品項詳情 |
-| `/order/cart` | 購物車 |
-| `/order/tickets` | 本桌訂單 |
-| `/checkout` | 結帳 |
-| `/checkout/pay` | 付款 |
-| `/member` | 會員中心 |
-| `/reserve` | 訂位 |
+以 [10-UI/UX 規格](../../ui/10-UI-UX規格.md) 的頁面表為準，下面是顧客端的對照：
 
-店家端另一個專案：`/admin/tables`、`/admin/kitchen`、`/admin/menu`、`/admin/inventory`、`/admin/waitlist`。
+| 代號 | 網址 | 頁面 | 級別 |
+|---|---|---|---|
+| C-00 | `/` | 入口頁（線上訂位／我的預約／會員登入） | 基礎 |
+| C-01 | `/t/:tableNo` | 掃碼進入 | 基礎 |
+| C-04 | `/order/menu` | 菜單主頁（鍋底是其中一個分類） | 基礎 |
+| C-05 | `/order/items/:id` | 品項詳情 | 基礎 |
+| C-06 | `/order/cart` | 購物車 | 基礎 |
+| C-07 | `/order/submitted` | 送出成功 | 基礎 |
+| C-08 | `/order/tickets` | 本桌訂單 | 基礎 |
+| C-09 | `/checkout` | 結帳明細 | 進階 A5 |
+| C-10 | `/checkout/pay` | 付款方式 | 進階 A5 |
+| C-11 | `/checkout/done` | 付款完成 | 進階 A5 |
+| C-12 | `/auth` | 會員登入／註冊（輸入手機） | 基礎 |
+| C-12b | `/auth/otp` | 輸入驗證碼 | 基礎 |
+| C-13 | `/auth/register` | 會員註冊補資料 | 基礎 |
+| C-14 | `/member` | 會員中心 | 基礎 |
+| C-15 | `/member/history` | 消費紀錄 | 進階 A1 |
+| C-20 | `/member/wallet` | 點數與優惠券 | 進階 A6 |
+| C-16 | `/reserve` | 線上訂位入口（會員／匿名） | 基礎 |
+| C-16b | `/reserve/guest` | 匿名訂位填資料 | 基礎 |
+| C-16c | `/reserve/when` | 選日期時段人數（送出即成立） | 基礎 |
+| C-18 | `/reserve/:id/done` | 訂位完成 | 基礎 |
+| C-17 | `/reserve/:id/preorder` | 預先點餐／調整餐點 | 進階 A2 |
+| C-19 | `/member/reservations` | 我的預約 | 基礎 |
+
+- C-04b、C-04c（同桌通知）和 C-21（服務鈴面板）是蓋在畫面上的覆蓋層，**不是獨立路由**。
+- **沒有「選鍋底」這一頁**：原本的 C-03 已經併進 C-04 的分類頁籤，「每桌至少一份鍋底」改成送出訂單時由後端擋（`400 SOUP_BASE_REQUIRED`）。C-02、C-03 是空號。
+- 基礎版客人到櫃檯結帳，`/checkout` 開頭的三條只有做進階 A5 才要加。
+
+店家端另一個專案：`/admin/login`、`/admin/tables`、`/admin/tables/:tableNo/open`（開桌，現場／候位／預約三個頁籤）、`/admin/tables/:tableNo`（桌位詳情）、`/admin/kitchen`、`/admin/menu`、`/admin/menu/options`、`/admin/reservations`、`/admin/tables-config`、`/admin/waitlist`；做進階才有 `/admin/inventory`（S-09）和 `/admin/reports`（S-12）。
 
 ## 15 分鐘動手小練習
 

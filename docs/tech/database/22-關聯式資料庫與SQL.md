@@ -96,7 +96,7 @@ WHERE member_id IS NULL     ✅
 - **人氣推薦**：`GROUP BY` + `SUM` + `ORDER BY`
 - **防超賣扣庫存**：`UPDATE ... WHERE quantity >= ?`（見 [鎖與併發](28-鎖與併發.md)）
 - **訂位的區間重疊檢查**（見 [區間重疊](../advanced/46-區間重疊與訂位排程.md)）
-- **報表統計**
+- **報表統計**（進階 A4）
 
 ## 15 分鐘動手小練習
 

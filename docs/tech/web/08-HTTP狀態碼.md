@@ -38,7 +38,7 @@
 | **403** | Forbidden | **登入了但你沒權限** | 顯示「權限不足」 |
 | **404** | Not Found | 找不到這筆資料 | 顯示「查無資料」 |
 | **409** | Conflict | **狀態衝突**——品項售完、桌子已被使用、時段被訂走 | 顯示具體原因，讓使用者調整 |
-| **422** | Unprocessable | 格式對但邏輯不通過（付款失敗） | 顯示原因 + 重試 |
+| **422** | Unprocessable | 格式對但邏輯不通過（付款失敗，進階 A5 線上結帳才有） | 顯示原因 + 重試 |
 | **429** | Too Many Requests | 太頻繁（驗證碼一直要） | 顯示倒數 |
 | **500** | Internal Server Error | 後端爆了 | 顯示通用錯誤，**去看後端日誌** |
 
@@ -61,8 +61,9 @@
 ```
 送出點餐 → 201  第 2 單已送出
 送出點餐 → 409  ITEM_SOLD_OUT  牛五花已售完
-掃碼開桌 → 409  TABLE_OCCUPIED 這桌已經在使用中
-結帳中加點 → 409  SESSION_LOCKED 結帳中無法加點
+櫃檯開桌 → 409  TABLE_OCCUPIED 這桌已經在使用中
+已結帳還加點 → 409  SESSION_CLOSED 這桌已經結帳，不能再加點
+櫃檯結清時有人剛加點 → 409  BILL_CHANGED 金額有變動，請重新確認
 廚房人員想改菜單 → 403 FORBIDDEN
 用餐結束後還拿舊 token → 401 INVALID_SESSION_TOKEN
 ```

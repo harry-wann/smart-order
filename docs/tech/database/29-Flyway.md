@@ -27,20 +27,24 @@ Flyway 的做法：**所有表結構的改動，都寫成一支帶編號的 SQL 
 
 ```
 backend/src/main/resources/db/migration/
-├── V1__create_base_tables.sql
+├── V1__create_account_tables.sql
 ├── V2__create_menu_tables.sql
 ├── V3__create_dining_tables.sql
-├── V4__create_reservation_tables.sql
-├── V5__add_service_call_and_waitlist.sql
-└── V6__add_track_inventory_to_menu_item.sql
+├── V4__create_inventory_tables.sql
+├── V5__create_payment_tables.sql
+├── V6__create_reservation_tables.sql
+├── V7__create_service_and_waitlist.sql
+└── V8__create_member_benefit_tables.sql    ← 進階 A6（點數與優惠券）
 ```
+
+（每一支建哪幾張表，見 [03-資料庫設計](../../spec/03-資料庫設計.md) 的「Flyway 檔案規劃」。）
 
 檔名規則：`V` + 版本號 + `__`（**兩個底線**）+ 描述 + `.sql`
 
 檔案內容就是純 SQL：
 
 ```sql
--- V5__add_service_call_and_waitlist.sql
+-- V7__create_service_and_waitlist.sql
 CREATE TABLE service_call (
   id                BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   dining_session_id BIGINT UNSIGNED NOT NULL,
@@ -61,7 +65,7 @@ CREATE TABLE service_call (
 
 因為別人的資料庫已經跑過那支了。你改了內容，Flyway 會發現「checksum 對不上」然後拒絕啟動。
 
-**要改？寫一支新的 V7。** 這跟 Git 一樣——你不會去改已經 push 出去的 commit。
+**要改？寫一支新的 V9。** 這跟 Git 一樣——你不會去改已經 push 出去的 commit。
 
 ## 怎麼設定
 
@@ -96,7 +100,7 @@ spring:
 
 **A（唯一能寫 migration 的人）要加一個欄位：**
 
-1. 新增 `V7__add_is_refill_to_menu_item.sql`
+1. 新增 `V9__add_is_refill_to_menu_item.sql`
 2. 寫 `ALTER TABLE menu_item ADD COLUMN is_refill TINYINT(1) NOT NULL DEFAULT 0;`
 3. 同時更新 `MenuItem` Entity 加上對應欄位
 4. 本機跑起來確認沒問題
@@ -122,7 +126,7 @@ db/seed/               ← 開發用的假資料，用 CommandLineRunner + @Prof
 
 理由：正式環境不該有假訂單。
 
-或者用 Flyway 的 `R__` 前綴（repeatable，內容變了就重跑），但我們的種子資料有 5000 筆歷史訂單，用程式產生比較實際。
+或者用 Flyway 的 `R__` 前綴（repeatable，內容變了就重跑），但我們的種子資料有 5000 筆歷史單品，用程式產生比較實際。
 
 ## 15 分鐘動手小練習
 
@@ -156,7 +160,7 @@ Migration checksum mismatch for migration version 1
 `V1_create_note.sql`（只有一個底線）→ Flyway 不認得。**要兩個底線。**
 
 **③ 版本號重複**
-兩個人同時寫了 `V7`。
+兩個人同時寫了 `V9`。
 → 所以 migration **只有 A 能寫**。
 
 **④ `ddl-auto` 還留著 `update`**

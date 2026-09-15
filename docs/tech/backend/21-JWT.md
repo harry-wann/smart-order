@@ -113,7 +113,7 @@ if (token) headers['Authorization'] = `Bearer ${token}`;
 // 收到 401 就導回登入頁
 if (res.status === 401) {
   localStorage.removeItem('jwt');
-  navigate('/auth/login');
+  navigate('/auth');                 // C-12 會員登入
 }
 ```
 

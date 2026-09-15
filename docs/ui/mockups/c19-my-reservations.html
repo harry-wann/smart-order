@@ -29,6 +29,11 @@
     <div class="scroll">
       <div class="c g12" style="padding:16px">
 
+        <div class="infobox ib-quiet">
+          <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5.2l3.2 1.8"/></svg>
+          <div>訂位保留 10 分鐘，逾時視同未到，需現場候位。</div>
+        </div>
+
         <!-- 狀態三：已鎖定（過了前一天 20:00） -->
         <div class="card" style="padding:16px 20px">
           <div class="r g8">
@@ -96,7 +101,7 @@
 
           <hr class="sep mt16">
           <div class="r g8 mt12">
-            <svg class="ic ic-sm" viewBox="0 0 24 24" style="color:var(--text-500)"><path d="M3 11h18M5 11V8a7 7 0 0 1 14 0v3M4 11v2a8 8 0 0 0 16 0v-2M8 21h8"/></svg>
+            <svg class="ic ic-sm" viewBox="0 0 24 24" style="color:var(--text-600)"><path d="M3 11h18M5 11V8a7 7 0 0 1 14 0v3M4 11v2a8 8 0 0 0 16 0v-2M8 21h8"/></svg>
             <span class="t-sm fill" style="margin:0">尚未預先點餐</span>
           </div>
           <div class="t-sm" style="margin:4px 0 0">先點好，到店報到後廚房直接開始做，出菜排最前面。</div>
@@ -115,14 +120,14 @@
             <span class="t-cap num">8/24（一）18:30</span>
           </div>
           <div class="h3 mt8">6 位・C02 包廂</div>
-          <div class="t-sm" style="margin:4px 0 0">實際消費 NT$ 2,310</div>
+          <div class="t-sm" style="margin:4px 0 0">已到店用餐</div>
         </div>
 
         <div class="card card-tight" style="opacity:.72">
           <div class="r g8">
             <span class="badge b-sold">已取消</span>
             <span class="fill"></span>
-            <span class="t-cap num">7/09（三）19:00</span>
+            <span class="t-cap num">7/9（四）19:00</span>
           </div>
           <div class="h3 mt8">2 位・B05</div>
           <div class="t-sm" style="margin:4px 0 0">前一天取消，未產生任何費用</div>
@@ -149,6 +154,13 @@
     <dt>已鎖定</dt>
     <dd>過了前一天 20:00。<br>
         兩顆按鈕都 disabled ＋ 請來電</dd>
+  </dl>
+  <b class="mt16" style="display:block">基礎與進階</b>
+  <dl style="margin:0">
+    <dt>保留 10 分鐘</dt>
+    <dd>最上面那行提示：逾時視同未到（NO_SHOW），<br>只能現場候位</dd>
+    <dt>預先點餐／調整餐點</dt>
+    <dd>進階 A2。沒做就只剩「取消訂位」，<br>卡片上的預點摘要也拿掉</dd>
   </dl>
   <b class="mt16" style="display:block">金額一律寫「預估」</b>
   <dl style="margin:0">

@@ -131,7 +131,7 @@ export default function Button({ variant='primary', size='lg', className='', ...
 
 之後全專案就寫 `<Button>加入購物車</Button>`，乾淨。
 
-**我們要自己寫的 8 個元件**：Button、Card、MenuItemRow、Stepper、OptionCard、Badge、Toast、EmptyState。
+**我們要自己寫的 10 個元件**：Button、Card、MenuItemRow、Notify、Stepper、OptionCard、Badge、InfoBox、Toast、三態（載入中／空資料／錯誤，原本的 EmptyState 併在這裡），清單以 [11-設計系統](../../ui/11-設計系統.md) §5 為準。
 
 ## 15 分鐘動手小練習
 

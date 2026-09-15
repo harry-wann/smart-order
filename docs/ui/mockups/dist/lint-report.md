@@ -2,7 +2,7 @@
 
 > 由 `tools/figma_prep.py` 產生。
 
-**48 個檔案，0 個問題。**
+**51 個檔案，0 個問題。**
 
 | 檔案 | 結果 | 問題 |
 |---|---|---|
@@ -30,6 +30,7 @@
 | `c17-reserve-preorder.html` | PASS | — |
 | `c18-reserve-done.html` | PASS | — |
 | `c19-my-reservations.html` | PASS | — |
+| `c20-points-coupons.html` | PASS | — |
 | `c21-service-bell.html` | PASS | — |
 | `ds01-tokens.html` | PASS | — |
 | `ds02-button.html` | PASS | — |
@@ -49,9 +50,11 @@
 | `s05-menu-admin.html` | PASS | — |
 | `s06-option-groups.html` | PASS | — |
 | `s07-reservations.html` | PASS | — |
+| `s07b-reservation-seat.html` | PASS | — |
 | `s08-tables-config.html` | PASS | — |
 | `s09-inventory.html` | PASS | — |
 | `s10-waitlist.html` | PASS | — |
+| `s10b-waitlist-seat.html` | PASS | — |
 | `s11-service-bell-panel.html` | PASS | — |
 | `s12-reports.html` | PASS | — |
 

@@ -57,7 +57,7 @@ openjdk version "17.0.x"
 
 ```java
 public enum SessionStatus {
-    OPEN, CHECKOUT_PENDING, PAID, CANCELLED
+    OPEN, PAID, CANCELLED      // 用餐中、已結清、已取消（沒有「結帳中」）
 }
 ```
 

@@ -24,7 +24,7 @@ Redis 像**掛在牆上的小白板**：寫和看都是一瞬間，但**它在�
 ```
 key                          value
 "otp:0912345678"       →     "482913"
-"session:code:A03"     →     "4821"
+"rate:otp:0912345678"  →     "2"
 "menu:items:all"       →     [一大包 JSON]
 ```
 

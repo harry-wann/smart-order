@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>S-10｜候位管理</title>
+<title>S-10b｜候位報到・選桌開桌</title>
 <link rel="stylesheet" href="_shared.css">
 </head>
 <body>
@@ -12,7 +12,7 @@
 <div class="stage">
 
 <div>
-  <p class="meta"><b>S-10｜候位管理</b><code>1280 × 800</code><code>/admin/waitlist</code></p>
+  <p class="meta"><b>S-10b｜候位報到・選桌開桌</b><code>1280 × 800</code><code>對話框，不是獨立路由</code><code>疊在 S-10 上</code></p>
   <div class="frame f-desk">
     <div class="admin">
         <aside class="side">
@@ -123,32 +123,104 @@
         </div></div>
       </div>
     </div>
+    <!-- 底下是 S-10 候位管理（被遮罩壓暗） -->
+    <!-- 選一張空桌（S-07b／S-10b 共用元件） -->
+    <div class="scrim"></div>
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+      <div class="card" style="width:560px;padding:32px">
+        <div class="r g8">
+          <h2 class="h1 fill">A12 王先生・3 位</h2>
+          <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+        <p class="t-sm" style="margin:4px 0 0">列出座位數坐得下的空桌</p>
+        <div class="r g8 mt8 t-cap"><svg class="ic ic-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5.2l3.2 1.8"/></svg><span>候位 A12・18:37 登記・已叫號</span></div>
+
+        <div class="c g8 mt24">
+            <div class="opt" style="min-height:56px">
+              <span class="rd"></span>
+              <span class="h3 num" style="width:56px">A04</span>
+              <span class="t-sm fill" style="margin:0">A 區・窗邊</span>
+              <span class="r g4 t-cap" style="color:#8A5214;font-weight:700"><svg class="ic ic-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5.2l3.2 1.8"/></svg>19:30 有預約</span>
+              <span class="badge b-plain">4 人桌</span>
+            </div>
+            <div class="opt on" style="min-height:56px">
+              <span class="rd on"></span>
+              <span class="h3 num" style="width:56px">A05</span>
+              <span class="t-sm fill" style="margin:0">A 區・走道</span>
+              
+              <span class="badge b-plain">4 人桌</span>
+            </div>
+            <div class="opt" style="min-height:56px">
+              <span class="rd"></span>
+              <span class="h3 num" style="width:56px">B04</span>
+              <span class="t-sm fill" style="margin:0">B 區</span>
+              
+              <span class="badge b-plain">4 人桌</span>
+            </div>
+            <div class="opt" style="min-height:56px">
+              <span class="rd"></span>
+              <span class="h3 num" style="width:56px">A06</span>
+              <span class="t-sm fill" style="margin:0">A 區・走道</span>
+              
+              <span class="badge b-plain">6 人桌</span>
+            </div>
+            <div class="opt" style="min-height:56px">
+              <span class="rd"></span>
+              <span class="h3 num" style="width:56px">C02</span>
+              <span class="t-sm fill" style="margin:0">C 包廂</span>
+              <span class="r g4 t-cap" style="color:#8A5214;font-weight:700"><svg class="ic ic-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5.2l3.2 1.8"/></svg>19:00 有預約</span>
+              <span class="badge b-plain">8 人桌</span>
+            </div>
+        </div>
+
+        <p class="hint" style="margin-top:12px">座位數小的排前面。標「有預約」的桌一樣能開，只是提醒你稍後有人訂。</p>
+
+        <div class="r g12 mt24">
+          <button class="btn btn-ghost btn-lg">取消</button>
+          <button class="btn btn-primary btn-lg fill">開 A05</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
 
 <div class="sidenote">
-  <b>候位的兩個動作</b>
+  <b>從人出發開桌</b>
   <dl style="margin:0">
-    <dt>叫號</dt>
-    <dd>等待中 → 已叫號，候位螢幕跟著跳號。<br>
-        叫號後 10 分鐘沒報到，排程標成過號；<br>
-        只有「已叫號」會被標，「等待中」不會</dd>
-    <dt>報到開桌</dt>
-    <dd>只有已叫號的列才有。按下去跳 S-10b<br>
-        選一張坐得下的空桌，確定後<br>
-        waitlist.status → SEATED、桌位轉用餐中</dd>
+    <dt>怎麼進來</dt>
+    <dd>S-10 已叫號那一列按「報到開桌」。<br>跟 S-07b 是同一個對話框元件，<br>只差標題與資料來源</dd>
+    <dt>選一張 → 開 A05</dt>
+    <dd>POST /api/admin/waitlist/{id}/seat<br>
+        { tableId }，收尾跟 S-02c 一樣：<br>
+        waitlist.status → SEATED、<br>
+        桌位轉用餐中，這一組從候位清單消失</dd>
+    <dt>人數不用重填</dt>
+    <dd>登記取號時填的 3 位直接帶入，<br>真要改，開桌後去 S-03 調整</dd>
   </dl>
-  <b class="mt16" style="display:block">兩個入口，同一組 API</b>
+  <b class="mt16" style="display:block">清單規則</b>
   <dl style="margin:0">
-    <dt>從人出發</dt>
-    <dd>這一頁 → S-10b 選桌</dd>
-    <dt>從桌子出發</dt>
-    <dd>S-02 點空桌 → S-02c 候位頁籤</dd>
-    <dt>個資</dt>
-    <dd>只留電話末四碼，不留全號碼</dd>
+    <dt>只列坐得下的空桌</dt>
+    <dd>status = AVAILABLE 且 seats ≥ 人數。<br>
+        依座位數由小到大、再依桌號排</dd>
+    <dt>稍後有預約</dt>
+    <dd>那張卡上用暖黃小字提醒「19:30 有預約」，<br>
+        只提醒不擋，跟 S-02b 頂部那條一樣</dd>
+    <dt>API</dt>
+    <dd>GET /api/admin/tables/available?partySize=N<br>
+        回桌號、區域、座位數、upcomingReservationAt</dd>
+  </dl>
+  <b class="mt16" style="display:block">沒有坐得下的空桌</b>
+  <dl style="margin:0">
+    <dt>空狀態（同一個對話框）</dt>
+    <dd>「目前沒有坐得下的空桌」<br>
+        ＋「清潔完成或有桌結帳後再試一次」<br>
+        ＋ 一顆「關閉」</dd>
+    <dt>兩個櫃檯搶同一張</dt>
+    <dd>開桌本來就鎖住那張桌，後到的拿到<br>
+        409 TABLE_OCCUPIED，清單自動重新載入</dd>
   </dl>
 </div>
-
 </div>
 </body>
 </html>

@@ -1,6 +1,6 @@
 # 前端接 WebSocket
 
-**難度** ★★★☆☆　**用在哪些模組** M2、M3、M4、M5　**哪幾週** 第 3 週
+**難度** ★★★☆☆　**用在哪些模組** M2、M3、M4、M5、M6　**哪幾週** 第 3 週
 
 ## 一句話
 
@@ -9,8 +9,11 @@
 ## 要裝什麼
 
 ```bash
-npm install @stomp/stompjs sockjs-client
+npm install @stomp/stompjs
 ```
+
+> 不需要 `sockjs-client`：後端開的是原生 WebSocket 端點 `/ws`（見 [WebSocket 與 STOMP](41-WebSocket與STOMP.md)），
+> `brokerURL` 直接寫 `ws://…/ws`，正式環境是 `wss://…/ws`。
 
 ## 最小的例子
 
@@ -42,6 +45,14 @@ client.activate();
 import { useEffect, useRef } from 'react';
 import { Client } from '@stomp/stompjs';
 
+// 顧客手機帶用餐權杖；KDS、櫃檯帶員工 JWT（後端攔截器兩種都認）
+function wsAuthHeaders() {
+  const sessionToken = localStorage.getItem('sessionToken');
+  if (sessionToken) return { 'X-Session-Token': sessionToken };
+  const jwt = localStorage.getItem('jwt');
+  return jwt ? { Authorization: `Bearer ${jwt}` } : {};
+}
+
 export function useStomp({ topics, onEvent, onReconnect, enabled = true }) {
   const clientRef = useRef(null);
 
@@ -50,9 +61,7 @@ export function useStomp({ topics, onEvent, onReconnect, enabled = true }) {
 
     const client = new Client({
       brokerURL: import.meta.env.VITE_WS_URL,
-      connectHeaders: {
-        'X-Session-Token': localStorage.getItem('sessionToken') ?? '',
-      },
+      connectHeaders: wsAuthHeaders(),
       reconnectDelay: 3000,
       onConnect: () => {
         topics.forEach(topic => {
@@ -78,6 +87,7 @@ export function useStomp({ topics, onEvent, onReconnect, enabled = true }) {
 ```jsx
 function TicketsPage() {
   const [tickets, setTickets] = useState([]);
+  const [closed, setClosed] = useState(false);        // 櫃檯結清後變 true
   const { sessionId } = useContext(SessionContext);
 
   const refetch = useCallback(async () => {
@@ -95,6 +105,10 @@ function TicketsPage() {
       case 'TICKET_CANCELLED':
         setTickets(prev => prev.filter(t => t.ticketId !== event.payload.ticketId));
         break;
+      case 'SESSION_CLOSED':          // 櫃檯結清了：清掉權杖，畫面切到「已結帳」
+        localStorage.removeItem('sessionToken');
+        setClosed(true);
+        break;
       default:
         refetch();          // 不認識的事件就整包重抓，最安全
     }
@@ -108,6 +122,7 @@ function TicketsPage() {
 
   useEffect(() => { refetch(); }, [refetch]);   // 第一次進頁面先抓一次
 
+  if (closed) return <SessionClosed />;          // 「這桌已經結帳完成」＋回到首頁
   return <TicketList tickets={tickets} />;
 }
 ```
@@ -204,7 +219,7 @@ HTTPS 網站只能用 `wss://`。
 |---|---|---|
 | `WebSocket connection failed` | 連不上 | 後端沒開、網址錯、CORS 沒設 |
 | `Mixed Content: ... was loaded over HTTPS, but attempted to connect to ws://` | HTTPS 頁面用了不安全的 ws | 改成 `wss://` |
-| 一直重連 | 握手驗證失敗 | 檢查 token 有沒有帶對 |
+| 一直重連 | 接通時身分驗證失敗，或訂閱了沒權限的頻道 | 檢查 token 有沒有帶對、KDS／櫃檯有沒有帶員工 JWT |
 | 畫面更新但資料不對 | 事件處理邏輯有問題 | 不認識的事件就整包 refetch |
 | 換頁後還在收訊息 | 沒 deactivate | 檢查 useEffect 的 return |
 

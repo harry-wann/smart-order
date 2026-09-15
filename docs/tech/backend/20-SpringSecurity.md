@@ -28,13 +28,14 @@ Spring Security 就是那個警衛。請求還沒到你的 Controller，它就�
 **401 = 認證失敗**（不知道你是誰）
 **403 = 授權失敗**（知道你是誰，但你不能做這件事）
 
-## 我們有三種身分
+## 我們有四種身分
 
-這是我們專案比較特別的地方——**顧客不需要註冊也能點餐**，所以有兩套認證機制並存：
+這是我們專案比較特別的地方——**顧客不需要註冊也能點餐、也能訂位**，所以除了 JWT，還有兩種「建立時發下去的隨機權杖」並存：
 
 | 身分 | 怎麼證明 | 有效期 |
 |---|---|---|
-| **匿名顧客** | `X-Session-Token` 標頭（開桌時發的用餐權杖） | 到這次結帳為止 |
+| **匿名顧客（用餐）** | `X-Session-Token` 標頭（掃碼加入時發的用餐權杖） | 到這次結帳為止 |
+| **匿名訂位** | `X-Reservation-Token` 標頭（建立訂位時發的，存 localStorage） | 到這筆訂位結束為止 |
 | **會員** | `Authorization: Bearer <JWT>` | 7 天 |
 | **員工** | `Authorization: Bearer <JWT>` + 角色 | 12 小時 |
 
@@ -51,6 +52,7 @@ public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
     private final SessionTokenFilter sessionTokenFilter;
+    private final ReservationTokenFilter reservationTokenFilter;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -58,11 +60,16 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())          // 我們用 token，不用 cookie，所以關掉
             .sessionManagement(s -> s.sessionCreationPolicy(STATELESS))  // 不存 session
             .authorizeHttpRequests(auth -> auth
-                // 完全開放
+                // 完全開放（一定要寫在 /api/admin/** 那行之前：規則由上往下比，先符合的先算）
                 .requestMatchers("/api/tables/*/status",
-                                 "/api/dining-sessions",
                                  "/api/dining-sessions/join",
-                                 "/api/auth/**").permitAll()
+                                 "/api/reservations",               // 不登入也能訂位
+                                 "/api/reservations/availability",
+                                 "/api/auth/**",
+                                 "/api/admin/auth/login",           // 員工登入：還沒登入才要打它
+                                 "/ws/**").permitAll()              // WebSocket 握手；身分在 CONNECT frame 驗
+                // 菜單公開讀取（推薦的 HISTORY／PROFILE 要知道你是誰，在 Controller 裡另外檢查會員 JWT）
+                .requestMatchers(HttpMethod.GET, "/api/menu/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 // 店家端要員工身分
                 .requestMatchers("/api/admin/**").authenticated()
@@ -70,6 +77,7 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .addFilterBefore(sessionTokenFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(reservationTokenFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -102,14 +110,14 @@ public MenuItemDto create(@RequestBody CreateMenuItemRequest req) { ... }
 
 廚房人員的畫面上沒有「修改菜單」按鈕，但他只要打開 Postman，直接打 `POST /api/admin/menu/items`，如果後端沒擋，他就改得了。
 
-**每一支 `/api/admin/**` 的 API 都必須有角色檢查。** 這是驗收項目。
+**每一支 `/api/admin/**` 的 API 都必須有角色檢查**（員工登入 `/api/admin/auth/login` 除外）。這是驗收項目。
 
 ## 密碼怎麼存
 
 **絕對不要存明碼。** 用 BCrypt 雜湊：
 
 ```java
-// 註冊時
+// 建立員工帳號時（會員只用手機驗證碼登入，沒有密碼）
 String hash = passwordEncoder.encode("1234");
 // 存進資料庫的是 $2a$10$N9qo8uLOickgx2ZMRZoMy...
 
@@ -151,6 +159,14 @@ Security 的 filter 在 CORS 之前跑。
 
 **⑥ 把 JWT 密鑰寫在程式碼裡 commit 上去**
 → 放 `application-local.yml` 並加進 `.gitignore`，正式環境用環境變數。
+
+**⑦ 員工永遠登入不了**
+`/api/admin/auth/login` 落在 `/api/admin/**` 底下，沒放行的話要先登入才能打登入 API。
+→ 把它加進 `permitAll()`，而且要寫在 `/api/admin/**` 那一行**之前**。
+
+**⑧ WebSocket 一連就 401，KDS、櫃檯、手機都收不到推播**
+WebSocket 的 HTTP 握手（升級請求）不會帶我們的權杖標頭，`anyRequest().authenticated()` 會在握手階段就擋掉。
+→ `/ws/**` 要 `permitAll()`；身分改在 STOMP 的 CONNECT frame 裡驗（`ChannelInterceptor`，見 [WebSocket 與 STOMP](../realtime/41-WebSocket與STOMP.md)）。
 
 ## 常見錯誤訊息對照
 

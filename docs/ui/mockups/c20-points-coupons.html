@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>C-20｜點數與優惠券</title>
+<link rel="stylesheet" href="_shared.css">
+<style>
+/* 優惠券卡：左邊一欄面額、右邊一欄條件，中間用虛線切開，像撕下來的券 */
+.coupon{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.coupon .amt{width:96px;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;padding:16px 8px;background:var(--brand-100);color:var(--brand-700);border-right:1px dashed var(--border)}
+.coupon .amt b{font-family:"Noto Serif TC",serif;font-size:28px;font-weight:900;line-height:1.2;font-variant-numeric:tabular-nums;white-space:nowrap}
+.coupon .amt small{font-size:12px;line-height:1.5}
+.coupon .bd{flex:1;min-width:0;padding:12px 16px;display:flex;flex-direction:column;gap:4px}
+.coupon.off .amt{background:var(--surface-2);color:var(--text-400)}
+.coupon.off .bd .nm{color:var(--text-600)}
+</style>
+</head>
+<body>
+<!-- #thumbmode：總覽頁用 iframe 取縮圖時，只留第一個畫框 -->
+<span id="thumbmode"></span>
+<div class="stage">
+
+<div>
+  <p class="meta"><b>C-20｜點數與優惠券</b><code>375 × 812</code><code>/member/wallet</code><code>進階 A6</code></p>
+  <div class="frame f-mobile">
+
+    <header class="appbar">
+      <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+      <div class="ttl">點數與優惠券</div>
+    </header>
+
+    <div style="flex:none;padding:16px">
+      <div class="card" style="background:var(--accent-100);border-color:#EBD3A6">
+        <div class="t-cap">目前點數</div>
+        <div class="r g8" style="align-items:baseline">
+          <span class="display num" style="color:var(--brand-600)">1,248</span>
+          <span class="h3">點</span>
+          <span class="fill"></span>
+          <span class="t-cap num">可折 NT$ 1,248</span>
+        </div>
+        <hr class="sep mt12" style="background:#EBD3A6">
+        <div class="c g4 mt12">
+          <div class="r g8"><svg class="ic ic-sm" viewBox="0 0 24 24" style="color:var(--accent-600)"><path d="m12 3 2.6 5.6 6.1.8-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.4l6.1-.8z"/></svg><span class="t-sm" style="margin:0;color:var(--text-900)">每消費 100 元累積 1 點</span></div>
+          <div class="r g8"><svg class="ic ic-sm" viewBox="0 0 24 24" style="color:var(--accent-600)"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span class="t-sm" style="margin:0;color:var(--text-900)">1 點折 1 元，結帳時使用</span></div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="tabs">
+      <div class="tab on">優惠券 3</div>
+      <div class="tab">點數紀錄</div>
+    </nav>
+
+    <div class="scroll">
+      <div class="secbar"><h2 class="h3">可以用的</h2><span class="t-cap">1 張</span></div>
+      <div class="c g12 px16">
+        <div class="coupon">
+          <div class="amt"><b>100</b><small>元折抵</small></div>
+          <div class="bd">
+            <div class="r g8"><span class="nm" style="font-weight:700">回訪禮</span><span class="fill"></span><span class="badge b-done">可使用</span></div>
+            <div class="t-sm" style="margin:0">消費滿 NT$ 800 可用</div>
+            <div class="t-cap num">使用期限 2026/10/31</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="secbar"><h2 class="h3">用過或過期的</h2><span class="t-cap">2 張</span></div>
+      <div class="c g12 px16" style="padding-bottom:24px">
+        <div class="coupon off">
+          <div class="amt"><b>150</b><small>元折抵</small></div>
+          <div class="bd">
+            <div class="r g8"><span class="nm" style="font-weight:700">新會員見面禮</span><span class="fill"></span><span class="badge b-plain">已使用</span></div>
+            <div class="t-sm" style="margin:0">消費滿 NT$ 1,000 可用</div>
+            <div class="t-cap num">9/2 用在 B07 桌</div>
+          </div>
+        </div>
+        <div class="coupon off">
+          <div class="amt"><b>9 折</b><small>整單打折</small></div>
+          <div class="bd">
+            <div class="r g8"><span class="nm" style="font-weight:700">平日晚餐</span><span class="fill"></span><span class="badge b-plain">已過期</span></div>
+            <div class="t-sm" style="margin:0">消費滿 NT$ 1,500 可用</div>
+            <div class="t-cap num">使用期限 2026/9/10</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottombar" style="padding-bottom:16px">
+      <p class="t-cap center" style="margin:0">一次結帳限用一張券，在線上結帳（C-09）時使用</p>
+    </div>
+
+  </div>
+</div>
+
+<div class="sidenote">
+  <b>進階 A6：點數與優惠券</b>
+  <dl style="margin:0">
+    <dt>從哪進來</dt>
+    <dd>C-14 會員中心的「點數與優惠券」。<br>對應 M8 8.E1 集點、8.E2 優惠券、<br>M6 6.E5 優惠券折抵</dd>
+    <dt>上方點數卡</dt>
+    <dd>餘額大數字、每消費 100 元累積 1 點、<br>1 點折 1 元。點數在付款成功後才入帳</dd>
+    <dt>券的三種狀態</dt>
+    <dd>可使用／已使用／已過期。<br>後兩種除了變淡，一定要有文字標籤，<br>不能只靠顏色</dd>
+    <dt>每張券要寫的</dt>
+    <dd>名稱、折抵方式（固定金額或打折）、<br>低消、到期日（已使用就寫用在哪一天）</dd>
+  </dl>
+  <b class="mt16" style="display:block">使用規則</b>
+  <dl style="margin:0">
+    <dt>一次一張、不疊加</dt>
+    <dd>一次結帳最多用一張券</dd>
+    <dt>只在 C-09 用</dt>
+    <dd>線上結帳（A5）的折抵區。<br>櫃檯結帳要用券是 A6 的延伸，這次沒畫</dd>
+    <dt>券從哪來</dt>
+    <dd>這次沒有店家端發券畫面，<br>先用種子資料建券</dd>
+    <dt>「點數紀錄」頁籤</dt>
+    <dd>每一筆：日期、+N 點或 −N 點、<br>哪一次消費。空的時候給「還沒有點數紀錄」</dd>
+  </dl>
+</div>
+
+</div>
+</body>
+</html>

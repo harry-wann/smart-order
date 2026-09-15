@@ -12,7 +12,7 @@
 <div class="stage">
 
 <div>
-  <p class="meta"><b>DS-07｜三態與回饋</b><code>1280 × 1200</code><code>載入中、空資料、錯誤、鎖定、完成</code></p>
+  <p class="meta"><b>DS-07｜三態與回饋</b><code>1280 × 1200</code><code>載入中、空資料、錯誤、已結帳、完成</code></p>
   <div class="frame f-ds">
     <div class="sp">
       <div class="sp-hd"><span class="t">三態與回饋</span><span class="s">每個會讀資料的畫面都要備這三態</span></div>
@@ -52,12 +52,13 @@
         </div>
       </div>
       <div class="sp-grid" style="grid-template-columns:1fr 1fr">
-        <div class="sp-sec"><div class="t">鎖定　按下結帳後整桌不能再加點</div>
-          <div class="infobox ib-quiet" style="margin:0">
-            <svg class="ic" viewBox="0 0 24 24"><rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>
-            <div><b>這桌已經送出結帳，不能再加點了。</b><br>還想吃的話請按服務鈴，請服務生取消結帳。</div>
+        <div class="sp-sec"><div class="t">已結帳　櫃檯結清後同桌手機一起切換</div>
+          <div class="infobox ib-ok" style="margin:0">
+            <svg class="ic" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+            <div><b>這桌已經結帳完成</b><br>謝謝光臨，歡迎再來</div>
           </div>
-          <span class="sp-lb">同時內容整個壓淡、分類頁籤停用、購物車列消失</span>
+          <div class="sp-row"><button class="btn btn-primary btn-lg">回到首頁</button></div>
+          <span class="sp-lb">收到 SESSION_CLOSED：菜單壓暗、權杖清掉，底部面板只留「回到首頁」（C-04 的已結帳狀態）</span>
         </div>
         <div class="sp-sec"><div class="t">完成　勾勾描邊 0.6 秒後停住</div>
           <div class="sp-row" style="justify-content:center">
@@ -79,6 +80,8 @@
     <dd>一句話說清楚為什麼空的，<br>再給一個按鈕讓他離開這裡。</dd>
     <dt>錯誤不給錯誤碼</dt>
     <dd>客人看不懂 500。<br>講人話 ＋ 重試 ＋ 找服務生。</dd>
+    <dt>沒有「鎖定」這一態</dt>
+    <dd>結帳不鎖桌，改用金額比對擋加點。<br>客人手機只會看到「已結帳」。</dd>
   </dl>
 </div>
 

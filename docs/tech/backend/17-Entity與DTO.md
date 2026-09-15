@@ -61,7 +61,7 @@ public record MenuItemDto(
 ## 四個不能直接回傳 Entity 的理由
 
 **① 會洩漏不該給的東西**
-`member` 表裡有 `passwordHash`。直接回傳 Entity，密碼雜湊就送到前端了。
+`staff`（員工）表裡有 `passwordHash`。直接回傳 Entity，密碼雜湊就送到前端了。
 
 **② 會噴 lazy loading 錯誤**
 `MenuItem` 裡有 `category` 這個關聯。JPA 預設不會馬上載入它（lazy）。等到 Controller 要轉 JSON 時，交易已經結束，就會噴：

@@ -50,15 +50,21 @@ const res = await fetch('/api/dining-sessions/me/orders', {
 ```js
 const BASE = import.meta.env.VITE_API_BASE || '/api';
 
+// 三種憑證，各對應一個標頭
+const CREDENTIALS = {
+  session:     () => ['X-Session-Token',     localStorage.getItem('sessionToken')],      // 用餐權杖（掃碼加入時拿到）
+  jwt:         () => ['Authorization',       bearer(localStorage.getItem('jwt'))],       // 會員或員工登入
+  reservation: () => ['X-Reservation-Token', localStorage.getItem('reservationToken')],  // 匿名訂位權杖（建立訂位時拿到）
+};
+const bearer = (t) => (t ? `Bearer ${t}` : null);
+
 export async function request(path, { method = 'GET', body, auth = 'session' } = {}) {
   const headers = { 'Content-Type': 'application/json' };
 
-  if (auth === 'session') {
-    const t = localStorage.getItem('sessionToken');
-    if (t) headers['X-Session-Token'] = t;
-  } else if (auth === 'jwt') {
-    const t = localStorage.getItem('jwt');
-    if (t) headers['Authorization'] = `Bearer ${t}`;
+  // auth 可以是一個字串，也可以是陣列（同時帶好幾種），例如 ['session', 'jwt']；null 表示都不帶
+  for (const kind of [].concat(auth ?? [])) {
+    const [name, value] = CREDENTIALS[kind]();
+    if (value) headers[name] = value;
   }
 
   let res;
@@ -84,18 +90,32 @@ export async function request(path, { method = 'GET', body, auth = 'session' } =
 }
 ```
 
-**這 30 行會省掉你們非常多重複的程式碼。** 而且錯誤處理集中在一個地方。
+**這幾十行會省掉你們非常多重複的程式碼。** 而且錯誤處理集中在一個地方。
+
+`auth` 的寫法（三種標頭對照 [04-API 規格](../../spec/04-API規格.md) §1.4）：
+
+| `auth` | 帶哪個標頭 | 用在哪 |
+|---|---|---|
+| `'session'`（預設） | `X-Session-Token` | 點餐、服務鈴、本桌訂單 |
+| `'jwt'` | `Authorization: Bearer …` | 會員中心、我的預約、店家端全部 |
+| `'reservation'` | `X-Reservation-Token` | 匿名客人在 C-19 查看、取消自己的訂位 |
+| `['session', 'jwt']` | 兩個都帶 | 進階 8.10「這次消費記到會員」（`attach-member`） |
+| `null` | 都不帶 | 查桌位狀態、菜單、訂位空位 |
+
+匿名訂位的權杖在建立訂位成功時存起來：`localStorage.setItem('reservationToken', res.accessToken)`。
 
 用起來：
 
 ```js
 import { request } from '../api/client';
 
-const items = await request('/menu/items?categoryId=2');
+const items = await request('/menu/items?categoryId=2', { auth: null });   // 菜單公開讀取
 const ticket = await request('/dining-sessions/me/orders', {
   method: 'POST',
   body: { items: cart },
 });
+// 匿名客人取消自己的訂位（C-19）
+await request(`/reservations/${id}`, { method: 'DELETE', auth: 'reservation' });
 ```
 
 ## 在元件裡的標準寫法
@@ -148,18 +168,20 @@ async function handleSubmit() {
         markSoldOut(err.details);                      // 標紅那幾項
         toast.error('部分品項已售完，請調整後重新送出');
         break;
-      case 'SESSION_LOCKED':
-        toast.error('結帳中無法加點');
-        break;
-      case 'INVALID_SESSION_TOKEN':
+      case 'SESSION_CLOSED':                            // 櫃檯已經結清了
+        toast.error('這桌已經結帳，不能再加點');
         localStorage.removeItem('sessionToken');
-        navigate('/');                                  // 導回掃碼頁
+        setClosed(true);                                // 菜單切到「已結帳」面板，按「回到首頁」到 C-00
         break;
+      case 'INVALID_SESSION_TOKEN':                     // 權杖已失效（這桌結清或取消了）
+        localStorage.removeItem('sessionToken');
+        navigate('/');                                  // 回 C-00 首頁；客人再掃桌上 QR 時，
+        break;                                          // C-01 依桌位狀態顯示（剛結清是「整理中，請稍候」）
       default:
         toast.error(err.message);
     }
   } finally {
-    setSubmitting(true === false);                      // 記得關掉
+    setSubmitting(false);                               // 記得關掉
   }
 }
 ```

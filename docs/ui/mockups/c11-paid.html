@@ -12,7 +12,7 @@
 <div class="stage">
 
 <div>
-  <p class="meta"><b>C-11｜付款完成</b><code>375 × 812</code><code>/checkout/done</code><code>電子收據</code></p>
+  <p class="meta"><b>C-11｜付款完成</b><code>375 × 812</code><code>/checkout/done</code><code>進階 A5</code><code>電子收據</code></p>
   <div class="frame f-mobile">
 
     <div class="scroll c" style="padding:48px 16px 0;align-items:center;text-align:center">
@@ -28,21 +28,18 @@
         <div class="sumrow" style="font-size:15px"><span class="k t-sm" style="margin:0">時間</span><span class="v num">2026/09/13 19:26</span></div>
         <div class="sumrow" style="font-size:15px"><span class="k t-sm" style="margin:0">桌號</span><span class="v">A03・3 位</span></div>
         <hr class="sep mt8">
+        <!-- 進階 A6：會員才有、付款成功後才入帳；沒做 A6 就拿掉這一列 -->
         <div class="r g8 mt12">
           <svg class="ic" viewBox="0 0 24 24" style="color:var(--accent-600)"><path d="m12 3 2.6 5.6 6.1.8-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.4l6.1-.8z"/></svg>
-          <span class="t-sm" style="margin:0">這次獲得</span>
+          <span class="t-sm" style="margin:0">本次獲得</span>
+          <span class="badge b-wait">進階 A6</span>
           <span class="fill"></span>
-          <b class="num" style="color:var(--brand-600)">156 點</b>
+          <b class="num" style="color:var(--brand-600)">15 點</b>
         </div>
       </div>
 
-      <div class="card card-tight mt12" style="width:100%;text-align:left;background:var(--accent-100);border-color:#EBD3A6">
-        <div class="h3">這筆消費已累積 156 點</div>
-        <p class="t-sm" style="margin:4px 0 0">已存進你的會員帳戶，在「消費紀錄」查得到。</p>
-      </div>
-
-      <p class="t-sm mt24" style="margin-bottom:0">感謝光臨，歡迎再來</p>
-      <p class="t-cap">收據已存進「消費紀錄」，隨時可以調出來看</p>
+      <p class="h3 mt32" style="margin-bottom:0">感謝光臨，歡迎再來</p>
+      <p class="t-cap mt4">這桌的點餐已經結束，同桌的手機也會一起顯示已結帳</p>
     </div>
 
     <div class="bottombar">
@@ -50,6 +47,20 @@
     </div>
 
   </div>
+</div>
+
+<div class="sidenote">
+  <b>進階 A5：付款完成</b>
+  <dl style="margin:0">
+    <dt>畫面內容</dt>
+    <dd>交易編號、金額、付款方式、<br>「感謝光臨，歡迎再來」</dd>
+    <dt>同桌同步</dt>
+    <dd>付款成功後 session → PAID、桌位轉待清理，<br>推 SESSION_CLOSED，同桌其他手機<br>顯示 C-04 的「已結帳」</dd>
+    <dt>沒有登入或註冊入口</dt>
+    <dd>用餐都結束了才叫人註冊，<br>只是在關門時硬塞一張表單。<br>要登入請在 C-09 付款前</dd>
+    <dt>「本次獲得 N 點」</dt>
+    <dd>進階 A6，每消費 100 元 1 點，<br>付款成功後才入帳。沒做 A6 就拿掉</dd>
+  </dl>
 </div>
 
 </div>
