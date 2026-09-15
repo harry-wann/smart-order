@@ -51,7 +51,7 @@
             <div class="vr"></div>
             <div class="st"><span class="v" style="color:var(--danger)">1</span><span class="k">未到（NO_SHOW）</span></div>
             <div class="vr"></div>
-            <div class="st"><span class="v" style="color:var(--accent-600)">4</span><span class="k">預先點餐</span></div>
+            <div class="st"><span class="v" style="color:var(--accent-600)">4</span><span class="k">已預先點餐</span></div>
             <span class="fill"></span>
             <span class="t-cap">可預約比例 70%・18 桌中開放 13 桌</span>
           </div>
@@ -59,7 +59,7 @@
           <table class="dt">
             <tr><th style="width:80px">時段</th><th style="width:130px">姓名</th><th style="width:130px">電話</th>
                 <th style="width:80px">人數</th><th style="width:80px">配桌</th>
-                <th style="width:130px">預先點餐</th><th style="width:110px">狀態</th><th style="width:110px">操作</th></tr>
+                <th style="width:150px">預先點餐</th><th style="width:110px">狀態</th><th style="width:110px">操作</th></tr>
             <tr>
               <td class="n" style="font-weight:700;font-size:15px">17:00</td>
               <td><b style="font-size:15px">王大明</b></td>
@@ -75,7 +75,7 @@
               <td class="n">0933***210</td>
               <td class="n">4 位</td>
               <td class="n" style="font-weight:700">A08</td>
-              <td><span class="badge b-pri">已付 1,980</span></td>
+              <td><span class="badge b-pri">4 項・預估 1,980</span></td>
               <td><span class="badge b-done">已報到</span></td>
               <td><button class="btn btn-ghost btn-sm">看桌位</button></td>
             </tr><tr>
@@ -93,7 +93,7 @@
               <td class="n">0921***037</td>
               <td class="n">2 位</td>
               <td class="n" style="font-weight:700">B05</td>
-              <td><span class="badge b-pri">已付 860</span></td>
+              <td><span class="badge b-pri">2 項・預估 860</span></td>
               <td><span class="badge b-info">已確認</span></td>
               <td><button class="btn btn-primary btn-sm">報到開桌</button></td>
             </tr><tr>
@@ -111,7 +111,7 @@
               <td class="n">0987***553</td>
               <td class="n">8 位</td>
               <td class="n" style="font-weight:700">C02</td>
-              <td><span class="badge b-pri">已付 3,240</span></td>
+              <td><span class="badge b-pri">7 項・預估 3,240</span></td>
               <td><span class="badge b-info">已確認</span></td>
               <td><button class="btn btn-primary btn-sm">報到開桌</button></td>
             </tr><tr>
@@ -140,6 +140,13 @@
             區間重疊用 <span class="num">A.start &lt; B.end AND B.start &lt; A.end</span> 判斷，
             並用悲觀鎖 + 資料庫唯一約束擋併發，兩人同時訂同一桌同時段只有一個會成功。</div>
           </div>
+
+          <div class="infobox ib-warn"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 16v-4.5M12 8h.01"/></svg>
+            <div><b>「預先點餐」欄位是預估金額，不是已付金額。</b>
+            訂位與預先點餐都<b>不收錢</b>，餐點一律到店結帳時才算。
+            按下「報到開桌」時，預點的內容才會轉成正式的點餐單、才扣庫存——
+            這時候如果有品項已經售完，畫面會跳出清單，<b>要當面跟客人講</b>。</div>
+          </div>
         </div></div>
       </div>
     </div>
@@ -149,16 +156,28 @@
 <div>
   <p class="meta"></p>
 <div class="sidenote">
-  <b>三支排程</b>
+  <b>兩支排程</b>
   <dl style="margin:0">
-    <dt>桌位預留</dt>
-    <dd>訂位前 30 分鐘，桌位自動<br>從「空桌」轉「已預約」</dd>
     <dt>NO_SHOW</dt>
     <dd>過了時段一段時間沒報到，<br>自動標記，桌位放回去給候位</dd>
     <dt>訂位提醒</dt>
     <dd>前一天發提醒（模擬簡訊）</dd>
     <dt>手動觸發</dt>
     <dd>三支都要有手動觸發 API，<br>demo 時不用等到時間才看得到效果</dd>
+  </dl>
+  <b class="mt16" style="display:block">報到開桌會做三件事</b>
+  <dl style="margin:0">
+    <dt>1 建立用餐紀錄</dt>
+    <dd>人數自動帶入，桌位轉「用餐中」</dd>
+    <dt>2 轉單（有預點才有）</dt>
+    <dd>預點內容複製成 is_preorder 的單，<br>
+        KDS 金色邊框、排最前面。<br>
+        <b>價格照預點當下的快照</b>，中間調價不追溯</dd>
+    <dt>3 這時候才扣庫存</dt>
+    <dd>扣不到的品項從單裡移除，<br>
+        回一份 soldOut 清單給這個畫面。<br>
+        <b>這是「預點不鎖庫存」的已知取捨</b>，<br>
+        不是 bug，驗收時要講得出來</dd>
   </dl>
 </div>
 </div>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>S-02b｜開桌・現場</title>
+<title>S-02d｜開桌・預約</title>
 <link rel="stylesheet" href="_shared.css">
 </head>
 <body>
@@ -12,7 +12,7 @@
 <div class="stage">
 
 <div>
-  <p class="meta"><b>S-02b｜開桌　現場</b><code>1280 × 800</code><code>/admin/tables/A06/open</code><code>從 S-02 點某一張空桌進來</code></p>
+  <p class="meta"><b>S-02d｜開桌　預約</b><code>1280 × 800</code><code>/admin/tables/A06/open</code><code>同一個路由的第三個頁籤</code></p>
   <div class="frame f-desk">
     <div class="admin">
 
@@ -51,49 +51,53 @@
             </div>
 
             <nav class="tabs">
-              <div class="tab on">現場</div>
+              <div class="tab">現場</div>
               <div class="tab">候位 3</div>
-              <div class="tab">預約 2</div>
+              <div class="tab on">預約 2</div>
             </nav>
 
-            <div class="card" style="padding:24px 48px">
-              <h1 class="h1">這桌坐幾位？</h1>
-              <p class="t-sm" style="margin:8px 0 0">
-                人數由櫃檯輸入比客人自填準。<span class="muted">不參與金額計算</span>，
-                用途是座位安排、分帳參考、兒童友善推薦與客單價統計。
-              </p>
-
-              <div class="r g24 mt24" style="align-items:flex-start">
-                <div class="c g12 fill">
-                  <div class="h3">大人</div>
-                  <div class="bigstep">
-                    <button><svg class="ic ic-lg" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
-                    <div class="n">2</div>
-                    <button><svg class="ic ic-lg" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button>
-                  </div>
-                  <div class="t-cap">上限 10 位</div>
-                </div>
-                <div style="width:1px;align-self:stretch;background:var(--border)"></div>
-                <div class="c g12 fill">
-                  <div class="h3">小孩</div>
-                  <div class="bigstep">
-                    <button><svg class="ic ic-lg" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
-                    <div class="n">1</div>
-                    <button><svg class="ic ic-lg" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button>
-                  </div>
-                  <div class="t-cap">會帶出兒童友善推薦</div>
-                </div>
+            <div class="card" style="padding:24px">
+              <div class="r g8" style="margin-bottom:16px">
+                <span class="h2 fill">現在可以報到的預約</span>
+                <span class="t-cap">現在 −15 分 ～ +45 分・4 位以內坐得下</span>
               </div>
 
-              <div class="r g12 mt24" style="padding:16px 20px;background:var(--brand-100);border-radius:12px">
-                <span class="h2">共 3 位</span>
-                <span class="fill"></span>
-                <span class="t-sm" style="margin:0">A06 是 4 人桌，座位夠</span>
+              <div class="c g12">
+              <div class="cartrow" style="">
+                <div class="r g16">
+                  <span class="h2 num" style="min-width:72px">18:00</span>
+                  <div class="fill">
+                    <div class="r g8" style="flex-wrap:wrap">
+                      <b style="font-size:17px">陳怡君</b>
+                      <span class="t-cap num">0933***210</span>
+                      <span class="badge b-pri">已預先點餐 4 項</span>
+                    </div>
+                    <div class="t-sm" style="margin:4px 0 0">4 位・訂位時配到 A08</div>
+                  </div>
+                  <button class="btn btn-primary btn-md">開桌</button>
+                </div>
+              </div>
+              <div class="cartrow" style="margin-bottom:0;">
+                <div class="r g16">
+                  <span class="h2 num" style="min-width:72px">18:30</span>
+                  <div class="fill">
+                    <div class="r g8" style="flex-wrap:wrap">
+                      <b style="font-size:17px">黃先生</b>
+                      <span class="t-cap num">0955***192</span>
+                      <span class="badge b-plain">未預點</span>
+                    </div>
+                    <div class="t-sm" style="margin:4px 0 0">3 位・訂位時配到 A04</div>
+                  </div>
+                  <button class="btn btn-primary btn-md">開桌</button>
+                </div>
+              </div>
               </div>
 
-              <div class="r g12 mt24">
-                <button class="btn btn-primary btn-lg fill">開桌</button>
-                <button class="btn btn-ghost btn-lg">取消</button>
+              <div class="infobox ib-quiet mt24" style="margin-bottom:0">
+                <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 16v-4.5M12 8h.01"/></svg>
+                <div><b>不限定原本配到哪一張桌。</b>客人被帶到別張桌是現場常態，清單只看「人數坐得下、時間對得上」。
+                  <br>「訂位時配到 A08」只是附帶資訊 ——<b>開桌不會去改那筆訂位的桌號</b>，本專題不做換桌。
+                  <br><span class="t-cap">狀態同時轉成已報到；有預點的單這時候才進 KDS、這時候才扣庫存。</span></div>
               </div>
             </div>
           </div>
@@ -105,36 +109,39 @@
 </div>
 
 <div class="sidenote">
-  <b>開桌的三種來源集中在一頁</b>
+  <b>預約頁籤</b>
   <dl style="margin:0">
-    <dt>為什麼用頁籤</dt>
-    <dd>不做「先跳三選一對話框、再進設定人數」——<br>
-        那是兩次點擊換一次分類，不划算。<br>
-        櫃檯只要記一個動作：<br>
-        點桌 → 選頁籤 → 開桌。</dd>
-    <dt>預設停在哪一頁</dt>
-    <dd>這張桌有保留 → 保留對象那一頁<br>
-        否則有可報到的預約 → 預約<br>
-        否則有候位 → 候位<br>
-        都沒有 → 現場</dd>
+    <dt>清單條件</dt>
+    <dd>status = CONFIRMED<br>
+        用餐時間在現在 −15 ～ +45 分<br>
+        party_size ≤ 這張桌的座位數</dd>
+    <dt>不看訂位時配到哪張桌</dt>
+    <dd>客人被帶到別張桌是現場常態。<br>
+        「訂位時配到 A08」只是附帶資訊。</dd>
+    <dt>按下去之後</dt>
+    <dd>建立 dining_session、帶入人數、<br>
+        reservation.status → SEATED、<br>
+        有預點就轉成 is_preorder 的單並扣庫存。</dd>
   </dl>
-  <b class="mt16" style="display:block">兩個動作：開桌與保留</b>
+  <b class="mt16" style="display:block">不做換桌</b>
   <dl style="margin:0">
-    <dt>開桌</dt>
-    <dd>客人已經到了，直接入座。</dd>
-    <dt>保留</dt>
-    <dd>客人還沒到但要先把桌留起來。<br>
-        桌位轉保留，訂位／候位的狀態不變。</dd>
-    <dt>現場這一頁</dt>
-    <dd>「只保留這張桌」不指定對象，<br>
-        只是把桌先留著（可以加備註）。</dd>
+    <dt>開桌不改 reservation.table_id</dt>
+    <dd>那是訂位當下配的桌，<br>
+        只服務容量與區間重疊判斷。<br>
+        回頭改它，訂位容量就算不準了。</dd>
+    <dt>實際坐哪桌看哪裡</dt>
+    <dd>dining_session 的 table_id<br>
+        與 reservation_id 這一組。<br>
+        兩個欄位回答兩個不同的問題。</dd>
   </dl>
-  <b class="mt16" style="display:block">頂部那條黃字</b>
+  <b class="mt16" style="display:block">手動保留是進階</b>
   <dl style="margin:0">
-    <dt>只提醒，不擋</dt>
-    <dd>系統不知道這組客人會坐多久，<br>
-        也不知道櫃檯有沒有別的安排。<br>
-        三個頁籤都會顯示這一條。</dd>
+    <dt>M2 的 2.E5</dt>
+    <dd>要做的話，每一列再多一顆<br>
+        secondary 的「保留」（客人還沒到<br>
+        但要先留桌），保留中的桌再點進來<br>
+        頂部顯示保留給誰＋「取消保留」。<br>
+        基礎不做。</dd>
   </dl>
 </div>
 

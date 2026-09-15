@@ -2,7 +2,7 @@
 
 > 由 `tools/figma_prep.py` 產生。
 
-**46 個檔案，0 個問題。**
+**48 個檔案，0 個問題。**
 
 | 檔案 | 結果 | 問題 |
 |---|---|---|
@@ -42,6 +42,8 @@
 | `s01-login.html` | PASS | — |
 | `s02-tables.html` | PASS | — |
 | `s02b-open-table.html` | PASS | — |
+| `s02c-open-waitlist.html` | PASS | — |
+| `s02d-open-reservation.html` | PASS | — |
 | `s03-table-detail.html` | PASS | — |
 | `s04-kds.html` | PASS | — |
 | `s05-menu-admin.html` | PASS | — |
@@ -57,10 +59,10 @@
 
 | 宣告 | 次數 |
 |---|---|
-| margin-top:2px（例外4 光學對齊） | 3 |
+| margin-top:2px（例外4 光學對齊） | 1 |
 | padding:0 14px（例外3 按鈕 sm 左右 14px） | 1 |
 | padding:0 20px（例外3 按鈕 md 左右 20px） | 1 |
-| padding:16px 20px（例外1 卡片內距 20px） | 5 |
-| padding:20px（例外1 卡片內距 20px） | 5 |
+| padding:16px 20px（例外1 卡片內距 20px） | 7 |
+| padding:20px（例外1 卡片內距 20px） | 6 |
 | padding:2px 10px（例外2 膠囊標籤 2px 10px） | 5 |
 | padding:2px 8px（例外2 膠囊標籤（售完印章）） | 1 |

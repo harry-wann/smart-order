@@ -7,7 +7,15 @@ from playwright.async_api import async_playwright
 SRC = sys.argv[1] if len(sys.argv) > 1 else '/tmp/dist/B'
 OUT = sys.argv[2] if len(sys.argv) > 2 else '/tmp/fp/layout.json'
 NAMES = sys.argv[3] if len(sys.argv) > 3 else os.path.join(os.path.dirname(SRC) or '.', 'frames.json')
-FF = pathlib.Path('/tmp/shot/fontfix.css').read_text()
+
+# 字型對照表放在這支腳本旁邊（以前硬寫在 /tmp，換一台機器就不見了）。
+# 要換別份可以用環境變數 FONTFIX 指定。
+FF_PATH = os.environ.get('FONTFIX') or os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), 'fontfix.css')
+FF = pathlib.Path(FF_PATH).read_text(encoding='utf-8')
+
+# 沒裝 playwright 自帶瀏覽器時，用 CHROMIUM_PATH 指到現成的 chromium
+CHROMIUM = os.environ.get('CHROMIUM_PATH') or None
 
 JS = r"""() => {
 const rgb = s => {
@@ -229,6 +237,50 @@ document.querySelectorAll('.frame').forEach(f => {
 return out;
 }"""
 
+PROBE_JS = """() => {
+  const mk = (fam, txt) => {
+    const d = document.createElement('div');
+    d.style.cssText = 'position:absolute;left:-9999px;font-size:40px;font-family:' + fam;
+    d.textContent = txt;
+    document.body.appendChild(d);
+    const r = d.getBoundingClientRect();
+    d.remove();
+    return Math.round(r.height / 40 * 100) / 100;
+  };
+  return {
+    han:  mk('"Noto Sans TC"', '\u62db\u724c\u9ebb\u8fa3\u934b\u5e95'),
+    num:  mk('"Noto Sans TC"', 'NT$ 1,420'),
+    serif: mk('"Noto Serif TC"', '\u8a02\u4f4d\u5b8c\u6210'),
+  };
+}"""
+
+
+async def check_fonts(pg):
+    """量測前先確認字型真的有載到。
+
+    最容易踩的坑不是「完全沒字型」，而是「中文有、數字沒有」：
+    中文拿到 CJK 字型（行高 1.45em），數字掉到拉丁備援（1.15em），
+    同一張稿子兩套度量混在一起，而且完全不會報錯。
+    2026-09-14 那版 layout.json 就是這樣壞掉的。
+    """
+    await pg.set_content('<body></body>')
+    await pg.add_style_tag(content=FF)
+    await pg.wait_for_timeout(200)
+    r = await pg.evaluate(PROBE_JS)
+    bad = [k for k, v in r.items() if not (1.35 <= v <= 1.60)]
+    if bad:
+        sys.exit(
+            '\n量測字型沒載到，中止。\n'
+            '  實測行高比值：中文 %(han).2f、數字 %(num).2f、襯線 %(serif).2f\n'
+            '  Noto Sans TC / Noto Serif TC 應該都落在 1.45 上下；\n'
+            '  1.15 左右代表掉到系統的拉丁備援字型了。\n'
+            '  跑一次 python3 tools/fetch_fonts.py 把字型裝好再來。' % r)
+    if abs(r['han'] - r['num']) > 0.03:
+        sys.exit('\n中文與數字用到不同字型（%.2f vs %.2f），量出來會是兩套度量。中止。'
+                 % (r['han'], r['num']))
+    print('字型檢查通過：中文 %.2f／數字 %.2f／襯線 %.2f' % (r['han'], r['num'], r['serif']))
+
+
 async def main():
     # 畫框命名以 dist/frames.json 為準（由 figma_prep.py 產生）
     names = {}
@@ -240,8 +292,9 @@ async def main():
     files = sorted(glob.glob(os.path.join(SRC, '*.html')))
     frames = []
     async with async_playwright() as p:
-        b = await p.chromium.launch()
+        b = await p.chromium.launch(executable_path=CHROMIUM) if CHROMIUM else await p.chromium.launch()
         pg = await b.new_page(viewport={'width': 2400, 'height': 1400})
+        await check_fonts(pg)
         for f in files:
             stem = os.path.basename(f)[:-5]
             await pg.goto('file://' + f)
@@ -265,6 +318,13 @@ async def main():
                     nm = '%s #%d' % (title, i + 1)
                 fr = {'name': nm, 'page': page, 'batch': batch,
                       'file': stem + '.html', 'w': n['w'], 'h': n['h'], 'root': n}
+                # 右側說明卡的內容（來源 ui/13-畫框註解.md，經 figma_prep.py 進 frames.json）
+                nts = (e or {}).get('notes') or []
+                if i < len(nts) and nts[i]:
+                    fr['note'] = nts[i]
+                # 基礎必做／進階有空才做（來源 ui/10 的頁面表）
+                lvs = (e or {}).get('levels') or []
+                fr['level'] = lvs[i] if i < len(lvs) else '基礎'
                 # 流程分組（顧客端一條流程排一列），由 figma_prep.py 決定
                 if e and 'flow' in e:
                     fr['flow'] = e['flow']

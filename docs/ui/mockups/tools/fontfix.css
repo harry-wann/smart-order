@@ -1,0 +1,20 @@
+/* 量測專用樣式 —— 只給 extract_layout.py 用，不要載進設計稿本身。
+ *
+ * 前提：量測的機器上要裝**真正的** Noto Sans TC 與 Noto Serif TC
+ * （Google Fonts 版，見 fetch_fonts.py）。設計稿宣告的就是這兩個名字，
+ * 裝好之後 CSS 會自己對上，不需要任何 @font-face 對照。
+ *
+ * 為什麼不要用 Noto Sans CJK TC 頂替：
+ *   實測兩者度量差距只有 0.22px，頂替其實可行 —— 但真正的坑不在這裡。
+ *   坑是「中文有字型、數字沒有」：CJK 字型缺某些拉丁字符時，
+ *   數字與英文會掉到系統的拉丁備援（DejaVu / Liberation），行高從 1.45em
+ *   變成 1.15em，於是同一張稿子裡兩套度量混在一起。
+ *   2026-09-14 那版 layout.json 就是這樣壞掉的：59 個單行文字節點裡，
+ *   24 個是 1.15、35 個是 1.45。
+ *   Figma 那邊全部都會用 Noto Sans TC，所以那些 1.15 的文字框全部太矮。
+ *
+ *   extract_layout.py 開頭會擋這件事，量到不對的比值直接中止。
+ */
+
+/* 沒有對應字重時不要合成假粗體／假斜體，那會讓字寬量錯 */
+*, *::before, *::after { font-synthesis: none !important }

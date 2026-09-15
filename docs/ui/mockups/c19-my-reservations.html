@@ -21,7 +21,7 @@
     </header>
 
     <nav class="tabs">
-      <div class="tab on">即將到來 1</div>
+      <div class="tab on">即將到來 3</div>
       <div class="tab">已完成 8</div>
       <div class="tab">已取消 2</div>
     </nav>
@@ -29,12 +29,40 @@
     <div class="scroll">
       <div class="c g12" style="padding:16px">
 
+        <!-- 狀態三：已鎖定（過了前一天 20:00） -->
+        <div class="card" style="padding:16px 20px">
+          <div class="r g8">
+            <span class="badge b-done">已確認</span>
+            <span class="badge b-plain">已鎖定</span>
+            <span class="fill"></span>
+            <span class="t-cap">明天</span>
+          </div>
+          <div class="h2 mt12">9/16（三）18:30</div>
+          <div class="t-sm" style="margin:4px 0 0">2 位・B05 靠窗 2 人桌</div>
+          <div class="t-sm" style="margin:0">預約編號 <span class="num">R-260916-0038</span></div>
+
+          <hr class="sep mt16">
+          <div class="r g8 mt12">
+            <span class="t-sm" style="margin:0">已預先點餐 4 項</span>
+            <span class="fill"></span>
+            <span class="price">預估 NT$ 860</span>
+          </div>
+          <div class="t-sm" style="margin:4px 0 0">招牌麻辣鍋底 ×1、伊比利豬梅花 ×2、時蔬八品 ×1</div>
+
+          <div class="r g12 mt16">
+            <button class="btn btn-secondary btn-md fill" disabled>調整餐點</button>
+            <button class="btn btn-ghost btn-md" disabled>取消訂位</button>
+          </div>
+          <p class="hint">已超過修改時間，要改請來電 02-2591-xxxx</p>
+        </div>
+
+        <!-- 狀態二：已預點，還可以改 -->
         <div class="card" style="border-color:var(--brand-600);padding:16px 20px">
           <div class="r g8">
             <span class="badge b-done">已確認</span>
-            <span class="badge b-pri">已先點餐</span>
+            <span class="badge b-pri">已預先點餐</span>
             <span class="fill"></span>
-            <span class="t-cap">還有 8 天</span>
+            <span class="t-cap">還有 6 天</span>
           </div>
           <div class="h2 mt12">9/21（一）18:00</div>
           <div class="t-sm" style="margin:4px 0 0">4 位・A08 窗邊 4 人桌</div>
@@ -42,17 +70,42 @@
 
           <hr class="sep mt16">
           <div class="r g8 mt12">
-            <span class="t-sm" style="margin:0">已付預先點餐</span>
+            <span class="t-sm" style="margin:0">已預先點餐 4 項</span>
             <span class="fill"></span>
-            <span class="price">NT$ 1,980</span>
+            <span class="price">預估 NT$ 1,340</span>
           </div>
-          <div class="t-sm" style="margin:4px 0 0">招牌麻辣鍋底 ×1、安格斯霜降牛五花 ×2、時蔬八品 ×1…</div>
+          <div class="t-sm" style="margin:4px 0 0">招牌麻辣鍋底 ×1、安格斯霜降牛五花 ×3</div>
 
           <div class="r g12 mt16">
-            <button class="btn btn-secondary btn-md fill">看預點內容</button>
-            <button class="btn btn-ghost btn-md" style="color:var(--danger)">取消預約</button>
+            <button class="btn btn-primary btn-md fill">調整餐點</button>
+            <button class="btn btn-ghost btn-md" style="color:var(--danger)">取消訂位</button>
           </div>
-          <p class="hint">9/20（日）20:00 前取消可全額退款</p>
+          <p class="hint">9/20（日）20:00 前都可以改或取消，沒有費用</p>
+        </div>
+
+        <!-- 狀態一：還沒預點 -->
+        <div class="card" style="padding:16px 20px">
+          <div class="r g8">
+            <span class="badge b-done">已確認</span>
+            <span class="fill"></span>
+            <span class="t-cap">還有 13 天</span>
+          </div>
+          <div class="h2 mt12">9/28（一）19:00</div>
+          <div class="t-sm" style="margin:4px 0 0">6 位・C01 包廂</div>
+          <div class="t-sm" style="margin:0">預約編號 <span class="num">R-260928-0061</span></div>
+
+          <hr class="sep mt16">
+          <div class="r g8 mt12">
+            <svg class="ic ic-sm" viewBox="0 0 24 24" style="color:var(--text-500)"><path d="M3 11h18M5 11V8a7 7 0 0 1 14 0v3M4 11v2a8 8 0 0 0 16 0v-2M8 21h8"/></svg>
+            <span class="t-sm fill" style="margin:0">尚未預先點餐</span>
+          </div>
+          <div class="t-sm" style="margin:4px 0 0">先點好，到店報到後廚房直接開始做，出菜排最前面。</div>
+
+          <div class="r g12 mt16">
+            <button class="btn btn-primary btn-md fill">預先點餐</button>
+            <button class="btn btn-ghost btn-md" style="color:var(--danger)">取消訂位</button>
+          </div>
+          <p class="hint">9/27（日）20:00 前都可以點或取消，現在不用付款</p>
         </div>
 
         <div class="card card-tight" style="opacity:.72">
@@ -72,28 +125,52 @@
             <span class="t-cap num">7/09（三）19:00</span>
           </div>
           <div class="h3 mt8">2 位・B05</div>
-          <div class="t-sm" style="margin:4px 0 0">前一天取消，NT$ 860 已退回 LINE Pay</div>
+          <div class="t-sm" style="margin:4px 0 0">前一天取消，未產生任何費用</div>
         </div>
 
       </div>
     </div>
 
     <div class="bottombar">
-      <button class="btn btn-primary btn-lg btn-block">再訂一次</button>
+      <button class="btn btn-secondary btn-lg btn-block">再訂一次</button>
     </div>
 
   </div>
 </div>
 
 <div class="sidenote">
-  <b>取消的二次確認</b>
+  <b>一張卡片三種樣子</b>
   <dl style="margin:0">
-    <dt>按下取消預約</dt>
-    <dd>跳底部彈出面板：<br>「要取消 9/21 的訂位嗎？<br>已付的 NT$ 1,980 會退回 LINE Pay，<br>約 3 個工作天。」</dd>
+    <dt>未預點</dt>
+    <dd>「尚未預先點餐」＋ 主按鈕「預先點餐」</dd>
+    <dt>已預點</dt>
+    <dd>品項摘要 ＋ 主按鈕「調整餐點」，<br>
+        卡片加品牌色邊框</dd>
+    <dt>已鎖定</dt>
+    <dd>過了前一天 20:00。<br>
+        兩顆按鈕都 disabled ＋ 請來電</dd>
+  </dl>
+  <b class="mt16" style="display:block">金額一律寫「預估」</b>
+  <dl style="margin:0">
+    <dt>不寫「已付」</dt>
+    <dd>這個階段沒有任何一筆錢被收走。<br>
+        舊版寫「已付預先點餐 NT$ 1,980」，<br>
+        那是上一版預付流程留下來的。</dd>
+  </dl>
+  <b class="mt16" style="display:block">取消的二次確認</b>
+  <dl style="margin:0">
+    <dt>底部彈出面板</dt>
+    <dd>「要取消 9/21 的訂位嗎？<br>
+        沒有款項需要退還，餐點還沒結帳。」</dd>
     <dt>兩顆按鈕</dt>
     <dd>「確定取消」（danger）／「先不要」（ghost）</dd>
-    <dt>超過期限</dt>
-    <dd>取消鈕停用 + 「已超過免費取消時間，<br>請直接來電 02-2591-xxxx」</dd>
+  </dl>
+  <b class="mt16" style="display:block">匿名客人</b>
+  <dl style="margin:0">
+    <dt>看到的不是列表</dt>
+    <dd>是單筆訂位詳情，<br>
+        靠 localStorage 存的 accessToken 取。<br>
+        清了快取就要打電話。</dd>
   </dl>
 </div>
 

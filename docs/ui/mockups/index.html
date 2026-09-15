@@ -298,30 +298,30 @@
         </div>
       </a>
       <a class="tcard" href="c16c-reserve-datetime.html">
-        <div class="thumb m"><iframe src="c16c-reserve-datetime.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="C-16c 預約 1　日期時段人數"></iframe></div>
+        <div class="thumb m"><iframe src="c16c-reserve-datetime.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="C-16c 選日期時段人數"></iframe></div>
         <div class="tinfo">
           <div class="code">C-16c</div>
-          <div class="nm">預約 1　日期時段人數</div>
+          <div class="nm">選日期時段人數</div>
           <div class="rt">/reserve/when</div>
-                    
-        </div>
-      </a>
-      <a class="tcard" href="c17-reserve-preorder.html">
-        <div class="thumb m"><iframe src="c17-reserve-preorder.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="C-17 預約 2　預先點餐"></iframe></div>
-        <div class="tinfo">
-          <div class="code">C-17</div>
-          <div class="nm">預約 2　預先點餐</div>
-          <div class="rt">/reserve/preorder</div>
-          
+          <div class="tags"><span class="badge b-info">改版</span></div>
         </div>
       </a>
       <a class="tcard" href="c18-reserve-done.html">
-        <div class="thumb m"><iframe src="c18-reserve-done.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="C-18 預約 3　付款完成"></iframe></div>
+        <div class="thumb m"><iframe src="c18-reserve-done.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="C-18 訂位完成"></iframe></div>
         <div class="tinfo">
           <div class="code">C-18</div>
-          <div class="nm">預約 3　付款完成</div>
-          <div class="rt">/reserve/done</div>
-          
+          <div class="nm">訂位完成</div>
+          <div class="rt">/reserve/:id/done</div>
+          <div class="tags"><span class="badge b-info">改版</span></div>
+        </div>
+      </a>
+      <a class="tcard" href="c17-reserve-preorder.html">
+        <div class="thumb m"><iframe src="c17-reserve-preorder.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="C-17 預先點餐／調整餐點"></iframe></div>
+        <div class="tinfo">
+          <div class="code">C-17</div>
+          <div class="nm">預先點餐／調整餐點</div>
+          <div class="rt">/reserve/:id/preorder</div>
+          <div class="tags"><span class="badge b-plain">進階</span></div>
         </div>
       </a>
       <a class="tcard" href="c19-my-reservations.html">
@@ -366,12 +366,30 @@
         </div>
       </a>
       <a class="tcard" href="s02b-open-table.html">
-        <div class="thumb d"><iframe src="s02b-open-table.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="S-02b 開桌設定人數"></iframe></div>
+        <div class="thumb d"><iframe src="s02b-open-table.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="S-02b 開桌・現場"></iframe></div>
         <div class="tinfo">
           <div class="code">S-02b</div>
-          <div class="nm">開桌設定人數</div>
-          <div class="rt">/t/:tableNo/open</div>
-          <div class="tags"><span class="badge b-plain">從桌況總覽點進來</span></div>
+          <div class="nm">開桌・現場</div>
+          <div class="rt">/admin/tables/:tableNo/open</div>
+          <div class="tags"><span class="badge b-info">改版</span></div>
+        </div>
+      </a>
+      <a class="tcard" href="s02c-open-waitlist.html">
+        <div class="thumb d"><iframe src="s02c-open-waitlist.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="S-02c 開桌・候位"></iframe></div>
+        <div class="tinfo">
+          <div class="code">S-02c</div>
+          <div class="nm">開桌・候位</div>
+          <div class="rt">同上路由的頁籤</div>
+          <div class="tags"><span class="badge b-info">新</span></div>
+        </div>
+      </a>
+      <a class="tcard" href="s02d-open-reservation.html">
+        <div class="thumb d"><iframe src="s02d-open-reservation.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="S-02d 開桌・預約"></iframe></div>
+        <div class="tinfo">
+          <div class="code">S-02d</div>
+          <div class="nm">開桌・預約</div>
+          <div class="rt">同上路由的頁籤</div>
+          <div class="tags"><span class="badge b-info">新</span></div>
         </div>
       </a>
       <a class="tcard" href="s03-table-detail.html">

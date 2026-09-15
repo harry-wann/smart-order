@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>C-16c｜預約 1 日期時段人數</title>
+<title>C-16c｜選日期時段人數</title>
 <link rel="stylesheet" href="_shared.css">
 </head>
 <body>
@@ -12,21 +12,13 @@
 <div class="stage">
 
 <div>
-  <p class="meta"><b>C-16c｜預約 步驟 1　日期時段人數</b><code>375 × 812</code><code>/reserve/when</code></p>
+  <p class="meta"><b>C-16c｜選日期時段人數</b><code>375 × 812</code><code>/reserve/when</code></p>
   <div class="frame f-mobile">
 
     <header class="appbar">
       <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
       <div class="ttl">線上訂位</div>
     </header>
-
-    <div class="steps">
-      <span class="s on"><span class="n">1</span>選時間</span>
-      <span class="bar"></span>
-      <span class="s"><span class="n">2</span>先點餐</span>
-      <span class="bar"></span>
-      <span class="s"><span class="n">3</span>完成</span>
-    </div>
 
     <div class="scroll">
       <div class="hero" style="height:120px">
@@ -77,11 +69,29 @@
 
     <div class="bottombar">
       <button class="btn btn-primary btn-lg btn-block">
-        <span>下一步</span><span class="fill"></span><span class="num">9/21（一）18:00・4 位</span>
+        <span>確認訂位</span><span class="fill"></span><span class="num">9/21（一）18:00・4 位</span>
       </button>
     </div>
 
   </div>
+</div>
+
+<div class="sidenote">
+  <b>這一頁送出，訂位就成立了</b>
+  <dl style="margin:0">
+    <dt>沒有步驟指示器</dt>
+    <dd>原本是「① 選時間 ─ ② 先點餐 ─ ③ 完成」。<br>
+        現在只有一步，就不要假裝有三步。</dd>
+    <dt>按下確認訂位</dt>
+    <dd>POST /api/reservations → 201 直接跳 C-18，<br>
+        <b>不經過付款頁</b>。</dd>
+    <dt>客滿的話</dt>
+    <dd>409 SLOT_UNAVAILABLE → 留在本頁，<br>
+        該時段就地變成「已額滿」虛線框。</dd>
+    <dt>為什麼要改</dt>
+    <dd>舊流程要走完三關才知道訂到沒有，<br>
+        中途放棄的人等於白來。</dd>
+  </dl>
 </div>
 
 </div>

@@ -2,13 +2,14 @@
 
 ```
 tools/
-├─ figma_prep.py          Lint 33 張設計稿 + 打包 + 產匯入文件
+├─ figma_prep.py          Lint 設計稿 + 打包 + 產匯入文件 + 讀 ui/13-畫框註解.md
 ├─ extract_layout.py      把畫框在 Chromium 裡量成 layout.json（需要 Playwright）
 └─ figma-plugin/          Figma 匯入外掛
    ├─ manifest.json
    ├─ code.template.js    外掛邏輯（要改改這個）
    ├─ build_plugin.py     把 layout.json 注入 template → code.js
-   ├─ layout.json         39 個畫框、4,841 個節點的量測結果
+   ├─ layout.json         55 個畫框、7,339 個節點的量測結果
+   ├─ test_plugin.js      用假的 Figma API 在 Node 裡實跑一次
    └─ ui.html
 ```
 
@@ -66,9 +67,15 @@ python3 docs/ui/mockups/tools/extract_layout.py \
 
 # 3. 重建外掛
 python3 docs/ui/mockups/tools/figma-plugin/build_plugin.py
+
+# 4. 丟進 Figma 之前先在 Node 裡實跑一次
+node docs/ui/mockups/tools/figma-plugin/test_plugin.js \
+     docs/ui/mockups/tools/figma-plugin/code.js
 ```
 
-然後在 Figma 裡重跑一次外掛。舊的畫框要自己刪 — 外掛不會覆蓋。
+然後在 Figma 裡重跑一次外掛。**同名畫框、它的標題與說明卡、以及這次會重畫的
+那幾列的列標題與底板，外掛會自己清掉再重建**，不用手動全選刪除；
+已經從清單裡消失的畫面（例如被砍掉的功能）也會一起清掉。
 
 ---
 
@@ -80,6 +87,21 @@ python3 docs/ui/mockups/tools/figma-plugin/build_plugin.py
 
 **畫框命名**的唯一來源是 `dist/frames.json`，由 `figma_prep.py` 產生。
 `extract_layout.py` 和外掛都讀它，不各寫一套。
+
+**每個畫框右邊那張說明卡**的內容來自 `docs/ui/13-畫框註解.md`，
+一個 `## 畫框名` 對一個畫框，底下分「規格」與「注意」兩段。
+`figma_prep.py` 讀它塞進 `frames.json`，`extract_layout.py` 再帶進 `layout.json`。
+**漏寫、多寫、單條超過 70 字、一張超過 11 條，自我驗證都會擋下來**，
+所以新增畫面時記得順手補一段。
+
+**畫框上方的標題是真的文字節點**，不是 Figma 自己畫的圖層名 ——
+那行灰字是固定的螢幕字級，縮到看得見整列時幾乎讀不出來，也沒辦法排版。
+
+**列底板是暖灰 `#E6DED2`（`--border`），不是白的。** 畫框底色是 `#FBF7F0`，
+跟純白只差一點點，白底板一鋪下去就看不出畫框從哪裡開始、到哪裡結束。
+現在是「暖灰襯墊上放淺色畫框與純白說明卡」，三層各自分得出來。
+畫框底下另外墊一張同尺寸、同底色、帶柔陰影的矩形 ——
+**陰影不掛在畫框本身**，畫框要對得起原稿，Inspect 時多一個 CSS 裡沒有的效果會誤導前端。
 
 **圖片佔位**的圖層名照 `IMG／肉盤／1-1` 這種格式，直接來自 HTML 的 `data-layer`。
 
@@ -98,7 +120,10 @@ python3 docs/ui/mockups/tools/figma-plugin/build_plugin.py
 
 `extract_layout.py` 的輸出和外掛都驗過：
 
-- **抽取**：39 個畫框、3,919 個元素的座標與原稿逐一比對，0 處位移超過 0.5px
-- **外掛**：用假的 Figma API 在 Node 裡實跑 `code.js`，確認節點數
-  （4,841 = 2,854 frame + 1,633 text + 354 svg）、211 個陰影、
-  畫框尺寸、所屬 page、無重疊、無 NaN 座標、字體載入順序正確
+- **字型**：量測前先跑 `check_fonts()`，中文／數字／襯線的行高比例落在
+  1.35–1.60 之外就直接中止 —— 機器沒裝中文字型時會掉回 Latin fallback，
+  行高從 1.45 變 1.15，量出來的 `layout.json` 整份是壞的卻看不出來
+- **抽取**：55 個畫框、7,339 個節點，座標與原稿逐一比對
+- **外掛**：`node test_plugin.js code.js` 用假的 Figma API 實跑一次，確認
+  節點數、所屬 page、無重疊、無 NaN 座標、無重複畫框名、
+  每個畫框都有標題／副標／說明卡，而且說明卡不是空的

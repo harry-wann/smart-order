@@ -52,6 +52,8 @@
 | 409 | `SESSION_LOCKED` | 已進入結帳，不可加點 | 顯示「結帳中無法加點」 |
 | 409 | `ALREADY_CHECKING_OUT` | 重複要求結帳 | 直接導到結帳頁 |
 | 409 | `SLOT_UNAVAILABLE` | 訂位時段已客滿 | 重新載入可訂時段 |
+| 409 | `PREORDER_LOCKED` | 已過預點修改期限（前一天 20:00） | 停用編輯，顯示請來電 |
+| 409 | `RESERVATION_LOCKED` | 已過取消期限，或訂位已報到／已取消 | 停用取消鈕，顯示請來電 |
 | 409 | `ALREADY_ATTACHED` | 此次用餐已綁定會員 | — |
 | 422 | `PAYMENT_FAILED` | 模擬付款失敗（5%） | 顯示原因 + 重試按鈕 |
 | 429 | `TOO_MANY_ATTEMPTS` | 驗證碼太頻繁 | 顯示倒數 |
@@ -62,6 +64,7 @@
 | 身分 | 標頭 | 取得方式 | 有效期 |
 |---|---|---|---|
 | 匿名顧客 | `X-Session-Token: <token>` | 掃碼加入時取得 | 到該次結帳為止 |
+| 匿名訂位 | `X-Reservation-Token: <token>` | 建立訂位時取得 | 到該筆訂位結束為止 |
 | 會員 | `Authorization: Bearer <JWT>` | 手機驗證碼登入 | 7 天 |
 | 員工 | `Authorization: Bearer <JWT>` | 帳密登入 | 12 小時 |
 
@@ -110,11 +113,20 @@
 | 方法 | 路徑 | 說明 |
 |---|---|---|
 | GET | `/api/reservations/availability` | `?date=&partySize=` → 各時間點剩幾桌 |
-| POST | `/api/reservations` | 建立訂位（含配桌） |
-| GET | `/api/reservations/{id}` | 訂位詳情 |
+| POST | `/api/reservations` | **建立訂位（含配桌），送出即成立** |
+| GET | `/api/reservations/{id}` | 訂位詳情（含預點內容） |
 | DELETE | `/api/reservations/{id}` | 取消（含期限判定） |
 | GET | `/api/members/me/reservations` | 我的訂位 |
-| POST | `/api/reservations/{id}/preorder` | 預先點餐（進階） |
+| GET | `/api/reservations/{id}/preorder` | 目前的預點內容（進階） |
+| PUT | `/api/reservations/{id}/preorder` | **整批覆蓋**預點內容，新增與調整共用（進階） |
+| DELETE | `/api/reservations/{id}/preorder` | 清空預點（進階） |
+
+> **預點用 `PUT` 整批覆蓋，不做部分更新。** 前端本來就有購物車，把整份送上來最直覺；
+> 後端 `deleteByReservationId` 再重建，不用寫 diff；重送同一份結果一樣（冪等）。
+> 「先點餐」和「調整餐點」是同一支 API、同一個畫面（C-17）。
+>
+> **存取控制**：會員帶 JWT，匿名帶 `X-Reservation-Token`。
+> 兩者都沒有就回 `401`——只憑 `{id}` 不可以動別人的訂位。
 
 ### 2.4 店家端 `/api/admin`
 
@@ -122,7 +134,8 @@
 |---|---|---|---|
 | POST | `/api/admin/auth/login` | 員工登入 | — |
 | GET | `/api/admin/tables` | 桌況總覽 | 全部 |
-| POST | `/api/admin/tables/{id}/open` | 櫃檯開桌 | COUNTER, MANAGER |
+| GET | `/api/admin/tables/{id}/open-options` | **開桌頁要的兩份清單**：可報到的候位與預約 | COUNTER, MANAGER |
+| POST | `/api/admin/tables/{id}/open` | 櫃檯開桌（現場，帶人數） | COUNTER, MANAGER |
 | POST | `/api/admin/tables/{id}/clean` | 整理完成 → 空桌 | COUNTER, MANAGER |
 | GET | `/api/admin/dining-sessions/{id}` | 桌位詳情 | COUNTER, MANAGER |
 | POST | `/api/admin/dining-sessions/{id}/orders` | 代客加點 | COUNTER, MANAGER |
@@ -144,7 +157,7 @@
 | GET | `/api/admin/menu/items/{id}/qrcode` | 產生桌位 QR code（PNG） | MANAGER |
 | CRUD | `/api/admin/tables-config` | 座位管理 | MANAGER |
 | GET | `/api/admin/reservations` | 訂位管理（`?date=`） | COUNTER, MANAGER |
-| POST | `/api/admin/reservations/{id}/seat` | 訂位報到並開桌 | COUNTER, MANAGER |
+| POST | `/api/admin/reservations/{id}/seat` | 訂位報到並開桌（**帶 `tableId`**） | COUNTER, MANAGER |
 | GET | `/api/admin/inventory` | 庫存清單（低量優先） | MANAGER |
 | PATCH | `/api/admin/inventory/{menuItemId}` | 調整庫存／補貨 | MANAGER |
 | GET | `/api/admin/reports/**` | 報表（進階） | MANAGER |
@@ -158,7 +171,6 @@
 | POST | `/api/admin/scheduler/check-overtime` | 用餐超時掃描 | MANAGER |
 | POST | `/api/admin/scheduler/expire-waitlist` | 候位過號標記 | MANAGER |
 | POST | `/api/admin/scheduler/remind-cleaning` | 待清理提醒 | MANAGER |
-| POST | `/api/admin/scheduler/reserve-tables` | 桌位預留轉換 | MANAGER |
 | POST | `/api/admin/scheduler/mark-no-show` | NO_SHOW 標記 | MANAGER |
 | POST | `/api/admin/scheduler/send-reminders` | 訂位提醒 | MANAGER |
 | POST | `/api/admin/scheduler/check-low-stock` | 低庫存檢查 | MANAGER |
@@ -249,9 +261,12 @@ GET /api/tables/A03/status
 | 桌位狀態 | `canJoin` | 前端顯示 |
 |---|---|---|
 | `AVAILABLE` | false | 「請洽櫃檯帶位」 |
-| `RESERVED` | false | 「此桌已預約，請洽櫃檯」 |
 | `OCCUPIED` | true | 直接進入點餐 |
 | `CLEANING` | false | 「整理中，請稍候」 |
+
+> 舊版還有一個 `RESERVED`（顯示「此桌已預約，請洽櫃檯」）。桌位狀態拿掉它之後，
+> 已被預約但還沒報到的桌就是 `AVAILABLE`，客人掃到一樣看到「請洽櫃檯帶位」——
+> **對客人來說結果完全相同，前端少一個分支。**
 
 ### 4.2 掃碼加入用餐
 
@@ -289,6 +304,80 @@ Authorization: Bearer <員工 JWT>
 
 後端用悲觀鎖（`SELECT ... FOR UPDATE`）避免同一桌開出兩張帳單。
 **錯誤**：`409 TABLE_OCCUPIED`
+
+### 4.3b 開桌頁的來源清單
+
+```http
+GET /api/admin/tables/12/open-options
+```
+
+```json
+200 OK
+{
+  "tableNo": "A03", "seats": 4,
+  "waitlist": [
+    { "id": 77, "no": "A12", "name": "王先生", "partySize": 3,
+      "waitedMinutes": 18, "status": "CALLED" }
+  ],
+  "reservations": [
+    { "id": 442, "reservationNo": "R-260915-0442", "name": "陳怡君",
+      "phoneMasked": "0933***210", "startTime": "2026-09-15T18:00:00+08:00",
+      "adultCount": 3, "childCount": 1, "partySize": 4,
+      "preorderItemCount": 4, "assignedTableNo": "A08" }
+  ],
+  "upcomingOnThisTable": {
+    "reservationNo": "R-260915-0455", "name": "陳小姐",
+    "startTime": "2026-09-15T19:30:00+08:00", "endTime": "2026-09-15T21:25:00+08:00",
+    "partySize": 4
+  }
+}
+```
+
+**三段各自的規則**
+
+1. `waitlist`：`status = CALLED`（已叫號待報到）的組別。
+2. `reservations`：`status = CONFIRMED`、`start_time` 落在 **現在 −15 分 ～ +45 分**、
+   `party_size ≤ seats`。**不限定 `table_id` 是這張桌**——客人被帶到別張桌是現場常態，
+   `assignedTableNo` 只是附帶資訊讓櫃檯知道原本配到哪。
+3. `upcomingOnThisTable`：這張桌接下來最近的一筆訂位，**純提醒**，前端畫成黃字警示。
+   沒有就回 `null`。
+> **延伸功能（M2 的 2.E5）要做手動保留的話**，這支再多回一個 `heldFor`
+> （這張桌保留給哪一筆），前端把對應的那一列置頂標示；另外加
+> `POST` / `DELETE /api/admin/tables/{id}/hold` 兩支。基礎不做。
+
+> 這支回的全部是即時查詢，**不存任何狀態**。桌位不預留的理由見 [M2 問題 5](modules/M2-桌位開桌與候位.md)。
+
+### 4.3c 從候位或預約開桌
+
+```http
+POST /api/admin/waitlist/77/seat
+{ "tableId": 12 }
+```
+
+```http
+POST /api/admin/reservations/442/seat
+{ "tableId": 12 }
+```
+
+兩支都回 `4.11c` 的那種結果（`diningSessionId`、`soldOut`…）。**各自要做的收尾不能漏**：
+
+| 來源 | 一定要一起做完的事 |
+|---|---|
+| 候位 | `waitlist.status` → `SEATED`，人數帶入 `dining_session` |
+| 預約 | `reservation.status` → `SEATED`，人數帶入，有預點就轉單扣庫存 |
+| 兩者共同 | 桌位轉 `OCCUPIED`、`dining_session` 寫入來源 id |
+
+> **不要去改 `reservation.table_id`。** 那是「訂位當下配的桌」，只服務容量與區間重疊判斷；
+> 客人實際坐哪一張，`dining_session`（它的 `table_id` 和 `reservation_id`）已經記下來了。
+> 回頭改它會讓訂位容量的歷史資料跟著現場調度一起變動，反而算不準。
+> **本專題不做換桌功能**——客人被帶到別張桌是現場常態，但那是用餐紀錄的事，不是訂位的事。
+
+> **這裡不檢查區間重疊。** 客人已經站在櫃檯前面了，這是人為決定，系統不該擋。
+> 「這張桌等下有別人訂」的資訊已經在 `upcomingOnThisTable` 給前端顯示過了。
+
+**漏做收尾的後果**（驗收要專門測）：狀態沒轉 `SEATED` 的話，那筆預約會
+① 繼續出現在下一張桌的開桌清單上，② 20 分鐘後被 NO_SHOW 排程標成未到——
+客人明明已經坐下，系統卻記成沒來。
 
 ### 4.4 品項詳情（含選項群組）
 
@@ -486,18 +575,95 @@ POST /api/reservations
 201 Created
 {
   "reservationId": 442,
+  "reservationNo": "R-260920-0442",
+  "accessToken": "rsv_8f3c1d...",
   "tableNo": "A05",
   "seats": 4,
   "startTime": "2026-09-20T18:00:00+08:00",
   "endTime": "2026-09-20T19:55:00+08:00",
   "status": "CONFIRMED",
-  "cancellableUntil": "2026-09-19T20:00:00+08:00"
+  "cancellableUntil": "2026-09-19T20:00:00+08:00",
+  "preorderEditableUntil": "2026-09-19T20:00:00+08:00",
+  "hasPreorder": false
 }
 ```
 
 **錯誤**：`409 SLOT_UNAVAILABLE`（客滿）
 
+**這支回 `CONFIRMED` 就是訂位成立了**——沒有付款這一關，前端拿到 201 直接跳 C-18 訂位完成頁，
+在那裡才問「要不要先點餐」。`accessToken` 只有匿名訂位需要存起來（localStorage），會員可以忽略。
+
+`cancellableUntil` 與 `preorderEditableUntil` **是同一個時間點**（用餐日前一天 20:00）：
+一條規則比兩條好記，廚房也有完整一天可以備料。前端拿這個時間去決定按鈕要不要停用，
+但**後端一定要再擋一次**——前端隱藏按鈕不算權限控制。
+
 後端用悲觀鎖 + `UNIQUE(table_id, start_time)` 雙重保護，見 [區間重疊與訂位排程](../tech/advanced/46-區間重疊與訂位排程.md)。
+
+### 4.11b 預先點餐（進階 7.E1／7.E2）
+
+```http
+PUT /api/reservations/442/preorder
+X-Reservation-Token: rsv_8f3c1d...        （會員改帶 Authorization: Bearer <JWT>）
+
+{
+  "items": [
+    { "menuItemId": 12, "quantity": 1, "optionValueIds": [31], "note": null },
+    { "menuItemId": 45, "quantity": 3, "optionValueIds": [],   "note": "少油" }
+  ]
+}
+```
+
+```json
+200 OK
+{
+  "reservationId": 442,
+  "items": [
+    { "id": 901, "name": "招牌麻辣鍋底", "options": ["辣度：小辣"],
+      "unitPrice": 380.00, "quantity": 1, "lineTotal": 380.00 },
+    { "id": 902, "name": "安格斯霜降牛五花", "options": [],
+      "unitPrice": 320.00, "quantity": 3, "lineTotal": 960.00, "note": "少油" }
+  ],
+  "estimatedTotal": 1340.00,
+  "editableUntil": "2026-09-19T20:00:00+08:00",
+  "updatedAt": "2026-09-14T22:31:07+08:00"
+}
+```
+
+**四個重點**
+
+1. **整批覆蓋**。送 `"items": []` 就等於清空（`DELETE` 只是語意更清楚的同義詞）。
+2. **`estimatedTotal` 是「預估」不是「應付」**。這裡不產生任何 `payment`，
+   金額到店結帳時跟現場加點一起算。回傳金額純粹是讓客人心裡有數。
+3. **不檢查庫存、不扣庫存**。庫存在報到轉單那一刻才動，理由見 [M7 問題 7](../spec/modules/M7-訂位.md)。
+4. **鍋底規則這裡不擋**。共鍋是「每桌至少一份」，客人可能打算到店再加鍋底，
+   預點階段擋下來沒有道理。規則一樣在正式送單時才判（報到轉單後補點的第一張單）。
+
+**錯誤**：`409 PREORDER_LOCKED`（過期限）、`409 ITEM_SOLD_OUT` **不會在這裡出現**、`401`（沒憑證）
+
+### 4.11c 訂位報到開桌（店家端）
+
+```http
+POST /api/admin/reservations/442/seat
+```
+
+```json
+200 OK
+{
+  "diningSessionId": 1087,
+  "tableNo": "A05",
+  "adultCount": 3, "childCount": 1,
+  "preorderTicketId": 3298,
+  "soldOut": [
+    { "name": "安格斯霜降牛五花", "quantity": 3, "reason": "庫存不足" }
+  ]
+}
+```
+
+**`soldOut` 一定要顯示在櫃檯畫面上。** 預點不扣庫存，所以客人到店時某一項可能已經賣完；
+這些品項會從轉出來的單裡移除，由櫃檯當面跟客人講。
+**這不是 bug，是「預點不鎖庫存」這個設計選擇的已知取捨**，驗收時要講得出來。
+
+沒有預點內容時，`preorderTicketId` 為 `null`、`soldOut` 為空陣列——就只是單純開桌。
 
 ### 4.12 KDS 看板
 
@@ -551,11 +717,12 @@ catch (err) {
 ## 6. 開發順序（後端）
 
 1. `GET /api/menu/categories` + `GET /api/menu/items` ← **第 1 週要打通這兩支**，前端才有東西接
-2. `POST /api/admin/tables/{id}/open` + `POST /api/dining-sessions/join`
+2. `POST /api/admin/tables/{id}/open` + `POST /api/dining-sessions/join`（開桌頁的三種來源可以晚一點，先做現場那條）
 3. **`POST /api/dining-sessions/me/orders`**（最複雜的一支，留給最有把握的人）
 4. `GET /api/dining-sessions/me/orders` + WebSocket 推播
 5. `GET /api/admin/kitchen/tickets` + `PATCH .../serve`
 6. 結帳與付款
 7. 服務鈴、候位
-8. 訂位與排程
+8. 訂位與排程（**先做到「訂位成立 → 報到開桌」這條線**，預點是後面的事）
 9. 會員
+10. （有餘力）預先點餐三支 API + 報到轉單

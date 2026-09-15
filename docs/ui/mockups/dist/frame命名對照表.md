@@ -35,14 +35,16 @@
 | `c15-history.html` | `C-15｜消費紀錄` | 02 顧客端 | 375 × 812 |
 | `c16-reserve-entry.html` | `C-16｜線上訂位入口` | 02 顧客端 | 375 × 812 |
 | `c16b-reserve-guest.html` | `C-16b｜匿名訂位填資料` | 02 顧客端 | 375 × 812 |
-| `c16c-reserve-datetime.html` | `C-16c｜預約 1 日期時段人數` | 02 顧客端 | 375 × 812 |
-| `c17-reserve-preorder.html` | `C-17｜預約 2 預先點餐` | 02 顧客端 | 375 × 812 |
-| `c18-reserve-done.html` | `C-18｜預約 3 付款完成` | 02 顧客端 | 375 × 812 |
+| `c16c-reserve-datetime.html` | `C-16c｜選日期時段人數` | 02 顧客端 | 375 × 812 |
+| `c17-reserve-preorder.html` | `C-17｜預先點餐／調整餐點` | 02 顧客端 | 375 × 812 |
+| `c18-reserve-done.html` | `C-18｜訂位完成` | 02 顧客端 | 375 × 812 |
 | `c19-my-reservations.html` | `C-19｜我的預約` | 02 顧客端 | 375 × 812 |
 | `c21-service-bell.html` | `C-21｜服務鈴面板` | 02 顧客端 | 375 × 812 |
 | `s01-login.html` | `S-01｜員工登入` | 03 店家端 | 1280 × 800 |
 | `s02-tables.html` | `S-02｜桌況總覽` | 03 店家端 | 1280 × 800 |
-| `s02b-open-table.html` | `S-02b｜開桌設定人數` | 03 店家端 | 1280 × 800 |
+| `s02b-open-table.html` | `S-02b｜開桌・現場` | 03 店家端 | 1280 × 800 |
+| `s02c-open-waitlist.html` | `S-02c｜開桌・候位` | 03 店家端 | 1280 × 800 |
+| `s02d-open-reservation.html` | `S-02d｜開桌・預約` | 03 店家端 | 1280 × 800 |
 | `s03-table-detail.html` | `S-03｜桌位詳情` | 03 店家端 | 1280 × 800 |
 | `s05-menu-admin.html` | `S-05｜菜單管理` | 03 店家端 | 1280 × 800 |
 | `s06-option-groups.html` | `S-06｜選項群組管理` | 03 店家端 | 1280 × 800 |
@@ -57,6 +59,7 @@
 | `c04-menu-states.html` | `C-04｜空資料` | 01 Design System | 375 × 812 |
 | `c04-menu-states.html` | `C-04｜錯誤` | 01 Design System | 375 × 812 |
 | `c04-menu-states.html` | `C-04｜已送出結帳` | 01 Design System | 375 × 812 |
+| `s02-tables-states.html` | `S-02｜待清理確認框` | 01 Design System | 1280 × 800 |
 | `s02-tables-states.html` | `S-02｜載入中` | 01 Design System | 1280 × 800 |
 | `s02-tables-states.html` | `S-02｜空資料` | 01 Design System | 1280 × 800 |
 | `s02-tables-states.html` | `S-02｜錯誤` | 01 Design System | 1280 × 800 |

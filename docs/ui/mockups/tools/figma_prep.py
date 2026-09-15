@@ -29,6 +29,9 @@ DIST = ROOT / 'dist'
 SHARED_CSS = ROOT / '_shared.css'
 SKIP = {'index.html'}
 
+NOTES_MD = ROOT.parent / '13-畫框註解.md'
+UIUX_MD = ROOT.parent / '10-UI-UX規格.md'
+
 SPACING_SCALE = {0, 4, 8, 12, 16, 24, 32, 48, 64}
 
 SPACING_EXCEPTIONS = {
@@ -62,11 +65,14 @@ FLOW = [
     ('結帳', ['c09-checkout.html', 'c10-payment.html', 'c11-paid.html']),
     ('會員', ['c12-login.html', 'c12b-otp.html', 'c13-register.html',
               'c14-member.html', 'c15-history.html']),
+    # 排序就是流程順序：選時段 → 訂位完成 → （可選）預先點餐。
+    # C-17 排在 C-18 後面不是筆誤，代號沿用不重編（見 ui/10 的編號規則）。
     ('預約', ['c16-reserve-entry.html', 'c16b-reserve-guest.html', 'c16c-reserve-datetime.html',
-              'c17-reserve-preorder.html', 'c18-reserve-done.html', 'c19-my-reservations.html']),
+              'c18-reserve-done.html', 'c17-reserve-preorder.html', 'c19-my-reservations.html']),
     # 店家端：一個功能一列。列的先後同時也是代號遞增的順序，兩種讀法都對得上。
     ('員工登入', ['s01-login.html']),
-    ('現場桌況', ['s02-tables.html', 's02b-open-table.html', 's03-table-detail.html']),
+    ('現場桌況', ['s02-tables.html', 's02b-open-table.html', 's02c-open-waitlist.html',
+                 's02d-open-reservation.html', 's03-table-detail.html']),
     ('出菜', ['s04-kds.html']),
     ('菜單管理', ['s05-menu-admin.html', 's06-option-groups.html']),
     ('預約管理', ['s07-reservations.html']),
@@ -539,15 +545,84 @@ def write_name_table(items):
     (DIST / 'frame命名對照表.md').write_text('\n'.join(L), encoding='utf-8')
 
 
+# ── 級別（基礎必做／進階有空才做）────────────────────────────────────────────
+# 唯一來源是 10-UI-UX規格.md 兩張頁面表的「級別」欄。這裡只讀不寫，
+# 要改分層就去改那兩張表，設計稿、註解與 Figma 會一起跟著變。
+LEVEL_ROW_RE = re.compile(
+    r'^\|\s*((?:DS|[CS])-\d{2}[a-z]?)\s*\|[^|]*\|\s*\*{0,2}(基礎|進階)\*{0,2}\s*\|')
+
+
+def load_levels():
+    """回傳 {代號: '基礎'|'進階'}。"""
+    if not UIUX_MD.exists():
+        return {}
+    out = {}
+    for line in UIUX_MD.read_text(encoding='utf-8').splitlines():
+        m = LEVEL_ROW_RE.match(line.strip())
+        if m:
+            out[m.group(1)] = m.group(2)
+    return out
+
+
+def code_of(frame_name):
+    return frame_name.split('｜')[0].strip()
+
+
+# ── 畫框註解 ────────────────────────────────────────────────────────────────
+# 右側說明卡的內容來源是 ui/13-畫框註解.md，一個「## 畫框名」對一個畫框。
+# 寫在那份 md 而不是寫在這裡，是因為它同時要給人看（build_site.py 會排版成網頁）。
+
+def _plain(t):
+    """把行內 markdown 拆成純文字。Figma 的文字節點沒有粗體片段，留著記號只會變亂碼。"""
+    t = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', t)   # [字](連結) → 字
+    t = t.replace('**', '').replace('`', '')
+    return re.sub(r'\s+', ' ', t).strip()
+
+
+def load_notes():
+    """回傳 {畫框名: {'sub': str, 'spec': [str], 'warn': [str]}}。"""
+    if not NOTES_MD.exists():
+        return {}
+    notes, cur, bucket = {}, None, None
+    for raw in NOTES_MD.read_text(encoding='utf-8').splitlines():
+        line = raw.rstrip()
+        m = re.match(r'^##\s+(\S.*)$', line)
+        if m:
+            cur = {'sub': '', 'spec': [], 'warn': []}
+            notes[m.group(1).strip()] = cur
+            bucket = None
+            continue
+        if cur is None:
+            continue
+        if line.startswith('> ') and not cur['sub']:
+            cur['sub'] = _plain(line[2:])
+            continue
+        flat = line.strip()
+        if flat in ('**規格**', '**注意**'):
+            bucket = 'spec' if flat == '**規格**' else 'warn'
+            continue
+        if bucket and flat.startswith('- '):
+            cur[bucket].append(_plain(flat[2:]))
+        elif bucket and flat and not flat.startswith(('#', '>', '|')) and cur[bucket]:
+            # 上一條的續行（md 裡為了不超過行寬折的）
+            cur[bucket][-1] += ' ' + _plain(flat)
+    return notes
+
+
 def write_frames_json(items):
     """畫框命名的單一來源。抽取器與外掛都讀這份，避免命名各寫一套。"""
     import json
+    notes = load_notes()
+    levels = load_levels()
+    blank = {'sub': '', 'spec': [], 'warn': []}
     data = []
     for it in items:
         e = {'file': it['stem'] + '.html', 'title': it['title'], 'page': it['page'],
              'batch': it['batch'], 'cls': it['cls'],
              'w': FRAME_SPEC[it['cls']][0], 'h': FRAME_SPEC[it['cls']][1],
-             'frames': it['frame_names']}
+             'frames': it['frame_names'],
+             'notes': [notes.get(fn, blank) for fn in it['frame_names']],
+             'levels': [levels.get(code_of(fn), '基礎') for fn in it['frame_names']]}
         fl = FLOW_OF.get(it['stem'] + '.html')
         if fl:
             e['flow'], e['flow_name'], e['flow_i'] = fl[0], fl[1], fl[2]
@@ -644,14 +719,51 @@ def verify(items):
         problems.append('設計系統 frame 數是 %s，應為 8' % per_page.get('01 Design System'))
     if per_page.get('02 顧客端') != 24:
         problems.append('顧客端 frame 數是 %s，應為 24' % per_page.get('02 顧客端'))
-    if per_page.get('03 店家端') != 13:
-        problems.append('店家端 frame 數是 %s，應為 13' % per_page.get('03 店家端'))
+    if per_page.get('03 店家端') != 15:
+        problems.append('店家端 frame 數是 %s，應為 15' % per_page.get('03 店家端'))
 
     # 每張都要歸在某一條流程，不然外掛排版時會掉進「其他」那一列
     for it in items:
         f = it['stem'] + '.html'
         if f not in FLOW_OF:
             problems.append('%s 沒有歸到任何一條流程，請加進 figma_prep.py 的 FLOW' % f)
+    notes = load_notes()
+    if not notes:
+        problems.append('找不到 %s，右側說明卡會全部空白' % NOTES_MD.name)
+    for fn in names:
+        n = notes.get(fn)
+        if not n:
+            problems.append('%s 在 %s 裡沒有註解段落' % (fn, NOTES_MD.name))
+            continue
+        if not n['spec']:
+            problems.append('%s 的註解沒有「規格」條目' % fn)
+        if not n['warn']:
+            problems.append('%s 的註解沒有「注意」條目' % fn)
+        if len(n['spec']) + len(n['warn']) > 11:
+            problems.append('%s 的註解共 %d 條，太長了（上限 11 條）'
+                            % (fn, len(n['spec']) + len(n['warn'])))
+        for line in n['spec'] + n['warn']:
+            if len(line) > 70:
+                problems.append('%s 的註解有一條 %d 字，太長了（上限 70）：%s…'
+                                % (fn, len(line), line[:24]))
+    for fn in sorted(set(notes) - set(names)):
+        problems.append('%s 裡的「%s」已經沒有對應畫框，請移除' % (NOTES_MD.name, fn))
+
+    levels = load_levels()
+    if not levels:
+        problems.append('讀不到 %s 的級別欄，Figma 上會全部標成基礎' % UIUX_MD.name)
+    codes = {code_of(fn) for fn in names}
+    for c in sorted(codes):
+        if c.startswith('DS-'):
+            continue
+        if c not in levels:
+            problems.append('%s 有設計稿但 %s 的頁面表沒有這一列，補不出級別' % (c, UIUX_MD.name))
+    for c in sorted(set(levels) - codes):
+        problems.append('%s 列在 %s 的頁面表，卻沒有對應的設計稿' % (c, UIUX_MD.name))
+    adv = sorted(c for c in codes if levels.get(c) == '進階')
+    if adv:
+        print('  進階畫面：%s' % '、'.join(adv))
+
     known = {f for _, fs in FLOW for f in fs}
     have = {it['stem'] + '.html' for it in items}
     for f in sorted(known - have):

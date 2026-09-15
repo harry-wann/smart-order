@@ -33,7 +33,7 @@
         </div>
         <div class="c g8 mt12">
           <div class="r g8"><svg class="ic ic-sm" style="color:var(--brand-600)" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span class="t-sm" style="margin:0">姓名電話自動帶入，不用每次重填</span></div>
-          <div class="r g8"><svg class="ic ic-sm" style="color:var(--brand-600)" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span class="t-sm" style="margin:0">在「我的預約」改期或取消</span></div>
+          <div class="r g8"><svg class="ic ic-sm" style="color:var(--brand-600)" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span class="t-sm" style="margin:0">換手機也找得到，隨時先點餐或取消</span></div>
           <div class="r g8"><svg class="ic ic-sm" style="color:var(--brand-600)" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span class="t-sm" style="margin:0">當天用餐自動累點</span></div>
         </div>
         <button class="btn btn-primary btn-lg btn-block mt16">登入／註冊會員</button>
@@ -44,8 +44,9 @@
           <svg class="ic ic-lg" style="color:var(--text-600)" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0"/><path d="M12 8v4l2.5 2.5"/></svg>
           <div class="h2 fill" style="margin:0">直接訂，不註冊</div>
         </div>
-        <p class="t-sm" style="margin:12px 0 0">留姓名與手機就好。到店報手機號碼查訂位，
-          改期或取消要打電話給店家。</p>
+        <p class="t-sm" style="margin:12px 0 0">留姓名與手機就好。
+          <b style="color:var(--text-900)">這支手機會記住你的訂位</b>，一樣可以回來先點餐或取消；
+          換手機或清除瀏覽資料後要查詢，再打電話給店家。</p>
         <button class="btn btn-secondary btn-lg btn-block mt16">直接訂位</button>
       </div>
 
@@ -68,6 +69,17 @@
     <dd>C-12 → C-12b →（新號碼再走 C-13）<br>完成後回到這一頁，<br>直接進 C-16c 選日期。</dd>
     <dt>直接訂位</dt>
     <dd>進 C-16b 填姓名手機。</dd>
+    <dt>匿名不是死路</dt>
+    <dd>建立訂位時後端發一個 accessToken，<br>
+        前端存這支手機的 localStorage，<br>
+        靠它就能回來看訂位、先點餐、取消。<br>
+        會員的優勢不是「能不能改」，<br>
+        而是換裝置也找得到、還能累點。</dd>
+    <dt>沒有「改期」</dt>
+    <dd>要換時間就取消後重訂。<br>
+        改期要放掉舊桌、對新時段重跑<br>
+        區間重疊與 best-fit，等於把建立訂位<br>
+        整套再做一次，不值得多開一支 API。</dd>
     <dt>店家端</dt>
     <dd>S-07 預約管理看得出這筆是<br>會員還是匿名，匿名的只有<br>姓名與手機。</dd>
   </dl>
