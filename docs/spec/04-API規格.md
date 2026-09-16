@@ -71,9 +71,10 @@
 | 409 | `BILL_CHANGED` | 結清或付款時，重算的合計跟 `expectedTotal` 不同（剛好有人加點） | 顯示「金額有變動，請重新確認」，用回應裡的 `bill` 重畫再按一次；C-10 回 C-09 提示「剛剛有人加點，金額更新了，請再確認一次」 |
 | 409 | `SLOT_UNAVAILABLE` | 訂位時段已客滿 | 重新載入可訂時段 |
 | 409 | `PREORDER_LOCKED` | 已過預點修改期限（前一天 20:00） | 停用編輯，顯示請來電 |
-| 409 | `RESERVATION_LOCKED` | 已過取消期限，或訂位已報到／已取消 | 停用取消鈕，顯示請來電 |
+| 409 | `RESERVATION_LOCKED` | 已過取消期限，或訂位已報到／已取消（櫃檯取消保留時，訂位不是 `CONFIRMED` 也回這個） | 停用取消鈕，顯示請來電；櫃檯端重抓訂位清單 |
 | 409 | `RESERVATION_EXPIRED` | 報到時已超過訂位時間 10 分鐘（保留時間已過） | 顯示「已超過保留時間，請改登記候位」 |
 | 409 | `RESERVATION_TOO_EARLY` | 報到時還沒到訂位時間前 30 分鐘 | 顯示「還沒到可報到時間（18:00 起）」 |
+| 409 | `HOLD_ALREADY_RELEASED` | 取消預約保留時，這筆已經取消過了（例如兩個櫃檯同時按） | 顯示「這筆訂位已經取消過保留了」，重抓訂位清單 |
 | 409 | `ALREADY_ATTACHED` | 此次用餐已綁定會員（進階 8.10） | — |
 | 422 | `PAYMENT_FAILED` | 模擬付款失敗（5%，進階 A5） | 顯示原因 + 重試按鈕 |
 | 429 | `TOO_MANY_ATTEMPTS` | 驗證碼太頻繁 | 顯示倒數 |
@@ -172,7 +173,7 @@
 | GET | `/api/admin/tables/available` | **一鍵開桌的空桌清單**（`?partySize=`，S-07b／S-10b） | COUNTER, MANAGER |
 | POST | `/api/admin/tables/{id}/open` | 現場開桌（S-02 點空桌，帶人數；保留中回 `409 TABLE_RESERVED`） | COUNTER, MANAGER |
 | POST | `/api/admin/tables/{id}/clean` | 整理完成 → 空桌 | COUNTER, MANAGER |
-| GET | `/api/admin/dining-sessions/{id}` | 桌位詳情（含帳單：小計、服務費、合計；多回 `cartItemCount`＝整桌購物車還沒送出的列數，見 4.8） | COUNTER, MANAGER |
+| GET | `/api/admin/dining-sessions/{id}` | 桌位詳情（含帳單：品項明細、小計、服務費、合計；S-03「小計 N 項」的 N＝已送出品項的份數加總；**不回購物車**，見 4.8） | COUNTER, MANAGER |
 | POST | `/api/admin/dining-sessions/{id}/orders` | 代客加點（body 直接帶品項，**不經過購物車**；`source = STAFF`、`submitted_by_guest_id` 為 NULL） | COUNTER, MANAGER |
 | POST | `/api/admin/dining-sessions/{id}/settle` | **櫃檯結清**（`CASH`／`CARD`／`BARCODE`，帶 `expectedTotal`，可帶 `memberId`） | COUNTER, MANAGER |
 | POST | `/api/admin/dining-sessions/{id}/cancel` | 取消該次用餐（沒點過餐才可以，見 4.8b） | MANAGER |
@@ -192,9 +193,9 @@
 | CRUD | `/api/admin/menu/option-groups` | 選項群組管理 | MANAGER |
 | CRUD | `/api/admin/tables-config` | 座位管理 | MANAGER |
 | GET | `/api/admin/tables-config/{id}/qrcode` | 產生桌位 QR code（PNG，內容 `/t/{tableNo}`） | MANAGER |
-| GET | `/api/admin/reservations` | 訂位管理（`?date=`；每列多回 `assignedTableNo`、`holding`（現在是否保留中）、`holdReleasedAt`） | COUNTER, MANAGER |
+| GET | `/api/admin/reservations` | 訂位管理（`?date=`；每列多回 `assignedTableNo`、`holding`（現在是否保留中，決定「保留 A08」小字）、`holdReleasedAt`；`status = CONFIRMED` 且 `holdReleasedAt` 是 `null` 就顯示「取消保留」，跟 `holding` 無關） | COUNTER, MANAGER |
 | POST | `/api/admin/reservations/{id}/seat` | 訂位報到並開桌（**帶 `tableId`**） | COUNTER, MANAGER |
-| POST | `/api/admin/reservations/{id}/release-hold` | **取消預約保留**（M7 7.10，見 4.3e） | COUNTER, MANAGER |
+| POST | `/api/admin/reservations/{id}/release-hold` | **取消預約保留**（M7 7.10，見 4.3e；訂位是 `CONFIRMED` 就能按，不限保留窗內） | COUNTER, MANAGER |
 | GET | `/api/admin/inventory` | 庫存清單（低量優先，**進階 A3**） | MANAGER |
 | PATCH | `/api/admin/inventory/{menuItemId}` | 調整庫存／補貨（**進階 A3**） | MANAGER |
 | GET | `/api/admin/reports/**` | 報表（**進階 A4**） | MANAGER |
@@ -260,8 +261,8 @@
 
 | type | 推到哪些頻道 | payload | 前端該做什麼 |
 |---|---|---|---|
-| `CART_UPDATED` | session | `{ action: ADDED\|UPDATED\|REMOVED, byGuest: "陳小美", byGuestId: 2, itemName, quantity }` | 重抓 `GET /me/cart`、更新購物車角標；`ADDED` 而且 `byGuestId` 不是自己時，跳 C-04b 通知條「陳小美 加了 安格斯霜降牛五花 ×1」 |
-| `NEW_TICKET` | session、kitchen | `OrderTicketDto`（多帶 `byGuest`、`byGuestId`；櫃檯代客加點是 `"櫃檯"`／`null`，預點轉單兩個都是 `null`） | 加進清單，高亮 2 秒；同桌手機重抓購物車（已被清空）；`byGuest` 不是 `null`、`byGuestId` 也不是自己時，跳 C-04c「王大明 送出 6 項」（N＝這張單的品項列數） |
+| `CART_UPDATED` | session | `{ action: ADDED\|UPDATED\|REMOVED, byGuest: "陳小美", byGuestId: 2, itemName, quantity, optionSummary }` | 重抓 `GET /me/cart`、更新購物車角標；`ADDED` 而且 `byGuestId` 不是自己時，跳 C-04b 通知條（標題「陳小美 加了一樣東西」，說明「安格斯霜降牛五花 ×1・全份」） |
+| `NEW_TICKET` | session、kitchen | `OrderTicketDto`（含 `quantity`＝這張單的份數加總；推給同桌的那份多帶 `byGuest`、`byGuestId`，櫃檯代客加點是 `"櫃檯"`／`null`，預點轉單兩個都是 `null`） | 加進清單，高亮 2 秒；同桌手機重抓購物車（已被清空）；`byGuest` 不是 `null`、`byGuestId` 也不是自己時，跳 C-04c「王大明 送出 6 項」（N＝payload 的 `quantity`，份數加總） |
 | `ITEM_SERVED` | session、kitchen | `{ticketId, itemId, servedAt}` | 該品項狀態改「已出餐」 |
 | `TICKET_SERVED` | session、kitchen | `{ticketId}` | KDS 卡片淡出移除 |
 | `TICKET_CANCELLED` | session、kitchen | `{ticketId, reason}` | 從清單移除 |
@@ -275,6 +276,25 @@
 | `TABLE_OVERTIME` | counter | `{tableId, tableNo, minutes}` | 標紅閃爍 |
 | `WAITLIST_CALLED` | waitlist | `{ticketNo, partySize}` | 候位螢幕顯示叫號 |
 | `WAITLIST_UPDATED` | waitlist、counter | `{waitingCount}` | 更新候位清單 |
+
+**同桌兩個事件的 payload 範例**（推到 `/topic/session/1052`）：
+
+```json
+{ "type": "CART_UPDATED",
+  "payload": { "action": "ADDED", "byGuest": "陳小美", "byGuestId": 2,
+               "itemName": "安格斯霜降牛五花", "quantity": 1, "optionSummary": "全份" } }
+```
+
+```json
+{ "type": "NEW_TICKET",
+  "payload": { "ticketId": 3301, "sequenceNo": 1, "status": "PENDING", "quantity": 6,
+               "byGuest": "王大明", "byGuestId": 1, "items": [ ... ] } }
+```
+
+- `optionSummary`：這一列選到的選項值名稱，依選項群組的順序用「・」串起來（例：「全份・加蔥花」）；沒有選項就是 `null`。
+  C-04b 說明那行＝`itemName ×quantity`，`optionSummary` 不是 `null` 就用「・」接在後面（「安格斯霜降牛五花 ×1・全份」），太長由前端截斷加「…」
+- `quantity`（`NEW_TICKET`）：這張單所有品項的**份數加總**，不是列數——白飯 ×2 算 2 項。上面這張單 6 份，C-04c 就是「王大明 送出 6 項」。
+  全站的「N 項」都是這樣算（見 [01 名詞定義](01-專案總覽.md)）
 
 ### 3.5 兩條鐵律
 
@@ -399,7 +419,7 @@ GET /api/admin/tables/12/open-options
 2. `reservations`：`status = CONFIRMED`、`start_time` 落在 **現在 −10 分 ～ +30 分**、
    `party_size ≤ seats`。晚到超過 10 分鐘的不列——訂位只保留 10 分鐘，不能等 NO_SHOW 排程來標；
    +30 是最早可報到的時間，跟預約保留的開頭是同一個數字。**不限定 `table_id` 是這張桌**——客人被帶到別張桌是現場常態，
-   `assignedTableNo` 只是附帶資訊讓櫃檯知道原本配到哪。
+   `assignedTableNo` 只是附帶資訊讓櫃檯知道原本配到哪。`preorderItemCount` 是預點的**份數加總**（「已預先點餐 4 項」），沒預點是 0。
 3. `upcomingOnThisTable`：這張桌**保留窗之外**、接下來最近的一筆訂位，**純提醒**，前端畫成黃字警示，不擋開桌。
    沒有就回 `null`。
 4. `heldFor`：這張桌**現在**正保留給哪筆訂位（格式同 4.3e），沒有就回 `null`。不是 `null` 時：
@@ -522,11 +542,15 @@ Authorization: Bearer <員工 JWT>
   "tableNo": "A08", "displayStatus": "AVAILABLE" }
 ```
 
-- 寫入 `hold_released_at`／`hold_released_by`，**交易提交後**推 `TABLE_STATUS` 到 `/topic/counter`，A08 立刻變回空桌
-- 訂位本身**仍是 `CONFIRMED`**，客人到了照樣可以報到（改從 S-07b 選別張桌）
-- 前端按下前先二次確認：「取消後無法恢復。A08 會變回空桌，陳怡君到店時再幫他選別張桌」
+- **隨時可以按**：前置條件只有兩個——訂位 `status = CONFIRMED`、`hold_released_at IS NULL`，**不看現在是不是在保留窗內**。
+  所以 S-07 上凡是有配桌、還沒取消保留的 `CONFIRMED` 列都有「取消保留」，明天、後天的訂位也能先取消
+- 寫入 `hold_released_at`／`hold_released_by`，**交易提交後**推 `TABLE_STATUS` 到 `/topic/counter`；這張桌當下正在保留中的話，A08 立刻變回空桌，
+  還沒進保留窗的話桌況本來就不是預約保留，畫面不會變，只是到時候不會鎖（回應的 `displayStatus` 是這張桌當下的顯示狀態）
+- 訂位本身**仍是 `CONFIRMED`**，客人到了照樣可以報到（改從 S-07b 選別張桌）；**名額也照算**（區間重疊看的是訂位狀態，不看保留），取消保留不會讓那個時段多出一桌可以線上訂
+- 前端按下前先二次確認：「取消後，這筆訂位到時候不會鎖住 A08，而且無法恢復。客人到店時再幫他選別張桌。」
 - **單向、不能恢復**：沒有「恢復保留」的 API。按錯的話，客人到店時從 S-07b 選桌（A08 還空著就照樣列得出來，只是不再標「原保留桌」、不排第一）
-- 已經取消過 → 照樣回 200（冪等）；訂位不是 `CONFIRMED`（已報到、已取消、未到）→ `409 RESERVATION_LOCKED`
+- 已經取消過 → `409 HOLD_ALREADY_RELEASED`「這筆訂位已經取消過保留了」（兩個櫃檯同時按時，後到的拿到這個，前端重抓清單即可）；
+  訂位不是 `CONFIRMED`（已報到、已取消、未到）→ `409 RESERVATION_LOCKED`。兩個檢查都要在 `SELECT ... FOR UPDATE` 鎖住這筆訂位之後做
 
 ### 4.4 品項詳情（含選項群組）
 
@@ -574,6 +598,7 @@ X-Device-Id: 7f1c2a9e-4b6d-4e2a-9c1f-2d8e5a0b3c71
   "ticketId": 3301,
   "sequenceNo": 1,
   "status": "PENDING",
+  "quantity": 3,
   "placedAt": "2026-09-13T18:42:11+08:00",
   "items": [ ... ],
   "sessionSubtotal": 1210.00
@@ -612,7 +637,7 @@ X-Device-Id: 7f1c2a9e-4b6d-4e2a-9c1f-2d8e5a0b3c71
 8. 建立 ticket（`submitted_by_guest_id` = 按送出的那支手機）+ items + item options，**以菜單現價重算**並寫入名稱與價格快照（`cart_item.unit_price` 只給畫面看，不拿來算錢）
 9. **刪掉這批 `cart_item`**（同一個交易）
 10. 更新 `dining_session.subtotal`
-11. **交易提交後**才推 `NEW_TICKET`（帶 `byGuest`、`byGuestId`）到 `/topic/session/{id}` 和 `/topic/kitchen`
+11. **交易提交後**才推 `NEW_TICKET`（帶 `byGuest`、`byGuestId`；`quantity` 是這張單的份數加總，C-04c「送出 N 項」用它）到 `/topic/session/{id}` 和 `/topic/kitchen`
 
 **兩個人同時按送出**：兩筆請求搶同一列的鎖。先到的把整桌購物車送出並刪掉；後到的拿到鎖時購物車已經空了 → `409 CART_EMPTY`，
 前端提示並重抓本桌訂單。所以不會送出兩張重複的單。**第 3 步一定要在第 2 步之後**，先讀再鎖的話兩邊讀到的是同一份。
@@ -657,7 +682,8 @@ GET /api/dining-sessions/me/cart
 - `unitPrice`／`lineTotal`／`subtotal` 只是畫面上的參考（不含服務費），送單時以菜單現價重算
 - 加入時就先驗必選群組（`400 OPTION_REQUIRED`）與售完標記（`409 ITEM_SOLD_OUT`）；真正的庫存檢查仍在送出時
 - session 不是 `OPEN` → `409 SESSION_CLOSED`；要改的那一列已經不在（例如同桌剛送出）→ `404 NOT_FOUND`，前端重抓購物車
-- 每次寫入，**交易提交後**推 `CART_UPDATED` 到 `/topic/session/{id}`；其他手機收到就重抓 `GET /me/cart`，`ADDED` 時跳通知條「陳小美 加了 安格斯霜降牛五花 ×1」（`byGuestId` 是自己就不跳）
+- `totalQuantity` 範例是 3：鴛鴦鍋底 ×1 ＋ 美國牛五花 ×2，**算份數不算列數**（2 列、3 項）
+- 每次寫入，**交易提交後**推 `CART_UPDATED` 到 `/topic/session/{id}`（帶 `optionSummary`，見 3.4）；其他手機收到就重抓 `GET /me/cart`，`ADDED` 時跳通知條「陳小美 加了一樣東西／安格斯霜降牛五花 ×1・全份」（`byGuestId` 是自己就不跳）
 
 ### 4.6 本桌訂單
 
@@ -669,7 +695,7 @@ GET /api/dining-sessions/me/orders
   "soupBaseOrdered": true,
   "tickets": [
     {
-      "ticketId": 3301, "sequenceNo": 1, "status": "PREPARING",
+      "ticketId": 3301, "sequenceNo": 1, "status": "PREPARING", "quantity": 3,
       "placedAt": "2026-09-13T18:42:11+08:00",
       "items": [
         { "id": 8801, "name": "鴛鴦鍋底", "quantity": 1,
@@ -683,6 +709,8 @@ GET /api/dining-sessions/me/orders
   ]
 }
 ```
+
+> 每張單的 `quantity` 是份數加總（這張 1 ＋ 2 ＝ 3），C-07 單號下的件數用它，跟 `NEW_TICKET` 的 `quantity` 同一個欄位。
 
 > **這支 API 有 WebSocket 還是要留**：進頁面時要抓一次，斷線重連後也要抓一次。
 
@@ -735,9 +763,8 @@ Authorization: Bearer <員工 JWT>
 `409 BILL_CHANGED` → 對話框關閉、帳單刷新並提示「剛剛有人加點，金額更新了」。
 **櫃檯結帳不做失敗機率**（線上 A5 的 95% 成功率照舊）。倒數只在前端，取消不需要任何 API。
 
-**購物車裡還沒送出的東西**：結清時直接捨棄（第 5 步），不算錢。`GET /api/admin/dining-sessions/{id}` 多回 `cartItemCount`（整桌購物車的列數），
-不是 0 就在 S-03 結帳區顯示暖黃小字「還有 N 項沒送出，結帳後會捨棄」——**只提醒、不擋**。
-這個數字是打開 S-03 時抓的（`CART_UPDATED` 只推給同桌手機，不推櫃檯），按付款前重新整理一次就是最新的。
+**購物車裡還沒送出的東西**：結清時直接捨棄（第 5 步），不算錢。**櫃檯不用管購物車**：S-03／S-03b 不顯示任何購物車提示，
+`GET /api/admin/dining-sessions/{id}` 也不回購物車資訊；櫃檯只看已經送出的單。客人要那幾樣，就要在結帳前自己送出。
 
 ### 4.8a 櫃檯查會員（進階 8.10 的櫃檯入口）
 
@@ -878,7 +905,9 @@ POST /api/reservations
 }
 ```
 
-**錯誤**：`409 SLOT_UNAVAILABLE`（客滿）
+**錯誤**：`409 SLOT_UNAVAILABLE`（客滿）；`400 VALIDATION_FAILED`（`startTime` 不在**明天起 30 天內**——C-16c 的月曆已經只給選這段，後端一樣要再擋一次；`GET /availability` 的 `date` 也是同一個範圍）
+
+> **線上訂位只能訂明天以後**，所以同一天不會有新的線上訂位插進來；區間重疊只算 `CONFIRMED` 與「`SEATED` 且用餐紀錄還沒結帳」的理由見 [M7 問題 5](modules/M7-訂位.md)。
 
 `reservationNo` 是預約編號（格式 `R-YYMMDD-流水號`，見 03 的 `reservation.reservation_no`），C-18 用大字顯示。
 

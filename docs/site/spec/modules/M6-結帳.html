@@ -251,8 +251,8 @@ pre.mermaid svg{max-width:100%;height:auto}
 付款方式從「現金／模擬支付」改成「現金／信用卡／條碼」（2026-09-16），<code>payment.method</code> 沒有 <code>MOCK_PAY</code> 了。</p>
 <p><strong>S-03 結帳區的「會員（選填）」那一塊是進階 8.10 的櫃檯入口</strong>（A1／A6 的前提）：輸入手機 → 查詢 → 顯示「陳小美・1998/04/21」讓櫃檯唸給客人確認 →
 「確認是本人」才把 <code>memberId</code> 放進 settle 的 body，同一個交易寫進 <code>dining_session.member_id</code>。不做 8.10 就整塊拿掉，settle 不帶 <code>memberId</code>。細節見 <a href="../../spec/modules/M8-會員.html">M8</a> 8.10。</p>
-<p><strong>結帳前整桌購物車還有東西</strong>：S-03 結帳區顯示暖黃小字「還有 N 項沒送出，結帳後會捨棄」（<code>GET /api/admin/dining-sessions/{id}</code> 的 <code>cartItemCount</code>），<strong>只提醒、不擋</strong>。
-客人真的要那幾樣，就請他先在手機上送出，或由櫃檯代客加點。</p>
+<p><strong>結帳時整桌購物車還有東西</strong>：結清的同一個交易裡直接捨棄、不算錢（6.10）。<strong>櫃檯不用管購物車</strong>：S-03／S-03b 不顯示任何購物車提示，
+<code>GET /api/admin/dining-sessions/{id}</code> 也不回購物車資訊，櫃檯只看已經送出的單。客人要那幾樣，就要在結帳前自己送出（或請櫃檯代客加點）。</p>
 <p><strong>S-03 還有一顆「取消該次用餐」</strong>（僅店長，<a href="../../spec/modules/M2-桌位開桌與候位.html">M2</a> 2.14），跟結帳是兩條路：沒點過餐才能取消，
 點過餐就只能結帳（<code>409 SESSION_HAS_ORDERS</code>）。取消推的也是 <code>SESSION_CLOSED</code>，但 <code>reason: CANCELLED</code>，手機不顯示「已結帳」面板、直接回 C-00。</p>
 </blockquote>
@@ -660,10 +660,10 @@ useEffect(() =&gt; {
 <h3 id="基礎一定要演完">基礎（一定要演完）</h3>
 <ol>
 <li>手機點三樣東西（含一個有選項價差的）→ 送出；C-08 底部看得到「用餐完畢請到櫃檯結帳」</li>
-<li>櫃檯 S-03 點開這桌：品項明細、小計、服務費 10%、合計（先在手機加一樣東西不送出 → 結帳區多一行「還有 1 項沒送出，結帳後會捨棄」）</li>
+<li>櫃檯 S-03 點開這桌：品項明細、小計、服務費 10%、合計；「小計 N 項」的 N 是已送出品項的份數加總</li>
 <li><strong>櫃檯畫面先不動，手機再加點一盤</strong> → 櫃檯按「信用卡」→ 倒數 5 → 0 → <strong>對話框關閉，提示「剛剛有人加點，金額更新了」，合計換成新金額</strong></li>
-<li>按「現金」→ 倒數中按「取消」→ <strong>什麼都沒發生</strong>；再按一次「現金」等倒數到 0 → 勾勾「結帳完成」→ <strong>約 1.5 秒後自動關閉</strong>回 S-02（對話框標題是「收款中，請把現金放進收銀機」）</li>
-<li>桌況變「待清理」；<strong>兩支手機的 C-04 同時變成「已結帳」</strong>，菜單變暗、不能再加點</li>
+<li>按「現金」→ 倒數中按「取消」→ <strong>什麼都沒發生</strong>；這時在手機加一樣東西<strong>但不送出</strong> → S-03 <strong>沒有任何購物車提示</strong>，合計也不變；再按一次「現金」等倒數到 0 → 勾勾「結帳完成」→ <strong>約 1.5 秒後自動關閉</strong>回 S-02（對話框標題是「收款中，請把現金放進收銀機」）</li>
+<li>桌況變「待清理」；<strong>兩支手機的 C-04 同時變成「已結帳」</strong>，菜單變暗、不能再加點；第 4 步沒送出的那一樣跟著購物車一起捨棄，不算錢</li>
 <li>手機按「回到首頁」→ C-00；再掃一次桌上 QR → C-01 顯示「整理中，請稍候」（權杖已失效，沒關掉的舊分頁再打 API 會拿到 <code>401 INVALID_SESSION_TOKEN</code>，一樣清掉權杖導到 C-00）</li>
 </ol>
 <h3 id="有做-a5-顧客線上結帳才加演6e7">有做 A5 顧客線上結帳才加演（6.E7）</h3>

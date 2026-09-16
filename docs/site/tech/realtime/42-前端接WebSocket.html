@@ -304,10 +304,12 @@ function TicketsPage() {
 <p>購物車存在後端、整桌共用。同桌任何人加、改、刪，後端都會推一個 <code>CART_UPDATED</code> 到 <code>/topic/session/{id}</code>：</p>
 <pre><code class="language-json">{
   &quot;type&quot;: &quot;CART_UPDATED&quot;,
-  &quot;payload&quot;: { &quot;action&quot;: &quot;ADDED&quot;, &quot;byGuest&quot;: &quot;陳小美&quot;, &quot;byGuestId&quot;: 7, &quot;itemName&quot;: &quot;安格斯霜降牛五花&quot;, &quot;quantity&quot;: 1 }
+  &quot;payload&quot;: { &quot;action&quot;: &quot;ADDED&quot;, &quot;byGuest&quot;: &quot;陳小美&quot;, &quot;byGuestId&quot;: 7,
+               &quot;itemName&quot;: &quot;安格斯霜降牛五花&quot;, &quot;quantity&quot;: 1, &quot;optionSummary&quot;: &quot;全份&quot; }
 }
 </code></pre>
 <p><code>action</code> 有 <code>ADDED</code>／<code>UPDATED</code>／<code>REMOVED</code> 三種。<code>byGuest</code> 是顯示名稱（給通知條用），<code>byGuestId</code> 是做這件事的那支手機在這桌的 guest id。
+<code>optionSummary</code> 是選到的選項用「・」串起來（例：「全份・加蔥花」），沒有選項就是 <code>null</code>；通知條寫成「安格斯霜降牛五花 ×1・全份」。
 送單事件 <code>NEW_TICKET</code> 推給同桌的那份也帶這兩個欄位；櫃檯在 S-03 代客加點不經過購物車，<code>byGuest</code> 是「櫃檯」、<code>byGuestId</code> 是 <code>null</code>；
 預點轉單（開桌當下，還沒有手機加入）兩個都是 <code>null</code>，不跳通知。</p>
 <p><strong>自己的動作不通知自己</strong>：前端拿 <code>byGuestId</code> 跟這支手機掃碼加入時拿到的 <code>guest.id</code>（<code>POST /join</code> 的回應）比，相同就只更新畫面、不跳通知條。
@@ -337,13 +339,14 @@ function MenuPage() {
       case 'CART_UPDATED':
         reloadCart();                             // 不管誰改的、改了什麼，整份重抓
         if (p.action === 'ADDED' &amp;&amp; p.byGuestId !== guest.id) {         // 自己加的不用通知自己
-          flash(`${p.byGuest} 加了 ${p.itemName} ×${p.quantity}`);        // C-04b
+          const opt = p.optionSummary ? `・${p.optionSummary}` : '';     // 沒有選項就不接
+          flash(`${p.byGuest} 加了 ${p.itemName} ×${p.quantity}${opt}`);  // C-04b：太長由 CSS 截斷加「…」
         }
         break;
       case 'NEW_TICKET':                          // 有人把整桌購物車送出了
         reloadCart();                             // 購物車被清空，角標歸零
         if (p.byGuest &amp;&amp; p.byGuestId !== guest.id) {   // 櫃檯代客加點：「櫃檯」／null → 會跳；預點轉單：null／null → 不跳
-          flash(`${p.byGuest} 送出 ${p.items.length} 項`);                 // C-04c：N＝這張單的品項列數
+          flash(`${p.byGuest} 送出 ${p.quantity} 項`);                     // C-04c：N＝份數加總（白飯 ×2 算 2），不是 items.length
         }
         break;
       case 'SESSION_CLOSED':                      // PAID 時，沒送出的購物車已經在結清的交易裡捨棄了
@@ -362,7 +365,7 @@ function MenuPage() {
 
   useEffect(() =&gt; { reloadCart(); }, [reloadCart]);
 
-  const cartCount = cart.reduce((sum, i) =&gt; sum + i.quantity, 0);   // 算得出來的就不要存 state
+  const cartCount = cart.reduce((sum, i) =&gt; sum + i.quantity, 0);   // 角標算份數（跟後端的 totalQuantity 一樣）；算得出來的就不要存 state
 
   if (closed) return &lt;SessionClosed /&gt;;          // 已結帳面板：底部購物車列跟著消失
   return (
@@ -374,11 +377,12 @@ function MenuPage() {
   );
 }
 </code></pre>
-<p>四個重點：</p>
+<p>五個重點：</p>
 <ol>
 <li><strong>收到 <code>CART_UPDATED</code> 就重抓，不要自己合併。</strong> payload 只有「誰、做了什麼」，是給通知條用的，不是完整的購物車；拿它去改本機陣列，很快就會跟後端對不上。</li>
 <li><strong>送出點餐推的是 <code>NEW_TICKET</code>，不是 <code>CART_UPDATED</code>。</strong> 但送出會把整桌購物車清空，所以收到 <code>NEW_TICKET</code> 也要重抓購物車，不然別人手機上的角標會停在舊數字。</li>
 <li><strong>兩個人同時按「送出整桌點餐」</strong>：後端用列鎖讓兩筆排隊，先到的送出整份，後到的拿到 <code>409 CART_EMPTY</code>（「購物車是空的，可能同桌已經送出了」），前端提示後重抓就好（見 <a href="../../tech/frontend/40-fetch串接API.html">fetch 串接後端 API</a>、<a href="../../tech/database/28-鎖與併發.html">鎖與併發</a>）。</li>
+<li><strong>數量一律算份數。</strong> 角標、「送出 N 項」都是 <code>quantity</code> 加總；用 <code>items.length</code> 會把「白飯 ×2」算成 1 項，跟畫面上的份數對不上。</li>
 <li><strong>自己做的不跳通知，比 <code>byGuestId</code> 不比名字。</strong> 自己加的、自己送出的，只重抓購物車；櫃檯代客加點的 <code>byGuestId</code> 是 <code>null</code>，同桌每支手機都會跳「櫃檯 送出 3 項」。</li>
 </ol>
 <p><code>SESSION_CLOSED</code> 兩頁都用同一個 <code>handleSessionClosed</code>：<code>PAID</code> 顯示「已結帳」面板，<code>CANCELLED</code> 什麼都不顯示、清掉權杖直接回 <code>/</code>。</p>

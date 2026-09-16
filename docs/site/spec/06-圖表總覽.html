@@ -945,7 +945,7 @@ pre.mermaid svg{max-width:100%;height:auto}
     A -->|AVAILABLE| R{"有沒有一筆訂位<br/>配到這張桌 而且 CONFIRMED<br/>現在在開始前 30 分到開始後 10 分<br/>而且沒被取消保留"}
     R -->|有| H["預約保留 RESERVED<br/>帶 heldFor<br/>開給別人回 409 TABLE_RESERVED"]
     R -->|沒有| E["空桌"]
-    H -.->|櫃檯取消保留<br/>寫 hold_released_at<br/>單向 不能恢復| E
+    H -.->|櫃檯取消保留 隨時可按<br/>寫 hold_released_at<br/>單向 不能恢復| E
 
     classDef occ fill:#FBE8E3,stroke:#C8442E,color:#2B211C
     classDef held fill:#FCF0DC,stroke:#E8A33D,color:#2B211C
@@ -974,7 +974,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td>虛線箭頭</td>
-<td>取消保留只改 <code>reservation</code>，訂位仍是 <code>CONFIRMED</code>；<strong>單向</strong>，沒有恢復保留的路</td>
+<td>取消保留只改 <code>reservation</code>，訂位仍是 <code>CONFIRMED</code>；<strong>隨時可按</strong>（不限保留窗內，還沒進窗就先取消的話，到時候直接走「沒有」那條）；<strong>單向</strong>，沒有恢復保留的路</td>
 </tr>
 </tbody>
 </table></div>
@@ -987,7 +987,7 @@ pre.mermaid svg{max-width:100%;height:auto}
     direction LR
     [*] --> CONFIRMED : 選完時段送出 當場成立
     CONFIRMED --> SEATED : 到店報到 開桌 最早提前 30 分
-    CONFIRMED --> CONFIRMED : 櫃檯取消保留 只寫 hold_released_at
+    CONFIRMED --> CONFIRMED : 櫃檯取消保留 隨時可按 只寫 hold_released_at
     CONFIRMED --> CANCELLED : 前一日 20 點前取消
     CONFIRMED --> NO_SHOW : 排程 過了訂位時間 10 分未到
     SEATED --> [*]
@@ -1002,6 +1002,11 @@ pre.mermaid svg{max-width:100%;height:auto}
         開始前 30 分到開始後 10 分
         配到的桌顯示預約保留
     end note
+    note right of SEATED
+        用餐紀錄還沒結帳前算佔位
+        結帳或取消用餐後名額就釋出
+        不用等到 end_time
+    end note
     note right of NO_SHOW
         訂位只保留 10 分鐘
         逾時只能現場候位
@@ -1013,8 +1018,10 @@ pre.mermaid svg{max-width:100%;height:auto}
 報到 API 也自己檢查：太早回 <code>409 RESERVATION_TOO_EARLY</code>，逾時回 <code>409 RESERVATION_EXPIRED</code>，不等排程。</p>
 <p>取消會把 <code>table_id</code> 設為 <code>NULL</code>，釋放 <code>UNIQUE(table_id, start_time)</code>，那個時段才能重新被訂走。
 <code>NO_SHOW</code> 發生時那個時段已經開始了，不需要釋放，<code>table_id</code> 留著當紀錄（跟 <a href="../spec/03-資料庫設計.html">03</a> 一致）；
-它本來就不算佔位（<a class="gloss" href="../tech/advanced/46-區間重疊與訂位排程.html" title="看這個技術的白話說明">區間重疊</a>只看 <code>CONFIRMED</code> 與 <code>SEATED</code>），預約保留也在訂位時間後 10 分鐘自己結束，桌位狀態完全不受影響。</p>
-<p><strong><code>SEATED</code> 也算佔用</strong>（到 <code>end_time</code> 為止）：客人報到後還坐著，只算 <code>CONFIRMED</code> 的話同一時段會被線上多訂一組。</p>
+它本來就不算佔位（<a class="gloss" href="../tech/advanced/46-區間重疊與訂位排程.html" title="看這個技術的白話說明">區間重疊</a>只看 <code>CONFIRMED</code> 與還沒結帳的 <code>SEATED</code>），預約保留也在訂位時間後 10 分鐘自己結束，桌位狀態完全不受影響。</p>
+<p><strong><code>SEATED</code> 只在用餐紀錄還沒結帳（<code>dining_session.status = OPEN</code>）時算佔用</strong>：客人還坐著就要算；結帳或取消用餐後名額立刻釋出，不用等到 <code>end_time</code>。
+線上訂位只能訂明天以後，所以這條主要影響的是「同一天之後的訂位保留」與容量報表的正確性，不會出現當天被線上搶訂的情況。</p>
+<p><strong>取消保留隨時可按</strong>：訂位是 <code>CONFIRMED</code>、還沒取消過就能按，不限保留窗內；重複按回 <code>409 HOLD_ALREADY_RELEASED</code>。</p>
 </blockquote>
 <h3 id="64b-預先點餐進階">6.4b 預先點餐（進階）</h3>
 <p>這不是資料庫欄位，是由「有沒有內容」加上「現在幾點」推導出來的。</p>
@@ -1343,14 +1350,14 @@ CREATE UNIQUE INDEX uk_guest_session_device ON dining_session_guest (dining_sess
 
     Note over G,KDS: 階段二 整桌共用購物車 存在後端
 
-    G->>API: POST /me/cart/items 鴛鴦鍋底
+    G->>API: POST /me/cart/items 鴛鴦鍋底 ×1
     API->>DB: 寫 cart_item 記下是客人 1 加的
     API->>WS: CART_UPDATED ADDED
-    WS-->>G2: 通知條 客人 1 加了 鴛鴦鍋底 購物車同步
+    WS-->>G2: 通知條 客人 1 加了 鴛鴦鍋底 ×1・麻辣・昆布 角標 1
     Note over G: 自己也收到 CART_UPDATED 但 byGuestId 是自己 只重抓不跳通知
-    G2->>API: POST /me/cart/items 牛五花
+    G2->>API: POST /me/cart/items 牛五花 ×1 全份
     API->>WS: CART_UPDATED ADDED
-    WS-->>G: 通知條 客人 2 加了 牛五花
+    WS-->>G: 通知條 客人 2 加了 牛五花 ×1・全份 角標 2
 
     Note over G,KDS: 階段三 送出整桌點餐 共鍋每桌至少一份鍋底
 
@@ -1368,7 +1375,7 @@ CREATE UNIQUE INDEX uk_guest_session_device ON dining_session_guest (dining_sess
         API-->>G: 201 第 1 單已送出
         Note over API: 交易提交後才推播
         API->>WS: NEW_TICKET byGuest 客人 1 byGuestId 1
-        WS-->>G2: 新單出現 購物車清空 通知條 客人 1 送出 2 項
+        WS-->>G2: 新單出現 購物車清空 通知條 客人 1 送出 2 項 算份數
         WS-->>KDS: 卡片跳出
     else 庫存不足
         DB-->>API: 影響筆數 0
@@ -1453,13 +1460,14 @@ CREATE UNIQUE INDEX uk_guest_session_device ON dining_session_guest (dining_sess
 <ol>
 <li><strong>掃碼第一次被擋下來</strong>——桌位還是 <code>AVAILABLE</code>，櫃檯沒開桌。這是「半輔助工具」定位的具體呈現。</li>
 <li><strong>購物車是整桌共用、存在後端的（第 11～17 步）。</strong> 兩支手機各加各的，加進同一份；每次異動推 <code>CART_UPDATED</code>，
-   另一支跳通知條「客人 1 加了 鴛鴦鍋底」；事件帶 <code>byGuestId</code>，自己的動作只重抓、不跳通知。<code>X-Device-Id</code> 只拿來標示誰加的，不是身分驗證。</li>
+   另一支跳通知條「客人 1 加了 鴛鴦鍋底 ×1・麻辣・昆布」（事件帶 <code>optionSummary</code>）；事件帶 <code>byGuestId</code>，自己的動作只重抓、不跳通知。
+   角標與「送出 N 項」都算<strong>份數</strong>（<code>totalQuantity</code>、<code>NEW_TICKET</code> 的 <code>quantity</code>），不是列數。<code>X-Device-Id</code> 只拿來標示誰加的，不是身分驗證。</li>
 <li><strong>第 18～32 步是整個系統最重要的交易</strong>。送出不帶品項，<strong>鎖住 session 之後</strong>才讀整桌購物車（第 20 步）；
    扣庫存用 <code>WHERE qty &gt;= n</code> 判斷影響筆數，任一項失敗整張單回滾、購物車原封不動；成功就在同一個交易裡刪掉購物車（第 24 步）。
    兩個人同時按送出，後到的拿到空購物車 → <code>409 CART_EMPTY</code>。</li>
 <li><strong>推播一律在交易提交之後</strong>，否則前端收到通知去查卻查不到資料。</li>
 <li><strong>手機 B 不輪詢</strong>，所有更新都是推過去的；收到 <code>CART_UPDATED</code> 或 <code>NEW_TICKET</code> 就重抓購物車（以後端為準），連上時和斷線重連時也各要抓一次完整資料。</li>
-<li><strong>結帳在櫃檯（第 40～50 步），沒有「結帳中」狀態。</strong> 櫃檯按付款方式（現金／信用卡／條碼都一樣）後先倒數 5 秒（S-03b，可取消），倒數到 0 才送出，成功後約 1.5 秒自動關閉；還沒送出的購物車品項在結清時直接捨棄；
+<li><strong>結帳在櫃檯（第 40～50 步），沒有「結帳中」狀態。</strong> 櫃檯按付款方式（現金／信用卡／條碼都一樣）後先倒數 5 秒（S-03b，可取消），倒數到 0 才送出，成功後約 1.5 秒自動關閉；還沒送出的購物車品項在結清時直接捨棄（櫃檯畫面不提示）；
    結清帶 <code>expectedTotal</code>，跟送出點餐（第 20 步）搶同一把列鎖：
    加點先到，結清拿到 <code>BILL_CHANGED</code>；結清先到，加點拿到 <code>SESSION_CLOSED</code>。成功推 <code>SESSION_CLOSED</code>（<code>reason: PAID</code>）。客人手機上的「我要結帳」是進階 A5。</li>
 </ol>
@@ -1479,10 +1487,10 @@ CREATE UNIQUE INDEX uk_guest_session_device ON dining_session_guest (dining_sess
 
     G->>API: GET /reservations/availability date partySize
     API-->>G: 各時段剩幾桌 客滿的標 false
-    G->>API: POST /reservations 選好日期時段人數
+    G->>API: POST /reservations 選好日期 明天起 30 天內 時段人數
     activate API
     API->>DB: 悲觀鎖候選桌 依 id 排序防死鎖
-    API->>DB: 區間重疊檢查 CONFIRMED 與 SEATED 都算 加 best-fit 挑最小夠坐的桌
+    API->>DB: 區間重疊檢查 CONFIRMED 與還沒結帳的 SEATED 才算 加 best-fit 挑最小夠坐的桌
     alt 有空桌
         API->>DB: 寫入 reservation 狀態 CONFIRMED
         API-->>G: 201 預約編號 桌號 accessToken
@@ -1513,7 +1521,7 @@ CREATE UNIQUE INDEX uk_guest_session_device ON dining_session_guest (dining_sess
 
     CT->>API: GET /admin/tables
     API-->>CT: A05 displayStatus RESERVED heldFor 這筆訂位 當場算出來
-    opt 櫃檯決定先把 A05 給別人
+    opt 櫃檯決定先把 A05 給別人 取消保留隨時可按
         CT->>API: POST /admin/reservations/442/release-hold
         API-->>CT: A05 變回空桌 訂位仍是 CONFIRMED 不能恢復
     end
@@ -1592,7 +1600,7 @@ CREATE UNIQUE INDEX uk_guest_session_device ON dining_session_guest (dining_sess
 <li><strong>庫存到第 26 步才扣</strong>。預點不鎖庫存，代價是到店可能售完 → <code>soldOut</code> 清單。
    這是設計選擇不是 bug，要在驗收時講得出來。</li>
 <li><strong>配到的桌在訂位前 30 分鐘起顯示「預約保留」（第 15～16 步）</strong>，是查桌況時當場算的，沒有排程。
-   櫃檯可以取消保留（第 17～18 步），訂位仍是 <code>CONFIRMED</code>，客人到了改坐別張桌；取消是單向的，不能恢復。</li>
+   櫃檯可以取消保留（第 17～18 步），<strong>隨時可按</strong>（不限保留窗內，重複按回 <code>HOLD_ALREADY_RELEASED</code>），訂位仍是 <code>CONFIRMED</code>，客人到了改坐別張桌；取消是單向的，不能恢復。</li>
 <li><strong>報到前先選桌（第 19～21 步）</strong>。S-07b 列出坐得下的空桌，原保留桌排第一，別人的保留桌不列；
    太早回 <code>RESERVATION_TOO_EARLY</code>、過了訂位時間 10 分鐘回 <code>RESERVATION_EXPIRED</code>、開到別人的保留桌回 <code>TABLE_RESERVED</code>（第 22～24 步），
    都不等排程。報到成功後這筆轉 <code>SEATED</code>，保留條件不成立，保留自己消失（第 30 步）。</li>

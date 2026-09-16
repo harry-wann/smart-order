@@ -256,7 +256,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <pre><code>POST  /api/admin/tables/3/open                     開桌
 POST  /api/admin/dining-sessions/1052/settle       櫃檯結清
 POST  /api/admin/dining-sessions/1052/cancel       取消該次用餐
-POST  /api/admin/reservations/442/release-hold     取消訂位保留（單向，不能恢復）
+POST  /api/admin/reservations/442/release-hold     取消訂位保留（隨時可按，單向，不能恢復）
 PATCH /api/admin/order-items/8801/serve            勾選已出餐
 </code></pre>
 <p><strong>用 <code>POST</code> 或 <code>PATCH</code>，不要用 <code>GET</code>。</strong> 這些都會改資料。</p>

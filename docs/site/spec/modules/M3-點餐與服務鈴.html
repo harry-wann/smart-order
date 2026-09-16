@@ -227,13 +227,13 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td>3.1</td>
 <td>購物車（整桌共用）</td>
-<td><strong>存後端</strong>（<code>cart_item</code>），同桌每支手機看到同一份，任何人都能增減數量、刪除、加備註；每列品名下方小字「陳小美 加的」（原 3.E4 併入）；加入／修改／刪除後推 <code>CART_UPDATED</code>，同桌 1 秒內更新角標，加入時<strong>其他手機</strong>跳通知條「陳小美 加了 安格斯霜降牛五花 ×1」（比對 <code>byGuestId</code>，自己加的不跳）；已結帳 → <code>409 SESSION_CLOSED</code></td>
+<td><strong>存後端</strong>（<code>cart_item</code>），同桌每支手機看到同一份，任何人都能增減數量、刪除、加備註；每列品名下方小字「陳小美 加的」（原 3.E4 併入）；加入／修改／刪除後推 <code>CART_UPDATED</code>，同桌 1 秒內更新角標（角標＝份數加總 <code>totalQuantity</code>，白飯 ×2 算 2），加入時<strong>其他手機</strong>跳通知條「陳小美 加了一樣東西／安格斯霜降牛五花 ×1・全份」（<code>CART_UPDATED</code> 帶 <code>optionSummary</code>，沒有選項就只到「×1」；比對 <code>byGuestId</code>，自己加的不跳）；已結帳 → <code>409 SESSION_CLOSED</code></td>
 <td>☐</td>
 </tr>
 <tr>
 <td>3.2</td>
 <td>送出整桌點餐</td>
-<td>按「送出整桌點餐」，<strong>不帶品項</strong>：後端把整桌購物車變成<strong>一張</strong> <code>order_ticket</code>（記下 <code>submitted_by_guest_id</code>）並清空購物車，同桌其他手機跳「王大明 送出 6 項」（N＝這張單的品項列數；按的人自己不跳）；購物車已經空了 → <code>409 CART_EMPTY</code>「購物車是空的，可能同桌已經送出了」</td>
+<td>按「送出整桌點餐」，<strong>不帶品項</strong>：後端把整桌購物車變成<strong>一張</strong> <code>order_ticket</code>（記下 <code>submitted_by_guest_id</code>）並清空購物車，同桌其他手機跳「王大明 送出 6 項」（N＝這張單的<strong>份數加總</strong>，<code>NEW_TICKET</code> 的 <code>quantity</code>；按的人自己不跳）；購物車已經空了 → <code>409 CART_EMPTY</code>「購物車是空的，可能同桌已經送出了」</td>
 <td>☐</td>
 </tr>
 <tr>
@@ -499,7 +499,7 @@ public OrderTicketDto submitOrder(String token, String deviceId) {   // 不收�
 </code></pre>
 <p><strong>這一行讓你同時拿到「即時」和「不會錯」。</strong> 就算 WebSocket 完全掛掉，只要使用者重新整理，資料還是對的。</p>
 <p><strong>購物車也走同一條路</strong>：誰加了東西，後端推 <code>CART_UPDATED</code>，其他手機收到就重抓 <code>GET /api/dining-sessions/me/cart</code>。
-不要拿事件內容自己去拼購物車——事件只拿來跳通知條「陳小美 加了 安格斯霜降牛五花 ×1」，內容一律以後端為準。</p>
+不要拿事件內容自己去拼購物車——事件只拿來跳通知條「陳小美 加了 安格斯霜降牛五花 ×1・全份」（<code>itemName</code>、<code>quantity</code>、<code>optionSummary</code>），內容一律以後端為準。</p>
 <hr />
 <h3 id="問題-4客人連按三下送出">問題 4：客人連按三下送出</h3>
 <p><strong>情境</strong>
@@ -586,7 +586,7 @@ public OrderTicketDto submitOrder(String token, String deviceId) {   // 不收�
 </tbody>
 </table></div>
 <p><strong>結帳或取消時還沒送出的品項直接捨棄</strong>：session 進終態的同一個交易裡刪掉整桌 <code>cart_item</code>，不算錢；
-櫃檯在 S-03 結帳前會看到暖黃小字「還有 N 項沒送出，結帳後會捨棄」（只提醒、不擋），已結帳的 C-04／C-06 購物車列直接消失。</p>
+<strong>櫃檯不用管購物車</strong>（S-03 不顯示購物車的任何提示），已結帳的 C-04／C-06 購物車列直接消失。客人要的東西，要在結帳前自己送出。</p>
 <hr />
 <h3 id="問題-7兩個人同時按送出整桌點餐">問題 7：兩個人同時按「送出整桌點餐」</h3>
 <p><strong>情境</strong>
@@ -701,9 +701,9 @@ public OrderTicketDto submitOrder(String token, String deviceId) {   // 不收�
 </blockquote>
 <ol>
 <li>兩支手機掃同一桌的 QR，都進到菜單</li>
-<li>手機 A 把「鴛鴦鍋底」（左麻辣、右昆布）加進購物車 → <strong>手機 B 跳出「客人 1 加了 鴛鴦鍋底 ×1」，購物車角標同步</strong>（手機 A 自己不跳）</li>
-<li>手機 B 加牛五花（全份、加蔥花）→ <strong>兩支手機的購物車都是兩項</strong>，各自標「客人 1 加的」「客人 2 加的」；手機 A 把牛五花改成 2 份，手機 B 跟著變</li>
-<li>手機 A 按「送出整桌點餐」→ <strong>手機 B 在 1 秒內看到「第 1 單」出現、購物車清空，通知條「客人 1 送出 2 項」</strong>（手機 A 自己不跳）</li>
+<li>手機 A 把「鴛鴦鍋底」（左麻辣、右昆布）加進購物車 → <strong>手機 B 跳出「客人 1 加了 鴛鴦鍋底 ×1・麻辣・昆布」，購物車角標同步變成 1</strong>（手機 A 自己不跳）</li>
+<li>手機 B 加牛五花 ×1（全份、加蔥花）→ 手機 A 跳「客人 2 加了 牛五花 ×1・全份・加蔥花」，<strong>兩支手機的購物車都是兩列、角標 2</strong>，各自標「客人 1 加的」「客人 2 加的」；手機 A 把牛五花改成 2 份，<strong>兩支手機的角標都變成 3</strong>（數量算份數，不算列數）</li>
+<li>手機 A 按「送出整桌點餐」→ <strong>手機 B 在 1 秒內看到「第 1 單」出現、購物車清空，通知條「客人 1 送出 3 項」</strong>（鴛鴦鍋底 1 份＋牛五花 2 份；手機 A 自己不跳）</li>
 <li>廚房看板同時跳出這張單</li>
 <li>手機 B 加點高麗菜 → 送出 → <strong>手機 A 看到「第 2 單」</strong></li>
 <li>兩支手機都加一樣東西，<strong>同時按送出</strong> → <strong>只成立一張單</strong>，另一支顯示「購物車是空的，可能同桌已經送出了」</li>
@@ -711,7 +711,7 @@ public OrderTicketDto submitOrder(String token, String deviceId) {   // 不收�
 <li>手機 A 按「服務鈴 → 加湯」→ <strong>櫃檯畫面立刻跳出提示</strong></li>
 <li>手機 A 先把一個品項加進購物車，再用 SQL 把它的庫存設成 0（模擬剛被別桌點完）→ 送出 → <strong>顯示「已售完」並標紅那一項，整張單沒有成立，購物車原封不動</strong></li>
 <li>本桌還沒點鍋底時，送出一份沒有鍋底的購物車 → <strong>顯示「這桌還沒點鍋底，共鍋至少要一份」</strong>，整張單沒有成立</li>
-<li>手機 B 加一樣東西但不送出 → 櫃檯打開 S-03，結帳區顯示「還有 1 項沒送出，結帳後會捨棄」</li>
+<li>手機 B 加一樣東西但不送出 → 櫃檯打開 S-03，<strong>看不到任何購物車提示</strong>，合計也不含它（櫃檯只看已送出的單）</li>
 <li>櫃檯在 S-03 結帳 → <strong>兩支手機同時變成「已結帳」</strong>，菜單變暗、購物車列換成「這桌已經結帳完成」，剛剛沒送出的那一項不算錢</li>
 </ol><div class="pager"><a href="../../spec/modules/M2-桌位開桌與候位.html"><div class="k">← 上一篇</div><div class="n">M2 桌位、開桌與候位</div></a><a class="next" href="../../spec/modules/M4-出菜看板.html"><div class="k">下一篇 →</div><div class="n">M4 出菜看板（KDS）</div></a></div>
 </article>

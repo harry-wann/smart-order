@@ -20,7 +20,7 @@
       <div class="av" style="background:var(--success-bg);color:var(--success)">單</div>
       <div class="bd">
         <div class="h">第 2 單已送出廚房</div>
-        <div class="t">王大明 送出 6 項・NT$ 1,420</div>
+        <div class="t">王大明 送出 3 項・NT$ 460</div>
       </div>
       <div class="tm">1 分鐘前</div>
       <div class="grip"></div>
@@ -160,8 +160,10 @@
     <dd>同桌有人按下「送出整桌點餐」，<br>整桌都會收到這則。</dd>
     <dt>資料從哪來</dt>
     <dd>送單事件 NEW_TICKET 的 payload<br>
-        多帶 byGuest：「王大明 送出 6 項」，<br>
-        6 是這張單的品項列數；標題寫第幾單、<br>
+        多帶 byGuest：「王大明 送出 3 項」，<br>
+        3 是這張單的份數加總（quantity：<br>
+        牛五花 ×1＋白飯 ×2），不是列數。<br>
+        標題寫第幾單、<br>
         說明行帶金額。櫃檯代客加點寫「櫃檯」</dd>
     <dt>自己送出的不跳</dt>
     <dd>byGuestId 跟自己的 guest id 相同，<br>

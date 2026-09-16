@@ -448,7 +448,8 @@ pre.mermaid svg{max-width:100%;height:auto}
 </table></div>
 <blockquote>
 <p>原 3.E4「誰加的」標示已併入 3.1（2026-09-16，購物車改成存後端、整桌共用之後就變成基礎），編號不重編。
-不經過整桌購物車的只有兩種：櫃檯代客加點（S-03 直接出單，同桌通知顯示「櫃檯 送出 N 項」），以及 C-17 預先點餐（A2，購物車只存在那支手機）。</p>
+不經過整桌購物車的只有兩種：櫃檯代客加點（S-03 直接出單，同桌通知顯示「櫃檯 送出 N 項」），以及 C-17 預先點餐（A2，購物車只存在那支手機）。
+全站的「N 項」都是<strong>份數加總</strong>（白飯 ×2 算 2 項）：購物車角標、C-06「小計 N 項」、C-04c「送出 N 項」、C-07 每張單的件數、S-03「小計 N 項」都一樣，見 <a href="../spec/01-專案總覽.html">01 名詞定義</a>。</p>
 </blockquote>
 <h3 id="m4-出菜看板-kds">M4 <a href="../spec/modules/M4-出菜看板.html">出菜看板 KDS</a>　★★★☆☆</h3>
 <div class="tablewrap"><table>
@@ -633,12 +634,12 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tbody>
 <tr>
 <td>7.1</td>
-<td>任意時間預約（<code>start_time</code> / <code>end_time</code>）</td>
+<td>任意時間預約（<code>start_time</code> / <code>end_time</code>；只能訂明天起 30 天內）</td>
 <td>☐</td>
 </tr>
 <tr>
 <td>7.2</td>
-<td><strong><a class="gloss" href="../tech/advanced/46-區間重疊與訂位排程.html" title="看這個技術的白話說明">區間重疊</a>檢查</strong>（<code>A.start &lt; B.end AND B.start &lt; A.end</code>；<code>CONFIRMED</code> 與 <code>SEATED</code> 都算佔用）</td>
+<td><strong><a class="gloss" href="../tech/advanced/46-區間重疊與訂位排程.html" title="看這個技術的白話說明">區間重疊</a>檢查</strong>（<code>A.start &lt; B.end AND B.start &lt; A.end</code>；算佔用的是 <code>CONFIRMED</code>，以及 <code>SEATED</code> 且用餐紀錄還沒結帳的）</td>
 <td>☐</td>
 </tr>
 <tr>
@@ -678,7 +679,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td>7.10</td>
-<td><strong>訂位保留桌位</strong>（配到的桌在訂位前 30 分～後 10 分鎖住；<strong>算出來的，不是排程</strong>；櫃檯可取消保留）</td>
+<td><strong>訂位保留桌位</strong>（配到的桌在訂位前 30 分～後 10 分鎖住；<strong>算出來的，不是排程</strong>；櫃檯隨時可取消保留，不限保留窗內）</td>
 <td>☐</td>
 </tr>
 <tr>
@@ -970,7 +971,7 @@ A7 人氣推薦<strong>沒有獨立畫面</strong>，只是 C-04 菜單主頁裡
 </tr>
 </tbody>
 </table></div>
-<p><strong>只有 <code>OPEN</code> 可以建立新的 <code>OrderTicket</code>，也只有 <code>OPEN</code> 可以增刪改購物車</strong>（否則 <code>409 SESSION_CLOSED</code>）。進入終態時該桌所有用餐權杖立刻失效，整桌購物車一起刪掉（還沒送出的品項直接捨棄，不算錢；櫃檯結帳前 S-03 會提醒「還有 N 項沒送出，結帳後會捨棄」）。</p>
+<p><strong>只有 <code>OPEN</code> 可以建立新的 <code>OrderTicket</code>，也只有 <code>OPEN</code> 可以增刪改購物車</strong>（否則 <code>409 SESSION_CLOSED</code>）。進入終態時該桌所有用餐權杖立刻失效，整桌購物車一起刪掉（還沒送出的品項直接捨棄，不算錢；櫃檯不用管購物車，S-03 不提示）。</p>
 <p>兩種終態推同一個事件 <code>SESSION_CLOSED</code>，用 <code>reason</code> 分：</p>
 <div class="tablewrap"><table>
 <thead>
@@ -1075,9 +1076,13 @@ A7 人氣推薦<strong>沒有獨立畫面</strong>，只是 C-04 菜單主頁裡
 <h3 id="64-預約-reservationstatus">6.4 預約 <code>Reservation.status</code></h3>
 <p><code>CONFIRMED</code> → <code>SEATED</code>，或 → <code>CANCELLED</code>（客人或櫃檯取消）／ <code>NO_SHOW</code>（排程標記）。</p>
 <p><strong>報到最早在訂位時間前 30 分鐘</strong>，更早按回 <code>409 RESERVATION_TOO_EARLY</code>「還沒到可報到時間（18:00 起）」。
-櫃檯「取消保留」只寫 <code>hold_released_at</code>，<strong>訂位狀態不變</strong>（仍是 <code>CONFIRMED</code>），客人到了照樣可以報到，改從 S-07b 選別張桌。
-取消保留是<strong>單向</strong>的，沒有恢復的 API，按之前要二次確認「取消後無法恢復。…」。</p>
-<p><strong>區間重疊時 <code>CONFIRMED</code> 與 <code>SEATED</code> 都算佔用</strong>（到 <code>end_time</code> 為止）。只算 <code>CONFIRMED</code> 的話，客人一報到名額就被讓出去，同一時段會被線上多訂一組。</p>
+櫃檯「取消保留」只寫 <code>hold_released_at</code>，<strong>訂位狀態不變</strong>（仍是 <code>CONFIRMED</code>，名額照算），客人到了照樣可以報到，改從 S-07b 選別張桌。
+<strong>隨時可以按</strong>：只要訂位是 <code>CONFIRMED</code>、還沒取消過，不管現在是不是在保留窗內（重複按回 <code>409 HOLD_ALREADY_RELEASED</code>）。
+取消保留是<strong>單向</strong>的，沒有恢復的 API，按之前要二次確認「取消後，這筆訂位到時候不會鎖住 A08，而且無法恢復。客人到店時再幫他選別張桌。」。</p>
+<p><strong>區間重疊只算 <code>CONFIRMED</code>，以及 <code>SEATED</code> 而且那筆用餐紀錄還沒結帳（<code>dining_session.status = OPEN</code>）的訂位。</strong>
+客人還坐著就要算，不然容量少算一組；結帳（<code>PAID</code>）或取消用餐之後就不算，名額立刻釋出，不用等到原本的 <code>end_time</code>。
+桌位本身照舊：結清 → 待清理 → 清潔完成 → 空桌，接著給下一筆訂位的保留或現場、候位使用。
+<strong>線上訂位只能訂明天以後</strong>，所以這條主要影響的是「同一天之後的訂位保留」與容量報表的正確性，不會出現當天被線上搶訂的情況。</p>
 <p><strong>訂位保留 10 分鐘</strong>：訂位時間過了 10 分鐘還沒報到就視為 <code>NO_SHOW</code>，只能現場候位。
 排程每 5 分鐘跑一次，最多晚 5 分鐘才標，所以開桌頁的預約清單只列 <code>start_time</code> 在現在 −10～+30 分的，
 報到 API 也自己檢查，逾時回 <code>409 RESERVATION_EXPIRED</code>。<code>NO_SHOW</code> 不用動桌位：預約保留在訂位時間後 10 分鐘就自己結束（它是算出來的，排程晚跑也不影響）。</p>

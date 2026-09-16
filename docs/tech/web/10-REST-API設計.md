@@ -85,7 +85,7 @@ GET /api/menu/items?categoryId=2&keyword=牛&page=0&size=20
 POST  /api/admin/tables/3/open                     開桌
 POST  /api/admin/dining-sessions/1052/settle       櫃檯結清
 POST  /api/admin/dining-sessions/1052/cancel       取消該次用餐
-POST  /api/admin/reservations/442/release-hold     取消訂位保留（單向，不能恢復）
+POST  /api/admin/reservations/442/release-hold     取消訂位保留（隨時可按，單向，不能恢復）
 PATCH /api/admin/order-items/8801/serve            勾選已出餐
 ```
 

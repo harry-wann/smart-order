@@ -773,6 +773,8 @@ grep -oE '(margin|padding|gap)[a-z-]*:[^;}]+' src/**/*.css | \
 <ul>
 <li>從畫面上方滑下、<strong>蓋在 appbar 上</strong>，停 4 秒自己收回，不用客人關掉</li>
 <li>內容一行標題一行說明：誰＋做了什麼、品項＋數量／金額，右側一個相對時間</li>
+<li>說明行<strong>固定一行</strong>，放不下就在尾端截斷加「…」（<code>text-overflow: ellipsis</code>）：
+  加購物車是「安格斯霜降牛五花 ×1・全份」（有選項才用「・」接 <code>optionSummary</code>），送出訂單是「王大明 送出 3 項・NT$ 460」（N 是份數加總）</li>
 <li>資料來源：加購物車是 <code>CART_UPDATED</code>（只有 <code>ADDED</code> 才跳，改數量與刪除不跳），送出訂單是送單事件 <code>NEW_TICKET</code>；
   「誰」是同桌的顯示名稱（會員暱稱，沒登入是「客人 1」「客人 2」；櫃檯代客加點是「櫃檯」）</li>
 <li><strong>自己做的不跳</strong>：事件帶 <code>byGuestId</code>，跟這支手機的 guest id 相同就只更新畫面，不出通知條</li>
@@ -905,8 +907,6 @@ grep -oE '(margin|padding|gap)[a-z-]*:[^;}]+' src/**/*.css | \
 </tr>
 </tbody>
 </table></div>
-<p>S-03 結帳區的「還有 2 項沒送出，結帳後會捨棄」<strong>不用 InfoBox</strong>，是一行暖黃小字：<code>caption</code> 字級、粗體、字色 <code>#8A5214</code>（跟「製作中」膠囊的深橘字同一色，
-白底上對比 6.37:1）＋購物車小圖示。只提醒、不擋結帳，所以不需要底色框住。</p>
 <h3 id="57-toast">5.7 Toast</h3>
 <p>畫面上方滑入、3 秒後自動消失、最多同時 1 個。成功綠、錯誤紅、一般深色，8px 圓角。<strong>不要用瀏覽器的 <code>alert()</code>。</strong></p>
 <h3 id="58-emptystate-skeleton-errorstate">5.8 EmptyState / Skeleton / ErrorState</h3>

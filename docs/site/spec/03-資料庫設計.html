@@ -711,7 +711,7 @@ SELECT * FROM reservation
 </tr>
 </tbody>
 </table></div>
-<p>索引：<code>INDEX(table_id, status)</code>、<code>INDEX(member_id, opened_at)</code>、<code>UNIQUE(session_token)</code></p>
+<p>索引：<code>INDEX(table_id, status)</code>、<code>INDEX(member_id, opened_at)</code>、<code>UNIQUE(session_token)</code>、<code>INDEX(reservation_id)</code>（外鍵本來就會自動建；訂位的<a class="gloss" href="../tech/advanced/46-區間重疊與訂位排程.html" title="看這個技術的白話說明">區間重疊</a>要靠它找「這筆報到的用餐紀錄結帳了沒」）</p>
 <blockquote>
 <p><strong>人數為什麼不參與金額計算？</strong>
 我們的計價是「一鍋一價 + 單點」、無低消。人數的用途是：座位安排、分帳均分的參考值、兒童友善推薦、客單價統計。
@@ -1243,12 +1243,14 @@ CREATE INDEX idx_reservation_start ON reservation (start_time, status);
 CREATE INDEX idx_reservation_phone ON reservation (contact_phone);
 </code></pre>
 <blockquote>
-<p><strong>重疊判斷式</strong>：<code>existing.start_time &lt; :newEnd AND :newStart &lt; existing.end_time</code>，而且只看 <code>status IN ('CONFIRMED', 'SEATED')</code>
-——已報到的客人還坐著，到 <code>end_time</code> 為止都算佔用；只算 <code>CONFIRMED</code> 的話，客人一報到名額就被讓出去，同時段會被多訂一組。
+<p><strong>重疊判斷式</strong>：<code>existing.start_time &lt; :newEnd AND :newStart &lt; existing.end_time</code>，而且只看 <code>CONFIRMED</code>，以及 <code>SEATED</code> 而且那筆用餐紀錄還沒結帳的：
+<code>status = 'CONFIRMED' OR (status = 'SEATED' AND EXISTS (SELECT 1 FROM dining_session ds WHERE ds.reservation_id = r.id AND ds.status = 'OPEN'))</code>
+——客人還坐著就算佔用；結帳（<code>PAID</code>）或取消用餐之後名額立刻釋出，不用等到原本的 <code>end_time</code>。
+線上訂位只能訂明天以後，所以這條主要影響的是「同一天之後的訂位保留」與容量報表的正確性，不會出現當天被線上搶訂的情況。
 <strong>用 <code>&lt;</code> 不是 <code>&lt;=</code></strong>，因為「剛好接續」不算衝突。詳見 <a href="../tech/advanced/46-區間重疊與訂位排程.html">區間重疊與訂位排程</a>。</p>
 <p><strong>取消時把 <code>table_id</code> 設為 NULL</strong>，這樣唯一約束就不會擋住「取消後同一時段重新訂」。狀態紀錄仍然保留。</p>
 <p><strong><code>reservation.table_id</code> 是「訂位當下配的桌」，不是「客人實際坐的桌」。</strong>
-它的用途有兩個：<strong>容量與<a class="gloss" href="../tech/advanced/46-區間重疊與訂位排程.html" title="看這個技術的白話說明">區間重疊</a>判斷</strong>——這個時段還有沒有位子可以再賣；
+它的用途有兩個：<strong>容量與區間重疊判斷</strong>——這個時段還有沒有位子可以再賣；
 以及<strong>訂位時間窗內保留那張桌</strong>（7.10）。</p>
 <p>客人到店後實際坐哪一張，由 <code>dining_session.table_id</code> 與 <code>dining_session.reservation_id</code>
 這一組記錄。<strong>開桌時不回頭改 <code>reservation.table_id</code></strong>，因為那會讓區間重疊的歷史資料
@@ -1524,6 +1526,11 @@ CREATE INDEX idx_reservation_phone ON reservation (contact_phone);
 <td>每次顧客端請求都要驗</td>
 </tr>
 <tr>
+<td>dining_session</td>
+<td><code>(reservation_id)</code></td>
+<td>區間重疊判斷：已報到的訂位，用餐紀錄還是 <code>OPEN</code> 才算佔用</td>
+</tr>
+<tr>
 <td>dining_session_guest</td>
 <td><code>UNIQUE(dining_session_id, device_id)</code></td>
 <td>同一支手機重複加入拿到同一筆</td>
@@ -1657,7 +1664,7 @@ CREATE INDEX idx_reservation_phone ON reservation (contact_phone);
 <tr>
 <td>未來訂位</td>
 <td>未來 7 天約 20 筆</td>
-<td>另放今天幾筆：三筆 30 分鐘內要到、配到不同桌（開桌頁看得到，配到的桌顯示「預約保留」；M7 demo 報到、原保留桌、取消保留各用一筆）、一筆約 1 小時後（demo「18:00 起可報到」與 <code>RESERVATION_TOO_EARLY</code>）、一筆已過訂位時間 10 分鐘以上（demo 逾時與 <code>RESERVATION_EXPIRED</code>）</td>
+<td>另放今天幾筆（線上訂位只能訂明天以後，今天的這幾筆由種子直接寫進資料表，不走 <code>POST /api/reservations</code>）：三筆 30 分鐘內要到、配到不同桌（開桌頁看得到，配到的桌顯示「預約保留」；M7 demo 報到、原保留桌、取消保留各用一筆）、一筆約 1 小時後（demo「18:00 起可報到」與 <code>RESERVATION_TOO_EARLY</code>）、一筆已過訂位時間 10 分鐘以上（demo 逾時與 <code>RESERVATION_EXPIRED</code>）</td>
 </tr>
 <tr>
 <td>候位</td>

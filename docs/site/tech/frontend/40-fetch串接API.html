@@ -313,6 +313,7 @@ await request(`/reservations/${id}`, { method: 'DELETE', auth: 'reservation' });
 import { request } from './client';
 
 // GET /me/cart 回 { items, totalQuantity, subtotal }，每個 item 有 addedBy: { guestId, displayName }（誰加的）
+// totalQuantity 是份數加總（白飯 ×2 算 2），不是列數
 // 這裡只取品項陣列；角標、合計要用的話，改成回整包再拿 totalQuantity、subtotal
 export const fetchCart      = async () =&gt; (await request('/dining-sessions/me/cart')).items;
 export const addToCart      = (body) =&gt; request('/dining-sessions/me/cart/items', { method: 'POST', body });

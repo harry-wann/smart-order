@@ -104,7 +104,7 @@
               <td class="n" style="font-weight:700">B02</td>
               <td><span class="dim">—</span></td>
               <td><span class="badge b-info">已確認</span></td>
-              <td><span class="t-cap num">18:15 起可報到</span></td>
+              <td><div class="r g8"><span class="t-cap num">18:15 起可報到</span><button class="btn btn-ghost btn-sm">取消保留</button></div></td>
             </tr><tr>
               <td class="n" style="font-weight:700;font-size:15px">19:00</td>
               <td><b style="font-size:15px">吳美玲</b></td>
@@ -113,7 +113,7 @@
               <td class="n" style="font-weight:700">C02</td>
               <td><span class="badge b-pri">7 項・預估 3,240</span></td>
               <td><span class="badge b-info">已確認</span></td>
-              <td><span class="t-cap num">18:30 起可報到</span></td>
+              <td><div class="r g8"><span class="t-cap num">18:30 起可報到</span><button class="btn btn-ghost btn-sm">取消保留</button></div></td>
             </tr><tr>
               <td class="n" style="font-weight:700;font-size:15px">19:30</td>
               <td><b style="font-size:15px">黃先生</b></td>
@@ -122,7 +122,7 @@
               <td class="n" style="font-weight:700">A04</td>
               <td><span class="dim">—</span></td>
               <td><span class="badge b-info">已確認</span></td>
-              <td><span class="t-cap num">19:00 起可報到</span></td>
+              <td><div class="r g8"><span class="t-cap num">19:00 起可報到</span><button class="btn btn-ghost btn-sm">取消保留</button></div></td>
             </tr><tr style="opacity:.55">
               <td class="n" style="font-weight:700;font-size:15px">20:00</td>
               <td><b style="font-size:15px">劉品妤</b></td>
@@ -136,9 +136,8 @@
           </table>
 
           <div class="infobox ib-warn"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5.2l3.2 1.8"/></svg>
-            <div><b>開始前 30 分鐘起可以報到，保留到開始後 10 分鐘</b>；這段時間配到的桌會先鎖住（桌況上是暖黃的「預約保留」），
-            要先讓給別人就按「取消保留」。過了 10 分鐘就不能報到，請改登記候位（17:30 那筆就是）。
-            <b>預先點餐欄位是預估金額，訂位不收錢</b>，報到開桌時才轉成正式的單、才扣庫存。</div>
+            <div><b>開始前 30 分～開始後 10 分可以報到</b>，這段時間配到的桌會先鎖住；<b>「取消保留」隨時可按</b>。
+            逾時請改登記候位。<b>預先點餐是預估金額，訂位不收錢</b>。</div>
           </div>
         </div></div>
       </div>
@@ -167,14 +166,17 @@
   <dl style="margin:0">
     <dt>保留 A08</dt>
     <dd>同一段時間（開始前 30 分～後 10 分）<br>
-        配到的空桌在桌況上顯示「預約保留」。<br>
-        狀態欄多一行小字，操作多 ghost「取消保留」</dd>
-    <dt>取消保留</dt>
-    <dd>跟 S-02d 同一個二次確認：「取消後 A08<br>
-        會變回空桌，陳怡君到店時再幫他選別張桌。<br>
-        <b>取消後無法恢復</b>。」<br>
+        配到的空桌在桌況上顯示「預約保留」，<br>
+        狀態欄多一行小字</dd>
+    <dt>取消保留：隨時可按</dt>
+    <dd>有配桌、還沒取消過的已確認列都有，<br>
+        <b>不限保留窗內</b>（18:45 之後那幾列也有）。<br>
+        跟 S-02d 同一個二次確認：「取消後，這筆<br>
+        訂位到時候不會鎖住 A08，而且無法恢復。<br>
+        客人到店時再幫他選別張桌。」<br>
         POST /api/admin/reservations/{id}/release-hold<br>
-        單向，沒有恢復。訂位仍是 CONFIRMED</dd>
+        單向，重複按回 409 HOLD_ALREADY_RELEASED。<br>
+        訂位仍是 CONFIRMED</dd>
     <dt>已取消保留</dt>
     <dd>小字換成「已取消保留」、沒有取消鈕，<br>
         也沒有「恢復保留」。報到時從 S-07b<br>
@@ -192,7 +194,8 @@
     <dt>best-fit ＋ 區間重疊</dt>
     <dd>4 位的優先給 4 人桌，沒有才往上找。<br>
         A.start &lt; B.end AND B.start &lt; A.end，<br>
-        CONFIRMED 與 SEATED 都算佔用，<br>
+        只算 CONFIRMED 與<br>
+        還沒結帳的 SEATED，結帳後就釋出名額；<br>
         悲觀鎖 ＋ 唯一約束擋同桌同時段重複訂</dd>
     <dt>頂欄沒有代訂按鈕</dt>
     <dd>訂位只從顧客端 C-16 進來</dd>

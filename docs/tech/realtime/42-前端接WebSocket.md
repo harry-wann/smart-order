@@ -147,11 +147,13 @@ function TicketsPage() {
 ```json
 {
   "type": "CART_UPDATED",
-  "payload": { "action": "ADDED", "byGuest": "陳小美", "byGuestId": 7, "itemName": "安格斯霜降牛五花", "quantity": 1 }
+  "payload": { "action": "ADDED", "byGuest": "陳小美", "byGuestId": 7,
+               "itemName": "安格斯霜降牛五花", "quantity": 1, "optionSummary": "全份" }
 }
 ```
 
 `action` 有 `ADDED`／`UPDATED`／`REMOVED` 三種。`byGuest` 是顯示名稱（給通知條用），`byGuestId` 是做這件事的那支手機在這桌的 guest id。
+`optionSummary` 是選到的選項用「・」串起來（例：「全份・加蔥花」），沒有選項就是 `null`；通知條寫成「安格斯霜降牛五花 ×1・全份」。
 送單事件 `NEW_TICKET` 推給同桌的那份也帶這兩個欄位；櫃檯在 S-03 代客加點不經過購物車，`byGuest` 是「櫃檯」、`byGuestId` 是 `null`；
 預點轉單（開桌當下，還沒有手機加入）兩個都是 `null`，不跳通知。
 
@@ -185,13 +187,14 @@ function MenuPage() {
       case 'CART_UPDATED':
         reloadCart();                             // 不管誰改的、改了什麼，整份重抓
         if (p.action === 'ADDED' && p.byGuestId !== guest.id) {         // 自己加的不用通知自己
-          flash(`${p.byGuest} 加了 ${p.itemName} ×${p.quantity}`);        // C-04b
+          const opt = p.optionSummary ? `・${p.optionSummary}` : '';     // 沒有選項就不接
+          flash(`${p.byGuest} 加了 ${p.itemName} ×${p.quantity}${opt}`);  // C-04b：太長由 CSS 截斷加「…」
         }
         break;
       case 'NEW_TICKET':                          // 有人把整桌購物車送出了
         reloadCart();                             // 購物車被清空，角標歸零
         if (p.byGuest && p.byGuestId !== guest.id) {   // 櫃檯代客加點：「櫃檯」／null → 會跳；預點轉單：null／null → 不跳
-          flash(`${p.byGuest} 送出 ${p.items.length} 項`);                 // C-04c：N＝這張單的品項列數
+          flash(`${p.byGuest} 送出 ${p.quantity} 項`);                     // C-04c：N＝份數加總（白飯 ×2 算 2），不是 items.length
         }
         break;
       case 'SESSION_CLOSED':                      // PAID 時，沒送出的購物車已經在結清的交易裡捨棄了
@@ -210,7 +213,7 @@ function MenuPage() {
 
   useEffect(() => { reloadCart(); }, [reloadCart]);
 
-  const cartCount = cart.reduce((sum, i) => sum + i.quantity, 0);   // 算得出來的就不要存 state
+  const cartCount = cart.reduce((sum, i) => sum + i.quantity, 0);   // 角標算份數（跟後端的 totalQuantity 一樣）；算得出來的就不要存 state
 
   if (closed) return <SessionClosed />;          // 已結帳面板：底部購物車列跟著消失
   return (
@@ -223,12 +226,13 @@ function MenuPage() {
 }
 ```
 
-四個重點：
+五個重點：
 
 1. **收到 `CART_UPDATED` 就重抓，不要自己合併。** payload 只有「誰、做了什麼」，是給通知條用的，不是完整的購物車；拿它去改本機陣列，很快就會跟後端對不上。
 2. **送出點餐推的是 `NEW_TICKET`，不是 `CART_UPDATED`。** 但送出會把整桌購物車清空，所以收到 `NEW_TICKET` 也要重抓購物車，不然別人手機上的角標會停在舊數字。
 3. **兩個人同時按「送出整桌點餐」**：後端用列鎖讓兩筆排隊，先到的送出整份，後到的拿到 `409 CART_EMPTY`（「購物車是空的，可能同桌已經送出了」），前端提示後重抓就好（見 [fetch 串接後端 API](../frontend/40-fetch串接API.md)、[鎖與併發](../database/28-鎖與併發.md)）。
-4. **自己做的不跳通知，比 `byGuestId` 不比名字。** 自己加的、自己送出的，只重抓購物車；櫃檯代客加點的 `byGuestId` 是 `null`，同桌每支手機都會跳「櫃檯 送出 3 項」。
+4. **數量一律算份數。** 角標、「送出 N 項」都是 `quantity` 加總；用 `items.length` 會把「白飯 ×2」算成 1 項，跟畫面上的份數對不上。
+5. **自己做的不跳通知，比 `byGuestId` 不比名字。** 自己加的、自己送出的，只重抓購物車；櫃檯代客加點的 `byGuestId` 是 `null`，同桌每支手機都會跳「櫃檯 送出 3 項」。
 
 `SESSION_CLOSED` 兩頁都用同一個 `handleSessionClosed`：`PAID` 顯示「已結帳」面板，`CANCELLED` 什麼都不顯示、清掉權杖直接回 `/`。
 

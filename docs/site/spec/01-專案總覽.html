@@ -505,6 +505,11 @@ pre.mermaid svg{max-width:100%;height:auto}
 <td>點餐單裡的一個品項 + 數量 + 選項</td>
 </tr>
 <tr>
+<td>N 項（數量）</td>
+<td><code>quantity</code> 加總</td>
+<td><strong>N 項＝份數加總，不是列數</strong>。白飯 ×2 算 2 項。購物車角標（<code>totalQuantity</code>）、C-06「小計 N 項」、C-04c「送出 N 項」（<code>NEW_TICKET</code> 的 <code>quantity</code>）、C-07 每張單的件數、S-03「小計 N 項」、預點的「已預先點餐 N 項」全部這樣算；畫面文字維持「項」</td>
+</tr>
+<tr>
 <td>品項</td>
 <td><code>MenuItem</code></td>
 <td>菜單上的一道菜</td>
@@ -562,12 +567,12 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td>訂位</td>
 <td><code>Reservation</code></td>
-<td>線上預訂某時段某桌</td>
+<td>線上預訂某時段某桌；<strong>只能訂明天起 30 天內</strong>，當天不接線上訂位</td>
 </tr>
 <tr>
 <td>預約保留</td>
 <td><code>displayStatus = RESERVED</code></td>
-<td>訂位配到的桌，在訂位時間前 30 分～後 10 分顯示「預約保留」，不能開給別人；櫃檯可以取消保留（單向，取消後無法恢復）。<strong>查桌況時算出來的，不存在 <code>dining_table.status</code>、不靠排程</strong>（M7 7.10）</td>
+<td>訂位配到的桌，在訂位時間前 30 分～後 10 分顯示「預約保留」，不能開給別人；櫃檯可以取消保留（訂位是 <code>CONFIRMED</code> 就能按，不限保留窗內；單向，取消後無法恢復）。<strong>查桌況時算出來的，不存在 <code>dining_table.status</code>、不靠排程</strong>（M7 7.10）</td>
 </tr>
 <tr>
 <td>清桌緩衝</td>

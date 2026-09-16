@@ -364,8 +364,8 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td>409</td>
 <td><code>RESERVATION_LOCKED</code></td>
-<td>已過取消期限，或訂位已報到／已取消</td>
-<td>停用取消鈕，顯示請來電</td>
+<td>已過取消期限，或訂位已報到／已取消（櫃檯取消保留時，訂位不是 <code>CONFIRMED</code> 也回這個）</td>
+<td>停用取消鈕，顯示請來電；櫃檯端重抓訂位清單</td>
 </tr>
 <tr>
 <td>409</td>
@@ -378,6 +378,12 @@ pre.mermaid svg{max-width:100%;height:auto}
 <td><code>RESERVATION_TOO_EARLY</code></td>
 <td>報到時還沒到訂位時間前 30 分鐘</td>
 <td>顯示「還沒到可報到時間（18:00 起）」</td>
+</tr>
+<tr>
+<td>409</td>
+<td><code>HOLD_ALREADY_RELEASED</code></td>
+<td>取消預約保留時，這筆已經取消過了（例如兩個櫃檯同時按）</td>
+<td>顯示「這筆訂位已經取消過保留了」，重抓訂位清單</td>
 </tr>
 <tr>
 <td>409</td>
@@ -742,7 +748,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td>GET</td>
 <td><code>/api/admin/dining-sessions/{id}</code></td>
-<td>桌位詳情（含帳單：小計、服務費、合計；多回 <code>cartItemCount</code>＝整桌購物車還沒送出的列數，見 4.8）</td>
+<td>桌位詳情（含帳單：品項明細、小計、服務費、合計；S-03「小計 N 項」的 N＝已送出品項的份數加總；<strong>不回購物車</strong>，見 4.8）</td>
 <td>COUNTER, MANAGER</td>
 </tr>
 <tr>
@@ -862,7 +868,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td>GET</td>
 <td><code>/api/admin/reservations</code></td>
-<td>訂位管理（<code>?date=</code>；每列多回 <code>assignedTableNo</code>、<code>holding</code>（現在是否保留中）、<code>holdReleasedAt</code>）</td>
+<td>訂位管理（<code>?date=</code>；每列多回 <code>assignedTableNo</code>、<code>holding</code>（現在是否保留中，決定「保留 A08」小字）、<code>holdReleasedAt</code>；<code>status = CONFIRMED</code> 且 <code>holdReleasedAt</code> 是 <code>null</code> 就顯示「取消保留」，跟 <code>holding</code> 無關）</td>
 <td>COUNTER, MANAGER</td>
 </tr>
 <tr>
@@ -874,7 +880,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td>POST</td>
 <td><code>/api/admin/reservations/{id}/release-hold</code></td>
-<td><strong>取消預約保留</strong>（M7 7.10，見 4.3e）</td>
+<td><strong>取消預約保留</strong>（M7 7.10，見 4.3e；訂位是 <code>CONFIRMED</code> 就能按，不限保留窗內）</td>
 <td>COUNTER, MANAGER</td>
 </tr>
 <tr>
@@ -1036,14 +1042,14 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td><code>CART_UPDATED</code></td>
 <td>session</td>
-<td><code>{ action: ADDED\|UPDATED\|REMOVED, byGuest: "陳小美", byGuestId: 2, itemName, quantity }</code></td>
-<td>重抓 <code>GET /me/cart</code>、更新購物車角標；<code>ADDED</code> 而且 <code>byGuestId</code> 不是自己時，跳 C-04b 通知條「陳小美 加了 安格斯霜降牛五花 ×1」</td>
+<td><code>{ action: ADDED\|UPDATED\|REMOVED, byGuest: "陳小美", byGuestId: 2, itemName, quantity, optionSummary }</code></td>
+<td>重抓 <code>GET /me/cart</code>、更新購物車角標；<code>ADDED</code> 而且 <code>byGuestId</code> 不是自己時，跳 C-04b 通知條（標題「陳小美 加了一樣東西」，說明「安格斯霜降牛五花 ×1・全份」）</td>
 </tr>
 <tr>
 <td><code>NEW_TICKET</code></td>
 <td>session、kitchen</td>
-<td><code>OrderTicketDto</code>（多帶 <code>byGuest</code>、<code>byGuestId</code>；櫃檯代客加點是 <code>"櫃檯"</code>／<code>null</code>，預點轉單兩個都是 <code>null</code>）</td>
-<td>加進清單，高亮 2 秒；同桌手機重抓購物車（已被清空）；<code>byGuest</code> 不是 <code>null</code>、<code>byGuestId</code> 也不是自己時，跳 C-04c「王大明 送出 6 項」（N＝這張單的品項列數）</td>
+<td><code>OrderTicketDto</code>（含 <code>quantity</code>＝這張單的份數加總；推給同桌的那份多帶 <code>byGuest</code>、<code>byGuestId</code>，櫃檯代客加點是 <code>"櫃檯"</code>／<code>null</code>，預點轉單兩個都是 <code>null</code>）</td>
+<td>加進清單，高亮 2 秒；同桌手機重抓購物車（已被清空）；<code>byGuest</code> 不是 <code>null</code>、<code>byGuestId</code> 也不是自己時，跳 C-04c「王大明 送出 6 項」（N＝payload 的 <code>quantity</code>，份數加總）</td>
 </tr>
 <tr>
 <td><code>ITEM_SERVED</code></td>
@@ -1125,6 +1131,21 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 </tbody>
 </table></div>
+<p><strong>同桌兩個事件的 payload 範例</strong>（推到 <code>/topic/session/1052</code>）：</p>
+<pre><code class="language-json">{ &quot;type&quot;: &quot;CART_UPDATED&quot;,
+  &quot;payload&quot;: { &quot;action&quot;: &quot;ADDED&quot;, &quot;byGuest&quot;: &quot;陳小美&quot;, &quot;byGuestId&quot;: 2,
+               &quot;itemName&quot;: &quot;安格斯霜降牛五花&quot;, &quot;quantity&quot;: 1, &quot;optionSummary&quot;: &quot;全份&quot; } }
+</code></pre>
+<pre><code class="language-json">{ &quot;type&quot;: &quot;NEW_TICKET&quot;,
+  &quot;payload&quot;: { &quot;ticketId&quot;: 3301, &quot;sequenceNo&quot;: 1, &quot;status&quot;: &quot;PENDING&quot;, &quot;quantity&quot;: 6,
+               &quot;byGuest&quot;: &quot;王大明&quot;, &quot;byGuestId&quot;: 1, &quot;items&quot;: [ ... ] } }
+</code></pre>
+<ul>
+<li><code>optionSummary</code>：這一列選到的選項值名稱，依選項群組的順序用「・」串起來（例：「全份・加蔥花」）；沒有選項就是 <code>null</code>。
+  C-04b 說明那行＝<code>itemName ×quantity</code>，<code>optionSummary</code> 不是 <code>null</code> 就用「・」接在後面（「安格斯霜降牛五花 ×1・全份」），太長由前端截斷加「…」</li>
+<li><code>quantity</code>（<code>NEW_TICKET</code>）：這張單所有品項的<strong>份數加總</strong>，不是列數——白飯 ×2 算 2 項。上面這張單 6 份，C-04c 就是「王大明 送出 6 項」。
+  全站的「N 項」都是這樣算（見 <a href="../spec/01-專案總覽.html">01 名詞定義</a>）</li>
+</ul>
 <h3 id="35-兩條鐵律">3.5 兩條鐵律</h3>
 <ol>
 <li><strong>推播要在資料庫交易「提交之後」才發</strong>，否則前端收到通知去查卻查不到資料。</li>
@@ -1247,7 +1268,7 @@ Authorization: Bearer &lt;員工 JWT&gt;
 <li><code>reservations</code>：<code>status = CONFIRMED</code>、<code>start_time</code> 落在 <strong>現在 −10 分 ～ +30 分</strong>、
    <code>party_size ≤ seats</code>。晚到超過 10 分鐘的不列——訂位只保留 10 分鐘，不能等 NO_SHOW 排程來標；
    +30 是最早可報到的時間，跟預約保留的開頭是同一個數字。<strong>不限定 <code>table_id</code> 是這張桌</strong>——客人被帶到別張桌是現場常態，
-   <code>assignedTableNo</code> 只是附帶資訊讓櫃檯知道原本配到哪。</li>
+   <code>assignedTableNo</code> 只是附帶資訊讓櫃檯知道原本配到哪。<code>preorderItemCount</code> 是預點的<strong>份數加總</strong>（「已預先點餐 4 項」），沒預點是 0。</li>
 <li><code>upcomingOnThisTable</code>：這張桌<strong>保留窗之外</strong>、接下來最近的一筆訂位，<strong>純提醒</strong>，前端畫成黃字警示，不擋開桌。
    沒有就回 <code>null</code>。</li>
 <li><code>heldFor</code>：這張桌<strong>現在</strong>正保留給哪筆訂位（格式同 4.3e），沒有就回 <code>null</code>。不是 <code>null</code> 時：
@@ -1364,11 +1385,15 @@ Authorization: Bearer &lt;員工 JWT&gt;
   &quot;tableNo&quot;: &quot;A08&quot;, &quot;displayStatus&quot;: &quot;AVAILABLE&quot; }
 </code></pre>
 <ul>
-<li>寫入 <code>hold_released_at</code>／<code>hold_released_by</code>，<strong>交易提交後</strong>推 <code>TABLE_STATUS</code> 到 <code>/topic/counter</code>，A08 立刻變回空桌</li>
-<li>訂位本身<strong>仍是 <code>CONFIRMED</code></strong>，客人到了照樣可以報到（改從 S-07b 選別張桌）</li>
-<li>前端按下前先二次確認：「取消後無法恢復。A08 會變回空桌，陳怡君到店時再幫他選別張桌」</li>
+<li><strong>隨時可以按</strong>：前置條件只有兩個——訂位 <code>status = CONFIRMED</code>、<code>hold_released_at IS NULL</code>，<strong>不看現在是不是在保留窗內</strong>。
+  所以 S-07 上凡是有配桌、還沒取消保留的 <code>CONFIRMED</code> 列都有「取消保留」，明天、後天的訂位也能先取消</li>
+<li>寫入 <code>hold_released_at</code>／<code>hold_released_by</code>，<strong>交易提交後</strong>推 <code>TABLE_STATUS</code> 到 <code>/topic/counter</code>；這張桌當下正在保留中的話，A08 立刻變回空桌，
+  還沒進保留窗的話桌況本來就不是預約保留，畫面不會變，只是到時候不會鎖（回應的 <code>displayStatus</code> 是這張桌當下的顯示狀態）</li>
+<li>訂位本身<strong>仍是 <code>CONFIRMED</code></strong>，客人到了照樣可以報到（改從 S-07b 選別張桌）；<strong>名額也照算</strong>（區間重疊看的是訂位狀態，不看保留），取消保留不會讓那個時段多出一桌可以線上訂</li>
+<li>前端按下前先二次確認：「取消後，這筆訂位到時候不會鎖住 A08，而且無法恢復。客人到店時再幫他選別張桌。」</li>
 <li><strong>單向、不能恢復</strong>：沒有「恢復保留」的 API。按錯的話，客人到店時從 S-07b 選桌（A08 還空著就照樣列得出來，只是不再標「原保留桌」、不排第一）</li>
-<li>已經取消過 → 照樣回 200（冪等）；訂位不是 <code>CONFIRMED</code>（已報到、已取消、未到）→ <code>409 RESERVATION_LOCKED</code></li>
+<li>已經取消過 → <code>409 HOLD_ALREADY_RELEASED</code>「這筆訂位已經取消過保留了」（兩個櫃檯同時按時，後到的拿到這個，前端重抓清單即可）；
+  訂位不是 <code>CONFIRMED</code>（已報到、已取消、未到）→ <code>409 RESERVATION_LOCKED</code>。兩個檢查都要在 <code>SELECT ... FOR UPDATE</code> 鎖住這筆訂位之後做</li>
 </ul>
 <h3 id="44-品項詳情含選項群組">4.4 品項詳情（含選項群組）</h3>
 <pre><code class="language-json">GET /api/menu/items/4
@@ -1410,6 +1435,7 @@ X-Device-Id: 7f1c2a9e-4b6d-4e2a-9c1f-2d8e5a0b3c71
   &quot;ticketId&quot;: 3301,
   &quot;sequenceNo&quot;: 1,
   &quot;status&quot;: &quot;PENDING&quot;,
+  &quot;quantity&quot;: 3,
   &quot;placedAt&quot;: &quot;2026-09-13T18:42:11+08:00&quot;,
   &quot;items&quot;: [ ... ],
   &quot;sessionSubtotal&quot;: 1210.00
@@ -1441,7 +1467,7 @@ X-Device-Id: 7f1c2a9e-4b6d-4e2a-9c1f-2d8e5a0b3c71
 <li>建立 ticket（<code>submitted_by_guest_id</code> = 按送出的那支手機）+ items + item options，<strong>以菜單現價重算</strong>並寫入名稱與價格快照（<code>cart_item.unit_price</code> 只給畫面看，不拿來算錢）</li>
 <li><strong>刪掉這批 <code>cart_item</code></strong>（同一個交易）</li>
 <li>更新 <code>dining_session.subtotal</code></li>
-<li><strong>交易提交後</strong>才推 <code>NEW_TICKET</code>（帶 <code>byGuest</code>、<code>byGuestId</code>）到 <code>/topic/session/{id}</code> 和 <code>/topic/kitchen</code></li>
+<li><strong>交易提交後</strong>才推 <code>NEW_TICKET</code>（帶 <code>byGuest</code>、<code>byGuestId</code>；<code>quantity</code> 是這張單的份數加總，C-04c「送出 N 項」用它）到 <code>/topic/session/{id}</code> 和 <code>/topic/kitchen</code></li>
 </ol>
 <p><strong>兩個人同時按送出</strong>：兩筆請求搶同一列的鎖。先到的把整桌購物車送出並刪掉；後到的拿到鎖時購物車已經空了 → <code>409 CART_EMPTY</code>，
 前端提示並重抓本桌訂單。所以不會送出兩張重複的單。<strong>第 3 步一定要在第 2 步之後</strong>，先讀再鎖的話兩邊讀到的是同一份。</p>
@@ -1482,7 +1508,8 @@ X-Device-Id: 7f1c2a9e-4b6d-4e2a-9c1f-2d8e5a0b3c71
 <li><code>unitPrice</code>／<code>lineTotal</code>／<code>subtotal</code> 只是畫面上的參考（不含服務費），送單時以菜單現價重算</li>
 <li>加入時就先驗必選群組（<code>400 OPTION_REQUIRED</code>）與售完標記（<code>409 ITEM_SOLD_OUT</code>）；真正的庫存檢查仍在送出時</li>
 <li>session 不是 <code>OPEN</code> → <code>409 SESSION_CLOSED</code>；要改的那一列已經不在（例如同桌剛送出）→ <code>404 NOT_FOUND</code>，前端重抓購物車</li>
-<li>每次寫入，<strong>交易提交後</strong>推 <code>CART_UPDATED</code> 到 <code>/topic/session/{id}</code>；其他手機收到就重抓 <code>GET /me/cart</code>，<code>ADDED</code> 時跳通知條「陳小美 加了 安格斯霜降牛五花 ×1」（<code>byGuestId</code> 是自己就不跳）</li>
+<li><code>totalQuantity</code> 範例是 3：鴛鴦鍋底 ×1 ＋ 美國牛五花 ×2，<strong>算份數不算列數</strong>（2 列、3 項）</li>
+<li>每次寫入，<strong>交易提交後</strong>推 <code>CART_UPDATED</code> 到 <code>/topic/session/{id}</code>（帶 <code>optionSummary</code>，見 3.4）；其他手機收到就重抓 <code>GET /me/cart</code>，<code>ADDED</code> 時跳通知條「陳小美 加了一樣東西／安格斯霜降牛五花 ×1・全份」（<code>byGuestId</code> 是自己就不跳）</li>
 </ul>
 <h3 id="46-本桌訂單">4.6 本桌訂單</h3>
 <pre><code class="language-json">GET /api/dining-sessions/me/orders
@@ -1492,7 +1519,7 @@ X-Device-Id: 7f1c2a9e-4b6d-4e2a-9c1f-2d8e5a0b3c71
   &quot;soupBaseOrdered&quot;: true,
   &quot;tickets&quot;: [
     {
-      &quot;ticketId&quot;: 3301, &quot;sequenceNo&quot;: 1, &quot;status&quot;: &quot;PREPARING&quot;,
+      &quot;ticketId&quot;: 3301, &quot;sequenceNo&quot;: 1, &quot;status&quot;: &quot;PREPARING&quot;, &quot;quantity&quot;: 3,
       &quot;placedAt&quot;: &quot;2026-09-13T18:42:11+08:00&quot;,
       &quot;items&quot;: [
         { &quot;id&quot;: 8801, &quot;name&quot;: &quot;鴛鴦鍋底&quot;, &quot;quantity&quot;: 1,
@@ -1507,6 +1534,7 @@ X-Device-Id: 7f1c2a9e-4b6d-4e2a-9c1f-2d8e5a0b3c71
 }
 </code></pre>
 <blockquote>
+<p>每張單的 <code>quantity</code> 是份數加總（這張 1 ＋ 2 ＝ 3），C-07 單號下的件數用它，跟 <code>NEW_TICKET</code> 的 <code>quantity</code> 同一個欄位。</p>
 <p><strong>這支 API 有 WebSocket 還是要留</strong>：進頁面時要抓一次，斷線重連後也要抓一次。</p>
 </blockquote>
 <h3 id="47-服務鈴">4.7 服務鈴</h3>
@@ -1546,9 +1574,8 @@ Authorization: Bearer &lt;員工 JWT&gt;
 成功 → 對話框換成勾勾「結帳完成」，<strong>約 1.5 秒後自動關閉</strong>並回 S-02（不用按按鈕），桌位變待清理；
 <code>409 BILL_CHANGED</code> → 對話框關閉、帳單刷新並提示「剛剛有人加點，金額更新了」。
 <strong>櫃檯結帳不做失敗機率</strong>（線上 A5 的 95% 成功率照舊）。倒數只在前端，取消不需要任何 API。</p>
-<p><strong>購物車裡還沒送出的東西</strong>：結清時直接捨棄（第 5 步），不算錢。<code>GET /api/admin/dining-sessions/{id}</code> 多回 <code>cartItemCount</code>（整桌購物車的列數），
-不是 0 就在 S-03 結帳區顯示暖黃小字「還有 N 項沒送出，結帳後會捨棄」——<strong>只提醒、不擋</strong>。
-這個數字是打開 S-03 時抓的（<code>CART_UPDATED</code> 只推給同桌手機，不推櫃檯），按付款前重新整理一次就是最新的。</p>
+<p><strong>購物車裡還沒送出的東西</strong>：結清時直接捨棄（第 5 步），不算錢。<strong>櫃檯不用管購物車</strong>：S-03／S-03b 不顯示任何購物車提示，
+<code>GET /api/admin/dining-sessions/{id}</code> 也不回購物車資訊；櫃檯只看已經送出的單。客人要那幾樣，就要在結帳前自己送出。</p>
 <h3 id="48a-櫃檯查會員進階-810-的櫃檯入口">4.8a 櫃檯查會員（進階 8.10 的櫃檯入口）</h3>
 <pre><code class="language-http">GET /api/admin/members/lookup?phone=0912345678
 Authorization: Bearer &lt;員工 JWT&gt;
@@ -1662,7 +1689,10 @@ X-Session-Token: eyJ0IjoxMDUyLi4u
   &quot;hasPreorder&quot;: false
 }
 </code></pre>
-<p><strong>錯誤</strong>：<code>409 SLOT_UNAVAILABLE</code>（客滿）</p>
+<p><strong>錯誤</strong>：<code>409 SLOT_UNAVAILABLE</code>（客滿）；<code>400 VALIDATION_FAILED</code>（<code>startTime</code> 不在<strong>明天起 30 天內</strong>——C-16c 的月曆已經只給選這段，後端一樣要再擋一次；<code>GET /availability</code> 的 <code>date</code> 也是同一個範圍）</p>
+<blockquote>
+<p><strong>線上訂位只能訂明天以後</strong>，所以同一天不會有新的線上訂位插進來；區間重疊只算 <code>CONFIRMED</code> 與「<code>SEATED</code> 且用餐紀錄還沒結帳」的理由見 <a href="../spec/modules/M7-訂位.html">M7 問題 5</a>。</p>
+</blockquote>
 <p><code>reservationNo</code> 是預約編號（格式 <code>R-YYMMDD-流水號</code>，見 03 的 <code>reservation.reservation_no</code>），C-18 用大字顯示。</p>
 <p><strong>這支回 <code>CONFIRMED</code> 就是訂位成立了</strong>——沒有付款這一關，前端拿到 201 直接跳 C-18 訂位完成頁，
 在那裡才問「要不要先點餐」。<code>accessToken</code> 只有匿名訂位需要存起來（localStorage），會員可以忽略。</p>

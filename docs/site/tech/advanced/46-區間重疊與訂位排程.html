@@ -179,8 +179,8 @@ pre.mermaid svg{max-width:100%;height:auto}
 <h2 id="一句話">一句話</h2>
 <p>判斷「這張桌子在這個時間有沒有被占用」，其實就是一條<strong>兩個時間區間有沒有重疊</strong>的判斷式。</p>
 <h2 id="想像一下">想像一下</h2>
-<p>A03 桌今天已經有一組訂位：<strong>18:00 ～ 19:40</strong>。</p>
-<p>現在有客人想訂 <strong>19:00 ～ 20:40</strong>。可以嗎？</p>
+<p>A03 桌明天已經有一組訂位：<strong>18:00 ～ 19:40</strong>。</p>
+<p>現在有客人想訂明天的 <strong>19:00 ～ 20:40</strong>。可以嗎？</p>
 <p>畫在時間軸上：</p>
 <pre><code>        18:00      19:00      19:40      20:40
           |----------已訂-------|
@@ -188,6 +188,9 @@ pre.mermaid svg{max-width:100%;height:auto}
                      └── 重疊 40 分鐘 ──┘
 </code></pre>
 <p>重疊了，不行。</p>
+<blockquote>
+<p>我們的線上訂位<strong>只能訂明天以後</strong>（明天起 30 天內），當天不接線上訂位，所以這頁的例子都是在訂未來的某一天。</p>
+</blockquote>
 <h2 id="那條判斷式">那條判斷式</h2>
 <p><strong>兩個區間重疊的條件是：</strong></p>
 <pre><code>A.開始 &lt; B.結束  且  B.開始 &lt; A.結束
@@ -217,7 +220,11 @@ WHERE t.active = 1
       SELECT 1
       FROM reservation r
       WHERE r.table_id = t.id
-        AND r.status IN ('CONFIRMED', 'SEATED')  -- ← 還沒到的、已經入座的都算佔位
+        AND ( r.status = 'CONFIRMED'           -- ← 還沒到的
+              OR (r.status = 'SEATED'          -- ← 已經入座、而且還沒結帳的
+                  AND EXISTS (SELECT 1 FROM dining_session ds
+                               WHERE ds.reservation_id = r.id
+                                 AND ds.status = 'OPEN')) )
         AND r.start_time &lt; :newEnd            -- ← 重疊判斷
         AND :newStart   &lt; r.end_time
   )
@@ -227,12 +234,16 @@ LIMIT 1;
 <p>三個重點：</p>
 <ol>
 <li><code>NOT EXISTS</code> ＋ 重疊條件 = 「這張桌在這段時間沒有衝突的訂位」</li>
-<li><code>status IN ('CONFIRMED', 'SEATED')</code> — <strong>還沒到的和已經報到入座的都算佔用</strong>，一直算到 <code>end_time</code>；只有取消（<code>CANCELLED</code>）和逾時未到（<code>NO_SHOW</code>）不算。訂位送出就直接是 <code>CONFIRMED</code>，沒有 <code>PENDING</code> 這種狀態</li>
+<li>狀態條件 — <strong>還沒到的（<code>CONFIRMED</code>）算佔用；已經報到入座的（<code>SEATED</code>）只在那筆用餐紀錄還沒結帳（<code>dining_session.status = 'OPEN'</code>）時算</strong>，結帳或取消用餐後就不算，不用等到 <code>end_time</code>；取消（<code>CANCELLED</code>）和逾時未到（<code>NO_SHOW</code>）不算。訂位送出就直接是 <code>CONFIRMED</code>，沒有 <code>PENDING</code> 這種狀態。
+   注意 <code>OR</code> 外面那層括號不能少：<code>AND</code> 比 <code>OR</code> 先算，少了括號會變成「<code>CONFIRMED</code> 那一段不比時間、<code>SEATED</code> 那一段不比桌號」</li>
 <li><code>ORDER BY seats ASC</code> — <strong>best-fit</strong>：2 個人不要佔 8 人桌</li>
 </ol>
 <blockquote>
-<p><strong>為什麼 <code>SEATED</code> 也要算？</strong> 如果只算 <code>CONFIRMED</code>，客人一報到，這筆就不算了——18:00 那組人明明還坐著吃，
-系統卻以為那張桌 18:30 空出來了，同一時段就會被線上<strong>多訂一組</strong>。報到只代表「人到了」，桌子還是被佔著，要佔到 <code>end_time</code> 為止。</p>
+<p><strong>為什麼 <code>SEATED</code> 也要算、又只算到結帳？</strong> 如果只算 <code>CONFIRMED</code>，客人一報到，這筆就不算了——18:00 那組人明明還坐著吃，
+系統卻以為那張桌 18:30 空出來了，容量少算一組。反過來，如果 <code>SEATED</code> 一律算到 <code>end_time</code>，客人 19:10 就吃完結帳走了，
+那張桌到 19:55 還被當成佔用，名額白白卡住。所以用「那筆用餐紀錄還是 <code>OPEN</code>」來判斷人還在不在。</p>
+<p>線上訂位只能訂明天以後，所以這條主要影響的是「同一天之後的訂位保留」與容量報表的正確性，不會出現當天被線上搶訂的情況。
+桌位本身照舊走「結清 → 待清理 → 清潔完成 → 空桌」，這跟名額算不算是兩回事。</p>
 <p>客人現場被安排到別張桌時，<code>reservation.table_id</code> 也<strong>不跟著改</strong>：佔用算的是「訂位當下配的那張」，容量才不會跟著現場調度亂跳。</p>
 </blockquote>
 <h2 id="best-fit-為什麼重要">best-fit 為什麼重要</h2>
@@ -306,6 +317,7 @@ CREATE UNIQUE INDEX uk_reservation_table_start
 <ul>
 <li>30 分＝最早可以提前報到的時間；10 分＝保留時間。兩個都放 <code>application.yml</code>：<code>reservation.hold-before-minutes: 30</code>、<code>reservation.hold-after-minutes: 10</code></li>
 <li>櫃檯可以按「取消保留」，後端寫入 <code>hold_released_at</code>／<code>hold_released_by</code>。訂位本身還是 <code>CONFIRMED</code>，客人到了照樣能報到，只是改坐別張桌</li>
+<li><strong>取消保留隨時可以按</strong>：前置條件只有 <code>status = 'CONFIRMED'</code> 和 <code>hold_released_at IS NULL</code>，<strong>不看現在是不是在保留窗內</strong>（明天的訂位也能先取消）；已經取消過再按，回 <code>409 HOLD_ALREADY_RELEASED</code></li>
 <li><strong>取消保留是單向的</strong>：沒有恢復的 API，<code>hold_released_at</code> 寫了就不會清掉；所以前端的二次確認要寫明「取消後無法恢復」</li>
 </ul>
 <p><strong>保留是查詢的時候算出來的，不是排程。</strong> <code>dining_table.status</code> 仍然只有 <code>AVAILABLE</code>／<code>OCCUPIED</code>／<code>CLEANING</code> 三種，沒有人會去把欄位改成 <code>RESERVED</code>：</p>
@@ -351,7 +363,8 @@ reservationRepo.findActiveHold(tableId, now).ifPresent(hold -&gt; {
 <pre><code class="language-sql">CREATE INDEX idx_reservation_table_time
   ON reservation (table_id, start_time, end_time);
 </code></pre>
-<p>重疊檢查每次都用 <code>table_id</code> + 時間範圍，這個索引是必要的。</p>
+<p>重疊檢查每次都用 <code>table_id</code> + 時間範圍，這個索引是必要的。
+<code>SEATED</code> 那一段靠 <code>dining_session.reservation_id</code> 找用餐紀錄；它是外鍵，<a class="gloss" href="../../tech/database/22-關聯式資料庫與SQL.html" title="看這個技術的白話說明">MySQL</a> 會自動幫它建索引，不用另外加。</p>
 <h2 id="15-分鐘動手小練習">15 分鐘動手小練習</h2>
 <p><strong>先用紙筆做，不要寫程式。</strong></p>
 <p>已訂：<code>A03: 18:00–19:55</code>、<code>A03: 20:00–21:55</code></p>
@@ -385,9 +398,9 @@ reservationRepo.findActiveHold(tableId, now).ifPresent(hold -&gt; {
 23:30 開始、用餐 100 分鐘 → 隔天 01:10。<strong>用 <code>DATETIME</code> 存完整時間就沒問題</strong>，如果只存「日期 + 時間」兩個欄位就會出錯。</p>
 <p><strong>⑥ 時區</strong>
 統一用 <code>Asia/Taipei</code>。</p>
-<p><strong>⑦ 客人一報到就不算佔用</strong>
-重疊檢查只算 <code>CONFIRMED</code>，報到後那組人還在吃，同一時段卻被線上多訂一組。
-→ <code>SEATED</code> 也要算，佔到 <code>end_time</code> 為止。</p>
+<p><strong>⑦ 客人一報到就不算佔用，或結帳走了還在佔用</strong>
+重疊檢查只算 <code>CONFIRMED</code>，報到後那組人還在吃，容量卻少算一組；反過來 <code>SEATED</code> 一律算到 <code>end_time</code>，客人提早結帳走了名額還卡著。
+→ <code>SEATED</code> 要算，但只算到那筆 <code>dining_session</code> 結帳（或取消用餐）為止。</p>
 <p><strong>⑧ 用排程去改桌位狀態做保留</strong>
 → 保留是查詢時算出來的，見上面「訂位保留桌位」。</p>
 <h2 id="常見錯誤訊息對照">常見錯誤訊息對照</h2>
@@ -426,9 +439,19 @@ reservationRepo.findActiveHold(tableId, now).ifPresent(hold -&gt; {
 <td>加 <code>(table_id, start_time, end_time)</code></td>
 </tr>
 <tr>
-<td>客人還在吃，同時段卻又被訂走</td>
+<td>客人還在吃，那個時段卻算成有空位</td>
 <td>重疊檢查只算 <code>CONFIRMED</code></td>
-<td>改成 <code>status IN ('CONFIRMED', 'SEATED')</code></td>
+<td>加上「<code>SEATED</code> 且用餐紀錄還是 <code>OPEN</code>」</td>
+</tr>
+<tr>
+<td>客人已經結帳走了，那個時段還算客滿</td>
+<td><code>SEATED</code> 一律算到 <code>end_time</code></td>
+<td>加 <code>EXISTS (... ds.status = 'OPEN')</code> 的條件</td>
+</tr>
+<tr>
+<td>明天的訂位按「取消保留」被擋</td>
+<td>前置條件多檢查了保留窗</td>
+<td>只看 <code>CONFIRMED</code> 與 <code>hold_released_at IS NULL</code></td>
 </tr>
 <tr>
 <td>取消後同一時段再也訂不到那張桌</td>
@@ -482,7 +505,7 @@ reservationRepo.findActiveHold(tableId, now).ifPresent(hold -&gt; {
 <li>為什麼要用 <code>&lt;</code> 不是 <code>&lt;=</code>？</li>
 <li>緩衝時間應該加在哪裡？為什麼判斷式不用改？</li>
 <li>兩個人同時訂同一桌，怎麼防？（講兩層保護）</li>
-<li>為什麼已經入座（<code>SEATED</code>）的訂位也要算佔用？</li>
+<li>為什麼已經入座（<code>SEATED</code>）的訂位也要算佔用？什麼時候就不算了？</li>
 <li>保留窗是哪一段時間？為什麼不用排程把桌子改成 <code>RESERVED</code>？</li>
 </ol>
 <h2 id="學習資源">學習資源</h2>

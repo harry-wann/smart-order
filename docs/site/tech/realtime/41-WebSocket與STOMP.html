@@ -373,12 +373,12 @@ public class OrderService {
 <tr>
 <td><code>CART_UPDATED</code></td>
 <td>session</td>
-<td>整桌購物車有人加、改、刪（帶 <code>action</code>、<code>byGuest</code>、<code>byGuestId</code>、<code>itemName</code>、<code>quantity</code>），同桌手機重抓購物車；<code>byGuestId</code> 是自己的就不跳通知</td>
+<td>整桌購物車有人加、改、刪（帶 <code>action</code>、<code>byGuest</code>、<code>byGuestId</code>、<code>itemName</code>、<code>quantity</code>、<code>optionSummary</code>；<code>optionSummary</code> 例如「全份・加蔥花」，沒有選項是 <code>null</code>），同桌手機重抓購物車；<code>byGuestId</code> 是自己的就不跳通知</td>
 </tr>
 <tr>
 <td><code>NEW_TICKET</code></td>
 <td>session、kitchen</td>
-<td>有新的點餐單（推給同桌的那份多帶 <code>byGuest</code>、<code>byGuestId</code>：誰按了送出；櫃檯代客加點是「櫃檯」／<code>null</code>）</td>
+<td>有新的點餐單（<code>quantity</code> 是這張單的份數加總，「送出 N 項」用它；推給同桌的那份多帶 <code>byGuest</code>、<code>byGuestId</code>：誰按了送出；櫃檯代客加點是「櫃檯」／<code>null</code>）</td>
 </tr>
 <tr>
 <td><code>ITEM_SERVED</code></td>

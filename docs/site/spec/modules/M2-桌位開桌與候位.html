@@ -624,9 +624,10 @@ SELECT * FROM reservation
 </tbody>
 </table></div>
 <p>檢查要放在開桌那個交易裡、<code>FOR UPDATE</code> 鎖住桌位<strong>之後</strong>再算一次，不要相信畫面上的顏色。</p>
-<p><strong>櫃檯可以取消保留</strong>：<code>POST /api/admin/reservations/{id}/release-hold</code> 寫入 <code>hold_released_at</code>／<code>hold_released_by</code>，
-推 <code>TABLE_STATUS</code>，A08 立刻變回空桌。訂位本身<strong>仍是 <code>CONFIRMED</code></strong>，陳怡君到了照樣可以報到，只是改從 S-07b 選別張桌。
-<strong>取消是單向的，不能恢復</strong>（沒有「恢復保留」的 API），所以前端一定要二次確認「取消後無法恢復。A08 會變回空桌，陳怡君到店時再幫他選別張桌」。</p>
+<p><strong>櫃檯可以取消保留，而且隨時可以按</strong>：<code>POST /api/admin/reservations/{id}/release-hold</code> 寫入 <code>hold_released_at</code>／<code>hold_released_by</code>，
+前置條件只有訂位 <code>CONFIRMED</code>、還沒取消過（<strong>不限保留窗內</strong>，明天的訂位也能先取消；重複按回 <code>409 HOLD_ALREADY_RELEASED</code>）。
+推 <code>TABLE_STATUS</code>，正在保留中的 A08 立刻變回空桌；還沒進保留窗的，到時候就不會鎖。訂位本身<strong>仍是 <code>CONFIRMED</code></strong>，陳怡君到了照樣可以報到，只是改從 S-07b 選別張桌。
+<strong>取消是單向的，不能恢復</strong>（沒有「恢復保留」的 API），所以前端一定要二次確認「取消後，這筆訂位到時候不會鎖住 A08，而且無法恢復。客人到店時再幫他選別張桌。」</p>
 <p><strong>兩個邊界</strong></p>
 <ol>
 <li><strong>配到的桌到時間還在用餐中</strong> → 顯示「用餐中」，不顯示保留（優先順序）。陳怡君到了，櫃檯從 S-07b 幫她選別張桌。</li>
@@ -788,7 +789,7 @@ public void hold(Long tableId, HoldRequest req) {
 <li>把空桌都開掉再按一次「報到開桌」→ 顯示「目前沒有坐得下的空桌」</li>
 <li>種子資料裡 30 分鐘內要到的訂位 → 它配到的桌（例如 A08）在桌況上是暖黃「預約保留」，格內「18:30 陳○君 4 位」，統計列「預約保留 1」</li>
 <li>點 A08 → 開桌頁的預約頁籤，這筆置頂；切到現場頁籤 → 頂部暖黃條、開桌按鈕停用；用 Postman 直接打現場開桌 → <code>409 TABLE_RESERVED</code></li>
-<li>按「取消保留」→ 二次確認「取消後無法恢復。A08 會變回空桌，陳怡君到店時再幫他選別張桌」→ A08 變回空桌（訂位仍是已確認）；畫面上找不到「恢復保留」</li>
+<li>按「取消保留」→ 二次確認「取消後，這筆訂位到時候不會鎖住 A08，而且無法恢復。客人到店時再幫他選別張桌。」→ A08 變回空桌（訂位仍是已確認）；畫面上找不到「恢復保留」</li>
 <li>另開一張桌、不點餐 → 店長在 S-03 按「取消該次用餐」→ 桌位<strong>直接回空桌</strong>，<strong>手機不顯示面板、直接回到 C-00</strong>；
     對點過餐的桌按取消 → 「已經有點餐紀錄，請改用結帳」</li>
 </ol><div class="pager"><a href="../../spec/modules/M1-菜單與品項.html"><div class="k">← 上一篇</div><div class="n">M1 菜單與品項</div></a><a class="next" href="../../spec/modules/M3-點餐與服務鈴.html"><div class="k">下一篇 →</div><div class="n">M3 點餐與服務鈴</div></a></div>

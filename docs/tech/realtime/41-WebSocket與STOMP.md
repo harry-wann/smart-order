@@ -195,8 +195,8 @@ public class OrderService {
 
 | type | 頻道 | 意思 |
 |---|---|---|
-| `CART_UPDATED` | session | 整桌購物車有人加、改、刪（帶 `action`、`byGuest`、`byGuestId`、`itemName`、`quantity`），同桌手機重抓購物車；`byGuestId` 是自己的就不跳通知 |
-| `NEW_TICKET` | session、kitchen | 有新的點餐單（推給同桌的那份多帶 `byGuest`、`byGuestId`：誰按了送出；櫃檯代客加點是「櫃檯」／`null`） |
+| `CART_UPDATED` | session | 整桌購物車有人加、改、刪（帶 `action`、`byGuest`、`byGuestId`、`itemName`、`quantity`、`optionSummary`；`optionSummary` 例如「全份・加蔥花」，沒有選項是 `null`），同桌手機重抓購物車；`byGuestId` 是自己的就不跳通知 |
+| `NEW_TICKET` | session、kitchen | 有新的點餐單（`quantity` 是這張單的份數加總，「送出 N 項」用它；推給同桌的那份多帶 `byGuest`、`byGuestId`：誰按了送出；櫃檯代客加點是「櫃檯」／`null`） |
 | `ITEM_SERVED` | session、kitchen | 某個品項出餐了 |
 | `TICKET_CANCELLED` | session、kitchen | 整單取消 |
 | `SESSION_UPDATED` | session、counter | 金額或狀態變了 |

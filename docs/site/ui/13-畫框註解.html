@@ -306,7 +306,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <p><strong>規格</strong></p>
 <ul>
 <li>通知條從上方滑下、蓋在 appbar 上，停 4 秒自己收回</li>
-<li>收到 <code>CART_UPDATED</code>（<code>action = ADDED</code>）才跳：標題「陳小美 加了一樣東西」、說明品項與數量</li>
+<li>收到 <code>CART_UPDATED</code>（<code>ADDED</code>）才跳：「陳小美 加了一樣東西」／「安格斯霜降牛五花 ×1・全份」</li>
 <li>「誰」是同桌的顯示名稱：會員用暱稱，沒登入依加入順序叫「客人 1」「客人 2」</li>
 <li>自己加的不跳：事件的 <code>byGuestId</code> 跟這支手機的 guest id 相同，只更新角標</li>
 </ul>
@@ -314,6 +314,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <ul>
 <li>不用客人關掉；後來的蓋掉前一則，不堆疊</li>
 <li>改數量、刪除（<code>UPDATED</code>／<code>REMOVED</code>）不跳通知，只更新購物車角標</li>
+<li>說明行＝品名 ×數量＋「・」＋<code>optionSummary</code>（沒選項不接）；一行放不下截斷加「…」</li>
 <li>C-04、C-05、C-06、C-08 共用同一個元件，設計稿只畫這兩張</li>
 </ul>
 <h2 id="c-04c同桌通知有人送出訂單">C-04c｜同桌通知・有人送出訂單</h2>
@@ -331,7 +332,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <ul>
 <li>整桌結清（<code>SESSION_CLOSED</code>）之後不再出現；C-09 付款頁（進階 A5）也不放</li>
 <li>購物車是整桌一份，任何一支手機送出就是整桌送出，所以要讓其他人知道</li>
-<li>「N 項」是這張單的品項列數；自己送出的不跳，櫃檯代客加點顯示「櫃檯 送出 N 項」</li>
+<li>「N 項」是份數加總（白飯 ×2 算 2 項）；自己送出的不跳，櫃檯代客加點顯示「櫃檯 送出 N 項」</li>
 </ul>
 <h2 id="c-05品項詳情與選項">C-05｜品項詳情與選項</h2>
 <blockquote>
@@ -359,13 +360,13 @@ pre.mermaid svg{max-width:100%;height:auto}
 <li>頂部一句「這是整桌共用的購物車」；內容存在後端，收到 <code>CART_UPDATED</code> 就重抓</li>
 <li>每列：品項名、下方小字「陳小美 加的」、已選選項、備註、數量步進器、小計</li>
 <li>誰加的都可以改數量、備註或刪除</li>
-<li>底部合計＋主按鈕「送出整桌點餐」；送出不帶品項，後端把整份轉成一張單</li>
+<li>底部「小計 6 項」（份數加總，白飯 ×2 算 2 項）＋主按鈕「送出整桌點餐」；送出不帶品項</li>
 </ul>
 <p><strong>注意</strong></p>
 <ul>
 <li>左滑刪除一定要配一顆看得見的刪除鈕——長輩不會左滑</li>
 <li>同桌剛好先送出：<code>409 CART_EMPTY</code>「購物車是空的，可能同桌已經送出了」，重抓即可</li>
-<li>結清時沒送出的品項直接捨棄；收到 <code>SESSION_CLOSED</code>（PAID）就切到 C-04 已結帳</li>
+<li>結清時沒送出的品項直接捨棄，櫃檯不提示；收到 <code>SESSION_CLOSED</code>（PAID）切到 C-04 已結帳</li>
 <li>空購物車要給「去看看菜單」，不是只顯示 0 項</li>
 </ul>
 <h2 id="c-07送出成功">C-07｜送出成功</h2>
@@ -802,7 +803,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <ul>
 <li>清單：<code>CONFIRMED</code>、用餐時間在現在 −10 ～ +30 分鐘、人數坐得下這張桌</li>
 <li>每列：時間、姓名、電話末四碼、人數、預點狀態，一顆 primary「開桌」</li>
-<li>保留的那筆置頂標「保留中」＋「取消保留」，二次確認寫明「取消後無法恢復」</li>
+<li>保留的那筆置頂標「保留中」＋「取消保留」（無法恢復；S-07 那邊不限保留窗）</li>
 <li>頂部暖黃條：稍後（保留窗外）有預約只提醒，不擋開桌</li>
 </ul>
 <p><strong>注意</strong></p>
@@ -820,7 +821,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <ul>
 <li>上半桌號、人數、用餐分鐘、金額；中段依單分組的點餐紀錄＋「代客加點」</li>
 <li>結帳區：小計 → 服務費 10% → 合計；三顆付款（現金／信用卡／條碼）點了都跳 S-03b 倒數</li>
-<li>購物車還有東西：暖黃小字「還有 N 項沒送出，結帳後會捨棄」，只提醒不擋</li>
+<li>「小計 6 項」是份數加總；結清時沒送出的購物車直接捨棄，櫃檯畫面不提示</li>
 <li>會員（選填，進階）：手機查詢 →「陳小美・1998/04/21」→「確認是本人」，結帳帶 <code>memberId</code></li>
 <li>「取消該次用餐」僅 MANAGER，沒點過餐才能用：桌直接回空桌，客人手機回首頁</li>
 </ul>
@@ -904,7 +905,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <ul>
 <li>清單：時段、姓名、電話、人數、配桌、預點、狀態</li>
 <li>「報到開桌」只在用餐前 30 分～後 10 分出現 → S-07b；更早是灰字「18:15 起可報到」</li>
-<li>配到的桌保留中：小字「保留 A08」＋ ghost「取消保留」（無法恢復）；取消後改「已取消保留」</li>
+<li>有配桌、沒取消過保留的已確認列都有 ghost「取消保留」，不限保留窗；取消後改「已取消保留」</li>
 <li>過了用餐時間 10 分鐘：膠囊「逾時未到」，沒有報到鈕，改 ghost「登記候位」</li>
 <li>兩支排程：NO_SHOW（每 5 分鐘）、用餐前 2 小時提醒，都要有手動觸發 API</li>
 </ul>
@@ -1117,6 +1118,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <ul>
 <li>MenuItemRow 四種狀態，價格列固定 32px 高</li>
 <li>Notify 同桌通知從上方滑下停 4 秒；Toast 三秒後自動消失；金額列</li>
+<li>通知說明行只佔一行：「安格斯霜降牛五花 ×1・全份」，放不下截斷加「…」</li>
 </ul>
 <p><strong>注意</strong></p>
 <ul>
