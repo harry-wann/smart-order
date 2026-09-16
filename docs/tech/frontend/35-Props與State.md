@@ -104,6 +104,9 @@ function MenuItemRow({ item, onAdd }) {
 
 **這是 React 最常見的模式**：狀態放在父元件，函式往下傳，子元件只負責觸發。
 
+> 這裡為了專心練「函式往下傳」，`handleAdd` 直接改本機陣列。
+> **我們專案的購物車存在後端、整桌共用**，實際的 `handleAdd` 是先打 API 加進去、再把整桌那份抓回來 `setCart`（見 [useState](36-useState.md) 的「購物車」那段）。函式往下傳的寫法完全一樣。
+
 ## 狀態該放在哪一層
 
 規則：**放在「所有需要它的元件」的最近共同父元件上。**
@@ -118,6 +121,8 @@ OrderPage                    ← cart 狀態放這裡
 ```
 
 `MenuItemRow` 和 `CartBar` 都需要 cart，所以放在 `OrderPage`。
+
+（這個 `cart` 是從後端抓回來的畫面副本。同桌別人改了購物車，也是 `OrderPage` 收到通知後重抓，兩個子元件跟著一起更新。）
 
 **這叫「狀態提升」（lifting state up）。**
 

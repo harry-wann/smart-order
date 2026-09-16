@@ -40,15 +40,19 @@
         </div>
       </div>
 
-      <!-- 進階 A6：沒做點數與優惠券就整塊拿掉 -->
-      <div class="card card-tight mt12 r g12" style="border-style:dashed;border-color:var(--accent-500)">
-        <svg class="ic" viewBox="0 0 24 24" style="color:var(--accent-600)"><path d="M3 9a2 2 0 0 0 0 6v3a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-3a2 2 0 0 0 0-6V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1z"/><path d="M14 5v2M14 11v2M14 17v2"/></svg>
-        <div class="fill">
-          <div style="font-weight:700">使用優惠券／點數折抵</div>
-          <div class="t-cap">可用 1 張券・1,248 點</div>
+      <!-- 進階 A6：沒做點數與優惠券就整塊拿掉。兩列可以一起用：先扣券，再折點數 -->
+      <div class="card card-tight mt12" style="border-style:dashed;border-color:var(--accent-500);padding:4px 16px">
+        <div class="tick" style="align-items:center">
+          <svg class="ic st" viewBox="0 0 24 24" style="color:var(--accent-600)"><path d="M3 9a2 2 0 0 0 0 6v3a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-3a2 2 0 0 0 0-6V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1z"/><path d="M14 5v2M14 11v2M14 17v2"/></svg>
+          <div class="fill"><div class="nm">優惠券</div><div class="op">1 張可用・一次最多用一張</div></div>
+          <span class="badge b-wait">進階 A6</span>
+          <svg class="ic ic-sm dim" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
         </div>
-        <span class="badge b-wait">進階 A6</span>
-        <svg class="ic ic-sm dim" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+        <div class="tick" style="align-items:center">
+          <svg class="ic st" viewBox="0 0 24 24" style="color:var(--accent-600)"><path d="m12 3 2.6 5.6 6.1.8-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.4l6.1-.8z"/></svg>
+          <div class="fill"><div class="nm">點數折抵</div><div class="op">1,248 點可用・1 點折 1 元</div></div>
+          <span class="switch"></span>
+        </div>
       </div>
 
       <div class="card mt16" style="padding:16px 20px">
@@ -95,10 +99,19 @@
   </dl>
   <b class="mt16" style="display:block">虛線那塊是進階 A6</b>
   <dl style="margin:0">
-    <dt>優惠券／點數折抵</dt>
-    <dd>點進去選一張券或輸入要折的點數，<br>
-        一次最多一張券、不疊加。<br>
-        沒做 A6 就整塊拿掉</dd>
+    <dt>優惠券、點數折抵兩列</dt>
+    <dd>可以同時用：先扣優惠券（一次最多一張），<br>
+        再用點數折（1 點折 1 元，最多折到 0 元）。<br>
+        選了之後合計下面多兩行「優惠券 −NT$ 100」<br>
+        「點數 −NT$ 50」，再接實付金額</dd>
+    <dt>付款時一起帶</dt>
+    <dd>POST /api/payments 的 couponId<br>
+        與 usePoints 可以同時帶</dd>
+    <dt>點數回饋</dt>
+    <dd>以實付金額計，每滿 100 元 1 點、<br>
+        無條件捨去，付款成功後才入帳（C-11）</dd>
+    <dt>不做 A6</dt>
+    <dd>整塊拿掉，合計直接接登入入口</dd>
   </dl>
 </div>
 

@@ -20,7 +20,7 @@ WebSocket 就是講電話：連線接通後一直掛著，兩邊誰想說話都�
 
 ## 在我們的火鍋店裡
 
-你和朋友坐 A03 桌，各自拿手機點餐。你加了一盤牛五花，朋友的手機要馬上看到。
+你和朋友坐 A03 桌，各自拿手機點餐。購物車是整桌共用的：你把一盤牛五花加進購物車，朋友的手機要馬上看到。
 
 - 沒有 WebSocket：朋友的手機每 3 秒問一次「有新的嗎」，多數時候答案是「沒有」
 - 有 WebSocket：你一送出，伺服器直接推到朋友手機上
@@ -37,7 +37,7 @@ WebSocket 就是講電話：連線接通後一直掛著，兩邊誰想說話都�
 
 | 喇叭 | 誰聽得到 | 喊什麼 |
 |---|---|---|
-| A03 桌的喇叭 | 只有坐 A03 的手機 | 新的一單、牛五花出餐了 |
+| A03 桌的喇叭 | 只有坐 A03 的手機 | 陳小美加了牛五花、新的一單、牛五花出餐了、這桌結帳了 |
 | 廚房的喇叭 | 廚房螢幕 | B02 桌來了新單 |
 | 櫃檯的喇叭 | 櫃檯 | A03 按服務鈴了、桌況變了 |
 | 菜單的喇叭 | 所有正在點餐的手機 | 牛五花賣完了 |
@@ -191,19 +191,20 @@ public class OrderService {
 }
 ```
 
-我們的事件類型：
+我們的事件類型（常用的幾個，完整清單見 [04-API 規格](../../spec/04-API規格.md) §3.4）：
 
 | type | 頻道 | 意思 |
 |---|---|---|
-| `NEW_TICKET` | session、kitchen | 有新的點餐單 |
+| `CART_UPDATED` | session | 整桌購物車有人加、改、刪（帶 `action`、`byGuest`、`byGuestId`、`itemName`、`quantity`），同桌手機重抓購物車；`byGuestId` 是自己的就不跳通知 |
+| `NEW_TICKET` | session、kitchen | 有新的點餐單（推給同桌的那份多帶 `byGuest`、`byGuestId`：誰按了送出；櫃檯代客加點是「櫃檯」／`null`） |
 | `ITEM_SERVED` | session、kitchen | 某個品項出餐了 |
 | `TICKET_CANCELLED` | session、kitchen | 整單取消 |
 | `SESSION_UPDATED` | session、counter | 金額或狀態變了 |
-| `SESSION_CLOSED` | session、counter | 櫃檯結清了，同桌手機切到「已結帳」並清掉權杖 |
+| `SESSION_CLOSED` | session、counter | 這桌收場了，帶 `reason`：`PAID`（結清，沒送出的購物車一起捨棄）→ 同桌手機切到「已結帳」；`CANCELLED`（店長取消用餐）→ 直接回首頁。兩種都清掉權杖 |
 | `MENU_SOLD_OUT` | menu | 某品項售完 |
 | `MENU_RESTOCKED` | menu | 補貨了 |
 | `SERVICE_CALL` | counter | 有人按服務鈴 |
-| `TABLE_STATUS` | counter | 桌況變了 |
+| `TABLE_STATUS` | counter | 桌況變了（開桌、清潔完成、櫃檯取消訂位保留…） |
 | `WAITLIST_CALLED` | waitlist | 叫號 |
 
 ## 最重要的一件事

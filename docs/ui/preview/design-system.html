@@ -177,8 +177,12 @@ padding:12px 16px;border-radius:0 8px 8px 0;font-size:15px;margin:16px 0}
 <div class="tbl" style="background:var(--table-available);color:var(--text-900)">A01<small>空桌</small></div>
 <div class="tbl" style="background:var(--table-occupied);color:#fff">A02<small>用餐中</small></div>
 <div class="tbl" style="background:var(--table-cleaning);color:#fff">A05<small>待清理</small></div>
+<div class="tbl" style="background:var(--accent-100);color:var(--text-900);box-shadow:inset 0 0 0 1.5px var(--accent-500);text-align:center">A08<small>預約保留</small><small>18:30 陳○君 4 位</small></div>
 </div>
-<p class="note">桌位狀態只有這三種，沒有「已預約」「結帳中」。<code>--table-held</code>（#E8A33D）留給延伸功能 M2 2.E5 的手動保留，基礎不畫。</p>
+<p class="note">桌位狀態（存在資料表的）只有前三種，沒有「結帳中」。第四塊「預約保留」是查桌況時算出來的顯示狀態：
+空桌有一筆已確認訂位配到它、現在落在開始前 30 分～開始後 10 分、櫃檯沒取消保留，就顯示成暖黃
+（底 <code>accent-100</code>、框 <code>accent-500</code>、文字標籤「預約保留」）。
+<code>--table-held</code>（#E8A33D）仍留給延伸功能 M2 2.E5 的手動保留，基礎不畫。</p>
 
 <h2>2　字體階層</h2>
 <p class="note">標題用 <strong>Noto Serif TC 明體</strong>，內文用 Noto Sans TC。
@@ -257,6 +261,8 @@ padding:12px 16px;border-radius:0 8px 8px 0;font-size:15px;margin:16px 0}
 <button class="btn btn-primary btn-md" disabled>處理中…</button>
 </div>
 <p class="note"><strong>主要行動一律用 lg（52px）</strong>——長輩友善。全寬按鈕固定在底部安全區內。</p>
+<p class="note"><strong>可點擊區至少 44×44</strong>：md 按鈕高 44、圖示鈕與垃圾桶 44×44 都合規；
+sm（36px）只用在表格列與卡片內的次要操作；步進器與「+」的 28×28 是刻意的例外。</p>
 </div>
 
 <div class="sub">4.2　MenuItemRow　★最常出現的元件</div>
@@ -319,7 +325,7 @@ padding:12px 16px;border-radius:0 8px 8px 0;font-size:15px;margin:16px 0}
 <div class="sub">4.6　Notify 同桌通知　（從上方滑下，停 4 秒自己收回，不堆疊）</div>
 <div class="card" style="max-width:420px;display:flex;gap:12px;align-items:center;padding:12px 16px;box-shadow:var(--shadow-pop)">
 <div style="width:32px;height:32px;border-radius:50%;background:var(--brand-100);color:var(--brand-600);display:flex;align-items:center;justify-content:center;font-weight:700;flex:none">美</div>
-<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;line-height:1.5">陳小美 加了一樣東西</div><div class="note">安格斯霜降牛五花 ×1・全份</div></div>
+<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;line-height:1.5">陳小美 加了一樣東西</div><div class="note">安格斯霜降牛五花 ×1</div></div>
 <div class="note" style="flex:none">剛剛</div>
 </div>
 <p class="note">取代服務鈴上的紅點：直接說誰做了什麼。出現在 C-04、C-05、C-06、C-08；結帳頁不出現。</p>
@@ -396,7 +402,7 @@ padding:12px 16px;border-radius:0 8px 8px 0;font-size:15px;margin:16px 0}
 <tr><td><strong>售完印章</strong></td><td>斜蓋在照片上的紅色方框印章（上面 4.2 已示範）</td></tr>
 </table>
 
-<h2>7　畫面清單　42 張</h2>
+<h2>7　畫面清單　43 張</h2>
 <table style="margin-bottom:16px">
 <tr><th></th><th>顧客端</th><th>店家端</th></tr>
 <tr><td style="width:110px"><strong>裝置</strong></td><td>手機<strong>直式</strong></td><td><strong>橫式</strong>平板或電腦</td></tr>
@@ -405,17 +411,17 @@ padding:12px 16px;border-radius:0 8px 8px 0;font-size:15px;margin:16px 0}
 <tr><td><strong>超出範圍</strong></td><td>置中、最大寬 480px</td><td>「請將裝置橫放，或改用電腦操作」</td></tr>
 </table>
 <p class="note"><strong>例外</strong>：S-04 出菜看板 KDS 用 1920×1080 固定橫式大螢幕，不做 RWD。</p>
-<p class="note">唯一來源是 <code>10-UI-UX規格.md</code> 的兩張頁面表；另有 8 張元件總表 DS-01～DS-08（1280×1200）。C-02、C-03 是空號（C-03 選鍋底已併進 C-04 的分類頁籤）。進階 8 張有空才做。</p>
+<p class="note">唯一來源是 <code>10-UI-UX規格.md</code> 的兩張頁面表；另有 8 張元件總表 DS-01～DS-08（1280×1200）。C-02、C-03 是空號（C-03 選鍋底已併進 C-04 的分類頁籤）。進階 8 張有空才做；A7 人氣推薦沒有獨立畫面，是 C-04 裡的一塊。</p>
 <div class="sub">顧客端　手機直式 375×812　25 張</div>
 <table>
 <tr><th style="width:88px;white-space:nowrap">ID</th><th>畫面</th><th style="width:104px">級別</th><th style="width:240px">路由</th></tr>
 <tr><td style="white-space:nowrap">C-00</td><td>入口頁（店外進來的起點）</td><td>基礎</td><td>/</td></tr>
 <tr><td style="white-space:nowrap">C-01</td><td>掃碼進入／桌號確認</td><td>基礎</td><td>/t/:tableNo</td></tr>
-<tr><td style="white-space:nowrap">C-04</td><td>菜單主頁（含鍋底分類）　★最重要</td><td>基礎</td><td>/order/menu</td></tr>
+<tr><td style="white-space:nowrap">C-04</td><td>菜單主頁（含鍋底分類；人氣 TOP 5 是進階 A7）　★最重要</td><td>基礎</td><td>/order/menu</td></tr>
 <tr><td style="white-space:nowrap">C-04b</td><td>同桌通知・有人加購物車</td><td>基礎</td><td>覆蓋層</td></tr>
 <tr><td style="white-space:nowrap">C-04c</td><td>同桌通知・有人送出訂單</td><td>基礎</td><td>覆蓋層</td></tr>
 <tr><td style="white-space:nowrap">C-05</td><td>品項詳情與選項</td><td>基礎</td><td>/order/items/:id</td></tr>
-<tr><td style="white-space:nowrap">C-06</td><td>購物車</td><td>基礎</td><td>/order/cart</td></tr>
+<tr><td style="white-space:nowrap">C-06</td><td>購物車（整桌共用）</td><td>基礎</td><td>/order/cart</td></tr>
 <tr><td style="white-space:nowrap">C-07</td><td>送出成功</td><td>基礎</td><td>/order/submitted</td></tr>
 <tr><td style="white-space:nowrap">C-08</td><td>本桌訂單與出菜進度　★多裝置同步</td><td>基礎</td><td>/order/tickets</td></tr>
 <tr><td style="white-space:nowrap">C-09</td><td>結帳明細</td><td><span class="pill">進階 A5</span></td><td>/checkout</td></tr>
@@ -436,7 +442,7 @@ padding:12px 16px;border-radius:0 8px 8px 0;font-size:15px;margin:16px 0}
 <tr><td style="white-space:nowrap">C-21</td><td>服務鈴面板</td><td>基礎</td><td>彈出層</td></tr>
 </table>
 
-<div class="sub">店家端　橫式平板／電腦 1280×800　17 張</div>
+<div class="sub">店家端　橫式平板／電腦 1280×800　18 張</div>
 <table>
 <tr><th style="width:88px;white-space:nowrap">ID</th><th>畫面</th><th style="width:104px">級別</th><th style="width:240px">路由</th></tr>
 <tr><td style="white-space:nowrap">S-01</td><td>員工登入</td><td>基礎</td><td>/admin/login</td></tr>
@@ -445,6 +451,7 @@ padding:12px 16px;border-radius:0 8px 8px 0;font-size:15px;margin:16px 0}
 <tr><td style="white-space:nowrap">S-02c</td><td>開桌・候位（頁籤）</td><td>基礎</td><td>同上</td></tr>
 <tr><td style="white-space:nowrap">S-02d</td><td>開桌・預約（頁籤）</td><td>基礎</td><td>同上</td></tr>
 <tr><td style="white-space:nowrap">S-03</td><td>桌位詳情（含櫃檯結帳）</td><td>基礎</td><td>/admin/tables/:tableNo</td></tr>
+<tr><td style="white-space:nowrap">S-03b</td><td>櫃檯結帳・付款倒數</td><td>基礎</td><td>對話框，疊在 S-03 上</td></tr>
 <tr><td style="white-space:nowrap">S-04</td><td>出菜看板 KDS　★廚房主畫面・1920×1080</td><td>基礎</td><td>/admin/kitchen</td></tr>
 <tr><td style="white-space:nowrap">S-05</td><td>菜單管理</td><td>基礎</td><td>/admin/menu</td></tr>
 <tr><td style="white-space:nowrap">S-06</td><td>選項群組管理</td><td>基礎</td><td>/admin/menu/options</td></tr>

@@ -136,7 +136,7 @@ List<Object[]> findPopularItems(@Param("since") LocalDateTime since,
                                @Param("limit") int limit);
 ```
 
-**我們的原則**：簡單查詢用方法命名，推薦／報表／統計這種複雜的用 `nativeQuery`。不要為了「純 JPA」去硬湊 Criteria API。
+**我們的原則**：簡單查詢用方法命名，推薦（進階 A7）／報表（進階 A4）／統計這種複雜的用 `nativeQuery`。不要為了「純 JPA」去硬湊 Criteria API。
 
 ## 15 分鐘動手小練習
 

@@ -3,7 +3,7 @@
 /* ==========================================================================
    火鍋點餐系統 — 設計稿共用樣式
    依據 docs/ui/11-設計系統.md　與　docs/ui/10-UI-UX規格.md
-   用途：docs/ui/mockups/ 底下 50 張 HTML 施工架（顧客端 25、店家端 17、元件總表 8）。這不是前端原始碼。
+   用途：docs/ui/mockups/ 底下 51 張 HTML 施工架（顧客端 25、店家端 18、元件總表 8）。這不是前端原始碼。
    ========================================================================== */
 
 :root{
@@ -153,6 +153,7 @@ body:has(#thumbmode:target) .frame{box-shadow:none}
    右欄文字的垂直位置也跟著跑（C-04 曾經出現 157.78 / 143.78 / 141.78 三種高度）。
    32 是能裝下最高控制項（步進器 30）的 8 的倍數。 */
 .mi .foot{display:flex;align-items:center;gap:8px;min-height:32px}
+/* 進詳情的箭頭 32×32：可點擊區 44×44 的第二個例外（第一個是步進器與 +），整列本來就可點 */
 .mi .foot .iconbtn{width:32px;height:32px}
 .mi .step{margin-left:auto}
 .mi .step .n{width:24px}
@@ -192,7 +193,7 @@ body:has(#thumbmode:target) .frame{box-shadow:none}
 
 /* ---------------------- 5.4 Stepper ------------------------------------ */
 /* 按鈕 28×28、加號 28×28。這是 11-設計系統.md §5.4 的例外：
-   低於「可點擊區 ≥ 48×48」那條規則，換取版面不被步進器吃掉。
+   低於「可點擊區 ≥ 44×44」那條規則，換取版面不被步進器吃掉。
    步進器旁邊就是空白，實際可按範圍比 28px 大，誤觸風險低。
    註：這是整組第二次縮一階（44 → 36 → 28），再往下就真的按不到了。 */
 .step{display:inline-flex;align-items:center;flex:none;background:var(--surface);
@@ -351,7 +352,14 @@ body:has(#thumbmode:target) .frame{box-shadow:none}
 .statstrip .st{display:flex;align-items:baseline;gap:8px;flex:none;white-space:nowrap}
 .statstrip .st .v{font-family:"Noto Serif TC",serif;font-size:26px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1}
 .statstrip .st .k{font-size:13px;color:var(--text-600);white-space:nowrap}
-.statstrip .vr{width:1px;align-self:stretch;background:var(--border)}
+.statstrip .vr{width:1px;flex:none;align-self:stretch;background:var(--border)}
+/* 統計列兼圖例：桌況四種顯示的數字後面放一顆跟桌格同色的小方塊（S-02、S-11、DS-08）。
+   桌格上本來就有文字標籤，這裡只是讓「預約保留」這個新顏色第一眼就對得上 */
+.statstrip .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px}
+.sw-av{background:var(--table-available)}
+.sw-oc{background:var(--table-occupied)}
+.sw-cl{background:var(--table-cleaning)}
+.sw-rs{background:var(--accent-100);box-shadow:inset 0 0 0 1.5px var(--accent-500)}
 
 /* 資料表格 */
 .dt{width:100%;border-collapse:separate;border-spacing:0;background:var(--surface);
@@ -372,7 +380,12 @@ body:has(#thumbmode:target) .frame{box-shadow:none}
 .tt .mt{font-size:13px;line-height:1.6;font-variant-numeric:tabular-nums}
 .tt-av{background:var(--table-available);color:var(--text-900)}
 .tt-oc{background:var(--table-occupied);color:#fff}
-/* 保留：M2 的延伸功能 2.E5，基礎的桌況總覽不會用到 */
+/* 預約保留：不是存在資料表的桌態，是查桌況時算出來的顯示狀態（AVAILABLE ＋ 進入保留窗的訂位）。
+   暖黃淺底＋金黃框，跟「用餐中」的實心朱紅拉開距離 —— 它還是一張空著的桌，只是先留給別人。
+   用 inset 陰影畫框，不用 border，桌號才會跟隔壁幾格對齊。 */
+.tt-rs{background:var(--accent-100);color:var(--text-900);box-shadow:inset 0 0 0 1.5px var(--accent-500)}
+.tt-rs .lb{background:var(--accent-500);color:var(--text-900)}
+/* 手動保留：M2 的延伸功能 2.E5，基礎的桌況總覽不會用到 */
 .tt-hd{background:var(--table-held);color:var(--text-900)}
 .tt-cl{background:var(--table-cleaning);color:#fff}
 .tt-oc .lb,.tt-cl .lb{background:rgba(255,255,255,.9)}
@@ -513,6 +526,8 @@ body:has(#thumbmode:target) .frame{box-shadow:none}
 .sidenote b{display:block;font-family:"Noto Serif TC",serif;font-size:15px;color:var(--text-900);margin-bottom:8px}
 .sidenote dt{font-weight:700;color:var(--text-900);margin-top:8px}
 .sidenote dd{margin:0}
+/* dd 裡的粗體是句中強調，不能吃到上面 .sidenote b 的區塊標題樣式 */
+.sidenote dd b{display:inline;font-family:inherit;font-size:inherit;margin:0}
 /* 選項群組標題 */
 .grouphd{display:flex;align-items:baseline;gap:8px;margin-bottom:12px}
 .req{flex:none;font-size:12px;font-weight:700;padding:2px 10px;border-radius:999px;
@@ -524,10 +539,13 @@ body:has(#thumbmode:target) .frame{box-shadow:none}
 .cartrow .hd{display:flex;align-items:baseline;gap:8px}
 .cartrow .hd .nm{flex:1;min-width:0;font-size:17px;font-weight:700;line-height:1.5}
 .cartrow .sub{font-size:14px;line-height:1.7;color:var(--text-600)}
+/* 整桌共用購物車：品名下方的「陳小美 加的」。比選項小一階、前面帶人像圖示，選項才是客人要核對的內容 */
+.cartrow .by{display:flex;align-items:center;gap:4px;font-size:13px;line-height:1.6;color:var(--text-600)}
+.cartrow .by .ic{width:14px;height:14px}
 .trash{width:44px;height:44px;flex:none;border:0;background:transparent;border-radius:8px;
   color:var(--text-400);display:flex;align-items:center;justify-content:center;cursor:pointer}
 .trash:hover{color:var(--danger);background:var(--danger-bg)}
-/* 大型步進器（櫃檯開桌） */
+/* 大型步進器（開桌填人數） */
 .bigstep{display:flex;align-items:center;gap:16px}
 .bigstep button{width:56px;height:56px;flex:none;border:1.5px solid var(--brand-600);border-radius:50%;
   background:var(--surface);color:var(--brand-600);display:flex;align-items:center;justify-content:center;cursor:pointer}
@@ -573,3 +591,19 @@ body:has(#thumbmode:target) .frame{box-shadow:none}
 .tinfo .rt{font-size:12px;line-height:1.6;color:var(--text-400);font-variant-numeric:tabular-nums;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tinfo .tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+
+/* ------------------------- 預約保留的小字 ------------------------------- */
+/* S-07 狀態欄「保留 A08」、S-07b「原保留桌」、S-02d 置頂列。跟 .b-wait 同一個暖褐字色 */
+.t-hold{display:inline-flex;align-items:center;gap:4px;font-size:13px;line-height:1.6;
+  font-weight:700;color:#8A5214;white-space:nowrap}
+.t-hold .ic{width:14px;height:14px}
+
+/* ---------------------- 櫃檯付款倒數（S-03b） --------------------------- */
+/* 大數字放在一圈進度環裡；環用 SVG 的 stroke-dasharray 畫剩下幾秒，不用漸層。
+   環的顏色（brand-100 底軌、brand-600 進度）與「從 12 點鐘開始」的旋轉都直接寫在 SVG 的屬性上：
+   extract_layout.py 會把 SVG 單獨拿出去渲染，子元素吃不到這裡的 class，CSS transform 也帶不過去 */
+.countdown{position:relative;width:152px;height:152px;flex:none}
+.countdown svg{position:absolute;left:0;top:0;width:152px;height:152px;fill:none}
+.countdown .n{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:"Noto Serif TC",serif;font-size:72px;font-weight:900;line-height:1;
+  color:var(--brand-600);font-variant-numeric:tabular-nums}

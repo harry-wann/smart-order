@@ -64,16 +64,17 @@ import { Link } from 'react-router-dom';
 
 ```jsx
 import { useNavigate } from 'react-router-dom';
+import { submitCart } from '../api/cart';
 
 function CartPage() {
   const navigate = useNavigate();
 
   async function handleSubmit() {
-    const ticket = await request('/dining-sessions/me/orders', { ... });
+    await submitCart();                           // 不帶品項：整桌購物車一起送出（見 fetch 那頁）
     navigate('/order/tickets');                   // 送出後跳到訂單頁
   }
 
-  return <button onClick={handleSubmit}>送出點餐</button>;
+  return <button onClick={handleSubmit}>送出整桌點餐</button>;
 }
 ```
 
@@ -145,7 +146,7 @@ function RequireStaff({ children }) {
 | C-01 | `/t/:tableNo` | 掃碼進入 | 基礎 |
 | C-04 | `/order/menu` | 菜單主頁（鍋底是其中一個分類） | 基礎 |
 | C-05 | `/order/items/:id` | 品項詳情 | 基礎 |
-| C-06 | `/order/cart` | 購物車 | 基礎 |
+| C-06 | `/order/cart` | 購物車（整桌共用） | 基礎 |
 | C-07 | `/order/submitted` | 送出成功 | 基礎 |
 | C-08 | `/order/tickets` | 本桌訂單 | 基礎 |
 | C-09 | `/checkout` | 結帳明細 | 進階 A5 |

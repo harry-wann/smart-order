@@ -42,7 +42,8 @@
     <div class="scroll">
 
       <!-- 手寫感木牌：只有這家店有的細節 -->
-      <div class="secbar"><span class="woodsign">今日推薦</span><span class="t-cap">本店人氣 TOP 5</span></div>
+      <!-- 進階 A7 人氣推薦（GET /api/menu/recommendations）：沒做就整塊拿掉（木牌＋橫捲卡片），分類頁籤下面直接接品項列；「推薦」頁籤與「人氣」膠囊一起拿掉 -->
+      <div class="secbar"><span class="woodsign">今日推薦</span><span class="t-cap">本店人氣 TOP 5</span><span class="fill"></span><span class="badge b-wait">進階 A7</span></div>
       <div class="hs" style="padding:0 16px">
         <div class="reccard">
           <div class="img-ph" style="aspect-ratio:16/9" data-layer="IMG／麻辣鍋湯頭／16-9">
@@ -351,7 +352,8 @@
     <div class="scroll">
 
       <!-- 手寫感木牌：只有這家店有的細節 -->
-      <div class="secbar"><span class="woodsign">今日推薦</span><span class="t-cap">本店人氣 TOP 5</span></div>
+      <!-- 進階 A7 人氣推薦（GET /api/menu/recommendations）：沒做就整塊拿掉（木牌＋橫捲卡片），分類頁籤下面直接接品項列；「推薦」頁籤與「人氣」膠囊一起拿掉 -->
+      <div class="secbar"><span class="woodsign">今日推薦</span><span class="t-cap">本店人氣 TOP 5</span><span class="fill"></span><span class="badge b-wait">進階 A7</span></div>
       <div class="hs" style="padding:0 16px">
         <div class="reccard">
           <div class="img-ph" style="aspect-ratio:16/9" data-layer="IMG／麻辣鍋湯頭／16-9">
@@ -411,7 +413,7 @@
           <span class="stamp">售完</span>
         </div>
 
-        <!-- 已加入購物車 → 顯示步進器 -->
+        <!-- 結帳時沒送出的購物車品項一起捨棄：步進器變回 +，底部也沒有購物車列 -->
         <div class="mi">
           <div class="img-ph tiny thumb80" data-layer="IMG／豬梅花／1-1">
             <b>豬肉盤</b><span>320×320・1:1</span><span class="kw">pork belly slices plate</span>
@@ -422,11 +424,7 @@
             <div class="foot">
               <span class="price">NT$ 320</span>
               <span class="fill"></span>
-              <div class="step">
-              <button><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
-              <div class="n">2</div>
-              <button><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button>
-            </div>
+              <button class="plus"><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button>
             </div>
           </div>
         </div>
@@ -465,6 +463,53 @@
     </div>
 
   </div>
+</div>
+
+<div class="sidenote">
+  <b>正常態</b>
+  <dl style="margin:0">
+    <dt>「今日推薦・本店人氣 TOP 5」</dt>
+    <dd><b>進階 A7 人氣推薦</b>，資料來自<br>
+        GET /api/menu/recommendations。<br>
+        不做就整塊拿掉（木牌＋橫捲卡片），<br>
+        分類頁籤下面直接接品項列；<br>
+        「推薦」頁籤、品項上的「人氣」膠囊<br>
+        也屬於 A7，一起拿掉</dd>
+    <dt>底部購物車列</dt>
+    <dd>顯示的是整桌共用購物車的項數與金額，<br>
+        同桌有人加減會跟著變（C-06）</dd>
+    <dt>鍋底只是分類之一</dt>
+    <dd>「每桌至少一份」在送單時擋：<br>
+        400 SOUP_BASE_REQUIRED</dd>
+  </dl>
+  <b class="mt16" style="display:block">三態</b>
+  <dl style="margin:0">
+    <dt>載入中／空資料／錯誤</dt>
+    <dd>骨架屏＋火鍋冒泡；<br>
+        插圖＋一句話＋一個行動；<br>
+        中文訊息＋重試，不給客人看錯誤碼</dd>
+  </dl>
+  <b class="mt16" style="display:block">已結帳</b>
+  <dl style="margin:0">
+    <dt>只有 reason = PAID 才顯示</dt>
+    <dd>櫃檯在 S-03 結清（或 A5 線上付款），<br>
+        整桌收到 SESSION_CLOSED<br>
+        （reason: PAID），菜單變暗、<br>
+        底部面板「這桌已經結帳完成」</dd>
+    <dt>取消用餐直接回首頁</dt>
+    <dd>reason: CANCELLED（店長在 S-03 取消）：<br>
+        不顯示任何面板，<br>
+        清掉權杖直接導回 C-00</dd>
+    <dt>權杖失效</dt>
+    <dd>收到事件就清掉權杖；之後打 API 拿到<br>
+        401 也一樣清權杖、回 C-00</dd>
+    <dt>沒送出的購物車捨棄</dt>
+    <dd>結清的同一個交易刪掉整桌購物車，<br>
+        所以這個狀態沒有購物車列、步進器變回 +</dd>
+    <dt>沒有「結帳中」</dt>
+    <dd>結清前同桌照樣能加點，金額變了由<br>
+        結清時的 expectedTotal 比對擋下</dd>
+  </dl>
 </div>
 
 </div>

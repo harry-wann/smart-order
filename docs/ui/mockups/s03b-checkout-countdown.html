@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>S-03｜桌位詳情</title>
+<title>S-03b｜櫃檯結帳・付款倒數</title>
 <link rel="stylesheet" href="_shared.css">
 </head>
 <body>
@@ -12,8 +12,9 @@
 <div class="stage">
 
 <div>
-  <p class="meta"><b>S-03｜桌位詳情</b><code>1280 × 800</code><code>/admin/tables/:tableNo</code></p>
+  <p class="meta"><b>S-03b｜櫃檯結帳・付款倒數</b><code>1280 × 800</code><code>對話框，疊在 S-03 上</code><code>信用卡・倒數 3</code></p>
   <div class="frame f-desk">
+    <!-- 底下是 S-03 桌位詳情（被遮罩壓暗） -->
     <div class="admin">
         <aside class="side">
         <div class="brand">鼎沸鍋物<small>SMART ORDER</small></div>
@@ -123,9 +124,9 @@
                 <span class="t-cap">按下後倒數 5 秒才送出</span>
               </div>
               <div class="gr3 mt8">
-                <button class="btn btn-primary btn-lg">現金</button>
-                <button class="btn btn-primary btn-lg">信用卡</button>
-                <button class="btn btn-primary btn-lg">條碼</button>
+                <button class="btn btn-primary btn-lg" disabled>現金</button>
+                <button class="btn btn-primary btn-lg" disabled>信用卡</button>
+                <button class="btn btn-primary btn-lg" disabled>條碼</button>
               </div>
               <!-- 整桌購物車還有沒送出的品項才出現：只提醒、不擋；結清時這些品項直接捨棄 -->
               <div class="r g4 mt12 t-cap" style="color:#8A5214;font-weight:700">
@@ -137,74 +138,76 @@
         </div></div>
       </div>
     </div>
+    <!-- 付款倒數對話框：現金／信用卡／條碼三顆共用，標題帶付款方式 -->
+    <div class="scrim"></div>
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+      <div class="card c" style="width:440px;padding:32px;align-items:center;text-align:center">
+        <div class="r g8 t-cap">
+          <svg class="ic ic-sm" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>
+          <span>A03 桌・櫃檯結帳</span>
+        </div>
+        <h2 class="h1 mt8">信用卡付款中</h2>
+
+        <div class="countdown mt24">
+          <svg viewBox="0 0 152 152"><circle cx="76" cy="76" r="68" stroke="#FBE8E3" stroke-width="8"/><circle cx="76" cy="76" r="68" stroke="#C8442E" stroke-width="8" stroke-linecap="round" stroke-dasharray="256.35 427.26" transform="rotate(-90 76 76)"/></svg>
+          <div class="n">3</div>
+        </div>
+        <p class="t-sm mt12" style="margin-bottom:0">秒後送出，按錯付款方式請按取消</p>
+
+        <div class="display mt16" style="color:var(--text-900)">NT$ 1,562</div>
+        <div class="t-cap">小計 1,420＋服務費 142</div>
+
+        <div class="infobox ib-quiet mt24" style="width:100%;text-align:left">
+          <svg class="ic ic-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 16v-4.5M12 8h.01"/></svg>
+          <div>本系統為教學專題，付款為模擬流程</div>
+        </div>
+        <button class="btn btn-ghost btn-lg btn-block mt8">取消</button>
+      </div>
+    </div>
   </div>
 </div>
 
-<div>
-  <p class="meta"></p>
 <div class="sidenote">
-  <b>櫃檯結帳（基礎）</b>
+  <b>收款前留 5 秒反悔</b>
   <dl style="margin:0">
-    <dt>三顆收款按鈕</dt>
-    <dd>現金／信用卡／條碼，按哪顆都先跳<br>
-        S-03b 倒數 5 秒（可取消），到 0 才送：<br>
-        POST …/dining-sessions/{id}/settle<br>
-        { method: CASH | CARD | BARCODE,<br>
-        &nbsp;&nbsp;expectedTotal, memberId }<br>
-        刷卡、掃碼都是模擬，不接金流</dd>
-    <dt>金額比對，不鎖桌</dt>
-    <dd>expectedTotal 就是畫面上的合計。<br>
-        後端鎖住這筆 dining_session 重算，<br>
-        對不上回 409 BILL_CHANGED，<br>
-        帳單刷新並提示「剛剛有人加點，金額更新了」</dd>
-    <dt>結清之後</dt>
-    <dd>session → PAID、桌位 → 待清理、<br>
-        權杖全部失效，推 SESSION_CLOSED<br>
-        （reason: PAID），客人手機顯示 C-04「已結帳」</dd>
-    <dt>「還有 2 項沒送出」</dt>
-    <dd>整桌購物車還有東西才出現的暖黃小字，<br>
-        只提醒、不擋。結清的同一個交易<br>
-        把這些品項刪掉，不算進帳單</dd>
-    <dt>防重複</dt>
-    <dd>倒數與送出中按鈕停用。客人線上付款（進階 A5）<br>
-        同時成功的話，後到的拿 409 SESSION_CLOSED</dd>
+    <dt>怎麼進來</dt>
+    <dd>S-03 按現金、信用卡、條碼任一顆，<br>
+        三顆都跳這個對話框。不是獨立路由</dd>
+    <dt>標題跟著付款方式</dt>
+    <dd>現金「收款中，請把現金放進收銀機」<br>
+        信用卡「信用卡付款中」（這張畫的）<br>
+        條碼「條碼付款中」</dd>
+    <dt>倒數 5 → 0</dt>
+    <dd>每秒跳一格，到 0 才送：<br>
+        POST /api/admin/dining-sessions/{id}/settle<br>
+        { method: CARD, expectedTotal: 1562.00,<br>
+        &nbsp;&nbsp;memberId: 12 | null }</dd>
+    <dt>取消（ghost）</dt>
+    <dd>倒數中隨時可按，什麼都不送，回到 S-03。<br>
+        避免櫃檯按錯付款方式就直接結清</dd>
+    <dt>教學專題聲明</dt>
+    <dd>三種付款都是模擬，不串刷卡機、掃碼槍。<br>
+        櫃檯結帳不做失敗機率<br>
+        （線上 A5 的 95% 成功率照舊）</dd>
   </dl>
-  <b class="mt16" style="display:block">虛線那塊是進階 A1／A6 的前提</b>
+  <b class="mt16" style="display:block">送出之後</b>
   <dl style="margin:0">
-    <dt>會員（選填）</dt>
-    <dd>輸入手機按「查詢」：<br>
-        GET /api/admin/members/lookup?phone=…<br>
-        顯示姓名＋生日讓櫃檯唸給客人確認，<br>
-        按「確認是本人」才把 memberId 帶進 settle，<br>
-        同一個交易寫進 dining_session.member_id</dd>
-    <dt>查不到、沒填生日</dt>
-    <dd>404 MEMBER_NOT_FOUND →「查無此會員」；<br>
-        生日沒填顯示「未提供」</dd>
-    <dt>生日是個資</dt>
-    <dd>只在查詢結果顯示，不存進任何紀錄</dd>
-    <dt>不做就拿掉</dt>
-    <dd>沒做 A1 消費紀錄、A6 點數就整塊拿掉，<br>
-        settle 的 memberId 一律 null。<br>
-        用券、折點數在櫃檯這次沒畫（A6 的延伸）</dd>
+    <dt>倒數到 0</dt>
+    <dd>「取消」停用、顯示送出中，不能重複送</dd>
+    <dt>成功：自動關閉</dt>
+    <dd>對話框換成勾勾「結帳完成」，<br>
+        約 1.5 秒後自己關掉、回 S-02，<br>
+        這桌變待清理，不用按任何按鈕。<br>
+        同桌手機收到 SESSION_CLOSED（PAID），<br>
+        沒送出的購物車品項一起捨棄</dd>
+    <dt>409 BILL_CHANGED</dt>
+    <dd>對話框關閉、S-03 帳單刷新，提示<br>
+        「剛剛有人加點，金額更新了」，<br>
+        跟客人確認後再選一次付款方式</dd>
+    <dt>409 SESSION_CLOSED</dt>
+    <dd>客人已經在手機上付完（進階 A5），<br>
+        對話框關閉、S-03 轉成已結清，不會重複收款</dd>
   </dl>
-  <b class="mt16" style="display:block">其他操作</b>
-  <dl style="margin:0">
-    <dt>代客加點</dt>
-    <dd>開 C-04 的櫃檯版，不經過整桌購物車，<br>
-        直接送單、記 source = STAFF，一樣進 KDS。<br>
-        同桌手機的通知寫「櫃檯 送出 N 項」</dd>
-    <dt>取消該次用餐（僅店長）</dt>
-    <dd><b>只在沒點過餐時可用。</b><br>
-        這桌已經送過單，所以停用；硬送回<br>
-        409 SESSION_HAS_ORDERS<br>
-        「已經有點餐紀錄，請改用結帳」</dd>
-    <dt>可以取消時（先二次確認）</dt>
-    <dd>session → CANCELLED、桌位直接回空桌、<br>
-        權杖失效、整桌購物車刪掉。<br>
-        推 SESSION_CLOSED（reason: CANCELLED），<br>
-        客人手機不顯示面板、直接回首頁</dd>
-  </dl>
-</div>
 </div>
 
 </div>

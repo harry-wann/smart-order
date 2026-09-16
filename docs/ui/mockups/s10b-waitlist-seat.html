@@ -164,16 +164,10 @@
               
               <span class="badge b-plain">6 人桌</span>
             </div>
-            <div class="opt" style="min-height:56px">
-              <span class="rd"></span>
-              <span class="h3 num" style="width:56px">C02</span>
-              <span class="t-sm fill" style="margin:0">C 包廂</span>
-              <span class="r g4 t-cap" style="color:#8A5214;font-weight:700"><svg class="ic ic-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5.2l3.2 1.8"/></svg>19:00 有預約</span>
-              <span class="badge b-plain">8 人桌</span>
-            </div>
+            <!-- C02 這時候保留給 19:00 的訂位（18:30～19:10），預約保留中的桌不列 -->
         </div>
 
-        <p class="hint" style="margin-top:12px">座位數小的排前面。標「有預約」的桌一樣能開，只是提醒你稍後有人訂。</p>
+        <p class="hint" style="margin-top:12px">座位數小的排前面。「有預約」只是提醒，一樣能開；預約保留中的桌不會列出來。</p>
 
         <div class="r g12 mt24">
           <button class="btn btn-ghost btn-lg">取消</button>
@@ -203,9 +197,14 @@
     <dt>只列坐得下的空桌</dt>
     <dd>status = AVAILABLE 且 seats ≥ 人數。<br>
         依座位數由小到大、再依桌號排</dd>
+    <dt>預約保留中的桌不列</dt>
+    <dd>現在 18:55，C02 保留給 19:00 的訂位<br>
+        （開始前 30 分～後 10 分），所以不在清單上。<br>
+        剛好在這時被保留 → 409 TABLE_RESERVED，<br>
+        清單重新載入</dd>
     <dt>稍後有預約</dt>
-    <dd>那張卡上用暖黃小字提醒「19:30 有預約」，<br>
-        只提醒不擋，跟 S-02b 頂部那條一樣</dd>
+    <dd>還沒進保留窗的桌，卡片上用暖黃小字<br>
+        「19:30 有預約」，只提醒不擋</dd>
     <dt>API</dt>
     <dd>GET /api/admin/tables/available?partySize=N<br>
         回桌號、區域、座位數、upcomingReservationAt</dd>

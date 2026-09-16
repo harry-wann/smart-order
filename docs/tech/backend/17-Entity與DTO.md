@@ -82,19 +82,15 @@ failed to lazily initialize a collection of role: ... could not initialize proxy
 
 | 種類 | 用途 | 例子 |
 |---|---|---|
-| **Request DTO** | 前端送進來的 | `SubmitOrderRequest` |
+| **Request DTO** | 前端送進來的 | `AddCartItemRequest` |
 | **Response DTO** | 回給前端的 | `OrderTicketDto` |
 | **內部 DTO** | Service 之間傳的（不常用） | — |
 
 Request DTO 上要加驗證：
 
 ```java
-public record SubmitOrderRequest(
-    @NotEmpty(message = "至少要點一樣東西")
-    List<@Valid OrderItemRequest> items
-) {}
-
-public record OrderItemRequest(
+// POST /api/dining-sessions/me/cart/items 加入購物車
+public record AddCartItemRequest(
     @NotNull(message = "請選擇品項")
     Long menuItemId,
 
@@ -110,6 +106,10 @@ public record OrderItemRequest(
 ```
 
 Controller 加 `@Valid`，Spring 就會自動幫你檢查，不通過會回 400。
+
+> 為什麼範例是「加入購物車」而不是「送出點餐」？因為我們的購物車存在後端、整桌共用，
+> 品項是一項一項加進去的；送出點餐（`POST /api/dining-sessions/me/orders`）**不帶 body**，後端直接拿整桌購物車出單。
+> 所以欄位驗證放在加入這一步；送出時後端還會用菜單現況再檢查一次（品項可能剛售完、選項可能剛改過）。
 
 ## 怎麼轉換
 

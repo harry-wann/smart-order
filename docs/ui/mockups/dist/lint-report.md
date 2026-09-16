@@ -2,7 +2,7 @@
 
 > 由 `tools/figma_prep.py` 產生。
 
-**51 個檔案，0 個問題。**
+**52 個檔案，0 個問題。**
 
 | 檔案 | 結果 | 問題 |
 |---|---|---|
@@ -46,6 +46,7 @@
 | `s02c-open-waitlist.html` | PASS | — |
 | `s02d-open-reservation.html` | PASS | — |
 | `s03-table-detail.html` | PASS | — |
+| `s03b-checkout-countdown.html` | PASS | — |
 | `s04-kds.html` | PASS | — |
 | `s05-menu-admin.html` | PASS | — |
 | `s06-option-groups.html` | PASS | — |

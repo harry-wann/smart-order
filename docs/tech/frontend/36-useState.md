@@ -41,7 +41,7 @@ const [值, 改值的函式] = useState(初始值);
 const [quantity, setQuantity] = useState(1);              // 數字
 const [note, setNote] = useState('');                     // 字串
 const [loading, setLoading] = useState(false);            // 布林
-const [cart, setCart] = useState([]);                     // 陣列
+const [cart, setCart] = useState([]);                     // 陣列（購物車：畫面上的那份，內容以後端為準）
 const [session, setSession] = useState(null);             // 物件（還沒載入）
 const [selectedOptions, setSelectedOptions] = useState({}); // 物件
 ```
@@ -147,9 +147,52 @@ function ItemDetailPage() {
 
 **`loading` / `error` / 資料** 這三個 state 是每個要打 API 的頁面都會有的標準組合。
 
+## 購物車：state 只是「畫面上的那一份」
+
+我們的購物車**存在後端、整桌共用**：同桌每支手機看到同一份，誰都能加、改、刪（資料表是 [03-資料庫設計](../../spec/03-資料庫設計.md) 的 `cart_item`）。
+所以 `cart` 這個 state 是**畫面狀態**——從後端抓回來、拿來畫畫面的那一份，**內容以後端為準**。
+
+```jsx
+import { fetchCart, updateCartItem } from '../api/cart';   // 見 fetch 那頁的 src/api/cart.js
+
+function CartPage() {
+  const [cart, setCart] = useState([]);           // 畫面狀態：整桌購物車的最新一份
+  const [loading, setLoading] = useState(true);
+
+  const reloadCart = useCallback(async () => {
+    setCart(await fetchCart());                   // 以後端為準，整份換掉
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { reloadCart(); }, [reloadCart]);
+
+  // 改數量：先打 API，成功再重抓
+  const changeQty = async (id, quantity) => {
+    await updateCartItem(id, { quantity });
+    await reloadCart();
+  };
+
+  // 同桌別人加、改、刪 → 後端推 CART_UPDATED → 一樣呼叫 reloadCart()
+  // （接法見「前端接 WebSocket」那頁）
+
+  if (loading) return <Skeleton />;
+  return <CartList items={cart} onChangeQty={changeQty} />;
+}
+```
+
+**為什麼不直接 `setCart(prev => prev.map(...))` 就好？** 因為同桌另一支手機可能同時在改。只改自己畫面上的陣列，兩支手機就會各看到一個版本，按送出時後端送的又是資料庫裡那一份。
+
+規則很簡單：**自己改完、或收到 `CART_UPDATED`，就重抓一次整份。**
+（自己改的也會收到 `CART_UPDATED`，一樣重抓，只是 `byGuestId` 是自己，不跳通知條。）
+上面那些 `filter`／`map` 的寫法還是天天會用（列表、篩選、把某一列標成「更新中」），只是不要拿本機陣列當真正的購物車。
+相關：[fetch 串接後端 API](40-fetch串接API.md)、[前端接 WebSocket](../realtime/42-前端接WebSocket.md)。
+
+> **例外：C-17 預先點餐（進階 A2）的購物車只存在這支手機。** 那時客人還沒到店、沒有用餐紀錄，後端共用購物車掛不上去；
+> 這時 `cart` 就是真正的資料（用上面的 `filter`／`map` 改），按送出再整批 `PUT /api/reservations/{id}/preorder`。
+
 ## 15 分鐘動手小練習
 
-做一個購物車，練習三種更新：
+做一個本機購物車，練習三種更新（純練習；專案裡的購物車存在後端，見上面「購物車」那段）：
 
 ```jsx
 export default function App() {

@@ -12,7 +12,7 @@
 <div class="stage">
 
 <div>
-  <p class="meta"><b>S-02d｜開桌・預約</b><code>1280 × 800</code><code>/admin/tables/A06/open</code><code>同一個路由的第三個頁籤</code></p>
+  <p class="meta"><b>S-02d｜開桌・預約</b><code>1280 × 800</code><code>/admin/tables/A08/open</code><code>同一個路由的第三個頁籤</code><code>從預約保留的桌點進來</code></p>
   <div class="frame f-desk">
     <div class="admin">
 
@@ -35,8 +35,9 @@
       <div class="main">
         <header class="topbar">
           <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
-          <div class="h2">A06 桌　開桌</div>
-          <span class="badge b-plain">6 人桌・走道區</span>
+          <div class="h2">A08 桌　開桌</div>
+          <span class="badge b-plain">4 人桌・窗邊區</span>
+          <span class="badge b-wait">預約保留</span>
           <span class="fill"></span>
           <span class="t-cap num">今天 18:32</span>
           <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="dot"></span></button>
@@ -44,10 +45,11 @@
 
         <div class="content">
           <div style="max-width:760px;margin:0 auto">
+            <!-- 保留中的桌：三個頁籤頂部都是這一條；現場、候位頁的開桌按鈕停用 -->
             <div class="infobox ib-warn" style="margin-bottom:16px">
-              <svg class="ic" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0"/><path d="M12 9v4.5M12 17h.01"/></svg>
-              <div>這張桌 <b>19:30 有預約</b>（陳小姐 4 位），預計用餐到 21:25。<br>
-                <span class="t-cap">只是提醒，不會擋住開桌。要不要把桌留給那組，由現場決定。</span></div>
+              <svg class="ic" viewBox="0 0 24 24"><rect x="4" y="10.5" width="16" height="11" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>
+              <div>這張桌<b>保留給 陳怡君 18:30</b>（4 位），要先取消保留才能開給別人。<br>
+                <span class="t-cap">陳怡君到了，直接在下面按「報到開桌」。</span></div>
             </div>
 
             <nav class="tabs">
@@ -59,11 +61,12 @@
             <div class="card" style="padding:24px">
               <div class="r g8" style="margin-bottom:16px">
                 <span class="h2 fill">現在可以報到的預約</span>
-                <span class="t-cap">用餐時間在現在 −10 分 ～ +45 分・6 位以內坐得下</span>
+                <span class="t-cap">用餐時間在現在 −10 分 ～ +30 分・4 位以內坐得下</span>
               </div>
 
               <div class="c g12">
-              <div class="cartrow" style="">
+              <!-- 保留這張桌的那筆，永遠置頂 -->
+              <div class="cartrow" style="background:var(--accent-100);border-color:var(--accent-500)">
                 <div class="r g16">
                   <span class="h2 num" style="min-width:72px">18:30</span>
                   <div class="fill">
@@ -72,32 +75,39 @@
                       <span class="t-cap num">0933***210</span>
                       <span class="badge b-pri">已預先點餐 4 項</span>
                     </div>
-                    <div class="t-sm" style="margin:4px 0 0">4 位・訂位時配到 A08</div>
+                    <div class="r g8" style="margin-top:4px">
+                      <span class="t-sm" style="margin:0">4 位</span>
+                      <span class="t-hold"><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="10.5" width="16" height="11" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>保留中</span>
+                    </div>
                   </div>
-                  <button class="btn btn-primary btn-md">開桌</button>
+                  <button class="btn btn-secondary btn-md">取消保留</button>
+                  <button class="btn btn-primary btn-md">報到開桌</button>
                 </div>
               </div>
-              <div class="cartrow" style="margin-bottom:0;">
+              <div class="cartrow">
                 <div class="r g16">
-                  <span class="h2 num" style="min-width:72px">19:00</span>
+                  <span class="h2 num" style="min-width:72px">18:45</span>
                   <div class="fill">
                     <div class="r g8" style="flex-wrap:wrap">
-                      <b style="font-size:17px">黃先生</b>
-                      <span class="t-cap num">0955***192</span>
+                      <b style="font-size:17px">林家豪</b>
+                      <span class="t-cap num">0935***806</span>
                       <span class="badge b-plain">未預點</span>
                     </div>
-                    <div class="t-sm" style="margin:4px 0 0">3 位・訂位時配到 A04</div>
+                    <div class="t-sm" style="margin:4px 0 0">2 位・訂位時配到 B02</div>
                   </div>
-                  <button class="btn btn-primary btn-md">開桌</button>
+                  <div class="c" style="align-items:flex-end">
+                    <button class="btn btn-primary btn-md" disabled>開桌</button>
+                    <span class="t-cap">這張桌保留中</span>
+                  </div>
                 </div>
               </div>
               </div>
 
               <div class="infobox ib-quiet mt24" style="margin-bottom:0">
                 <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 16v-4.5M12 8h.01"/></svg>
-                <div><b>不限定原本配到哪一張桌。</b>客人被帶到別張桌是現場常態，清單只看「人數坐得下、時間對得上」。
-                  <br>「訂位時配到 A08」只是附帶資訊 ——<b>開桌不會去改那筆訂位的桌號</b>，本專題不做換桌。
-                  <br><span class="t-cap">狀態同時轉成已報到；有預點的單這時候才進 KDS、這時候才扣庫存。</span></div>
+                <div><b>保留中的桌只開給保留的那一筆。</b>林家豪要坐這張，得先按上面的「取消保留」。
+                  <br>其他情況照舊<b>不限定原本配到哪一張桌</b>，開桌也不會去改那筆訂位的桌號。
+                  <br><span class="t-cap">報到後狀態轉成已報到；有預點的單這時候才進 KDS、這時候才扣庫存。</span></div>
               </div>
             </div>
           </div>
@@ -113,40 +123,54 @@
   <dl style="margin:0">
     <dt>清單條件</dt>
     <dd>status = CONFIRMED<br>
-        用餐時間在現在 −10 ～ +45 分<br>
+        用餐時間在現在 −10 ～ +30 分<br>
         party_size ≤ 這張桌的座位數</dd>
+    <dt>最早提前 30 分鐘</dt>
+    <dd>跟報到開桌的規則同一條。太早按，<br>
+        後端回 409 RESERVATION_TOO_EARLY<br>
+        「還沒到可報到時間（18:00 起）」</dd>
     <dt>晚到超過 10 分鐘就不列</dt>
     <dd>訂位只保留 10 分鐘，逾時視同未到，<br>
-        只能現場登記候位。不等 NO_SHOW 排程<br>
-        （它最多晚 5 分鐘），清單自己看時間；<br>
+        只能現場登記候位。清單自己看時間，<br>
         報到 API 也會擋：409 RESERVATION_EXPIRED</dd>
-    <dt>不看訂位時配到哪張桌</dt>
-    <dd>客人被帶到別張桌是現場常態。<br>
-        「訂位時配到 A08」只是附帶資訊。</dd>
-    <dt>按下去之後</dt>
-    <dd>建立 dining_session、帶入人數、<br>
-        reservation.status → SEATED、<br>
-        有預點就轉成 is_preorder 的單並扣庫存。</dd>
+  </dl>
+  <b class="mt16" style="display:block">從預約保留的桌點進來</b>
+  <dl style="margin:0">
+    <dt>保留的那筆置頂</dt>
+    <dd>暖黃底、「保留中」小字，<br>
+        頂部暖黃條寫保留給誰、幾點、幾位</dd>
+    <dt>報到開桌（primary）</dt>
+    <dd>自己的保留桌，照常開桌</dd>
+    <dt>取消保留（secondary）</dt>
+    <dd>先跳二次確認：「取消後 A08 會變回空桌，<br>
+        陳怡君到店時再幫他選別張桌。<br>
+        <b>取消後無法恢復</b>。」<br>
+        POST /api/admin/reservations/{id}/release-hold<br>
+        單向的，沒有恢復 API。訂位仍是 CONFIRMED，<br>
+        到了照樣能報到（從 S-07b 選桌）</dd>
+    <dt>其他列的開桌停用</dt>
+    <dd>硬送會回 409 TABLE_RESERVED<br>
+        「這張桌保留給 陳怡君 18:30，要先取消保留」<br>
+        現場、候位頁籤的開桌按鈕也一樣停用</dd>
   </dl>
   <b class="mt16" style="display:block">不做換桌</b>
   <dl style="margin:0">
     <dt>開桌不改 reservation.table_id</dt>
     <dd>那是訂位當下配的桌，<br>
-        只服務容量與區間重疊判斷。<br>
-        回頭改它，訂位容量就算不準了。</dd>
-    <dt>實際坐哪桌看哪裡</dt>
-    <dd>dining_session 的 table_id<br>
-        與 reservation_id 這一組。<br>
-        兩個欄位回答兩個不同的問題。</dd>
+        只服務容量、區間重疊與保留判斷。<br>
+        實際坐哪桌看 dining_session 的<br>
+        table_id 與 reservation_id</dd>
+    <dt>按下去之後</dt>
+    <dd>建立 dining_session、帶入人數、<br>
+        reservation.status → SEATED、<br>
+        有預點就轉成 is_preorder 的單並扣庫存</dd>
   </dl>
-  <b class="mt16" style="display:block">手動保留是延伸功能</b>
+  <b class="mt16" style="display:block">手動保留仍是延伸功能</b>
   <dl style="margin:0">
     <dt>M2 的 2.E5</dt>
-    <dd>要做的話，每一列再多一顆<br>
-        secondary 的「保留」（客人還沒到<br>
-        但要先留桌），保留中的桌再點進來<br>
-        頂部顯示保留給誰＋「取消保留」。<br>
-        基礎不做。</dd>
+    <dd>給「沒有訂位、櫃檯自己想留桌」用，<br>
+        要存 HELD 狀態。這一頁的預約保留<br>
+        是 M7 7.10，查詢時算出來，基礎就有</dd>
   </dl>
 </div>
 

@@ -15,26 +15,28 @@
   <p class="meta"><b>DS-08｜店家端元件</b><code>1280 × 1200</code><code>桌位磚、統計條、通知卡、出菜看板卡</code></p>
   <div class="frame f-ds">
     <div class="sp">
-      <div class="sp-hd"><span class="t">店家端元件</span><span class="s">桌況三色與 KDS 卡片狀態</span></div>
+      <div class="sp-hd"><span class="t">店家端元件</span><span class="s">桌況四種樣子與 KDS 卡片狀態</span></div>
       <div class="sp-grid" style="grid-template-columns:1.1fr 1fr">
         <div class="sp-col">
-          <div class="sp-sec"><div class="t">桌位磚　三種桌況＋超時</div>
+          <div class="sp-sec"><div class="t">桌位磚　三種桌態＋預約保留＋超時</div>
             <div class="gr3">
             <div class="tt tt-av"><span class="lb">空桌</span><span class="no">A01</span><span class="mt">2 人桌・窗邊</span></div>
             <div class="tt tt-oc"><span class="lb">用餐中</span><span class="no">A03</span><span class="mt">47 分・NT$ 1,420</span></div>
             <div class="tt tt-cl"><span class="lb">待清理</span><span class="no">A05</span><span class="mt">18:30 結清</span></div>
-            <div class="tt tt-cl"><span class="lb">待清理</span><span class="no">B02</span><span class="mt">約 5 分鐘</span></div>
+            <div class="tt tt-rs"><span class="lb">預約保留</span><span class="no">A08</span><span class="mt">18:30 陳○君 4 位</span></div>
             </div>
             <div class="gr2" style="margin-top:8px">
             <div class="tt tt-oc over"><span class="lb">用餐中・超時</span><span class="no">B01</span><span class="mt">108 分・NT$ 2,310</span></div>
             </div>
-            <span class="sp-lb">超過 100 分鐘自動轉紅框。顏色之外一定有文字標籤</span>
+            <span class="sp-lb">預約保留是算出來的顯示狀態（accent-100 底＋accent-500 框），不是第四種桌態。超過 100 分鐘自動轉紅框。顏色之外一定有文字標籤</span>
           </div>
-          <div class="sp-sec"><div class="t">統計條</div>
+          <div class="sp-sec"><div class="t">統計條　數字旁的小方塊兼圖例</div>
             <div class="statstrip">
-              <div class="st"><span class="v">12</span><span class="k">用餐中</span></div><div class="vr"></div>
-              <div class="st"><span class="v">5</span><span class="k">空桌</span></div><div class="vr"></div>
-              <div class="st"><span class="v">3</span><span class="k">待清理</span></div><div class="vr"></div>
+              <!-- 跟 S-02 一樣：桌況四個數字一組不加分隔線，後面才接預約提醒 -->
+              <div class="st"><span class="v">5</span><span class="k"><i class="sw sw-av"></i>空桌</span></div>
+              <div class="st"><span class="v">12</span><span class="k"><i class="sw sw-oc"></i>用餐中</span></div>
+              <div class="st"><span class="v">3</span><span class="k"><i class="sw sw-cl"></i>待清理</span></div>
+              <div class="st"><span class="v">2</span><span class="k"><i class="sw sw-rs"></i>預約保留</span></div><div class="vr"></div>
               <div class="st"><span class="v">4</span><span class="k">待報到預約</span></div>
             </div>
           </div>
@@ -84,6 +86,10 @@
   <dl style="margin:0">
     <dt>桌況不能只靠顏色</dt>
     <dd>每一塊都有文字標籤。<br>外場的燈光與角度<br>比手機難判讀得多。</dd>
+    <dt>預約保留（暖黃）</dt>
+    <dd>空桌進入保留窗（開始前 30 分～<br>後 10 分）時查詢算出來的，<br>不存進桌位狀態。格內寫時間、<br>遮一個字的姓名、人數</dd>
+    <dt>別跟手動保留混用</dt>
+    <dd>淺黃底＋黃框是預約保留（基礎）；<br>--table-held 實心黃留給 2.E5<br>手動保留，基礎不畫。</dd>
     <dt>超時自動轉紅框</dt>
     <dd>不是換底色而是加外框 ——<br>底色還要留給桌況本身。</dd>
     <dt>KDS 是唯一深色</dt>

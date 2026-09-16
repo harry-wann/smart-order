@@ -18,14 +18,19 @@
     <header class="appbar">
       <button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
       <div class="ttl">購物車<small>A03 桌　這是第 2 單</small></div>
-      <button class="btn btn-ghost btn-sm">清空</button>
     </header>
+
+    <div class="r g8" style="flex:none;padding:8px 16px;background:var(--info-bg);color:#1F4E66;font-size:13px">
+      <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>這是整桌共用的購物車，同桌誰都可以改</span>
+    </div>
 
     <div class="scroll">
       <div class="c g12" style="padding:16px">
 
         <div class="cartrow">
           <div class="hd"><span class="nm">招牌麻辣鍋底</span><span class="price">NT$ 480</span></div>
+          <div class="by"><svg class="ic" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>陳小美 加的</div>
           <div class="r mt8">
             <button class="trash"><svg class="ic" viewBox="0 0 24 24"><path d="M3.5 6h17M19 6v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8.5 6V4.2A2 2 0 0 1 10.5 2h3a2 2 0 0 1 2 2.2V6"/></svg></button>
             <span class="fill"></span>
@@ -39,6 +44,7 @@
 
         <div class="cartrow">
           <div class="hd"><span class="nm">安格斯霜降牛五花</span><span class="price">NT$ 460</span></div>
+          <div class="by"><svg class="ic" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>陳小美 加的</div>
           <div class="sub">全份・加蔥花</div>
           <div class="sub">備註：不要太生</div>
           <div class="r mt8">
@@ -54,6 +60,7 @@
 
         <div class="cartrow">
           <div class="hd"><span class="nm">伊比利豬梅花</span><span class="price">NT$ 320</span></div>
+          <div class="by"><svg class="ic" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>客人 2 加的</div>
           <div class="r mt8">
             <button class="trash"><svg class="ic" viewBox="0 0 24 24"><path d="M3.5 6h17M19 6v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8.5 6V4.2A2 2 0 0 1 10.5 2h3a2 2 0 0 1 2 2.2V6"/></svg></button>
             <span class="fill"></span>
@@ -67,6 +74,7 @@
 
         <div class="cartrow">
           <div class="hd"><span class="nm">高麗菜</span><span class="price">NT$ 160</span></div>
+          <div class="by"><svg class="ic" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>客人 2 加的</div>
           <div class="r mt8">
             <button class="trash"><svg class="ic" viewBox="0 0 24 24"><path d="M3.5 6h17M19 6v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8.5 6V4.2A2 2 0 0 1 10.5 2h3a2 2 0 0 1 2 2.2V6"/></svg></button>
             <span class="fill"></span>
@@ -81,6 +89,7 @@
         <!-- 免費續加品項：0 元、不扣庫存，但仍要出單 -->
         <div class="cartrow">
           <div class="hd"><span class="nm">白飯</span><span class="price" style="color:var(--success)">免費</span></div>
+          <div class="by"><svg class="ic" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>王大明 加的</div>
           <div class="sub">續加品項，不扣庫存，一樣會出單給廚房</div>
           <div class="r mt8">
             <button class="trash"><svg class="ic" viewBox="0 0 24 24"><path d="M3.5 6h17M19 6v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8.5 6V4.2A2 2 0 0 1 10.5 2h3a2 2 0 0 1 2 2.2V6"/></svg></button>
@@ -102,15 +111,53 @@
         <span class="fill"></span>
         <span class="price" style="font-size:22px">NT$ 1,420</span>
       </div>
-      <p class="t-cap" style="margin:0 0 8px">服務費 10% 在結帳時才計算</p>
-      <button class="btn btn-primary btn-lg btn-block">送出點餐</button>
+      <p class="t-cap" style="margin:0 0 8px">送出後整份變成一張單，服務費 10% 結帳時才算</p>
+      <button class="btn btn-primary btn-lg btn-block">送出整桌點餐</button>
     </div>
 
   </div>
 </div>
 
 <div class="sidenote">
-  <b>刪除與空車</b>
+  <b>整桌共用一份</b>
+  <dl style="margin:0">
+    <dt>存在後端，不在手機裡</dt>
+    <dd>GET /api/dining-sessions/me/cart。<br>
+        同桌每支手機看到同一份，誰都能增減、刪除；<br>
+        收到 CART_UPDATED 就重抓，畫面以後端為準</dd>
+    <dt>「陳小美 加的」</dt>
+    <dd>每列的 addedBy：有登入用會員暱稱，<br>
+        沒登入依加入順序叫「客人 1」「客人 2」。<br>
+        只是標示，不是身分驗證</dd>
+    <dt>頂部那一句</dt>
+    <dd>「這是整桌共用的購物車」——<br>
+        不講清楚，有人刪了別人加的會吵架</dd>
+    <dt>拿掉「清空」</dt>
+    <dd>一鍵清空會把別人加的一起刪掉，<br>
+        要刪就一列一列刪</dd>
+  </dl>
+  <b class="mt16" style="display:block">送出整桌點餐</b>
+  <dl style="margin:0">
+    <dt>不帶品項</dt>
+    <dd>POST /api/dining-sessions/me/orders，<br>
+        後端把整桌購物車轉成一張單再清空。<br>
+        小計用加入當下的價，送單時以現價重算</dd>
+    <dt>兩個人同時按</dt>
+    <dd>後到的拿 409 CART_EMPTY<br>
+        「購物車是空的，可能同桌已經送出了」，<br>
+        重抓購物車、換成空狀態，不用重送</dd>
+    <dt>這桌剛結帳或被取消</dt>
+    <dd>409 SESSION_CLOSED 看 reason：<br>
+        PAID → 切到 C-04「已結帳」；<br>
+        CANCELLED → 清權杖直接回 C-00。<br>
+        加入、改數量、刪除也一樣</dd>
+    <dt>結帳時還沒送出的</dt>
+    <dd>結清時整桌購物車直接捨棄，<br>
+        櫃檯 S-03 會先看到「還有 N 項沒送出」</dd>
+    <dt>防重複送出</dt>
+    <dd>按下後按鈕停用並顯示「送出中…」</dd>
+  </dl>
+  <b class="mt16" style="display:block">刪除與空車</b>
   <dl style="margin:0">
     <dt>兩種刪除都要有</dt>
     <dd>左滑顯示紅色刪除區塊，<br><b>同時</b>保留列上的垃圾桶按鈕 —<br>長輩不會左滑</dd>
@@ -118,8 +165,6 @@
     <dd>鍋子線稿插圖 + 「還沒點東西呢」<br>+ 主按鈕「去看看菜單」</dd>
     <dt>送出後庫存不足</dt>
     <dd>該列標紅 + 「已售完」，整張單不成立<br>回到這一頁讓客人自己調整</dd>
-    <dt>防重複送出</dt>
-    <dd>按下後按鈕停用並顯示「送出中…」</dd>
   </dl>
 </div>
 

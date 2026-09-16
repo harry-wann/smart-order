@@ -68,16 +68,17 @@ class InventoryConcurrencyTest extends IntegrationTestBase {
     @Autowired InventoryRepository inventoryRepo;
 
     @Test
-    void 十個人同時搶最後一份不應超賣() throws Exception {
-        Long itemId = seedItemWithStock(1);          // 庫存 = 1
+    void 十桌同時搶最後一份不應超賣() throws Exception {
+        Long itemId = seedItemWithStock(1);                          // 庫存 = 1
+        List<String> tokens = seedTablesWithCart(10, itemId, 1);     // 開 10 桌，每桌購物車放 1 份（同桌客人的裝置代號是 device-test）
 
         ExecutorService pool = Executors.newFixedThreadPool(10);
         CountDownLatch latch = new CountDownLatch(10);
         AtomicInteger success = new AtomicInteger();
 
-        for (int i = 0; i < 10; i++) {
+        for (String token : tokens) {
             pool.submit(() -> {
-                try { orderService.submitOrder(token, requestFor(itemId, 1)); success.incrementAndGet(); }
+                try { orderService.submitOrder(token, "device-test"); success.incrementAndGet(); }
                 catch (BusinessException ignored) { }
                 finally { latch.countDown(); }
             });
@@ -97,8 +98,10 @@ class InventoryConcurrencyTest extends IntegrationTestBase {
 | 測試 | 為什麼需要真資料庫 |
 |---|---|
 | 防超賣 | 要測資料庫的列鎖行為 |
+| 同桌兩人同時送出整桌購物車 | 要測 `FOR UPDATE` 真的讓兩筆排隊：一個成功、一個 `CART_EMPTY`、只有一張單 |
 | 訂位重疊 + 唯一約束 | 要測 UNIQUE INDEX 真的擋得住 |
 | 悲觀鎖開桌 | `SELECT ... FOR UPDATE` |
+| 訂位保留窗（顯示「預約保留」） | `INTERVAL` 的日期運算要在 MySQL 上跑才準 |
 | Flyway migration | 確認 migration 真的跑得起來 |
 | 複雜的 native query | 語法要 MySQL 才驗證得了 |
 

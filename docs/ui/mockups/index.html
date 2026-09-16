@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>設計稿總覽｜火鍋點餐系統 42 張畫面</title>
+<title>設計稿總覽｜火鍋點餐系統 43 張畫面</title>
 <link rel="stylesheet" href="_shared.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
     <span class="badge b-plain">docs/ui/mockups</span>
     <h1 class="mt8">火鍋點餐系統　設計稿總覽</h1>
     <p class="t-sm" style="margin:8px 0 0">
-      42 張畫面（顧客端 25、店家端 17），另有 8 張元件總表，依 <b>10-UI-UX規格.md</b> 與 <b>11-設計系統.md</b> 產出。
+      43 張畫面（顧客端 25、店家端 18），另有 8 張元件總表，依 <b>10-UI-UX規格.md</b> 與 <b>11-設計系統.md</b> 產出。
       這是給 Figma 用的施工架，不是前端原始碼，不要放進 <span class="num">src/</span>。
     </p>
   </div>
@@ -41,7 +41,8 @@
       <ol class="t-sm" style="margin:8px 0 0;padding-left:24px;line-height:1.9">
         <li><b>三態示範只做在 C-04 和 S-02</b>，其餘只有正常態。</li>
         <li><b>標「進階」的 8 張有空才做</b>：A1 C-15、A2 C-17、A3 S-09、A4 S-12、
-            A5 C-09～C-11、A6 C-20。其餘 34 張是基礎。</li>
+            A5 C-09～C-11、A6 C-20。其餘 35 張是基礎。
+            A7 人氣推薦沒有獨立畫面，是 C-04 裡標「進階 A7」的那一塊。</li>
         <li><b>每個圖片佔位都寫了三行</b>：放什麼圖、尺寸比例、搜尋關鍵字，
             另外帶 <span class="num">data-layer="IMG／肉盤／1-1"</span> 供 Figma 圖層命名。</li>
         <li><b>店家端管理畫面不放照片</b>，只有 S-05 的品項縮圖例外。</li>
@@ -154,7 +155,7 @@
           <div class="code">C-04</div>
           <div class="nm">菜單主頁</div>
           <div class="rt">/order/menu</div>
-          <div class="tags"><span class="badge b-rec">最重要</span><span class="badge b-info">含三態＋已結帳</span></div>
+          <div class="tags"><span class="badge b-rec">最重要</span><span class="badge b-info">含三態＋已結帳</span><span class="badge b-wait">TOP 5 是進階 A7</span></div>
         </div>
       </a>
       <a class="tcard" href="c04b-menu-notify.html">
@@ -187,6 +188,7 @@
           <div class="code">C-06</div>
           <div class="nm">購物車</div>
           <div class="rt">/order/cart</div>
+          <div class="tags"><span class="badge b-plain">整桌共用</span></div>
         </div>
       </a>
       <a class="tcard" href="c07-submitted.html">
@@ -343,7 +345,7 @@
       </a>
   </div>
 
-  <div class="sec"><h2>店家端</h2><span class="badge b-plain">17 張</span>
+  <div class="sec"><h2>店家端</h2><span class="badge b-plain">18 張</span>
     <span class="t-cap">橫式平板／電腦 1280 × 800（S-04 為 1920 × 1080）</span></div>
   <div class="tgrid">
       <a class="tcard" href="s01-login.html">
@@ -360,7 +362,7 @@
           <div class="code">S-02</div>
           <div class="nm">桌況總覽</div>
           <div class="rt">/admin/tables</div>
-          <div class="tags"><span class="badge b-rec">櫃檯主畫面</span><span class="badge b-info">含三態＋確認框</span></div>
+          <div class="tags"><span class="badge b-rec">櫃檯主畫面</span><span class="badge b-info">含三態＋確認框</span><span class="badge b-plain">預約保留</span></div>
         </div>
       </a>
       <a class="tcard" href="s02b-open-table.html">
@@ -394,6 +396,15 @@
           <div class="nm">桌位詳情</div>
           <div class="rt">/admin/tables/:tableNo</div>
           <div class="tags"><span class="badge b-plain">櫃檯結帳</span></div>
+        </div>
+      </a>
+      <a class="tcard" href="s03b-checkout-countdown.html">
+        <div class="thumb d"><iframe src="s03b-checkout-countdown.html#thumbmode" loading="lazy" scrolling="no" tabindex="-1" title="S-03b 櫃檯結帳・付款倒數"></iframe></div>
+        <div class="tinfo">
+          <div class="code">S-03b</div>
+          <div class="nm">櫃檯結帳・付款倒數</div>
+          <div class="rt">對話框，疊在 S-03 上</div>
+          <div class="tags"><span class="badge b-plain">倒數 5 秒可取消</span></div>
         </div>
       </a>
       <a class="tcard" href="s04-kds.html">

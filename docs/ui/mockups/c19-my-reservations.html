@@ -31,7 +31,7 @@
 
         <div class="infobox ib-quiet">
           <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5.2l3.2 1.8"/></svg>
-          <div>訂位保留 10 分鐘，逾時視同未到，需現場候位。</div>
+          <div>訂位保留 10 分鐘，逾時視同未到，需現場候位；逾時的訂位會移到「已取消」。</div>
         </div>
 
         <!-- 狀態三：已鎖定（過了前一天 20:00） -->
@@ -113,25 +113,7 @@
           <p class="hint">9/27（日）20:00 前都可以點或取消，現在不用付款</p>
         </div>
 
-        <div class="card card-tight" style="opacity:.72">
-          <div class="r g8">
-            <span class="badge b-plain">已完成</span>
-            <span class="fill"></span>
-            <span class="t-cap num">8/24（一）18:30</span>
-          </div>
-          <div class="h3 mt8">6 位・C02 包廂</div>
-          <div class="t-sm" style="margin:4px 0 0">已到店用餐</div>
-        </div>
-
-        <div class="card card-tight" style="opacity:.72">
-          <div class="r g8">
-            <span class="badge b-sold">已取消</span>
-            <span class="fill"></span>
-            <span class="t-cap num">7/9（四）19:00</span>
-          </div>
-          <div class="h3 mt8">2 位・B05</div>
-          <div class="t-sm" style="margin:4px 0 0">前一天取消，未產生任何費用</div>
-        </div>
+        <!-- 已完成、已取消（含逾時未到）的卡片在各自的頁籤，這張畫框停在「即將到來」 -->
 
       </div>
     </div>
@@ -154,6 +136,20 @@
     <dt>已鎖定</dt>
     <dd>過了前一天 20:00。<br>
         兩顆按鈕都 disabled ＋ 請來電</dd>
+  </dl>
+  <b class="mt16" style="display:block">「已取消」頁籤（這張沒另外畫）</b>
+  <dl style="margin:0">
+    <dt>放兩種</dt>
+    <dd>客人自己取消的（CANCELLED），<br>
+        和逾時沒來的（NO_SHOW）</dd>
+    <dt>逾時未到的卡片</dt>
+    <dd>狀態膠囊「逾時未到」（danger）<br>
+        ＋一句「需要的話請重新訂位」。<br>
+        沒有任何按鈕，底部「再訂一次」照常</dd>
+    <dt>已取消的卡片</dt>
+    <dd>膠囊「已取消」＋「前一天取消，未產生任何費用」</dd>
+    <dt>頁籤數字</dt>
+    <dd>「已取消 2」＝ 1 筆取消＋ 1 筆逾時未到</dd>
   </dl>
   <b class="mt16" style="display:block">基礎與進階</b>
   <dl style="margin:0">

@@ -47,6 +47,7 @@
 | `s02c-open-waitlist.html` | `S-02c｜開桌・候位` | 03 店家端 | 1280 × 800 |
 | `s02d-open-reservation.html` | `S-02d｜開桌・預約` | 03 店家端 | 1280 × 800 |
 | `s03-table-detail.html` | `S-03｜桌位詳情` | 03 店家端 | 1280 × 800 |
+| `s03b-checkout-countdown.html` | `S-03b｜櫃檯結帳・付款倒數` | 03 店家端 | 1280 × 800 |
 | `s05-menu-admin.html` | `S-05｜菜單管理` | 03 店家端 | 1280 × 800 |
 | `s06-option-groups.html` | `S-06｜選項群組管理` | 03 店家端 | 1280 × 800 |
 | `s07-reservations.html` | `S-07｜預約管理` | 03 店家端 | 1280 × 800 |

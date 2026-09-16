@@ -41,6 +41,11 @@ Spring Security 就是那個警衛。請求還沒到你的 Controller，它就�
 
 顧客端可以**同時帶兩個**：用餐權杖說「我坐在 A03 桌」，JWT 說「我是誰」。
 
+> 顧客手機每個請求還會帶 `X-Device-Id`（第一次開啟時產生、存在 localStorage 的裝置代號）。它**不是身分**，
+> 只拿來標示整桌共用購物車裡「誰加的」，被偽造頂多顯示錯名字；能不能動這桌的購物車，看的還是 `X-Session-Token`。
+>
+> 購物車也**不放 HTTP session**（下面設定就是 `STATELESS`）：HTTP session 是每支手機各一份，同桌看不到彼此加了什麼，伺服器重開也會不見。購物車存在資料庫的 `cart_item`。
+
 ## 設定長什麼樣
 
 ```java
@@ -68,7 +73,7 @@ public class SecurityConfig {
                                  "/api/auth/**",
                                  "/api/admin/auth/login",           // 員工登入：還沒登入才要打它
                                  "/ws/**").permitAll()              // WebSocket 握手；身分在 CONNECT frame 驗
-                // 菜單公開讀取（推薦的 HISTORY／PROFILE 要知道你是誰，在 Controller 裡另外檢查會員 JWT）
+                // 菜單公開讀取（進階 A7 人氣推薦的 HISTORY／PROFILE 要知道你是誰，在 Controller 裡另外檢查會員 JWT）
                 .requestMatchers(HttpMethod.GET, "/api/menu/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 // 店家端要員工身分

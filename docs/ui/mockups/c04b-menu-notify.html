@@ -20,7 +20,7 @@
       <div class="av">美</div>
       <div class="bd">
         <div class="h">陳小美 加了一樣東西</div>
-        <div class="t">安格斯霜降牛五花 ×1・全份</div>
+        <div class="t">安格斯霜降牛五花 ×1</div>
       </div>
       <div class="tm">剛剛</div>
       <div class="grip"></div>
@@ -52,7 +52,8 @@
     <div class="scroll">
 
       <!-- 手寫感木牌：只有這家店有的細節 -->
-      <div class="secbar"><span class="woodsign">今日推薦</span><span class="t-cap">本店人氣 TOP 5</span></div>
+      <!-- 進階 A7 人氣推薦（GET /api/menu/recommendations）：沒做就整塊拿掉（木牌＋橫捲卡片），分類頁籤下面直接接品項列；「推薦」頁籤與「人氣」膠囊一起拿掉 -->
+      <div class="secbar"><span class="woodsign">今日推薦</span><span class="t-cap">本店人氣 TOP 5</span><span class="fill"></span><span class="badge b-wait">進階 A7</span></div>
       <div class="hs" style="padding:0 16px">
         <div class="reccard">
           <div class="img-ph" style="aspect-ratio:16/9" data-layer="IMG／麻辣鍋湯頭／16-9">
@@ -167,7 +168,20 @@
   <b>同桌通知</b>
   <dl style="margin:0">
     <dt>什麼時候出現</dt>
-    <dd>同桌其他人加入購物車、<br>或送出一張訂單。</dd>
+    <dd>同桌其他人把東西加進<br>整桌共用的購物車。</dd>
+    <dt>資料從哪來</dt>
+    <dd>WebSocket /topic/session/{id} 的<br>
+        CART_UPDATED，action = ADDED 才跳。<br>
+        標題用 byGuest，說明行＝itemName ×quantity<br>
+        （payload 沒有選項，所以不寫「全份」）。<br>
+        UPDATED／REMOVED 只更新購物車角標</dd>
+    <dt>自己加的不跳</dt>
+    <dd>事件多帶 byGuestId，跟這支手機 join 時<br>
+        拿到的 guest id 相同，就只更新角標</dd>
+    <dt>「陳小美」是誰</dt>
+    <dd>dining_session_guest 的顯示名稱：<br>
+        有登入用會員暱稱，沒登入叫「客人 2」。<br>
+        只標示誰加的，不是身分驗證</dd>
     <dt>出現在哪</dt>
     <dd>結帳前的所有點餐畫面：<br>C-04、C-05、C-06、C-08。<br>設計稿只畫這一張，其他畫面<br>共用同一個元件。</dd>
     <dt>行為</dt>

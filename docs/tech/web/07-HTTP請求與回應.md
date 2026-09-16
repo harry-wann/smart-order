@@ -49,18 +49,28 @@ HTTP 就是這樣的規矩。前端問一次，後端答一次，關係結束。
 
 ## 一個真實的例子
 
-送出點餐的請求：
+把兩份牛五花加進購物車的請求：
 
 ```http
-POST /api/dining-sessions/me/orders          ← 方法 + 網址
+POST /api/dining-sessions/me/cart/items      ← 方法 + 網址
 X-Session-Token: eyJ0IjoxMDUyLi4u            ← 標頭：證明我坐在 A03 桌
+X-Device-Id: 3f2a9c1e-…                      ← 標頭：這是哪一支手機（顯示「陳小美 加的」用）
 Content-Type: application/json               ← 標頭：我送的是 JSON
 
 {                                            ← 內容
-  "items": [
-    { "menuItemId": 12, "quantity": 2, "optionValueIds": [12, 41] }
-  ]
+  "menuItemId": 12,
+  "quantity": 2,
+  "optionValueIds": [12, 41],
+  "note": "不要太熟"
 }
+```
+
+購物車是整桌共用的，大家一項一項加進去；最後按「送出整桌點餐」時，請求**沒有內容**，後端直接拿整桌購物車出單：
+
+```http
+POST /api/dining-sessions/me/orders          ← 沒有 body
+X-Session-Token: eyJ0IjoxMDUyLi4u
+X-Device-Id: 3f2a9c1e-…
 ```
 
 後端的回應：

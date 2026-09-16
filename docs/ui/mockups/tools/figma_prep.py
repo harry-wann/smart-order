@@ -73,10 +73,12 @@ FLOW = [
     ('預約', ['c16-reserve-entry.html', 'c16b-reserve-guest.html', 'c16c-reserve-datetime.html',
               'c18-reserve-done.html', 'c17-reserve-preorder.html', 'c19-my-reservations.html']),
     # 店家端：一個功能一列。列的先後同時也是代號遞增的順序，兩種讀法都對得上。
-    # S-07b／S-10b 是從人出發的選桌開桌對話框，各自排在母畫面後面。
+    # S-07b／S-10b 是從人出發的選桌開桌對話框，S-03b 是櫃檯結帳的付款倒數對話框，
+    # 都排在各自母畫面的後面。
     ('員工登入', ['s01-login.html']),
     ('現場桌況', ['s02-tables.html', 's02b-open-table.html', 's02c-open-waitlist.html',
-                 's02d-open-reservation.html', 's03-table-detail.html']),
+                 's02d-open-reservation.html', 's03-table-detail.html',
+                 's03b-checkout-countdown.html']),
     ('出菜', ['s04-kds.html']),
     ('菜單管理', ['s05-menu-admin.html', 's06-option-groups.html']),
     ('預約管理', ['s07-reservations.html', 's07b-reservation-seat.html']),
@@ -472,7 +474,7 @@ def write_import_guide(items):
          '目標檔案：**🔥 火鍋點餐系統**　`AFqSmBl4P5HUHTI7oKAPZt`\n',
          '```\n🔥 火鍋點餐系統\n├─ 01 Design System   ← DS-01 ～ DS-08、C-04／S-02 的狀態示範\n'
          '├─ 02 顧客端        ← C-00 ～ C-21\n'
-         '└─ 03 店家端        ← S-01 ～ S-12（含 S-02b～d、S-07b、S-10b）\n```\n',
+         '└─ 03 店家端        ← S-01 ～ S-12（含 S-02b～d、S-03b、S-07b、S-10b）\n```\n',
          '## 怎麼匯入\n',
          'Figma REST API 的寫入 scope（comments / dev_resources / variables / webhooks）'
          '都不能建立設計節點，所以匯入靠自己寫的外掛 `tools/figma-plugin/`：\n',
@@ -721,12 +723,13 @@ def verify(items):
             per_page[it['page']] += len(it['frame_names'])
     # 數字要跟 10-UI-UX規格.md 的兩張頁面表一致（C-02、C-03 空號）。
     # 2026-09-15 第二批：新增 C-20（進階 A6）、S-07b／S-10b（選桌開桌對話框）。
+    # 2026-09-16 第三批：新增 S-03b（櫃檯結帳・付款倒數）。主批 8＋25＋18＝51。
     if per_page.get('01 Design System') != 8:
         problems.append('設計系統 frame 數是 %s，應為 8' % per_page.get('01 Design System'))
     if per_page.get('02 顧客端') != 25:
         problems.append('顧客端 frame 數是 %s，應為 25' % per_page.get('02 顧客端'))
-    if per_page.get('03 店家端') != 17:
-        problems.append('店家端 frame 數是 %s，應為 17' % per_page.get('03 店家端'))
+    if per_page.get('03 店家端') != 18:
+        problems.append('店家端 frame 數是 %s，應為 18' % per_page.get('03 店家端'))
 
     # 每張都要歸在某一條流程，不然外掛排版時會掉進「其他」那一列
     for it in items:

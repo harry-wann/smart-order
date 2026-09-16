@@ -85,13 +85,25 @@ export function useStomp({ topics, onEvent, onReconnect, enabled = true }) {
 用起來：
 
 ```jsx
+// 這桌收場了（SESSION_CLOSED）：兩種 reason，兩種畫面
+function handleSessionClosed(payload, { navigate, setClosed }) {
+  localStorage.removeItem('sessionToken');
+  if (payload.reason === 'CANCELLED') {
+    navigate('/', { replace: true });   // 店長取消這次用餐：不顯示任何面板，直接回 C-00
+  } else {
+    setClosed(true);                    // reason === 'PAID'：顯示「已結帳」面板
+  }
+}
+
 function TicketsPage() {
   const [tickets, setTickets] = useState([]);
-  const [closed, setClosed] = useState(false);        // 櫃檯結清後變 true
+  const [closed, setClosed] = useState(false);        // 結帳完成後變 true
   const { sessionId } = useContext(SessionContext);
+  const navigate = useNavigate();
 
   const refetch = useCallback(async () => {
-    setTickets(await request('/dining-sessions/me/orders'));
+    const data = await request('/dining-sessions/me/orders');   // { sessionStatus, subtotal, tickets }
+    setTickets(data.tickets);
   }, []);
 
   const handleEvent = useCallback((event) => {
@@ -105,14 +117,15 @@ function TicketsPage() {
       case 'TICKET_CANCELLED':
         setTickets(prev => prev.filter(t => t.ticketId !== event.payload.ticketId));
         break;
-      case 'SESSION_CLOSED':          // 櫃檯結清了：清掉權杖，畫面切到「已結帳」
-        localStorage.removeItem('sessionToken');
-        setClosed(true);
+      case 'SESSION_CLOSED':          // payload：{ sessionId, reason: 'PAID' | 'CANCELLED' }
+        handleSessionClosed(event.payload, { navigate, setClosed });
+        break;
+      case 'CART_UPDATED':            // 購物車的事，訂單頁不用管（菜單頁、購物車頁才處理）
         break;
       default:
         refetch();          // 不認識的事件就整包重抓，最安全
     }
-  }, [refetch]);
+  }, [refetch, navigate]);
 
   useStomp({
     topics: [`/topic/session/${sessionId}`, '/topic/menu'],
@@ -126,6 +139,98 @@ function TicketsPage() {
   return <TicketList tickets={tickets} />;
 }
 ```
+
+## 同桌共用購物車：CART_UPDATED
+
+購物車存在後端、整桌共用。同桌任何人加、改、刪，後端都會推一個 `CART_UPDATED` 到 `/topic/session/{id}`：
+
+```json
+{
+  "type": "CART_UPDATED",
+  "payload": { "action": "ADDED", "byGuest": "陳小美", "byGuestId": 7, "itemName": "安格斯霜降牛五花", "quantity": 1 }
+}
+```
+
+`action` 有 `ADDED`／`UPDATED`／`REMOVED` 三種。`byGuest` 是顯示名稱（給通知條用），`byGuestId` 是做這件事的那支手機在這桌的 guest id。
+送單事件 `NEW_TICKET` 推給同桌的那份也帶這兩個欄位；櫃檯在 S-03 代客加點不經過購物車，`byGuest` 是「櫃檯」、`byGuestId` 是 `null`；
+預點轉單（開桌當下，還沒有手機加入）兩個都是 `null`，不跳通知。
+
+**自己的動作不通知自己**：前端拿 `byGuestId` 跟這支手機掃碼加入時拿到的 `guest.id`（`POST /join` 的回應）比，相同就只更新畫面、不跳通知條。
+不要比 `byGuest`——會員暱稱可能重複，兩個「小美」同桌就會互相吃掉通知。
+
+菜單頁（C-04）這樣接：
+
+```jsx
+import { fetchCart } from '../api/cart';
+
+function MenuPage() {
+  const [cart, setCart] = useState([]);           // 畫面狀態：拿來畫底部購物車角標
+  const [notice, setNotice] = useState(null);     // 同桌通知條（C-04b／C-04c）
+  const [closed, setClosed] = useState(false);
+  const { sessionId, guest } = useContext(SessionContext);   // guest：join 時拿到的 { id, displayName }
+  const navigate = useNavigate();
+
+  const reloadCart = useCallback(async () => {
+    setCart(await fetchCart());                   // 購物車內容以後端為準
+  }, []);
+
+  const flash = useCallback((text) => {           // 通知條顯示 3 秒
+    setNotice(text);
+    setTimeout(() => setNotice(null), 3000);
+  }, []);
+
+  const handleEvent = useCallback((event) => {
+    const p = event.payload;
+    switch (event.type) {
+      case 'CART_UPDATED':
+        reloadCart();                             // 不管誰改的、改了什麼，整份重抓
+        if (p.action === 'ADDED' && p.byGuestId !== guest.id) {         // 自己加的不用通知自己
+          flash(`${p.byGuest} 加了 ${p.itemName} ×${p.quantity}`);        // C-04b
+        }
+        break;
+      case 'NEW_TICKET':                          // 有人把整桌購物車送出了
+        reloadCart();                             // 購物車被清空，角標歸零
+        if (p.byGuest && p.byGuestId !== guest.id) {   // 櫃檯代客加點：「櫃檯」／null → 會跳；預點轉單：null／null → 不跳
+          flash(`${p.byGuest} 送出 ${p.items.length} 項`);                 // C-04c：N＝這張單的品項列數
+        }
+        break;
+      case 'SESSION_CLOSED':                      // PAID 時，沒送出的購物車已經在結清的交易裡捨棄了
+        handleSessionClosed(p, { navigate, setClosed });
+        break;
+      default:
+        reloadCart();                             // 售完、補貨等菜單事件這裡省略，至少把購物車對齊
+    }
+  }, [reloadCart, flash, guest, navigate]);
+
+  useStomp({
+    topics: [`/topic/session/${sessionId}`, '/topic/menu'],
+    onEvent: handleEvent,
+    onReconnect: reloadCart,                      // ★ 重連一樣重抓
+  });
+
+  useEffect(() => { reloadCart(); }, [reloadCart]);
+
+  const cartCount = cart.reduce((sum, i) => sum + i.quantity, 0);   // 算得出來的就不要存 state
+
+  if (closed) return <SessionClosed />;          // 已結帳面板：底部購物車列跟著消失
+  return (
+    <>
+      {notice && <NotifyBar text={notice} />}
+      <MenuList />
+      <CartBar count={cartCount} />
+    </>
+  );
+}
+```
+
+四個重點：
+
+1. **收到 `CART_UPDATED` 就重抓，不要自己合併。** payload 只有「誰、做了什麼」，是給通知條用的，不是完整的購物車；拿它去改本機陣列，很快就會跟後端對不上。
+2. **送出點餐推的是 `NEW_TICKET`，不是 `CART_UPDATED`。** 但送出會把整桌購物車清空，所以收到 `NEW_TICKET` 也要重抓購物車，不然別人手機上的角標會停在舊數字。
+3. **兩個人同時按「送出整桌點餐」**：後端用列鎖讓兩筆排隊，先到的送出整份，後到的拿到 `409 CART_EMPTY`（「購物車是空的，可能同桌已經送出了」），前端提示後重抓就好（見 [fetch 串接後端 API](../frontend/40-fetch串接API.md)、[鎖與併發](../database/28-鎖與併發.md)）。
+4. **自己做的不跳通知，比 `byGuestId` 不比名字。** 自己加的、自己送出的，只重抓購物車；櫃檯代客加點的 `byGuestId` 是 `null`，同桌每支手機都會跳「櫃檯 送出 3 項」。
+
+`SESSION_CLOSED` 兩頁都用同一個 `handleSessionClosed`：`PAID` 顯示「已結帳」面板，`CANCELLED` 什麼都不顯示、清掉權杖直接回 `/`。
 
 ## 兩件一定要做的事
 
@@ -239,6 +344,9 @@ HTTPS 網站只能用 `wss://`。
 2. 不寫 `deactivate()` 會發生什麼？
 3. 有了 WebSocket，進頁面時還需要用 API 抓一次資料嗎？
 4. HTTPS 的網站要用 `ws://` 還是 `wss://`？
+5. 收到 `CART_UPDATED` 為什麼要重抓整份購物車，而不是用 payload 自己改陣列？
+6. `SESSION_CLOSED` 的 `reason` 是 `PAID` 和 `CANCELLED` 時，畫面各該怎麼做？
+7. 判斷「這是不是我自己加的」，為什麼要比 `byGuestId`，不比 `byGuest`？
 
 ## 學習資源
 

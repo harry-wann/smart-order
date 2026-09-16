@@ -34,10 +34,11 @@ if (!res.ok) { ... }                                 // 要自己檢查
 **② POST 要自己設定三件事**
 
 ```js
-const res = await fetch('/api/dining-sessions/me/orders', {
+// 加一份牛五花到購物車
+const res = await fetch('/api/dining-sessions/me/cart/items', {
   method: 'POST',                                    // ①
   headers: { 'Content-Type': 'application/json' },   // ②
-  body: JSON.stringify({ items: cart }),             // ③ 要轉成字串
+  body: JSON.stringify({ menuItemId: 12, quantity: 1, optionValueIds: [], note: '' }),  // ③ 要轉成字串
 });
 ```
 
@@ -58,8 +59,20 @@ const CREDENTIALS = {
 };
 const bearer = (t) => (t ? `Bearer ${t}` : null);
 
+// 這支手機的裝置代號：第一次開啟時產生，存在 localStorage。
+// 只拿來標示整桌購物車裡「誰加的」，不是身分驗證（驗證還是靠 X-Session-Token）
+function deviceId() {
+  let id = localStorage.getItem('deviceId');
+  if (!id) {
+    // crypto.randomUUID 只在 https 或 localhost 能用；手機連電腦區網 IP（http://192.168…）測試時沒有它
+    id = crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    localStorage.setItem('deviceId', id);
+  }
+  return id;
+}
+
 export async function request(path, { method = 'GET', body, auth = 'session' } = {}) {
-  const headers = { 'Content-Type': 'application/json' };
+  const headers = { 'Content-Type': 'application/json', 'X-Device-Id': deviceId() };
 
   // auth 可以是一個字串，也可以是陣列（同時帶好幾種），例如 ['session', 'jwt']；null 表示都不帶
   for (const kind of [].concat(auth ?? [])) {
@@ -96,7 +109,7 @@ export async function request(path, { method = 'GET', body, auth = 'session' } =
 
 | `auth` | 帶哪個標頭 | 用在哪 |
 |---|---|---|
-| `'session'`（預設） | `X-Session-Token` | 點餐、服務鈴、本桌訂單 |
+| `'session'`（預設） | `X-Session-Token` | 購物車、送出點餐、服務鈴、本桌訂單 |
 | `'jwt'` | `Authorization: Bearer …` | 會員中心、我的預約、店家端全部 |
 | `'reservation'` | `X-Reservation-Token` | 匿名客人在 C-19 查看、取消自己的訂位 |
 | `['session', 'jwt']` | 兩個都帶 | 進階 8.10「這次消費記到會員」（`attach-member`） |
@@ -104,19 +117,43 @@ export async function request(path, { method = 'GET', body, auth = 'session' } =
 
 匿名訂位的權杖在建立訂位成功時存起來：`localStorage.setItem('reservationToken', res.accessToken)`。
 
+另外**每個請求都帶 `X-Device-Id`**（上面的 `deviceId()`）。後端在掃碼加入（`join`）時用它建立一筆「同桌客人」，給一個顯示名稱（有登入會員用暱稱，否則依加入順序「客人 1」「客人 2」…），購物車每一列的「陳小美 加的」就是這樣來的。
+它**不是**權限，被偽造頂多顯示錯名字；能不能動這桌的購物車，看的還是 `X-Session-Token`。
+
 用起來：
 
 ```js
 import { request } from '../api/client';
 
 const items = await request('/menu/items?categoryId=2', { auth: null });   // 菜單公開讀取
-const ticket = await request('/dining-sessions/me/orders', {
-  method: 'POST',
-  body: { items: cart },
-});
 // 匿名客人取消自己的訂位（C-19）
 await request(`/reservations/${id}`, { method: 'DELETE', auth: 'reservation' });
 ```
+
+### 購物車的 API 也包一層
+
+購物車**存在後端、整桌共用**（同桌每支手機看到同一份）。頁面不要自己拼網址，統一放在 `src/api/cart.js`：
+
+```js
+// src/api/cart.js
+import { request } from './client';
+
+// GET /me/cart 回 { items, totalQuantity, subtotal }，每個 item 有 addedBy: { guestId, displayName }（誰加的）
+// 這裡只取品項陣列；角標、合計要用的話，改成回整包再拿 totalQuantity、subtotal
+export const fetchCart      = async () => (await request('/dining-sessions/me/cart')).items;
+export const addToCart      = (body) => request('/dining-sessions/me/cart/items', { method: 'POST', body });
+export const updateCartItem = (id, body) => request(`/dining-sessions/me/cart/items/${id}`, { method: 'PATCH', body });
+export const removeCartItem = (id) => request(`/dining-sessions/me/cart/items/${id}`, { method: 'DELETE' });
+// 送出點餐：不帶品項，後端直接把整桌購物車變成一張點餐單，再把購物車清空
+export const submitCart     = () => request('/dining-sessions/me/orders', { method: 'POST' });
+```
+
+```js
+// C-05 品項詳情按「加入購物車」
+await addToCart({ menuItemId: 12, quantity: 2, optionValueIds: [31, 41], note: '不要太熟' });
+```
+
+加入、修改、刪除成功後，同桌其他手機會收到 `CART_UPDATED`，各自重抓（見 [前端接 WebSocket](../realtime/42-前端接WebSocket.md)）。
 
 ## 在元件裡的標準寫法
 
@@ -153,25 +190,32 @@ function MenuPage() {
 ## 錯誤怎麼分別處理
 
 ```js
+import { submitCart, fetchCart } from '../api/cart';
+
 async function handleSubmit() {
   setSubmitting(true);
   try {
-    const ticket = await request('/dining-sessions/me/orders', {
-      method: 'POST', body: { items: cart },
-    });
+    const ticket = await submitCart();                  // 不帶品項：整桌購物車一起送出
     toast.success(`第 ${ticket.sequenceNo} 單已送出`);
-    setCart([]);
-    navigate('/order/tickets');
+    navigate('/order/tickets');                         // 不用 setCart([])：後端在同一個交易裡清掉了購物車
   } catch (err) {
     switch (err.code) {
+      case 'CART_EMPTY':                                // 409：同桌另一個人剛好先送出了
+        toast.error('購物車是空的，可能同桌已經送出了');
+        setCart(await fetchCart());                     // 重抓，畫面變成空的購物車
+        break;
       case 'ITEM_SOLD_OUT':
         markSoldOut(err.details);                      // 標紅那幾項
         toast.error('部分品項已售完，請調整後重新送出');
         break;
-      case 'SESSION_CLOSED':                            // 櫃檯已經結清了
-        toast.error('這桌已經結帳，不能再加點');
+      case 'SESSION_CLOSED':                            // 這桌已經收場（err.reason：PAID 或 CANCELLED）
         localStorage.removeItem('sessionToken');
-        setClosed(true);                                // 菜單切到「已結帳」面板，按「回到首頁」到 C-00
+        if (err.reason === 'CANCELLED') {
+          navigate('/');                                // 店長取消了這次用餐：不顯示面板，直接回 C-00
+        } else {
+          toast.error('這桌已經結帳，不能再加點');
+          setClosed(true);                              // 菜單切到「已結帳」面板，按「回到首頁」到 C-00
+        }
         break;
       case 'INVALID_SESSION_TOKEN':                     // 權杖已失效（這桌結清或取消了）
         localStorage.removeItem('sessionToken');
@@ -192,11 +236,12 @@ async function handleSubmit() {
 
 ```jsx
 <Button disabled={submitting} loading={submitting} onClick={handleSubmit}>
-  送出點餐
+  送出整桌點餐
 </Button>
 ```
 
-**沒有這個，客人連按三下就會送出三張單。** 這是驗收必測項。
+**沒有這個，客人連按三下，後兩下會跳出「購物車是空的」**（後端的列鎖讓三筆排隊，第一筆送出後購物車就空了，不會變成三張單，但畫面很難看）。
+「加入購物車」「櫃檯結清」這類按鈕沒有這層保護，連按就真的會重複加、重複送。**每個會寫資料的按鈕都要做**，這是驗收必測項。
 
 ## 15 分鐘動手小練習
 
@@ -242,6 +287,9 @@ console.log(await post.json());
 **⑦ 在 `useEffect` 裡沒做清理**
 元件消失了資料才回來，setState 會警告。
 
+**⑧ 購物車只改本機陣列**
+同桌另一支手機看到的是另一個版本。→ 購物車以後端為準，改完或收到 `CART_UPDATED` 就重抓。
+
 ## 常見錯誤訊息對照
 
 | 你會看到 | 中文意思 | 怎麼修 |
@@ -252,6 +300,7 @@ console.log(await post.json());
 | `415 Unsupported Media Type` | 沒帶 Content-Type | 加上 |
 | `401` | token 沒帶或過期 | F12 看 Request Headers |
 | 拿到 `Promise { <pending> }` | 忘了 await | 加上 |
+| `crypto.randomUUID is not a function` | 不是 https 也不是 localhost（例如手機連 `http://192.168…`） | 用 `deviceId()` 裡的備用寫法 |
 
 ## 術語對照表
 
