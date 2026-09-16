@@ -176,10 +176,10 @@ pre.mermaid svg{max-width:100%;height:auto}
 <article>
 <h1 id="05-開發流程與時程">05 開發流程與時程</h1>
 <blockquote>
-<p><strong>工作分配尚未決定。</strong> 等八大模組的規格都定稿後再分。
-本文件先定下<strong>協作規範</strong>與<strong>六週時程</strong>，這兩件事跟誰做什麼無關。</p>
+<p><strong>工作分配（基礎功能）已切成五個工作包 A～E，見 §1.4</strong>，人選開會認領。進階 A1～A7 等基礎全綠燈後再分。
+協作規範與六週時程跟誰做什麼無關，照 §2、§3 走。</p>
 </blockquote>
-<h2 id="1-工作分配原則先講人選後定">1. 工作分配：原則先講，人選後定</h2>
+<h2 id="1-工作分配">1. 工作分配</h2>
 <h3 id="11-我們的分工方法以功能切分">1.1 我們的分工方法：以功能切分</h3>
 <blockquote>
 <p><strong>一個人負責一個功能的前後端</strong>，從資料表 → API → 畫面全部自己走一遍。
@@ -288,6 +288,440 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 </tbody>
 </table></div>
+<h3 id="14-分配結果五個工作包2026-09-16">1.4 分配結果：五個工作包（2026-09-16）</h3>
+<blockquote>
+<p><strong>只分基礎。</strong> 進階 A1～A7 等基礎全綠燈後再開會分。
+先用工作包 A～E，<strong>開會時組員自己認領</strong>，認領完把名字填進下表。</p>
+</blockquote>
+<h4 id="141-怎麼算平均">1.4.1 怎麼算「平均」</h4>
+<p>三個維度一起看，每一包盡量落在同一個分數附近：</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>維度</th>
+<th>怎麼算</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>功能複雜度</strong></td>
+<td>後端模組難易度（§1.3 的星數），同模組只做一部分就打折；L0 地基算 4</td>
+</tr>
+<tr>
+<td><strong>頁面複雜度</strong></td>
+<td>每張基礎畫面：小 1（表單、單一狀態）／中 2（清單、覆蓋層、多狀態）／大 3（主畫面、對話框流程、即時更新）</td>
+</tr>
+<tr>
+<td><strong>功能關聯度</strong></td>
+<td>不計分，當分組的<strong>硬條件</strong>：同一段交易、同一把鎖、同一個頁面的東西不拆給兩個人</td>
+</tr>
+</tbody>
+</table></div>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>工作包</th>
+<th>主題</th>
+<th>功能分</th>
+<th>頁面分</th>
+<th>合計</th>
+<th>畫面數</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A</strong></td>
+<td>技術地基＋會員＋服務鈴</td>
+<td>8</td>
+<td>14</td>
+<td><strong>22</strong></td>
+<td>10</td>
+</tr>
+<tr>
+<td><strong>B</strong></td>
+<td>菜單＋出菜看板</td>
+<td>6</td>
+<td>15</td>
+<td><strong>21</strong></td>
+<td>6</td>
+</tr>
+<tr>
+<td><strong>C</strong></td>
+<td>點餐交易＋櫃檯結帳</td>
+<td>8</td>
+<td>13</td>
+<td><strong>21</strong></td>
+<td>6</td>
+</tr>
+<tr>
+<td><strong>D</strong></td>
+<td>桌位開桌＋候位</td>
+<td>5</td>
+<td>16</td>
+<td><strong>21</strong></td>
+<td>7</td>
+</tr>
+<tr>
+<td><strong>E</strong></td>
+<td>訂位</td>
+<td>7</td>
+<td>13</td>
+<td><strong>20</strong></td>
+<td>6</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>基礎畫面 35 張全部分完（43 張扣掉進階 8 張）。分數差距在 2 以內。
+A 的畫面多但都是小表單，因為<strong>地基卡住全隊都會卡住</strong>，所以不給他大畫面（§1.2 第 3 條）。</p>
+</blockquote>
+<h4 id="142-各包內容">1.4.2 各包內容</h4>
+<p><strong>A　技術地基＋會員＋服務鈴</strong>　認領人：＿＿＿＿</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>類別</th>
+<th>內容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>後端</td>
+<td><strong>L0 全部</strong>：Flyway V1～V7、種子資料、統一回應、全域例外、<a class="gloss" href="../tech/web/11-CORS跨來源.html" title="看這個技術的白話說明">CORS</a>、<a class="gloss" href="../tech/backend/19-Swagger.html" title="看這個技術的白話說明">Swagger</a>、<a class="gloss" href="../tech/team/05-Docker與Compose.html" title="看這個技術的白話說明">Docker Compose</a>、CI、部署；Spring Security、員工登入、JWT、用餐權杖 filter；WebSocket 設定與 <code>ChannelInterceptor</code>（頻道權限）</td>
+</tr>
+<tr>
+<td></td>
+<td><strong>M8 會員（基礎）</strong> 8.1～8.7、8.11、8.12</td>
+</tr>
+<tr>
+<td></td>
+<td><strong>服務鈴</strong> M3 3.12（<code>service_call</code>、60 秒冷卻、推 <code>/topic/counter</code>）</td>
+</tr>
+<tr>
+<td>畫面</td>
+<td>C-00 入口頁(1)、C-12 登入(1)、C-12b 驗證碼(1)、C-13 補資料(1)、C-14 會員中心(2)、C-16 訂位入口(1)、C-16b 匿名訂位填資料(1)、S-01 員工登入(1)、C-21 服務鈴面板(2)、S-11 服務鈴通知面板(3)</td>
+</tr>
+<tr>
+<td>面試故事</td>
+<td>Spring Security 雙軌認證（會員 JWT／用餐權杖）、WebSocket 訂閱權限、OTP 限流</td>
+</tr>
+<tr>
+<td>適合誰</td>
+<td><strong>最穩、最早能全力投入的人</strong>。第 1 週的 Flyway 沒出來，其他四個人都沒資料可用</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>C-16／C-16b 只收資料、不打訂位 API（真正送出在 E 的 C-16c），跟會員登入是同一個分岔，所以放 A。</p>
+</blockquote>
+<p><strong>B　菜單＋出菜看板</strong>　認領人：＿＿＿＿</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>類別</th>
+<th>內容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>後端</td>
+<td><strong>M1 菜單與品項</strong> 1.1～1.12（選項群組多對多、鴛鴦鍋、飲食標示）；菜單查詢 API</td>
+</tr>
+<tr>
+<td></td>
+<td><strong>M4 出菜看板</strong> 4.1～4.7、4.9～4.12（4.8 隨進階 A2）</td>
+</tr>
+<tr>
+<td>畫面</td>
+<td>C-04 菜單主頁(3)、C-05 品項詳情(2)、C-08 本桌訂單與出菜進度(2)、S-05 菜單管理(3)、S-06 選項群組管理(2)、S-04 KDS(3)</td>
+</tr>
+<tr>
+<td>面試故事</td>
+<td>選項群組的資料模型、由品項推導單狀態、KDS 1 秒內同步</td>
+</tr>
+<tr>
+<td>適合誰</td>
+<td>對畫面有興趣的人。C-04 是全站最重要的一頁，<strong>也負責顧客端的 <a class="gloss" href="../tech/frontend/39-Tailwind.html" title="看這個技術的白話說明">Tailwind</a> 設定與共用元件</strong></td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>C-04 的<strong>版面與菜單</strong>是 B 的；疊在上面的購物車列、C-04b／C-04c 通知條、「已結帳」面板是 C 的元件，B 留位置給它。
+C-08 放 B 而不是 C：它顯示的是出菜進度（M4 4.12），跟 KDS 是同一組事件的兩端。</p>
+</blockquote>
+<p><strong>C　點餐交易＋櫃檯結帳</strong>　認領人：＿＿＿＿</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>類別</th>
+<th>內容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>後端</td>
+<td><strong>M3 點餐</strong> 3.1～3.11、3.13、3.14（共用購物車、送出整桌點餐、鍋底規則、快照、<code>CART_UPDATED</code>／<code>NEW_TICKET</code>）</td>
+</tr>
+<tr>
+<td></td>
+<td><strong>M5 庫存（基礎）</strong> 5.1～5.6（條件式 UPDATE 防超賣、告罄下架、<code>MENU_SOLD_OUT</code>、取消回補）</td>
+</tr>
+<tr>
+<td></td>
+<td><strong>M6 結帳</strong> 6.1～6.3、6.7、6.9～6.11（金額計算、<code>expectedTotal</code>、櫃檯結清）；M2 2.14 取消該次用餐</td>
+</tr>
+<tr>
+<td>畫面</td>
+<td>C-06 購物車(2)、C-07 送出成功(1)、C-04b 同桌通知・加購物車(2)、C-04c 同桌通知・送出(2)、S-03 桌位詳情(3)、S-03b 結帳倒數(3)</td>
+</tr>
+<tr>
+<td>面試故事</td>
+<td><strong>送出點餐的交易邊界＋防超賣＋跟結清搶同一把列鎖</strong>——全專題技術含量最高的一段</td>
+</tr>
+<tr>
+<td>適合誰</td>
+<td>後端邏輯最強、最能靜下心寫測試的人</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p><strong>刻意的例外</strong>：§1.2 第 1 條說不要一人拿兩個四星，但 M5 的基礎只剩「送出點餐交易裡的那段扣減」（S-09 在進階），
+拆出去就違反第 2 條。所以 M3＋M5 基礎給同一人，其他模組（服務鈴、C-08）移出去補平。
+結帳也放這裡，因為結清和送出點餐鎖的是<strong>同一筆</strong> <code>dining_session</code>（<a href="../spec/modules/M6-結帳.html">M6 問題 1</a>），分兩個人寫一定對不上。</p>
+</blockquote>
+<p><strong>D　桌位開桌＋候位</strong>　認領人：＿＿＿＿</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>類別</th>
+<th>內容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>後端</td>
+<td><strong>M2 桌位</strong> 2.1～2.9、2.5b～2.5d（桌位狀態機、QR code、掃碼加入、開桌悲觀鎖、空桌清單 API、<code>TABLE_STATUS</code>）</td>
+</tr>
+<tr>
+<td></td>
+<td><strong>候位</strong> 2.10～2.13；排程三支：用餐超時、待清理提醒、候位過號</td>
+</tr>
+<tr>
+<td>畫面</td>
+<td>C-01 掃碼進入(1)、S-02 桌況總覽(3)、S-02b 開桌・現場(2)、S-02c 開桌・候位(2)、S-08 座位管理(3)、S-10 候位管理(2)、S-10b 候位選桌開桌(3)</td>
+</tr>
+<tr>
+<td>面試故事</td>
+<td>開桌的悲觀鎖、桌位狀態機、排程與手動觸發共用 Service</td>
+</tr>
+<tr>
+<td>適合誰</td>
+<td>能扛大畫面的人。S-02 是全站最大的一頁；<strong>也負責店家端的專案初始化、後台版型與 Tailwind 設定</strong></td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p><strong>選桌開桌對話框</strong>（S-10b）是 D 做成共用元件，E 的 S-07b 直接拿來用。</p>
+</blockquote>
+<p><strong>E　訂位</strong>　認領人：＿＿＿＿</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>類別</th>
+<th>內容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>後端</td>
+<td><strong>M7 訂位</strong> 7.1～7.18（區間重疊、best-fit、悲觀鎖、唯一約束、70%、取消期限、匿名 <code>access_token</code>、報到開桌、櫃檯代客取消）</td>
+</tr>
+<tr>
+<td></td>
+<td>7.10 算出來的預約保留（<code>ReservationHoldService</code>）；開桌強烈提醒的判斷（115 分鐘窗）；排程兩支：NO_SHOW、訂位提醒</td>
+</tr>
+<tr>
+<td>畫面</td>
+<td>C-16c 選日期時段(2)、C-18 訂位完成(2)、C-19 我的預約(2)、S-07 預約管理(3)、S-07b 預約選桌開桌(2)、S-02d 開桌・預約(2)</td>
+</tr>
+<tr>
+<td>面試故事</td>
+<td>區間重疊演算法、兩人同時訂同一桌的併發控制、「為什麼預約保留用算的不用排程」</td>
+</tr>
+<tr>
+<td>適合誰</td>
+<td>喜歡想演算法、邊界條件的人。<strong>第 1 週就可以先寫區間重疊的<a class="gloss" href="../tech/quality/47-單元測試.html" title="看這個技術的白話說明">單元測試</a></strong>，不用等別人</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="143-包與包之間的接點">1.4.3 包與包之間的接點</h4>
+<p>跨包的地方先把<strong>介面</strong>講好，各自寫自己那側：</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>接點</th>
+<th>提供方 → 使用方</th>
+<th>約定</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Entity、Flyway、種子資料</td>
+<td>A → 全部</td>
+<td>要加欄位開 issue 給 A，不要自己寫 migration</td>
+</tr>
+<tr>
+<td>用餐權杖、<code>X-Device-Id</code>、guest</td>
+<td>D（join API）＋ A（filter）→ C</td>
+<td>D 發權杖與 guest，A 的 filter 驗，C 的購物車拿 <code>guestId</code> 用</td>
+</tr>
+<tr>
+<td>菜單品項與選項</td>
+<td>B → C</td>
+<td>C 送出點餐時呼叫 B 的選項驗證（1.5），不自己再寫一份</td>
+</tr>
+<tr>
+<td><code>NEW_TICKET</code> 與出餐事件</td>
+<td>C 發 <code>NEW_TICKET</code> → B 的 KDS／C-08</td>
+<td>事件格式照 <a href="../spec/04-API規格.html">04 §3.4</a>，A 維護型別</td>
+</tr>
+<tr>
+<td>售完</td>
+<td>C 發 <code>MENU_SOLD_OUT</code> → B 的 C-04 標灰</td>
+<td></td>
+</tr>
+<tr>
+<td>C-04 上的疊層</td>
+<td>C 的元件 → B 的頁面</td>
+<td>購物車列、C-04b／C-04c、已結帳面板</td>
+</tr>
+<tr>
+<td>桌位狀態轉換</td>
+<td>C（結清 → <code>CLEANING</code>、取消 → <code>AVAILABLE</code>）→ D</td>
+<td>C 呼叫 D 的 <code>TableService</code>，不直接改 <code>dining_table</code></td>
+</tr>
+<tr>
+<td>預約保留</td>
+<td>E 的 <code>ReservationHoldService</code> → D 的 <code>GET /api/admin/tables</code> 與開桌三支</td>
+<td>D 只問「這桌現在保留中嗎」，判斷邏輯全在 E</td>
+</tr>
+<tr>
+<td>開桌</td>
+<td>D 的開桌 Service → E 的報到</td>
+<td>E 報到時呼叫 D 開桌，D 開完回頭把來源轉 <code>SEATED</code></td>
+</tr>
+<tr>
+<td>選桌對話框</td>
+<td>D（S-10b 元件）→ E（S-07b）</td>
+<td></td>
+</tr>
+<tr>
+<td>服務鈴面板位置</td>
+<td>D 的後台版型 → A 的 S-11</td>
+<td>D 在版面右上留位置</td>
+</tr>
+<tr>
+<td>訂位表單資料</td>
+<td>A（C-16b）→ E（C-16c）</td>
+<td>用 router state 帶姓名、手機、信箱</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="144-review-配對12-第-4-條">1.4.4 Review 配對（§1.2 第 4 條）</h4>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>作者</th>
+<th>第二個 review 的人</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>D</td>
+<td>權杖與 join 是兩人共同的接點</td>
+</tr>
+<tr>
+<td>B</td>
+<td>C</td>
+<td>KDS 吃的是 C 發的事件</td>
+</tr>
+<tr>
+<td><strong>C</strong></td>
+<td><strong>B</strong>（交易段加 A）</td>
+<td>防超賣與列鎖一定要兩個人看</td>
+</tr>
+<tr>
+<td>D</td>
+<td>E</td>
+<td>開桌是兩人共用的 Service</td>
+</tr>
+<tr>
+<td><strong>E</strong></td>
+<td><strong>D</strong>（併發段加 C）</td>
+<td>區間重疊的鎖跟 C 的列鎖是同一種思路</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="145-每週重點">1.4.5 每週重點</h4>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>週</th>
+<th>A</th>
+<th>B</th>
+<th>C</th>
+<th>D</th>
+<th>E</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>L0 全部</strong>、員工登入</td>
+<td>菜單 API、顧客端初始化、共用元件、walking skeleton</td>
+<td>訂單與購物車 Entity 規劃（交給 A 建表）、React 練習</td>
+<td>店家端初始化、後台版型</td>
+<td>區間重疊演算法＋單元測試</td>
+</tr>
+<tr>
+<td>2</td>
+<td>用餐權杖 filter、CI、部署技術驗證</td>
+<td>選項群組 API、C-04、C-05</td>
+<td>共用購物車、<strong>送出點餐交易</strong>、金額計算、C-06、C-07</td>
+<td>開桌／加入 API（悲觀鎖）、S-02、C-01</td>
+<td>可訂時段、建立訂位 API</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>WebSocket 設定與握手</strong></td>
+<td>KDS、C-08 即時、S-05</td>
+<td>櫃檯結清、S-03、S-03b、C-04b／C-04c</td>
+<td>S-02b、<code>TABLE_STATUS</code></td>
+<td>C-16c、C-18、取消訂位</td>
+</tr>
+<tr>
+<td>4</td>
+<td>服務鈴、C-21、S-11</td>
+<td>S-06、出餐順序</td>
+<td>取消單品、售完推播</td>
+<td>候位、S-10、S-10b、S-02c、空桌清單</td>
+<td>S-07、S-07b、S-02d、7.10、報到</td>
+</tr>
+<tr>
+<td>5</td>
+<td>會員 OTP／JWT、C-12～C-14、C-16／C-16b、<strong><a class="gloss" href="../tech/quality/50-部署上線.html" title="看這個技術的白話說明">部署上線</a></strong></td>
+<td>三態、RWD</td>
+<td>告罄下架、防超賣多執行緒測試</td>
+<td>S-08、三支排程</td>
+<td>NO_SHOW／提醒排程、C-19、併發測試</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>第 3 週主流程（§3）會走過 A、B、C、D 四包，<strong>E 是唯一不在主流程上的</strong>，所以 E 第 1 週就能獨立開工，不會被卡。</p>
+</blockquote>
 <hr />
 <h2 id="2-git-協作規範">2. Git 協作規範</h2>
 <blockquote>
@@ -350,54 +784,70 @@ chore: 升級 Spring Boot 版本
 </tr>
 </tbody>
 </table></div>
-<h3 id="24-共用檔案的唯一負責人分配時要指定">2.4 共用檔案的唯一負責人（分配時要指定）</h3>
+<h3 id="24-共用檔案的唯一負責人">2.4 共用檔案的唯一負責人</h3>
 <p>這些檔案動到就會影響所有人，<strong>每一個都要有唯一 owner</strong>：</p>
 <div class="tablewrap"><table>
 <thead>
 <tr>
 <th>項目</th>
+<th>負責工作包</th>
 <th>為什麼要唯一負責人</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>db/migration/</code> 下的 Flyway 檔案</td>
+<td>A</td>
 <td>版本號會撞、改了別人跑不起來</td>
 </tr>
 <tr>
 <td>Entity 定義</td>
+<td>A</td>
 <td>改欄位所有人都要跟著改</td>
 </tr>
 <tr>
 <td>種子資料程式</td>
+<td>A</td>
 <td></td>
 </tr>
 <tr>
 <td><code>pom.xml</code></td>
+<td>A</td>
 <td>最容易衝突的檔案之一</td>
 </tr>
 <tr>
 <td><code>docker-compose.yml</code></td>
+<td>A</td>
 <td>環境設定</td>
 </tr>
 <tr>
 <td>WebSocket 設定與事件型別</td>
+<td>A</td>
 <td>事件格式是前後端的合約</td>
 </tr>
 <tr>
 <td><code>04-API規格.md</code></td>
+<td>A</td>
 <td>同上</td>
 </tr>
 <tr>
-<td><code>package.json</code>（兩個前端各一）</td>
+<td><code>frontend-customer/package.json</code></td>
+<td>B</td>
 <td></td>
 </tr>
 <tr>
-<td><a class="gloss" href="../tech/frontend/39-Tailwind.html" title="看這個技術的白話說明">Tailwind</a> 設定與共用元件</td>
+<td><code>frontend-admin/package.json</code></td>
+<td>D</td>
+<td></td>
+</tr>
+<tr>
+<td>Tailwind 設定與共用元件</td>
+<td>顧客端 B、店家端 D</td>
 <td>改了全站樣式都會變</td>
 </tr>
 <tr>
 <td>Figma 檔</td>
+<td>B</td>
 <td></td>
 </tr>
 </tbody>
@@ -418,7 +868,7 @@ application-local.yml
 <h2 id="3-六週時程">3. 六週時程</h2>
 <blockquote>
 <p>圖見 <a href="../spec/06-圖表總覽.html">06-圖表總覽</a> 的甘特圖。每個模組的細節見各模組頁的「六週切分」。
-以下只寫「本週要交出什麼」，<strong>不指定誰做</strong>。</p>
+以下只寫「本週要交出什麼」；各工作包的每週重點見 §1.4.5。</p>
 </blockquote>
 <h3 id="第-0-週現在開工前">第 0 週（現在～開工前）</h3>
 <ul>
@@ -475,11 +925,13 @@ application-local.yml
 </blockquote>
 <h3 id="第-4-週訂位候位服務鈴">第 4 週：訂位、候位、服務鈴</h3>
 <ul>
-<li><strong><a href="../spec/modules/M7-訂位.html">訂位</a></strong>：區間重疊檢查 + 悲觀鎖 + best-fit 配桌、可訂時段查詢、取消、報到開桌</li>
+<li><strong><a href="../spec/modules/M7-訂位.html">訂位</a></strong>：區間重疊檢查 + 悲觀鎖 + best-fit 配桌、可訂時段查詢、取消（客人到訂位前 30 分，<code>CANCEL_DEADLINE_PASSED</code>）、報到開桌</li>
 <li>服務鈴（後端表 + 推播 + 顧客端按鈕 + 櫃檯面板）</li>
 <li>候位登記、叫號、報到、過號</li>
 <li>一鍵開桌：<code>GET /api/admin/tables/available</code> + S-07b／S-10b 選桌對話框；訂位保留 10 分鐘（<code>RESERVATION_EXPIRED</code>）；報到最早提前 30 分（<code>RESERVATION_TOO_EARLY</code>）</li>
-<li><strong>7.10 預約保留</strong>：桌況 <code>displayStatus</code>／<code>heldFor</code>、<code>release-hold</code>（隨時可按，重複按回 <code>HOLD_ALREADY_RELEASED</code>）、開桌三支的 <code>TABLE_RESERVED</code>、區間重疊把還沒結帳的 <code>SEATED</code> 算進去</li>
+<li><strong>7.10 預約保留</strong>：桌況 <code>displayStatus</code>／<code>heldFor</code>、開桌三支的 <code>TABLE_RESERVED</code>、區間重疊把還沒結帳的 <code>SEATED</code> 算進去</li>
+<li><strong>7.18 櫃檯代客取消</strong>：<code>POST /api/admin/reservations/{id}/cancel</code>（隨時可取消，不是 <code>CONFIRMED</code> 回 <code>RESERVATION_NOT_CANCELLABLE</code>，寫 <code>cancel_source</code>／<code>cancelled_by_staff_id</code>）</li>
+<li><strong>開桌強烈提醒</strong>：<code>upcomingOnThisTable</code>／<code>upcomingReservationAt</code> 用「現在～現在 + 115 分」的窗，「仍要開桌」二次確認，S-07b／S-10b 把有衝突的桌排後面</li>
 <li>出餐順序建議（人氣推薦改列進階 A7，<strong>基礎完成後才做</strong>）</li>
 <li>顧客端：訂位頁面（C-16c 選時段 → C-18 訂位完成）、服務鈴面板</li>
 <li>店家端：候位管理、訂位管理後台</li>
@@ -495,7 +947,7 @@ application-local.yml
 <li><a href="../tech/quality/47-單元測試.html">單元測試</a>補到 15～20 個</li>
 <li>前端三態處理、RWD、<strong>iOS Safari 實機測試</strong></li>
 <li>UI 一致性檢查（把 43 張畫面並排看，進階的 8 張另外標出來）</li>
-<li><strong>★ <a class="gloss" href="../tech/quality/50-部署上線.html" title="看這個技術的白話說明">部署上線</a></strong></li>
+<li><strong>★ 部署上線</strong></li>
 </ul>
 <blockquote>
 <p><strong>里程碑</strong>：線上 demo 網址可以完整操作。
@@ -578,7 +1030,7 @@ application-local.yml
 <ul>
 <li><input type="checkbox" disabled> 已合併到 <code>develop</code>，且 <code>develop</code> 能正常啟動</li>
 <li><input type="checkbox" disabled> <strong>CI 綠燈</strong></li>
-<li><input type="checkbox" disabled> API 出現在 <a class="gloss" href="../tech/backend/19-Swagger.html" title="看這個技術的白話說明">Swagger</a> 上，參數說明正確</li>
+<li><input type="checkbox" disabled> API 出現在 Swagger 上，參數說明正確</li>
 <li><input type="checkbox" disabled> 前端處理<strong>三種狀態</strong>：載入中、空資料、錯誤</li>
 <li><input type="checkbox" disabled> 手機 375px 不破版（顧客端功能）</li>
 <li><input type="checkbox" disabled> 至少一位組員 review 過 PR</li>
@@ -663,7 +1115,7 @@ application-local.yml
 <li><strong>每週五一定要整體跑一次。</strong> 不要等到第 6 週才第一次把所有人的東西合起來——那時候才發現介面對不上就來不及了。</li>
 </ol><div class="pager"><a href="../spec/04-API規格.html"><div class="k">← 上一篇</div><div class="n">04 API 規格</div></a><a class="next" href="../spec/06-圖表總覽.html"><div class="k">下一篇 →</div><div class="n">06 圖表總覽</div></a></div>
 </article>
-<aside class="toc"><div class="tt">本頁目錄</div><a href="#1-工作分配原則先講人選後定">1. 工作分配：原則先講，人選後定</a><a href="#2-git-協作規範">2. Git 協作規範</a><a href="#3-六週時程">3. 六週時程</a><a href="#4-每日每週節奏">4. 每日／每週節奏</a><a href="#5-完成定義dod">5. 完成定義（DoD）</a><a href="#6-風險與應對">6. 風險與應對</a><a href="#7-給整合負責人的三個提醒">7. 給整合負責人的三個提醒</a></aside>
+<aside class="toc"><div class="tt">本頁目錄</div><a href="#1-工作分配">1. 工作分配</a><a href="#2-git-協作規範">2. Git 協作規範</a><a href="#3-六週時程">3. 六週時程</a><a href="#4-每日每週節奏">4. 每日／每週節奏</a><a href="#5-完成定義dod">5. 完成定義（DoD）</a><a href="#6-風險與應對">6. 風險與應對</a><a href="#7-給整合負責人的三個提醒">7. 給整合負責人的三個提醒</a></aside>
 </div></div>
 </div>
 <script src="../vendor/mermaid.min.js"></script>
