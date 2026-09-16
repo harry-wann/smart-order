@@ -489,7 +489,7 @@ def build_index(pages):
         '<p style="margin-top:6px"><strong>UI 設計稿</strong>：<a href="%s" target="_blank" rel="noopener">'
         "Figma・火鍋點餐系統</a>（01 Design System／02 顧客端／03 店家端）。"
         'HTML 施工架在 <a href="../ui/mockups/index.html">ui/mockups/index.html</a>，'
-        "共 42 張畫面＋8 張元件總表。</p></div>" % html.escape(FIGMA_URL),
+        "共 43 張畫面＋8 張元件總表。</p></div>" % html.escape(FIGMA_URL),
         '<div class="callout"><div class="h">先讀這一篇</div>'
         '<p><a href="spec/00-架構分層與技術選型.html">00 架構分層與技術選型</a> —— '
         "兩個定位、基礎／進階分層原則、為什麼保留 WebSocket 與排程、不建議花時間的事。"

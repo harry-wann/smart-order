@@ -215,7 +215,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td><strong>時間處理</strong></td>
-<td>緩衝時間、跨午夜、時區</td>
+<td>緩衝時間、保留窗（前 30 分～後 10 分）、跨午夜、時區</td>
 </tr>
 </tbody>
 </table></div>
@@ -239,7 +239,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td>7.2</td>
 <td><strong>區間重疊檢查</strong></td>
-<td><code>A.start &lt; B.end AND B.start &lt; A.end</code>，剛好接續不算衝突</td>
+<td><code>A.start &lt; B.end AND B.start &lt; A.end</code>，剛好接續不算衝突；<strong><code>CONFIRMED</code> 與 <code>SEATED</code> 都算佔用</strong>（到 <code>end_time</code> 為止，見問題 5）</td>
 <td>☐</td>
 </tr>
 <tr>
@@ -281,7 +281,13 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td>7.9</td>
 <td>報到開桌</td>
-<td>S-07 按「報到開桌」→ S-07b 選一張坐得下的空桌 → 建立 <code>dining_session</code> 並帶入人數；超過訂位時間 10 分鐘 → <code>409 RESERVATION_EXPIRED</code></td>
+<td>S-07 按「報到開桌」→ S-07b 選一張坐得下的空桌（<strong>原保留桌排第一</strong>，標「原保留桌」）→ 建立 <code>dining_session</code> 並帶入人數；最早提前 30 分鐘，太早 → <code>409 RESERVATION_TOO_EARLY</code>「還沒到可報到時間（18:00 起）」；超過訂位時間 10 分鐘 → <code>409 RESERVATION_EXPIRED</code></td>
+<td>☐</td>
+</tr>
+<tr>
+<td>7.10</td>
+<td><strong>訂位保留桌位</strong>（算出來的鎖定，不是排程）</td>
+<td>配到的桌在 <code>start_time − 30 分</code> ～ <code>+10 分</code>、訂位 <code>CONFIRMED</code>、沒取消保留時，桌況顯示「預約保留」（<code>displayStatus = RESERVED</code>、<code>heldFor</code>）；現場開桌、候位入座、別筆訂位報到要開這張桌 → <code>409 TABLE_RESERVED</code>；櫃檯可按「取消保留」（<code>POST /api/admin/reservations/{id}/release-hold</code>，寫 <code>hold_released_at/by</code>），訂位仍是 <code>CONFIRMED</code>；<strong>單向、不能恢復</strong>，按之前二次確認「取消後無法恢復。…」。桌位欄位不多存任何東西，見 <a href="../../spec/modules/M2-桌位開桌與候位.html">M2 問題 5</a></td>
 <td>☐</td>
 </tr>
 <tr>
@@ -299,7 +305,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td>7.13</td>
 <td>店家端訂位管理</td>
-<td>依日期列出、可報到開桌／取消；逾時未到的列顯示「逾時未到」，沒有報到按鈕，改成「登記候位」</td>
+<td>依日期列出、可報到開桌／取消；「報到開桌」只在 <code>start_time − 30 分</code> ～ <code>+10 分</code> 出現，更早的列顯示灰字「18:00 起可報到」；進入保留窗的列狀態欄多一行小字「保留 A08」＋ghost「取消保留」，取消過的顯示「已取消保留」；逾時未到的列顯示「逾時未到」，沒有報到按鈕，改成「登記候位」</td>
 <td>☐</td>
 </tr>
 <tr>
@@ -317,7 +323,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td>7.16</td>
 <td>開桌時列出可報到的預約</td>
-<td>給 S-02d 用：用餐時間在<strong>現在 −10 ～ +45 分</strong>、坐得下的 <code>CONFIRMED</code> 訂位</td>
+<td>給 S-02d 用：用餐時間在<strong>現在 −10 ～ +30 分</strong>、坐得下的 <code>CONFIRMED</code> 訂位（+30 就是最早可報到的時間）；這張桌保留中時，保留的那筆置頂</td>
 <td>☐</td>
 </tr>
 <tr>
@@ -329,9 +335,11 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tbody>
 </table></div>
 <blockquote>
-<p><strong>編號跳過 7.10。</strong> 那是舊的「排程：預留轉換」（訂位前 30 分鐘把桌設為 <code>RESERVED</code>），
-桌位不再跟訂位連動之後整條拿掉了。既有代號不重編，所以留一個空號。
-桌位為什麼不預留，見 <a href="../../spec/modules/M2-桌位開桌與候位.html">M2 問題 5</a>。</p>
+<p><strong>7.10 恢復使用（2026-09-16）。</strong> 它原本是「排程：預留轉換」（訂位前 30 分鐘把 <code>dining_table.status</code> 改成 <code>RESERVED</code>），
+因為要靠 cron 同步、一沒跑就對不上，整條拿掉過、留了空號。
+現在的 7.10 <strong>不是排程</strong>：桌位欄位一樣只有三種，「預約保留」是查桌況時從 <code>reservation</code> 算出來的，
+所以<strong>排程仍然是九支</strong>，不要把舊的預留轉換排程加回來。為什麼算出來就沒有同步問題，見 <a href="../../spec/modules/M2-桌位開桌與候位.html">M2 問題 5</a>。</p>
+<p>跟 M2 的 2.E5（手動保留 <code>HELD</code>）不一樣：7.10 是<strong>有訂位</strong>時系統算的，2.E5 是<strong>沒有訂位</strong>時櫃檯手動按的，仍是延伸。</p>
 <p><strong>基礎這一層沒有預先點餐。</strong> 基礎要交出來的是一條完整可 demo 的線：
 選時間 → 訂位成立 → 到店報到 → 開桌。預先點餐整塊在下面的延伸功能，
 不做也不影響這條線跑完。</p>
@@ -349,7 +357,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td>7.E1</td>
 <td><strong>預先點餐</strong></td>
-<td>訂位成立後可先選餐，<strong>不先結帳</strong>；資料存在訂位底下，還不是正式點餐單</td>
+<td>訂位成立後可先選餐，<strong>不先結帳</strong>；資料存在訂位底下，還不是正式點餐單。選餐時的購物車只存在那支手機，不走店內整桌共用的後端購物車</td>
 </tr>
 <tr>
 <td>7.E2</td>
@@ -458,7 +466,7 @@ WHERE t.active = 1 AND t.reservable = 1 AND t.seats &gt;= :partySize
   AND NOT EXISTS (
       SELECT 1 FROM reservation r
       WHERE r.table_id = t.id
-        AND r.status = 'CONFIRMED'
+        AND r.status IN ('CONFIRMED', 'SEATED')   -- 已報到的客人還坐著，一樣算
         AND r.start_time &lt; :newEnd
         AND :newStart   &lt; r.end_time
   )
@@ -468,7 +476,7 @@ LIMIT 1;
 <p><strong>三個細節</strong>：</p>
 <ol>
 <li><strong>用 <code>&lt;</code> 不是 <code>&lt;=</code></strong>——18:00–19:55 和 19:55–21:50 是「剛好接續」，不算衝突。用 <code>&lt;=</code> 會白白浪費位子。</li>
-<li><strong>排除已取消的</strong>——不然位子永遠訂不到。</li>
+<li><strong>排除已取消與未到的，但已報到的要算</strong>——不然位子永遠訂不到，或反過來被多訂（見問題 5）。</li>
 <li><strong><code>ORDER BY seats ASC</code> = best-fit</strong>——2 個人不要佔 8 人桌，把大桌留給大團。</li>
 </ol>
 <hr />
@@ -521,7 +529,8 @@ CREATE UNIQUE INDEX uk_reservation_table_start ON reservation (table_id, start_t
 <p><strong>為什麼不好</strong>
 尖峰時櫃檯忙不過來，一定會忘記。而且「過了多久算 NO_SHOW」沒有一致標準。</p>
 <p><strong>規則：訂位保留 10 分鐘。</strong> 過了訂位時間 10 分鐘還沒報到就視為 <code>NO_SHOW</code>，只能現場登記候位。
-顧客端 C-18 訂位完成與 C-19 我的預約都要寫一行「訂位保留 10 分鐘，逾時視同未到，需現場候位」。</p>
+顧客端 C-18 訂位完成與 C-19 我的預約都要寫一行「訂位保留 10 分鐘，逾時視同未到，需現場候位」。
+被標成 <code>NO_SHOW</code> 的訂位，C-19 放在「已取消」頁籤，狀態膠囊「逾時未到」＋一句「需要的話請重新訂位」，沒有按鈕。</p>
 <p><strong>正確做法：排程自動處理</strong></p>
 <pre><code class="language-java">@Scheduled(cron = &quot;0 */5 * * * *&quot;, zone = &quot;Asia/Taipei&quot;)
 public void markNoShow() {
@@ -534,13 +543,16 @@ public void markNoShow() {
     }
 }
 </code></pre>
-<p>標記為 <code>NO_SHOW</code> 後，<strong>桌位不用動</strong>——桌位本來就沒有因為訂位被鎖住（見 <a href="../../spec/modules/M2-桌位開桌與候位.html">M2 問題 5</a>），
+<p>標記為 <code>NO_SHOW</code> 後，<strong>桌位不用動</strong>——7.10 的預約保留是算出來的，保留窗在訂位時間後 10 分鐘就自己結束了
+（跟 NO_SHOW 用同一個 10 分鐘），排程晚幾分鐘才標也不影響桌況（見 <a href="../../spec/modules/M2-桌位開桌與候位.html">M2 問題 5</a>）。
 這筆只是不再出現在開桌頁的預約清單上。有預點（A2）的也不用回補庫存，因為庫存本來就是報到才扣。</p>
 <p><strong>不能只靠排程。</strong> 排程每 5 分鐘跑一次，最晚要到 15 分鐘才標得到。所以：</p>
 <ul>
-<li>開桌頁的預約清單（<code>open-options</code>）自己看時間：只列 <code>start_time</code> 在<strong>現在 −10 ～ +45 分</strong>的</li>
+<li>開桌頁的預約清單（<code>open-options</code>）自己看時間：只列 <code>start_time</code> 在<strong>現在 −10 ～ +30 分</strong>的</li>
 <li>報到 API（<code>POST /api/admin/reservations/{id}/seat</code>）自己檢查 <code>now &gt; start_time + 10 分</code> → <code>409 RESERVATION_EXPIRED</code>「已超過保留時間，請改登記候位」</li>
 </ul>
+<p>報到 API 也擋<strong>太早</strong>的：<code>now &lt; start_time − 30 分</code> → <code>409 RESERVATION_TOO_EARLY</code>「還沒到可報到時間（18:00 起）」。
+30 分就是保留窗的開頭，也是開桌清單的 +30——三個地方用同一個設定值（<code>reservation.hold-before-minutes</code>）。</p>
 <p><strong>★ 一定要配一支手動觸發的 API</strong>，不然 demo 時你要真的等 10 分鐘。</p>
 <pre><code class="language-java">@PostMapping(&quot;/api/admin/scheduler/mark-no-show&quot;)
 @PreAuthorize(&quot;hasRole('MANAGER')&quot;)
@@ -558,10 +570,14 @@ public Map&lt;String, Object&gt; trigger() {
 <p><strong>但如果直接刪掉</strong>
 沒有紀錄，無法統計取消率，客人也查不到自己取消過。</p>
 <p><strong>正確做法：保留紀錄，但查詢時排除</strong></p>
-<pre><code class="language-sql">AND r.status = 'CONFIRMED'     -- 只有這一種算佔位
+<pre><code class="language-sql">AND r.status IN ('CONFIRMED', 'SEATED')     -- 這兩種算佔位
 </code></pre>
-<p><code>CANCELLED</code> / <code>NO_SHOW</code> / <code>SEATED</code>（已入座，桌況改由 dining_session 管）都不算。</p>
+<p><code>CANCELLED</code> / <code>NO_SHOW</code> 不算。<strong><code>SEATED</code> 要算</strong>（到 <code>end_time</code> 為止）：</p>
 <blockquote>
+<p>這裡原本只算 <code>CONFIRMED</code>，想法是「入座後桌況改由 <code>dining_session</code> 管」。但這樣客人一報到，
+那張桌那個時段的名額就被讓出去了——客人明明還坐著，線上卻能在同一時段再訂一組到同一張桌。
+所以已報到的訂位一樣佔著名額，直到 <code>end_time</code>（用餐 100 分＋清桌 15 分）。</p>
+<p><code>reservation.table_id</code> 不因為現場換桌而改：客人被帶到別張桌吃，佔的仍是當初配到那張桌的名額（容量算的是「這個時段賣出幾組」）。</p>
 <p><strong>原本這裡是 <code>IN ('PENDING', 'CONFIRMED')</code>。</strong> <code>PENDING</code> 的存在理由是舊流程的
 「先建訂位、預付成功才確認」；現在選完時段就直接成立，沒有任何路徑會產生 <code>PENDING</code>，
 所以這個狀態整個拿掉了。留著一個永遠不會出現的狀態，只會讓後面接手的人一直猜它什麼時候用。
@@ -607,7 +623,7 @@ dining_session
 不用去碰已經進 KDS 的東西，也不用發 <a class="gloss" href="../../tech/realtime/41-WebSocket與STOMP.html" title="看這個技術的白話說明">WebSocket</a> 通知廚房。</p>
 <blockquote>
 <p><strong>那 API 怎麼設計？</strong> 用 <code>PUT /api/reservations/{id}/preorder</code> <strong>整批覆蓋</strong>，
-不要做「加一筆／減一筆」的部分更新。前端本來就有購物車，把整份送上來最直覺；
+不要做「加一筆／減一筆」的部分更新。C-17 的購物車只存在那支手機（預點時還沒有用餐紀錄，不走店內那套整桌共用的後端購物車），把整份送上來最直覺；
 後端一句 <code>deleteByReservationId</code> 再重建，不用寫 diff 邏輯；
 重送同一份結果也一樣（冪等）。「新增預點」和「調整預點」是同一支 API。</p>
 </blockquote>
@@ -668,7 +684,7 @@ SeatResult seat(Long reservationId) {
 </tr>
 <tr>
 <td><strong>W4</strong></td>
-<td>★ 建立訂位（含悲觀鎖 + best-fit）；可訂時段查詢；取消；報到開桌（含 <code>RESERVATION_EXPIRED</code>）；顧客端 C-16c 選時段與 C-18 訂位完成；店家端 S-07 訂位管理與 S-07b 選桌開桌</td>
+<td>★ 建立訂位（含悲觀鎖 + best-fit，<code>SEATED</code> 也算佔用）；可訂時段查詢；取消；報到開桌（含 <code>RESERVATION_EXPIRED</code>、<code>RESERVATION_TOO_EARLY</code>）；<strong>7.10 預約保留</strong>（<code>findHolding</code>、桌況 <code>displayStatus</code>／<code>heldFor</code>、<code>release-hold</code>、開桌三支的 <code>TABLE_RESERVED</code>，跟 M2 一起做）；顧客端 C-16c 選時段與 C-18 訂位完成；店家端 S-07 訂位管理（「18:00 起可報到」「保留 A08」「取消保留」）與 S-07b 選桌開桌（原保留桌排第一）</td>
 </tr>
 <tr>
 <td><strong>W5</strong></td>
@@ -699,6 +715,26 @@ SeatResult seat(Long reservationId) {
 <tr>
 <td><strong>明明有位卻說客滿</strong></td>
 <td>判斷式用了 <code>&lt;=</code>，或沒排除已取消的</td>
+</tr>
+<tr>
+<td><strong>客人報到後，同時段又被線上訂走一組到同一張桌</strong></td>
+<td>區間重疊只算了 <code>CONFIRMED</code>，<code>SEATED</code> 也要算</td>
+</tr>
+<tr>
+<td><strong>客人早就報到了，桌況還顯示預約保留</strong></td>
+<td>保留條件漏了 <code>status = 'CONFIRMED'</code></td>
+</tr>
+<tr>
+<td><strong>取消保留之後又鎖回去</strong></td>
+<td>保留條件漏了 <code>hold_released_at IS NULL</code></td>
+</tr>
+<tr>
+<td><strong>保留窗算反了</strong>（18:30 的訂位 17:50 就鎖、18:45 還鎖）</td>
+<td>條件是「現在落在 <code>start − 30</code> ～ <code>start + 10</code>」；改查 <code>start_time</code> 就是 <code>now − 10</code> ～ <code>now + 30</code></td>
+</tr>
+<tr>
+<td><strong>有人又寫了一支「預留轉換」排程</strong></td>
+<td>不要。7.10 是算出來的，排程只有九支</td>
 </tr>
 <tr>
 <td><strong>出現重複訂位</strong></td>
@@ -750,16 +786,20 @@ SeatResult seat(Long reservationId) {
 <li>一直訂到那個時段客滿 → 顯示「這個時段已經客滿了」</li>
 <li>訂 19:55（剛好接在第一筆之後）→ <strong>可以訂</strong>（證明 <code>&lt;</code> 不是 <code>&lt;=</code>）</li>
 <li>店家端訂位管理：看到明天的訂位清單</li>
-<li>桌況總覽點一張<strong>空桌</strong> → 開桌頁的「預約」頁籤上有數字，裡面列著種子資料裡<strong>今天 30 分鐘內要到的那筆</strong>訂位（第 1 步訂的是明天，不在現在 −10～+45 分的清單裡）</li>
-<li>按該列的「開桌」→ 直接開桌，人數自動帶入，桌況變「用餐中」</li>
+<li>桌況總覽：種子資料裡<strong>今天 30 分鐘內要到的那筆</strong>訂位，它配到的桌是暖黃「<strong>預約保留</strong>」，格內「18:30 陳○君 4 位」；
+   用 Postman 對那張桌打現場開桌 → <code>409 TABLE_RESERVED</code></li>
+<li>桌況總覽點一張<strong>別的空桌</strong> → 開桌頁的「預約」頁籤上有數字，裡面列著那筆訂位（第 1 步訂的是明天，不在現在 −10～+30 分的清單裡）</li>
+<li>按該列的「開桌」→ 直接開桌，人數自動帶入，桌況變「用餐中」；<strong>原本保留的那張桌變回空桌</strong>（訂位已轉 <code>SEATED</code>，保留自己消失）</li>
 <li><strong>回到開桌頁看別張桌 → 那筆訂位已經不在清單裡了</strong>（狀態已轉 <code>SEATED</code>）</li>
-<li>另一筆訂位：在 S-07 按「報到開桌」→ <strong>S-07b 只列出坐得下的空桌</strong>（稍後有預約的桌有黃字提醒）→ 選一張 → 開桌</li>
+<li>另一筆 30 分鐘內要到的訂位：在 S-07 那一列看到「保留 A05」→ 按「報到開桌」→ <strong>S-07b 第一張是「A05・原保留桌」</strong>，其他保留中的桌不列 → 選 A05 → 開桌</li>
+<li>再一筆保留中的訂位：S-07 按「取消保留」→ 二次確認「取消後無法恢復。…」→ 桌況那張桌變回空桌，這一列顯示「已取消保留」，<strong>仍然可以報到</strong>（S-07b 不再有原保留桌）</li>
+<li>一小時後的訂位 → S-07 那一列沒有報到按鈕，顯示灰字「xx:xx 起可報到」；直接打報到 API → <code>409 RESERVATION_TOO_EARLY</code></li>
 <li>一筆訂位時間已過 10 分鐘 → S-07 那一列顯示「逾時未到」，只剩「登記候位」；直接打報到 API → <code>409 RESERVATION_EXPIRED</code></li>
-<li><strong>手動觸發 NO_SHOW 排程</strong> → 那筆標記為 NO_SHOW，桌況完全沒變</li>
+<li><strong>手動觸發 NO_SHOW 排程</strong> → 那筆標記為 NO_SHOW，桌況完全沒變（保留在訂位後 10 分鐘就已經自己結束）</li>
 <li>取消一筆訂位 → 那個時段又可以訂了</li>
 </ol>
 <h3 id="有做預先點餐才加演7e17e3">有做預先點餐才加演（7.E1～7.E3）</h3>
-<ol start="13">
+<ol start="16">
 <li>訂位完成頁按「先點餐」→ 走一般菜單流程選好 → 送出，<strong>全程沒有付款頁</strong></li>
 <li>回「我的預約」→ 看得到預點內容 → <strong>改成 3 份牛五花 → 再送出，內容更新</strong></li>
 <li>把系統時間調到用餐前一天 20:00 之後 → <strong>改單與取消都停用</strong>，顯示請來電</li>

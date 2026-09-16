@@ -249,7 +249,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <td>櫃檯人員</td>
 <td><code>COUNTER</code></td>
 <td>平板／桌機</td>
-<td>桌況、開桌、結帳、候位、訂位查詢</td>
+<td>桌況、開桌、結帳、候位、訂位查詢與取消預約保留</td>
 </tr>
 <tr>
 <td>廚房人員</td>
@@ -485,9 +485,19 @@ pre.mermaid svg{max-width:100%;height:auto}
 <td>一桌從開桌到結帳的完整一次。結帳、集點、消費紀錄都以此為單位</td>
 </tr>
 <tr>
+<td>購物車</td>
+<td><code>CartItem</code></td>
+<td><strong>整桌共用、存在後端</strong>（<code>cart_item</code>）。同桌每支手機看到同一份，誰都能增減、刪除；每列記下是誰加的</td>
+</tr>
+<tr>
+<td>同桌客人</td>
+<td><code>DiningSessionGuest</code></td>
+<td>同一次用餐裡的「誰」：前端產生的裝置 UUID（<code>X-Device-Id</code>）＋顯示名稱（會員暱稱，或依加入順序「客人 1」「客人 2」）。<strong>只用來標示誰加的，不是身分驗證</strong>；同桌通知靠它的 id（<code>byGuestId</code>）判斷「是不是我自己」，自己的動作不通知自己</td>
+</tr>
+<tr>
 <td>點餐單</td>
 <td><code>OrderTicket</code></td>
-<td>一次「送出購物車」＝出單機印一張。一次用餐可以有多張</td>
+<td>一次「送出整桌點餐」＝整份購物車變一張＝出單機印一張。一次用餐可以有多張</td>
 </tr>
 <tr>
 <td>單品</td>
@@ -555,6 +565,11 @@ pre.mermaid svg{max-width:100%;height:auto}
 <td>線上預訂某時段某桌</td>
 </tr>
 <tr>
+<td>預約保留</td>
+<td><code>displayStatus = RESERVED</code></td>
+<td>訂位配到的桌，在訂位時間前 30 分～後 10 分顯示「預約保留」，不能開給別人；櫃檯可以取消保留（單向，取消後無法恢復）。<strong>查桌況時算出來的，不存在 <code>dining_table.status</code>、不靠排程</strong>（M7 7.10）</td>
+</tr>
+<tr>
 <td>清桌緩衝</td>
 <td>Buffer</td>
 <td>訂位的 <code>end_time</code> 已包含的 15 分鐘</td>
@@ -567,7 +582,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td>已結清</td>
 <td>—</td>
-<td>櫃檯標記收款完成（現金或模擬支付），<code>dining_session</code> 轉 <code>PAID</code>。<strong>基礎的結帳就是這個</strong></td>
+<td>櫃檯標記收款完成（現金／信用卡／條碼，按下後倒數 5 秒的模擬流程），<code>dining_session</code> 轉 <code>PAID</code>。<strong>基礎的結帳就是這個</strong></td>
 </tr>
 <tr>
 <td>金額比對</td>
@@ -577,7 +592,12 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td>訂位保留時間</td>
 <td>—</td>
-<td>訂位時間後 10 分鐘。逾時視同 <code>NO_SHOW</code>，只能現場候位</td>
+<td>訂位時間後 10 分鐘。逾時視同 <code>NO_SHOW</code>，只能現場候位；配到的桌的預約保留也到這時為止</td>
+</tr>
+<tr>
+<td>最早報到</td>
+<td>—</td>
+<td>訂位時間前 30 分鐘。更早按報到回 <code>409 RESERVATION_TOO_EARLY</code>；預約保留也從這時開始</td>
 </tr>
 </tbody>
 </table></div>
@@ -662,7 +682,15 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td>開桌頁預約清單時間窗</td>
-<td>現在 −10 分 ～ +45 分</td>
+<td>現在 −10 分 ～ +30 分</td>
+</tr>
+<tr>
+<td>預約保留開始（<code>reservation.hold-before-minutes</code>）</td>
+<td>訂位時間前 30 分鐘（＝最早可報到）</td>
+</tr>
+<tr>
+<td>預約保留結束（<code>reservation.hold-after-minutes</code>）</td>
+<td>訂位時間後 10 分鐘（＝訂位保留時間）</td>
 </tr>
 <tr>
 <td>驗證碼效期</td>
@@ -677,8 +705,24 @@ pre.mermaid svg{max-width:100%;height:auto}
 <td>10 分鐘 3 次</td>
 </tr>
 <tr>
+<td>櫃檯付款倒數</td>
+<td>5 秒，倒數中可取消；現金、信用卡、條碼三種都倒數</td>
+</tr>
+<tr>
+<td>結帳完成提示</td>
+<td>約 1.5 秒後自動關閉，回桌況總覽</td>
+</tr>
+<tr>
 <td>點數回饋（進階 A6）</td>
-<td>消費每 100 元得 1 點，1 點折 1 元</td>
+<td>以實付金額計，每滿 100 元 1 點、無條件捨去（1,562 元 → 15 點），付款成功後才入帳</td>
+</tr>
+<tr>
+<td>點數折抵（進階 A6）</td>
+<td>1 點折 1 元，最多折到 0 元</td>
+</tr>
+<tr>
+<td>折抵順序（進階 A6）</td>
+<td>先扣優惠券（一次最多一張）→ 再用點數；券與點數可以同一次一起用</td>
 </tr>
 <tr>
 <td>模擬付款成功率（進階 A5）</td>

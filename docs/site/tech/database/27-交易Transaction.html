@@ -187,27 +187,35 @@ pre.mermaid svg{max-width:100%;height:auto}
 <p>如果第 1 步做完、第 2 步的時候系統當機——<strong>那 1000 元就人間蒸發了</strong>。</p>
 <p>交易的意思是：把這兩步綁在一起。中間出任何問題，第 1 步也要<strong>倒回去</strong>，當作什麼都沒發生。</p>
 <h2 id="我們專案最重要的交易送出點餐">我們專案最重要的交易：送出點餐</h2>
-<p>送出一張點餐單，後端要做這些事：</p>
+<p>我們的購物車存在後端、整桌共用。客人按「送出整桌點餐」時<strong>不帶品項</strong>，後端直接把這桌的購物車變成一張點餐單，要做這些事：</p>
 <pre><code>① 鎖住這桌的 dining_session（SELECT ... FOR UPDATE），確認狀態還是 OPEN
-② 檢查每個品項的必選選項有沒有選齊
-③ 檢查鍋底（本桌還沒有鍋底時，這張單一定要有）
-④ 逐項扣庫存
-⑤ 建立 order_ticket
-⑥ 建立每一筆 order_item
-⑦ 建立每一筆 order_item_option
-⑧ 更新 dining_session 的小計
-⑨ 推 WebSocket 通知廚房
+② 讀出整桌的 cart_item（同桌每個人加的都在裡面）；是空的 → 409 CART_EMPTY
+③ 檢查每個品項的必選選項有沒有選齊
+④ 檢查鍋底（本桌還沒有鍋底時，這張單一定要有）
+⑤ 逐項扣庫存
+⑥ 建立 order_ticket（記下是誰按送出的：submitted_by_guest_id）
+⑦ 建立每一筆 order_item（名稱、價格用菜單現況重新快照）
+⑧ 建立每一筆 order_item_option
+⑨ 刪掉這些 cart_item（購物車清空）
+⑩ 更新 dining_session 的小計
+—— 交易提交 ——
+⑪ 推 WebSocket 通知廚房和同桌手機
 </code></pre>
-<p>如果第 ④ 步扣到第三個品項時發現庫存不夠——<strong>前兩個品項的庫存已經扣掉了</strong>。</p>
+<p>如果第 ⑤ 步扣到第三個品項時發現庫存不夠——<strong>前兩個品項的庫存已經扣掉了</strong>。</p>
 <p>沒有交易的話：庫存憑空少了兩份，但訂單沒成立。<strong>資料就錯了，而且沒人會發現。</strong></p>
-<p>有交易的話：整個回滾，庫存回到原來的數字，回前端 409。<strong>乾淨。</strong></p>
+<p>有交易的話：整個回滾，庫存回到原來的數字，購物車也原封不動，回前端 409。<strong>乾淨。</strong></p>
+<p>購物車也是同一個道理：清購物車（⑨）跟寫單（⑥～⑧）綁在同一個交易裡，才不會出現
+「單寫進去了、購物車還在」（客人再按一次就重複點）或「購物車清掉了、單卻沒成立」（客人點的東西憑空消失）。
+同桌兩個人同時按送出會怎樣，見 <a href="../../tech/database/28-鎖與併發.html">鎖與併發</a>。</p>
+<p><strong>結清也是同一個道理。</strong> 櫃檯結清（或進階 A5 線上付款成功）時，「用餐轉 <code>PAID</code>、桌位轉待清理、寫付款紀錄」之外，
+<strong>同一個交易裡還要刪掉整桌還沒送出的 <code>cart_item</code></strong>——沒送出的東西不算錢，直接捨棄，不留孤兒資料。</p>
 <h2 id="怎麼用">怎麼用</h2>
 <pre><code class="language-java">@Service
 @RequiredArgsConstructor
 public class OrderService {
 
     @Transactional                    // ← 就這一行
-    public OrderTicketDto submitOrder(String token, SubmitOrderRequest req) {
+    public OrderTicketDto submitOrder(String token, String deviceId) {
         // 這個方法裡的所有資料庫操作，要嘛全部成功，要嘛全部回滾
     }
 }

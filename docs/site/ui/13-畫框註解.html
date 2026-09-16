@@ -229,16 +229,15 @@ pre.mermaid svg{max-width:100%;height:auto}
 <ul>
 <li>固定頂欄：桌號、人數、入座時間，右上角一顆服務鈴</li>
 <li>搜尋列、分類頁籤固定在頂部，捲動時自動高亮目前分類</li>
-<li>品項列左圖右文，高度至少 96px、照片 80×80、圓角 12px</li>
-<li>無選項的品項按 <code>+</code> 直接加入購物車；有必選選項的點整列進 C-05</li>
-<li>底部購物車列有東西才出現</li>
+<li>品項列左圖右文，高 ≥ 96px、照片 80×80；無選項按 <code>+</code> 直接加入，有必選的點整列進 C-05</li>
+<li>「本店人氣 TOP 5」、「推薦」頁籤、「人氣」膠囊是進階 A7；不做就一起拿掉</li>
+<li>底部購物車列是整桌共用那份的項數與金額，有東西才出現</li>
 </ul>
 <p><strong>注意</strong></p>
 <ul>
-<li>售完要照片灰階＋價格劃線＋「售完」文字標籤，不能只靠變灰</li>
-<li>售完是庫存扣減算出來的，那段是基礎；進階拿掉的只有 S-09 那一頁</li>
+<li>售完要照片灰階＋價格劃線＋「售完」文字標籤；售完是庫存扣減算出來的，屬於基礎</li>
 <li>鍋底只是分類之一，「每桌至少一份」改在送單時擋（<code>400 SOUP_BASE_REQUIRED</code>）</li>
-<li>服務鈴不掛紅點——要講同桌動態就用通知條，直接說清楚誰做了什麼</li>
+<li>服務鈴不掛紅點——同桌動態用通知條，直接說清楚誰做了什麼</li>
 </ul>
 <h2 id="c-04載入中">C-04｜載入中</h2>
 <blockquote>
@@ -284,20 +283,20 @@ pre.mermaid svg{max-width:100%;height:auto}
 </ul>
 <h2 id="c-04已結帳">C-04｜已結帳</h2>
 <blockquote>
-<p>櫃檯結清後整桌收到 SESSION_CLOSED</p>
+<p>櫃檯結清後整桌收到 SESSION_CLOSED（reason = PAID）</p>
 </blockquote>
 <p><strong>規格</strong></p>
 <ul>
-<li>櫃檯在 S-03 標記已結清（或進階 A5 線上付款成功）後，整桌手機一起切到這個狀態</li>
-<li>菜單內容整個變暗、分類頁籤停用</li>
-<li>底部面板：「這桌已經結帳完成」／「謝謝光臨，歡迎再來」</li>
-<li>按鈕「回到首頁」→ C-00</li>
+<li>櫃檯在 S-03 結帳完成（或進階 A5 線上付款成功）後，整桌手機一起切到這個狀態</li>
+<li>菜單變暗、分類頁籤停用、底部購物車列消失</li>
+<li>底部面板「這桌已經結帳完成」／「謝謝光臨，歡迎再來」＋「回到首頁」→ C-00</li>
 <li>收到 <code>SESSION_CLOSED</code> 就清掉權杖；之後打 API 拿到 401 也是清權杖、回 C-00</li>
 </ul>
 <p><strong>注意</strong></p>
 <ul>
+<li>只有 <code>reason = PAID</code> 才顯示；<code>CANCELLED</code>（店長取消該次用餐）不顯示面板，直接回 C-00</li>
 <li>沒有「結帳中」狀態，也沒有「請服務生取消結帳」——沒有鎖定就沒有解鎖</li>
-<li>結清前同桌照樣可以加點；金額變了，結清時用 <code>expectedTotal</code> 比對擋下（<code>409 BILL_CHANGED</code>）</li>
+<li>結清前同桌照樣可以加點（金額變了回 <code>409 BILL_CHANGED</code>）；沒送出的購物車結清時捨棄</li>
 <li>跟結清撞在一起送出的點餐拿到 <code>409 SESSION_CLOSED</code>，前端一樣切到這個畫面</li>
 </ul>
 <h2 id="c-04b同桌通知有人加購物車">C-04b｜同桌通知・有人加購物車</h2>
@@ -307,11 +306,14 @@ pre.mermaid svg{max-width:100%;height:auto}
 <p><strong>規格</strong></p>
 <ul>
 <li>通知條從上方滑下、蓋在 appbar 上，停 4 秒自己收回</li>
-<li>內容寫清楚是誰加了什麼</li>
+<li>收到 <code>CART_UPDATED</code>（<code>action = ADDED</code>）才跳：標題「陳小美 加了一樣東西」、說明品項與數量</li>
+<li>「誰」是同桌的顯示名稱：會員用暱稱，沒登入依加入順序叫「客人 1」「客人 2」</li>
+<li>自己加的不跳：事件的 <code>byGuestId</code> 跟這支手機的 guest id 相同，只更新角標</li>
 </ul>
 <p><strong>注意</strong></p>
 <ul>
 <li>不用客人關掉；後來的蓋掉前一則，不堆疊</li>
+<li>改數量、刪除（<code>UPDATED</code>／<code>REMOVED</code>）不跳通知，只更新購物車角標</li>
 <li>C-04、C-05、C-06、C-08 共用同一個元件，設計稿只畫這兩張</li>
 </ul>
 <h2 id="c-04c同桌通知有人送出訂單">C-04c｜同桌通知・有人送出訂單</h2>
@@ -320,7 +322,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 </blockquote>
 <p><strong>規格</strong></p>
 <ul>
-<li>內容換成第幾單、幾項、多少錢</li>
+<li>收到 <code>NEW_TICKET</code>（帶 <code>byGuest</code>、<code>byGuestId</code>）才跳：第幾單、誰送的、幾項、多少錢</li>
 <li>左側圓形頭像換成綠色（<code>success</code>），跟加購物車的紅色分開</li>
 <li>跟 C-04b 同一個元件：從上方滑下、停 4 秒自己收回</li>
 <li>出現在 C-04、C-05、C-06、C-08</li>
@@ -328,7 +330,8 @@ pre.mermaid svg{max-width:100%;height:auto}
 <p><strong>注意</strong></p>
 <ul>
 <li>整桌結清（<code>SESSION_CLOSED</code>）之後不再出現；C-09 付款頁（進階 A5）也不放</li>
-<li>共鍋是好幾支手機同時點，別人做了什麼不能只靠自己去翻購物車</li>
+<li>購物車是整桌一份，任何一支手機送出就是整桌送出，所以要讓其他人知道</li>
+<li>「N 項」是這張單的品項列數；自己送出的不跳，櫃檯代客加點顯示「櫃檯 送出 N 項」</li>
 </ul>
 <h2 id="c-05品項詳情與選項">C-05｜品項詳情與選項</h2>
 <blockquote>
@@ -349,16 +352,20 @@ pre.mermaid svg{max-width:100%;height:auto}
 </ul>
 <h2 id="c-06購物車">C-06｜購物車</h2>
 <blockquote>
-<p><code>/order/cart</code> ・6 項・NT$ 1,420</p>
+<p><code>/order/cart</code> ・整桌共用・6 項・NT$ 1,420</p>
 </blockquote>
 <p><strong>規格</strong></p>
 <ul>
-<li>每列：品項名、已選選項（小字灰色）、備註、數量步進器、小計</li>
-<li>底部合計＋主按鈕「送出點餐」</li>
+<li>頂部一句「這是整桌共用的購物車」；內容存在後端，收到 <code>CART_UPDATED</code> 就重抓</li>
+<li>每列：品項名、下方小字「陳小美 加的」、已選選項、備註、數量步進器、小計</li>
+<li>誰加的都可以改數量、備註或刪除</li>
+<li>底部合計＋主按鈕「送出整桌點餐」；送出不帶品項，後端把整份轉成一張單</li>
 </ul>
 <p><strong>注意</strong></p>
 <ul>
 <li>左滑刪除一定要配一顆看得見的刪除鈕——長輩不會左滑</li>
+<li>同桌剛好先送出：<code>409 CART_EMPTY</code>「購物車是空的，可能同桌已經送出了」，重抓即可</li>
+<li>結清時沒送出的品項直接捨棄；收到 <code>SESSION_CLOSED</code>（PAID）就切到 C-04 已結帳</li>
 <li>空購物車要給「去看看菜單」，不是只顯示 0 項</li>
 </ul>
 <h2 id="c-07送出成功">C-07｜送出成功</h2>
@@ -402,7 +409,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <li>頂部提示「付款成功後這桌就不能再加點」</li>
 <li>品項清單可摺疊；合計字級 32px 粗體；顯示均分每人多少</li>
 <li>登入入口「登入會員，這次消費會記到你的帳戶」→ C-12，小字「不登入也可以直接付款」</li>
-<li>「使用優惠券／點數折抵」整塊是進階 A6；不做 A6 就整塊拿掉</li>
+<li>折抵區是進階 A6：券一次一張、可再加點數，先扣券再扣點數；不做 A6 就整塊拿掉</li>
 <li>主按鈕「前往付款」，畫面上的合計當 <code>expectedTotal</code> 帶進 C-10</li>
 </ul>
 <p><strong>注意</strong></p>
@@ -437,7 +444,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <ul>
 <li>勾勾動畫、交易編號、金額</li>
 <li>「感謝光臨，歡迎再來」</li>
-<li>「本次獲得 N 點」那一行是進階 A6；不做 A6 就不顯示</li>
+<li>「本次獲得 N 點」是進階 A6：按實付金額每滿 100 元 1 點；不做 A6 就不顯示</li>
 <li>同桌其他手機同時收到 <code>SESSION_CLOSED</code>，顯示 C-04 的「已結帳」</li>
 </ul>
 <p><strong>注意</strong></p>
@@ -491,7 +498,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <p><strong>注意</strong></p>
 <ul>
 <li>多一欄就多一批人放棄，所以三欄都不必填，跳過也能完成註冊</li>
-<li>生日只給延伸功能 8.E6 生日優惠用，不顯示在任何地方</li>
+<li>生日用在 8.E6 生日優惠；櫃檯確認會員時會顯示給店員看（S-03），不給其他客人看</li>
 <li>條款不提點數——集點是進階 A6，基礎畫面不出現</li>
 </ul>
 <h2 id="c-14會員中心">C-14｜會員中心</h2>
@@ -585,8 +592,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <li>上半：大勾勾、「訂位完成」、預約編號（大字可複製）、日期時段、人數、桌號</li>
 <li>「加入行事曆」次要按鈕（<code>.ics</code>，進階 7.E8）</li>
 <li>下半一張卡片問「要先點餐嗎？」：先點餐 → C-17／到店再點</li>
-<li>取消政策 infobox；匿名訂位多一行「這支手機記住了你的訂位」</li>
-<li>infobox 裡一行「訂位保留 10 分鐘，逾時視同未到，需現場候位」</li>
+<li>取消政策 infobox 含「訂位保留 10 分鐘，逾時視同未到，需現場候位」；匿名訂位多一行「這支手機記住了你的訂位」</li>
 </ul>
 <p><strong>注意</strong></p>
 <ul>
@@ -602,15 +608,15 @@ pre.mermaid svg{max-width:100%;height:auto}
 <p><strong>規格</strong></p>
 <ul>
 <li>頂部訂位摘要條＋「可修改到 9/20（日）20:00」</li>
-<li>主體完全重用 C-04、C-05、C-06，不另外做一套</li>
+<li>主體重用 C-04、C-05、C-06；購物車只存在這支手機，不走後端的整桌共用購物車</li>
 <li>底部按鈕：第一次「送出預先點餐」；已有內容「更新餐點」＋ ghost「清空預點」</li>
+<li>過了期限直接開網址進來：整頁唯讀＋來電提示</li>
 </ul>
 <p><strong>注意</strong></p>
 <ul>
 <li>進到這一頁就代表客人已經選了要先點，不要再問一次「要先點餐嗎」</li>
 <li>金額一律寫「預估 NT$ 1,340」；送出後不進付款頁，回 C-19 顯示 toast</li>
 <li>鍋底在這裡不強制，「每桌至少一份」是送正式單時才擋</li>
-<li>過了期限直接開網址進來：整頁唯讀＋來電提示</li>
 <li>進階 A2（M7 7.E1～7.E3、M4 4.8）：不做的話 C-18 不問「要先點餐嗎」、C-19 少一顆按鈕</li>
 </ul>
 <h2 id="c-19我的預約">C-19｜我的預約</h2>
@@ -619,16 +625,15 @@ pre.mermaid svg{max-width:100%;height:auto}
 </blockquote>
 <p><strong>規格</strong></p>
 <ul>
-<li>三個頁籤：即將到來／已完成／已取消</li>
+<li>三個頁籤：即將到來／已完成／已取消；逾時未到放已取消，膠囊「逾時未到」＋「需要的話請重新訂位」</li>
 <li>卡片按預點狀態換按鈕：未預點→「預先點餐」、已預點→「調整餐點」、已鎖定→兩顆停用</li>
-<li>取消的二次確認：「沒有款項需要退還，餐點還沒結帳」</li>
+<li>取消的二次確認：「沒有款項需要退還，餐點還沒結帳」；金額一律寫「預估」，不寫「已付」</li>
 <li>即將到來頁籤最上面一行「訂位保留 10 分鐘，逾時視同未到，需現場候位」</li>
 </ul>
 <p><strong>注意</strong></p>
 <ul>
 <li><strong>沒有「改期」這個功能</strong>，要換時間就是取消後重訂，全站文案不要再出現「改期」</li>
 <li>「預先點餐」／「調整餐點」那顆按鈕是進階 A2；不做就只剩「取消訂位」</li>
-<li>金額一律寫「預估」，不寫「已付」</li>
 <li>匿名客人看到的是單筆訂位詳情（靠 localStorage 的 <code>accessToken</code>），不是列表</li>
 </ul>
 <h2 id="c-20點數與優惠券">C-20｜點數與優惠券</h2>
@@ -637,11 +642,10 @@ pre.mermaid svg{max-width:100%;height:auto}
 </blockquote>
 <p><strong>規格</strong></p>
 <ul>
-<li>上方點數餘額卡：大數字＋「每消費 100 元累積 1 點」＋「1 點折 1 元，結帳時使用」</li>
-<li>頁籤「優惠券 3」／「點數紀錄」</li>
-<li>優惠券卡片三種狀態：可使用／已使用／已過期</li>
+<li>上方點數餘額卡：大數字＋「每消費滿 100 元累積 1 點」＋「1 點折 1 元，結帳時使用」</li>
+<li>頁籤「優惠券 3」／「點數紀錄」；券有可使用／已使用／已過期三種狀態</li>
 <li>每張券顯示名稱、折抵方式（固定金額或百分比）、低消、到期日</li>
-<li>一次結帳最多用一張券、不疊加；點數在付款成功後才入帳</li>
+<li>規則「一次結帳最多用一張券，可以再加點數折抵」，先扣券再扣點數；點數按實付每滿 100 元 1 點，付款成功才入帳</li>
 </ul>
 <p><strong>注意</strong></p>
 <ul>
@@ -688,18 +692,17 @@ pre.mermaid svg{max-width:100%;height:auto}
 </blockquote>
 <p><strong>規格</strong></p>
 <ul>
-<li>左側固定側邊欄；主區是桌位色塊網格，每格顯示桌號、人數、已用時間、金額</li>
-<li>三種狀態各自的去向：空桌 → S-02b 開桌、用餐中 → S-03 桌位詳情、待清理 → 跳確認框</li>
-<li>桌態只有這三種，沒有「結帳中」；結清那一刻直接變待清理</li>
-<li>頂部統計列：空桌／用餐中／待清理／待報到預約／候位組數</li>
-<li>右上角服務鈴卡片只有呼叫服務生／加湯／換鍋撈渣，按鈕都是「已處理」</li>
+<li>主區桌位色塊網格：桌號、人數、已用時間、金額</li>
+<li>四種顯示各一個去向：空桌 → S-02b、預約保留 → S-02d、用餐中 → S-03、待清理 → 確認框</li>
+<li>預約保留：訂位前 30 分～後 10 分，配到的空桌顯示暖黃「18:30 陳○君 4 位」</li>
+<li>統計列：空桌／用餐中／待清理／預約保留／待報到預約／候位組數</li>
+<li>頂欄沒有「櫃檯開桌」；服務鈴卡片只有三種呼叫，按鈕都是「已處理」</li>
 </ul>
 <p><strong>注意</strong></p>
 <ul>
-<li><strong>桌位、訂位、候位三套獨立</strong>，唯一接點是開桌成功時把來源轉成已報到</li>
-<li>桌格上不顯示預約，預約資訊在開桌那一刻才出現</li>
-<li>「待報到預約」是系統唯一的全域提醒，點它去 S-07；超過保留 10 分鐘的不算</li>
-<li>顏色之外要有文字標籤；超過 100 分鐘轉紅閃爍；WebSocket 即時更新</li>
+<li>預約保留是查詢時算的，不存桌態；開始與結束沒有事件，所以每 60 秒重抓一次桌況</li>
+<li>優先順序：用餐中 ＞ 待清理 ＞ 預約保留 ＞ 空桌；沒有「結帳中」桌態</li>
+<li>只有進保留窗的桌才在格上顯示預約；顏色之外要有文字標籤；超過 100 分鐘轉紅閃爍</li>
 </ul>
 <h2 id="s-02待清理確認框">S-02｜待清理確認框</h2>
 <blockquote>
@@ -766,10 +769,12 @@ pre.mermaid svg{max-width:100%;height:auto}
 <li>頂部 <code>A06・走道 6 人桌</code>，右上角關閉</li>
 <li>三個頁籤，數字就是提醒：現場／候位 3／預約 2</li>
 <li>現場頁：大人、小孩兩組步進器，底部主按鈕「開桌」</li>
+<li>桌子預約保留中：頂部暖黃條「這張桌保留給 陳怡君 18:30（4 位），要先取消保留才能開給別人」，「開桌」停用</li>
 </ul>
 <p><strong>注意</strong></p>
 <ul>
-<li>預設停在哪一頁：有可報到的預約 → 預約；否則有候位 → 候位；都沒有 → 現場</li>
+<li>預設頁籤：保留中或有可報到的預約 → 預約；否則有候位 → 候位；都沒有 → 現場</li>
+<li>保留中硬送會回 <code>409 TABLE_RESERVED</code>；這個狀態只寫在說明，不另畫畫框</li>
 <li>數字為 0 的頁籤仍然看得到，點進去是空狀態</li>
 <li>不做「先跳三選一對話框、再進設定人數」——兩次點擊換一次分類，不划算</li>
 </ul>
@@ -781,12 +786,13 @@ pre.mermaid svg{max-width:100%;height:auto}
 <ul>
 <li>列出已叫號待報到的組別：號碼、姓名、人數、等了幾分鐘</li>
 <li>每一列自己一顆 primary 小按鈕「開桌」</li>
+<li>桌子預約保留中：頂部同一條暖黃條，每一列的「開桌」停用</li>
 </ul>
 <p><strong>注意</strong></p>
 <ul>
 <li>不要再叫客人填人數，登記時已經填過了，直接帶入</li>
 <li>確認開桌要把 <code>waitlist.status</code> 轉 <code>SEATED</code>，該筆從候位清單消失</li>
-<li>列本身不可點，避免整列誤觸</li>
+<li>列本身不可點，避免整列誤觸；候位不鎖桌，只有線上訂位會</li>
 </ul>
 <h2 id="s-02d開桌預約">S-02d｜開桌・預約</h2>
 <blockquote>
@@ -794,17 +800,17 @@ pre.mermaid svg{max-width:100%;height:auto}
 </blockquote>
 <p><strong>規格</strong></p>
 <ul>
-<li>清單條件：<code>status = CONFIRMED</code>、用餐時間落在現在 −10 ～ +45 分鐘、人數坐得下這張桌</li>
-<li>每列顯示時間、姓名、電話末四碼、人數、預點狀態（「已預先點餐 4 項」或「未預點」）</li>
-<li>每列一顆 primary 小按鈕「開桌」，帶入訂位人數，有預點就轉單扣庫存</li>
-<li>頂部暖黃警示條：這張桌 19:30 有預約，預計用餐到 21:25（只提醒，不擋開桌）</li>
+<li>清單：<code>CONFIRMED</code>、用餐時間在現在 −10 ～ +30 分鐘、人數坐得下這張桌</li>
+<li>每列：時間、姓名、電話末四碼、人數、預點狀態，一顆 primary「開桌」</li>
+<li>保留的那筆置頂標「保留中」＋「取消保留」，二次確認寫明「取消後無法恢復」</li>
+<li>頂部暖黃條：稍後（保留窗外）有預約只提醒，不擋開桌</li>
 </ul>
 <p><strong>注意</strong></p>
 <ul>
-<li><strong>不限定原本配到哪一張桌</strong>；開桌後不改 <code>reservation.table_id</code>，本專題不做換桌</li>
-<li>−10 是訂位保留時間：清單自己看時間，不等 NO_SHOW 排程（最多晚 5 分鐘才標）</li>
-<li>逾時才按開桌 → <code>409 RESERVATION_EXPIRED</code>「已超過保留時間，請改登記候位」</li>
-<li>忘了轉 <code>SEATED</code>，那筆會繼續出現在開桌清單上，10 分鐘後還被標成 NO_SHOW</li>
+<li>不限定原本配到哪一張桌；開桌後不改 <code>reservation.table_id</code></li>
+<li>−10 是保留時間、+30 是最早報到時間；清單自己看時間，不等排程</li>
+<li>取消保留不是取消訂位，客人到了從 S-07b 選別張桌</li>
+<li>逾時才按回 <code>409 RESERVATION_EXPIRED</code>；忘了轉 <code>SEATED</code> 會被標成未到</li>
 </ul>
 <h2 id="s-03桌位詳情">S-03｜桌位詳情</h2>
 <blockquote>
@@ -812,18 +818,35 @@ pre.mermaid svg{max-width:100%;height:auto}
 </blockquote>
 <p><strong>規格</strong></p>
 <ul>
-<li>上半：桌號、人數、已用餐分鐘數、目前金額</li>
-<li>中段：這一桌的點餐紀錄，依單分組，每單顯示送出時間與出餐狀態；「代客加點」</li>
-<li>下半結帳區：小計 → 服務費 10% → 合計，「標記已結清」選現金或模擬支付</li>
-<li>送 settle 帶 <code>method</code> 與 <code>expectedTotal</code>（畫面上的合計），送出中按鈕停用</li>
-<li>成功：用餐轉 <code>PAID</code>、桌位轉待清理、權杖失效，推 <code>SESSION_CLOSED</code> 給同桌手機</li>
+<li>上半桌號、人數、用餐分鐘、金額；中段依單分組的點餐紀錄＋「代客加點」</li>
+<li>結帳區：小計 → 服務費 10% → 合計；三顆付款（現金／信用卡／條碼）點了都跳 S-03b 倒數</li>
+<li>購物車還有東西：暖黃小字「還有 N 項沒送出，結帳後會捨棄」，只提醒不擋</li>
+<li>會員（選填，進階）：手機查詢 →「陳小美・1998/04/21」→「確認是本人」，結帳帶 <code>memberId</code></li>
+<li>「取消該次用餐」僅 MANAGER，沒點過餐才能用：桌直接回空桌，客人手機回首頁</li>
 </ul>
 <p><strong>注意</strong></p>
 <ul>
-<li>客人預設到櫃檯結帳，這是基礎唯一的結帳路徑，不能砍</li>
-<li><code>409 BILL_CHANGED</code>：客人剛好加點，結帳區換成最新金額，確認後再按一次</li>
-<li>「代客加點」要記 <code>source = STAFF</code>，報表才分得出來</li>
-<li>「取消該次用餐」僅 MANAGER：客人沒消費就走，桌位直接回空桌</li>
+<li>基礎唯一的結帳路徑；<code>BILL_CHANGED</code> 刷新金額再選</li>
+<li>生日是個資，只在查詢結果顯示、不寫進紀錄；沒填顯示「未提供」</li>
+<li>代客加點直接送單、不經購物車（<code>STAFF</code>）；點過餐的桌取消回 <code>SESSION_HAS_ORDERS</code></li>
+</ul>
+<h2 id="s-03b櫃檯結帳付款倒數">S-03b｜櫃檯結帳・付款倒數</h2>
+<blockquote>
+<p>對話框，不是獨立路由・疊在壓暗的 S-03 上</p>
+</blockquote>
+<p><strong>規格</strong></p>
+<ul>
+<li>標題依方式：現金「收款中，請把現金放進收銀機」、信用卡「信用卡付款中」、條碼「條碼付款中」</li>
+<li>三種都是大數字倒數 5 → 0，每秒一格；下方金額「NT$ 1,562」，小字「本系統為教學專題，付款為模擬流程」</li>
+<li>ghost「取消」：倒數中隨時可取消，什麼都不送</li>
+<li>倒數到 0 才送 settle；成功換成勾勾「結帳完成」，約 1.5 秒自動關閉回 S-02</li>
+<li><code>409 BILL_CHANGED</code>：關閉對話框、帳單刷新，提示「剛剛有人加點，金額更新了」</li>
+</ul>
+<p><strong>注意</strong></p>
+<ul>
+<li>倒數是讓櫃檯按錯付款方式還來得及反悔，送出中「取消」停用</li>
+<li>櫃檯結帳不做失敗機率；線上 A5 的 95% 成功率照舊</li>
+<li>模擬付款，不串刷卡機或掃碼槍；結帳完成不用按按鈕</li>
 </ul>
 <h2 id="s-04出菜看板-kds">S-04｜出菜看板 KDS</h2>
 <blockquote>
@@ -879,17 +902,17 @@ pre.mermaid svg{max-width:100%;height:auto}
 </blockquote>
 <p><strong>規格</strong></p>
 <ul>
-<li>今日預約清單：時段、姓名、電話、人數、配桌、預先點餐、狀態、操作</li>
-<li>已確認的列按「報到開桌」→ S-07b 選一張空桌</li>
+<li>清單：時段、姓名、電話、人數、配桌、預點、狀態</li>
+<li>「報到開桌」只在用餐前 30 分～後 10 分出現 → S-07b；更早是灰字「18:15 起可報到」</li>
+<li>配到的桌保留中：小字「保留 A08」＋ ghost「取消保留」（無法恢復）；取消後改「已取消保留」</li>
 <li>過了用餐時間 10 分鐘：膠囊「逾時未到」，沒有報到鈕，改 ghost「登記候位」</li>
-<li>兩支排程：NO_SHOW（每 5 分鐘，過時 10 分未報到）、用餐前 2 小時提醒（模擬簡訊）</li>
+<li>兩支排程：NO_SHOW（每 5 分鐘）、用餐前 2 小時提醒，都要有手動觸發 API</li>
 </ul>
 <p><strong>注意</strong></p>
 <ul>
-<li>兩支排程都要有手動觸發 API，demo 時不用等到時間才看得到效果</li>
-<li>報到開桌才轉單、這時候才扣庫存；扣不到的回 soldOut 清單，預點價格照快照</li>
-<li>逾時的列自己看時間，不等排程；有預點的 NO_SHOW 不轉單、不用回補庫存</li>
-<li>標成 NO_SHOW 桌位不用動——桌位本來就沒被鎖，只是不再出現在開桌清單</li>
+<li>頂欄沒有「電話代訂」；報到開桌才轉單、才扣庫存，扣不到的回 soldOut</li>
+<li>太早硬送回 <code>409 RESERVATION_TOO_EARLY</code>；逾時的列自己看時間，不等排程</li>
+<li>標成 NO_SHOW 桌位不用動——保留是算出來的，過了 +10 分鐘自己消失</li>
 </ul>
 <h2 id="s-07b預約報到選桌開桌">S-07b｜預約報到・選桌開桌</h2>
 <blockquote>
@@ -898,17 +921,16 @@ pre.mermaid svg{max-width:100%;height:auto}
 <p><strong>規格</strong></p>
 <ul>
 <li>標題「陳怡君・4 位」，副標「列出座位數坐得下的空桌」</li>
-<li>只列 <code>AVAILABLE</code> 且座位數 ≥ 人數的桌，依座位數由小到大、再依桌號排</li>
+<li>第一張「A08・原保留桌」；其餘依座位數由小到大、再依桌號</li>
+<li>只列空桌且座位數 ≥ 人數，保留給別筆訂位的桌不列</li>
 <li>每張卡片：桌號、區域、座位數；稍後有預約就用暖黃小字「19:30 有預約」</li>
-<li>選一張 → 底部主按鈕「開 A05」＋ ghost「取消」</li>
-<li>清單 <code>GET /api/admin/tables/available</code>，送出 <code>reservations/{id}/seat</code> 帶 <code>tableId</code></li>
+<li>選一張 → 主按鈕「開＋桌號」＋ ghost「取消」</li>
 </ul>
 <p><strong>注意</strong></p>
 <ul>
-<li>跟 S-10b 共用同一個元件、後端同一組 API；收尾跟 S-02d 完全一樣</li>
-<li>沒有坐得下的空桌：「目前沒有坐得下的空桌」＋「清潔完成或有桌結帳後再試一次」＋關閉</li>
-<li>兩個櫃檯搶同一桌，後到的拿 <code>409 TABLE_OCCUPIED</code>，對話框重新載入清單</li>
-<li>「有預約」只提醒不擋；超過保留時間才按會回 <code>409 RESERVATION_EXPIRED</code></li>
+<li>跟 S-10b 共用元件、同一組 API；清單 <code>tables/available</code> 多帶 <code>reservationId</code></li>
+<li>沒有坐得下的空桌：「目前沒有坐得下的空桌」＋關閉</li>
+<li>搶桌回 <code>TABLE_OCCUPIED</code>、撞到保留回 <code>TABLE_RESERVED</code>：重新載入清單</li>
 </ul>
 <h2 id="s-08座位管理">S-08｜座位管理</h2>
 <blockquote>
@@ -967,7 +989,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <p><strong>規格</strong></p>
 <ul>
 <li>標題「A12 王先生・3 位」，副標「列出座位數坐得下的空桌」</li>
-<li>清單規則跟 S-07b 一樣：空桌、座位數 ≥ 人數，座位數小的排前面</li>
+<li>清單規則跟 S-07b 一樣：空桌、座位數 ≥ 人數、排除預約保留中的桌，小桌排前面</li>
 <li>每張卡片：桌號、區域、座位數；稍後有預約就用暖黃小字提醒</li>
 <li>選一張 → 主按鈕「開 A05」＋ ghost「取消」</li>
 <li>送 <code>POST /api/admin/waitlist/{id}/seat</code> 帶 <code>tableId</code>，成功後候位轉 <code>SEATED</code></li>
@@ -976,7 +998,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <ul>
 <li>跟 S-07b 同一個元件，只差標題與資料來源；收尾跟 S-02c 完全一樣</li>
 <li>沒有坐得下的空桌就顯示空狀態＋「關閉」，不要讓人對著空白清單</li>
-<li>兩個櫃檯搶同一桌 → <code>409 TABLE_OCCUPIED</code>，對話框重新載入清單</li>
+<li>搶桌回 <code>TABLE_OCCUPIED</code>、撞到保留回 <code>TABLE_RESERVED</code>：重新載入清單</li>
 </ul>
 <h2 id="s-11服務鈴通知面板">S-11｜服務鈴通知面板</h2>
 <blockquote>
@@ -1038,7 +1060,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <p><strong>注意</strong></p>
 <ul>
 <li>一個畫面只會有一個 primary</li>
-<li>主要按鈕高度 ≥ 52px、可點擊區 ≥ 48×48px</li>
+<li>主要按鈕高度 ≥ 52px、可點擊區 ≥ 44×44px</li>
 <li>danger 只給不可逆的動作，取消訂位那種；不要拿來當強調色用</li>
 </ul>
 <h2 id="ds-03輸入元件">DS-03｜輸入元件</h2>
@@ -1051,7 +1073,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 </ul>
 <p><strong>注意</strong></p>
 <ul>
-<li>步進器是低於 48×48 的<strong>刻意例外</strong>（28×28），其他元件不准比照辦理</li>
+<li>步進器是低於 44×44 的<strong>刻意例外</strong>（28×28），其他元件不准比照辦理</li>
 <li>錯誤態一定要有文字說明，不能只有一個紅框</li>
 <li>輸入框內文 ≥ 16px，小於這個數字 iOS 會自己放大整頁</li>
 </ul>
@@ -1122,22 +1144,22 @@ pre.mermaid svg{max-width:100%;height:auto}
 </ul>
 <h2 id="ds-08店家端元件">DS-08｜店家端元件</h2>
 <blockquote>
-<p>1280 × 1200 ・桌況三色與 KDS 卡片狀態</p>
+<p>1280 × 1200 ・桌況四色與 KDS 卡片狀態</p>
 </blockquote>
 <p><strong>規格</strong></p>
 <ul>
-<li>桌位磚三種桌況（空桌／用餐中／待清理）＋超時態</li>
-<li>統計條、服務鈴通知卡、出菜看板卡</li>
+<li>桌位磚四種顯示（空桌／用餐中／待清理／預約保留）＋超時態</li>
+<li>統計條（數字旁有同色小方塊當圖例）、服務鈴通知卡、出菜看板卡</li>
 </ul>
 <p><strong>注意</strong></p>
 <ul>
 <li>超過 100 分鐘自動轉紅框；顏色之外一定有文字標籤</li>
 <li>出菜看板卡是全站唯一的深色介面，色票另外一組</li>
-<li>手動「保留」（<code>--table-held</code>）是延伸功能 M2 的 2.E5，基礎不畫</li>
+<li>手動「保留」（<code>--table-held</code> 實心黃）是延伸 2.E5，基礎不畫；預約保留是淺黃底＋黃框，別混用</li>
 <li>服務鈴通知卡只有三種呼叫，按鈕都是「已處理」，沒有「去結帳」</li>
 </ul><div class="pager"><a href="../ui/12-AI-UI工具與提示詞.html"><div class="k">← 上一篇</div><div class="n">12 AI UI 工具與提示詞</div></a><a class="next" href="../tech/00-技術總表.html"><div class="k">下一篇 →</div><div class="n">00 技術總表</div></a></div>
 </article>
-<aside class="toc"><div class="tt">本頁目錄</div><a href="#c-00入口頁">C-00｜入口頁</a><a href="#c-01掃碼進入">C-01｜掃碼進入</a><a href="#c-04菜單主頁">C-04｜菜單主頁</a><a href="#c-04載入中">C-04｜載入中</a><a href="#c-04空資料">C-04｜空資料</a><a href="#c-04錯誤">C-04｜錯誤</a><a href="#c-04已結帳">C-04｜已結帳</a><a href="#c-04b同桌通知有人加購物車">C-04b｜同桌通知・有人加購物車</a><a href="#c-04c同桌通知有人送出訂單">C-04c｜同桌通知・有人送出訂單</a><a href="#c-05品項詳情與選項">C-05｜品項詳情與選項</a><a href="#c-06購物車">C-06｜購物車</a><a href="#c-07送出成功">C-07｜送出成功</a><a href="#c-08本桌訂單與出菜進度">C-08｜本桌訂單與出菜進度</a><a href="#c-09結帳明細">C-09｜結帳明細</a><a href="#c-10付款方式選擇">C-10｜付款方式選擇</a><a href="#c-11付款完成">C-11｜付款完成</a><a href="#c-12會員登入註冊">C-12｜會員登入／註冊</a><a href="#c-12b輸入驗證碼">C-12b｜輸入驗證碼</a><a href="#c-13會員註冊補資料">C-13｜會員註冊補資料</a><a href="#c-14會員中心">C-14｜會員中心</a><a href="#c-15消費紀錄">C-15｜消費紀錄</a><a href="#c-16線上訂位入口">C-16｜線上訂位入口</a><a href="#c-16b匿名訂位填資料">C-16b｜匿名訂位填資料</a><a href="#c-16c選日期時段人數">C-16c｜選日期時段人數</a><a href="#c-18訂位完成">C-18｜訂位完成</a><a href="#c-17預先點餐調整餐點">C-17｜預先點餐／調整餐點</a><a href="#c-19我的預約">C-19｜我的預約</a><a href="#c-20點數與優惠券">C-20｜點數與優惠券</a><a href="#c-21服務鈴面板">C-21｜服務鈴面板</a><a href="#s-01員工登入">S-01｜員工登入</a><a href="#s-02桌況總覽">S-02｜桌況總覽</a><a href="#s-02待清理確認框">S-02｜待清理確認框</a><a href="#s-02載入中">S-02｜載入中</a><a href="#s-02空資料">S-02｜空資料</a><a href="#s-02錯誤">S-02｜錯誤</a><a href="#s-02b開桌現場">S-02b｜開桌・現場</a><a href="#s-02c開桌候位">S-02c｜開桌・候位</a><a href="#s-02d開桌預約">S-02d｜開桌・預約</a><a href="#s-03桌位詳情">S-03｜桌位詳情</a><a href="#s-04出菜看板-kds">S-04｜出菜看板 KDS</a><a href="#s-05菜單管理">S-05｜菜單管理</a><a href="#s-06選項群組管理">S-06｜選項群組管理</a><a href="#s-07預約管理">S-07｜預約管理</a><a href="#s-07b預約報到選桌開桌">S-07b｜預約報到・選桌開桌</a><a href="#s-08座位管理">S-08｜座位管理</a><a href="#s-09庫存管理">S-09｜庫存管理</a><a href="#s-10候位管理">S-10｜候位管理</a><a href="#s-10b候位報到選桌開桌">S-10b｜候位報到・選桌開桌</a><a href="#s-11服務鈴通知面板">S-11｜服務鈴通知面板</a><a href="#s-12報表">S-12｜報表</a><a href="#ds-01色彩與字級">DS-01｜色彩與字級</a><a href="#ds-02按鈕">DS-02｜按鈕</a><a href="#ds-03輸入元件">DS-03｜輸入元件</a><a href="#ds-04選擇元件">DS-04｜選擇元件</a><a href="#ds-05標籤與容器">DS-05｜標籤與容器</a><a href="#ds-06品項列與通知">DS-06｜品項列與通知</a><a href="#ds-07三態與回饋">DS-07｜三態與回饋</a><a href="#ds-08店家端元件">DS-08｜店家端元件</a></aside>
+<aside class="toc"><div class="tt">本頁目錄</div><a href="#c-00入口頁">C-00｜入口頁</a><a href="#c-01掃碼進入">C-01｜掃碼進入</a><a href="#c-04菜單主頁">C-04｜菜單主頁</a><a href="#c-04載入中">C-04｜載入中</a><a href="#c-04空資料">C-04｜空資料</a><a href="#c-04錯誤">C-04｜錯誤</a><a href="#c-04已結帳">C-04｜已結帳</a><a href="#c-04b同桌通知有人加購物車">C-04b｜同桌通知・有人加購物車</a><a href="#c-04c同桌通知有人送出訂單">C-04c｜同桌通知・有人送出訂單</a><a href="#c-05品項詳情與選項">C-05｜品項詳情與選項</a><a href="#c-06購物車">C-06｜購物車</a><a href="#c-07送出成功">C-07｜送出成功</a><a href="#c-08本桌訂單與出菜進度">C-08｜本桌訂單與出菜進度</a><a href="#c-09結帳明細">C-09｜結帳明細</a><a href="#c-10付款方式選擇">C-10｜付款方式選擇</a><a href="#c-11付款完成">C-11｜付款完成</a><a href="#c-12會員登入註冊">C-12｜會員登入／註冊</a><a href="#c-12b輸入驗證碼">C-12b｜輸入驗證碼</a><a href="#c-13會員註冊補資料">C-13｜會員註冊補資料</a><a href="#c-14會員中心">C-14｜會員中心</a><a href="#c-15消費紀錄">C-15｜消費紀錄</a><a href="#c-16線上訂位入口">C-16｜線上訂位入口</a><a href="#c-16b匿名訂位填資料">C-16b｜匿名訂位填資料</a><a href="#c-16c選日期時段人數">C-16c｜選日期時段人數</a><a href="#c-18訂位完成">C-18｜訂位完成</a><a href="#c-17預先點餐調整餐點">C-17｜預先點餐／調整餐點</a><a href="#c-19我的預約">C-19｜我的預約</a><a href="#c-20點數與優惠券">C-20｜點數與優惠券</a><a href="#c-21服務鈴面板">C-21｜服務鈴面板</a><a href="#s-01員工登入">S-01｜員工登入</a><a href="#s-02桌況總覽">S-02｜桌況總覽</a><a href="#s-02待清理確認框">S-02｜待清理確認框</a><a href="#s-02載入中">S-02｜載入中</a><a href="#s-02空資料">S-02｜空資料</a><a href="#s-02錯誤">S-02｜錯誤</a><a href="#s-02b開桌現場">S-02b｜開桌・現場</a><a href="#s-02c開桌候位">S-02c｜開桌・候位</a><a href="#s-02d開桌預約">S-02d｜開桌・預約</a><a href="#s-03桌位詳情">S-03｜桌位詳情</a><a href="#s-03b櫃檯結帳付款倒數">S-03b｜櫃檯結帳・付款倒數</a><a href="#s-04出菜看板-kds">S-04｜出菜看板 KDS</a><a href="#s-05菜單管理">S-05｜菜單管理</a><a href="#s-06選項群組管理">S-06｜選項群組管理</a><a href="#s-07預約管理">S-07｜預約管理</a><a href="#s-07b預約報到選桌開桌">S-07b｜預約報到・選桌開桌</a><a href="#s-08座位管理">S-08｜座位管理</a><a href="#s-09庫存管理">S-09｜庫存管理</a><a href="#s-10候位管理">S-10｜候位管理</a><a href="#s-10b候位報到選桌開桌">S-10b｜候位報到・選桌開桌</a><a href="#s-11服務鈴通知面板">S-11｜服務鈴通知面板</a><a href="#s-12報表">S-12｜報表</a><a href="#ds-01色彩與字級">DS-01｜色彩與字級</a><a href="#ds-02按鈕">DS-02｜按鈕</a><a href="#ds-03輸入元件">DS-03｜輸入元件</a><a href="#ds-04選擇元件">DS-04｜選擇元件</a><a href="#ds-05標籤與容器">DS-05｜標籤與容器</a><a href="#ds-06品項列與通知">DS-06｜品項列與通知</a><a href="#ds-07三態與回饋">DS-07｜三態與回饋</a><a href="#ds-08店家端元件">DS-08｜店家端元件</a></aside>
 </div></div>
 </div>
 <script src="../vendor/mermaid.min.js"></script>

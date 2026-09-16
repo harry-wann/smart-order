@@ -177,14 +177,14 @@ pre.mermaid svg{max-width:100%;height:auto}
 <h1 id="模組-2桌位開桌與候位">模組 2：桌位、開桌與候位</h1>
 <p><strong>難易度</strong> ★★★☆☆　<strong>里程碑</strong> 第 2 週開桌、第 3 週桌況、第 4 週候位</p>
 <h2 id="這個模組在做什麼">這個模組在做什麼</h2>
-<p>管理「客人坐在哪」。桌位主檔、桌上那張永遠不變的 QR code、櫃檯開桌、桌況總覽、還有尖峰時的現場候位。</p>
+<p>管理「客人坐在哪」。桌位主檔、桌上那張永遠不變的 QR code、開桌、桌況總覽、還有尖峰時的現場候位。</p>
 <p><strong>這個模組決定了系統的定位</strong>：QR code 固定貼在桌上，但<strong>櫃檯控制要不要開桌</strong>。客人掃了碼，如果櫃檯還沒開桌，他只會看到「請洽櫃檯帶位」。</p>
 <p>這就是「半輔助工具」的具體樣貌——<strong>櫃檯仍然是主導者，系統是延伸。</strong></p>
 <h2 id="難易度為什麼是三顆星">難易度為什麼是三顆星</h2>
 <p>單純的桌位 CRUD 只有一顆星。難的是兩件事：</p>
 <ol>
 <li><strong>開桌的併發控制</strong>——兩支手機同時對同一張桌開桌，會產生兩張帳單</li>
-<li><strong>狀態機</strong>——桌位有三種狀態，什麼時候該轉到什麼狀態，規則要想清楚</li>
+<li><strong>狀態機</strong>——桌位有三種狀態，什麼時候該轉到什麼狀態，規則要想清楚；再加上一個<strong>算出來的</strong>「預約保留」，不能存成第四種狀態（問題 5）</li>
 </ol>
 <h2 id="基礎必做功能">基礎必做功能</h2>
 <div class="tablewrap"><table>
@@ -223,14 +223,14 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td>2.5</td>
-<td>櫃檯開桌</td>
-<td><strong>三種來源</strong>（現場填人數／候位／預約）同一頁三頁籤，建立 <code>dining_session</code></td>
+<td>開桌</td>
+<td><strong>三種來源</strong>（現場填人數／候位／預約）同一頁三頁籤，建立 <code>dining_session</code>；目標桌預約保留中 → <code>409 TABLE_RESERVED</code>（預約報到開自己的保留桌除外）</td>
 <td>☐</td>
 </tr>
 <tr>
 <td>2.5b</td>
 <td>開桌來源清單</td>
-<td>查這張桌現在可報到的候位與預約，數字顯示在頁籤上</td>
+<td>查這張桌現在可報到的候位與預約，數字顯示在頁籤上；這張桌保留中時多回 <code>heldFor</code>，現場／候位頁籤頂部顯示暖黃條「這張桌保留給 陳怡君 18:30（4 位），要先取消保留才能開給別人」並停用開桌，預約頁籤把這筆置頂</td>
 <td>☐</td>
 </tr>
 <tr>
@@ -242,13 +242,13 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td>2.5d</td>
 <td><strong>從人出發開桌</strong></td>
-<td>S-07 預約管理、S-10 候位管理每列的「報到開桌」→ 對話框（S-07b／S-10b）列出 <code>AVAILABLE</code> 且座位數坐得下的空桌，選一張直接開桌，人數自動帶入。<code>GET /api/admin/tables/available?partySize=</code></td>
+<td>S-07 預約管理、S-10 候位管理每列的「報到開桌」→ 對話框（S-07b／S-10b）列出 <code>AVAILABLE</code> 且座位數坐得下的空桌（<strong>排除保留中的桌</strong>；從預約報到時自己的保留桌排第一、標「原保留桌」），選一張直接開桌，人數自動帶入。<code>GET /api/admin/tables/available?partySize=</code></td>
 <td>☐</td>
 </tr>
 <tr>
 <td>2.6</td>
 <td>顧客加入</td>
-<td>掃碼取得用餐權杖，存進 <code>localStorage</code></td>
+<td>掃碼取得用餐權杖，存進 <code>localStorage</code>；同時帶 <code>X-Device-Id</code>（前端產生的 UUID）取得同桌身分 <code>guest</code>（會員暱稱或「客人 1」），給共用購物車標示誰加的</td>
 <td>☐</td>
 </tr>
 <tr>
@@ -266,7 +266,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td>2.8</td>
 <td>桌況總覽</td>
-<td>三色網格 + 文字標籤，三種狀態各自的點擊去向正確，<a class="gloss" href="../../tech/realtime/41-WebSocket與STOMP.html" title="看這個技術的白話說明">WebSocket</a> 即時更新</td>
+<td><strong>四色</strong>網格 + 文字標籤（空桌／用餐中／待清理／<strong>預約保留</strong>；預約保留是算出來的 <code>displayStatus</code>，見問題 5 與 M7 7.10），格內顯示「18:30 陳○君 4 位」；統計列加「預約保留 N」；點保留中的桌 → 開桌頁預約頁籤、這筆置頂（「報到開桌」「取消保留」）；各狀態點擊去向正確，<a class="gloss" href="../../tech/realtime/41-WebSocket與STOMP.html" title="看這個技術的白話說明">WebSocket</a> 即時更新＋每 60 秒重抓</td>
 <td>☐</td>
 </tr>
 <tr>
@@ -302,7 +302,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td>2.14</td>
 <td>取消該次用餐</td>
-<td>客人未消費就離開，櫃檯可取消</td>
+<td>客人沒點餐就離開，<strong>店長</strong>在 S-03 按取消（<code>POST /api/admin/dining-sessions/{id}/cancel</code>）→ session <code>CANCELLED</code>、桌位<strong>直接回空桌</strong>（不用清潔）、權杖失效、刪整桌購物車；推 <code>SESSION_CLOSED</code>（<code>reason: CANCELLED</code>），同桌手機<strong>不顯示面板、直接回 C-00</strong>。已經送出過點餐單 → <code>409 SESSION_HAS_ORDERS</code>「已經有點餐紀錄，請改用結帳」</td>
 <td>☐</td>
 </tr>
 </tbody>
@@ -340,7 +340,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td>2.E5</td>
 <td><strong>手動保留桌位</strong></td>
-<td>櫃檯把某張桌設成「保留」，可指定留給某筆訂位或某組候位。見下面的問題 5</td>
+<td>給<strong>沒有訂位</strong>的保留用：櫃檯把某張桌設成「保留」，留給某組候位或寫一行備註（熟客來電說晚點到）。有訂位的保留已經是基礎 M7 7.10（算出來的），兩者差別見問題 5</td>
 </tr>
 <tr>
 <td>2.E6</td>
@@ -397,7 +397,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <p><strong>情境</strong>
 客人要掃碼點餐，但不能讓路過的人隨便開桌。</p>
 <p><strong>做法 A：每次開桌產生新的 QR</strong>
-櫃檯開桌 → 系統產生一次性 QR → 列印小卡給客人。</p>
+每次開桌 → 系統產生一次性 QR → 列印小卡給客人。</p>
 <ul>
 <li>優點：安全性最高</li>
 <li>缺點：<strong>每次都要印紙</strong>、要有印表機、客人弄丟就麻煩</li>
@@ -455,6 +455,10 @@ public DiningSessionDto open(String tableNo, int adults, int children) {
     if (table.getStatus() != TableStatus.AVAILABLE) {
         throw new BusinessException(&quot;TABLE_OCCUPIED&quot;, &quot;此桌已在使用中&quot;, CONFLICT);
     }
+    holdService.findHolding(table, LocalDateTime.now()).ifPresent(r -&gt; {   // 預約保留是算出來的，鎖住之後再算一次（問題 5）
+        throw new BusinessException(&quot;TABLE_RESERVED&quot;,
+            &quot;這張桌保留給 &quot; + r.getContactName() + &quot; &quot; + r.getStartTime().toLocalTime() + &quot;，要先取消保留&quot;, CONFLICT);
+    });
 
     table.setStatus(TableStatus.OCCUPIED);
     DiningSession session = sessionRepo.save(DiningSession.open(table, adults, children));
@@ -481,6 +485,8 @@ A03 桌結帳離開，下一組客人坐進來。上一組客人的手機還開�
 </code></pre>
 <p>前端收到 <code>401 INVALID_SESSION_TOKEN</code> → 清掉 <code>localStorage</code> 的用餐權杖 → 導到 C-00 首頁（<code>/</code>）。
 客人再掃桌上的 QR，C-01 就照桌位狀態顯示（剛結清是「整理中，請稍候」），不另外做「本次用餐已結束」的分支。</p>
+<p><strong>取消該次用餐</strong>（2.14）也是終態，但手機的反應不一樣：收到 <code>SESSION_CLOSED</code> 的 <code>reason: CANCELLED</code> 時<strong>不顯示任何面板</strong>，
+清掉權杖直接回 C-00；只有 <code>reason: PAID</code> 才顯示「已結帳」面板。</p>
 <p><strong>這條規則一定要寫進文件並驗收</strong>，不然 demo 時很容易被問倒。</p>
 <hr />
 <h3 id="問題-4候位叫號之後沒人來怎麼辦">問題 4：候位叫號之後沒人來怎麼辦？</h3>
@@ -507,33 +513,128 @@ public void expireCalledWaitlist() {
 <hr />
 <h3 id="問題-5訂位要不要把桌位先鎖起來">問題 5：訂位要不要把桌位先「鎖起來」</h3>
 <p><strong>情境</strong>
-A03 今晚 19:30 有訂位。現在 18:00，一組現場客人走進來，只剩 A03 空著。</p>
+A08 今晚 18:30 有一筆 4 位的線上訂位（陳怡君）。現在 18:05，一組現場客人走進來，A08 剛好空著。</p>
 <p><strong>直覺會這樣寫</strong>
-寫一支排程，訂位前 30 分鐘把桌位狀態轉成 <code>RESERVED</code>，櫃檯就開不了那張桌。
-桌況總覽上多一個暖黃色塊「已預約 19:30」。</p>
-<p><strong>為什麼不好</strong></p>
+寫一支排程，訂位前 30 分鐘把 <code>dining_table.status</code> 改成 <code>RESERVED</code>；客人報到、取消或 NO_SHOW 時再改回來。
+（舊版就是這樣做的，後來整條拿掉。）</p>
+<p><strong>為什麼會壞</strong></p>
 <ol>
 <li><strong>兩份資料要同步。</strong> 「這張桌被誰訂走」本來就存在 <code>reservation</code>（有 <code>table_id</code> 和 <code>start_time</code>）。
-   複製一份到 <code>dining_table.status</code> 之後，兩邊就得靠 cron 維持一致。
-   排程晚跑一輪、或訂位被取消而狀態沒轉回去，就會出現
-   <strong>「畫面顯示空桌，按開桌卻被擋」</strong>——這是最難查的那種 bug，因為畫面本身沒有錯誤訊息。</li>
-<li><strong>現場本來就會覆蓋它。</strong> 18:00 進來一組客人，櫃檯評估他們吃一小時就走，
-   那張桌照樣可以先用。餐廳的調度是人在做判斷，系統把桌位鎖死只會逼櫃檯找路繞過去。</li>
-<li><strong>30 分鐘這個數字沒有依據。</strong> 訂 19:30 的客人可能 19:00 就到，也可能 19:45 才到。</li>
+   複製一份到 <code>dining_table.status</code> 之後，兩邊就得靠 cron 維持一致。排程晚跑一輪、伺服器剛好重啟、
+   或訂位被取消而狀態沒轉回去，就會出現<strong>「畫面顯示空桌，按開桌卻被擋」</strong>，或反過來「早就沒人訂了，桌子還鎖著」——
+   這是最難查的那種 bug，因為畫面本身沒有錯誤訊息。</li>
+<li><strong>每一條「轉回去」的路都要記得寫。</strong> 取消訂位、NO_SHOW、報到、櫃檯改帶別張桌……漏一條就卡住一張桌。</li>
+<li><strong>時間不準。</strong> 排程每幾分鐘跑一次，18:00 整該鎖的桌可能 18:04 才鎖，這幾分鐘剛好被開走。</li>
 </ol>
-<p><strong>正確做法：系統不自動鎖，但給櫃檯一個手動的「保留」</strong> ← 我們選這個</p>
-<p>分兩層看：</p>
-<p><strong>第一層，系統這邊什麼都不做。</strong>
-<code>dining_table.status</code> 不會因為有訂位就自己改變。桌況總覽的統計列放一個
-「待報到預約 4」當全域提醒；真正需要知道「這張桌等下有人訂」的時刻，是
-<strong>櫃檯正要開這張桌的時候</strong>——所以提醒放在開桌頁頂部，黃字警示、<strong>不擋開桌</strong>。</p>
-<pre><code class="language-java">// 開桌頁要的兩份清單，都是即時查 reservation / waitlist，不存狀態
-List&lt;ReservationDto&gt; arrivals = reservationRepo.findSeatable(
-        tableId, now.minusMinutes(10), now.plusMinutes(45), table.getSeats());   // 超過 10 分鐘的已經不保留
-Optional&lt;ReservationDto&gt; upcoming = reservationRepo.findNextOnTable(tableId, now);
+<p><strong>但「完全不鎖」也不行</strong>（2026-09-16 定案）
+使用者的決定是：<strong>線上訂位就會預先保留桌位，該桌位會鎖住，但櫃檯人員可以取消鎖住的狀態。</strong>
+客人線上訂到位、準時到店，卻發現桌子被現場客人坐走了，這比讓現場客人多等一下更傷。</p>
+<p><strong>正確做法：保留是算出來的，不存狀態、不靠排程</strong> ← 我們選這個（M7 7.10）</p>
+<p><code>dining_table.status</code> 仍然只有 <code>AVAILABLE</code>／<code>OCCUPIED</code>／<code>CLEANING</code> 三種，<strong>什麼都不多存</strong>。
+查桌況的時候才順便判斷要不要顯示「預約保留」：</p>
+<pre><code class="language-java">// 每次查桌況都現算，什麼都不寫回資料庫
+TableDisplayStatus displayStatus(DiningTable t, LocalDateTime now) {
+    if (t.getStatus() == OCCUPIED) return TableDisplayStatus.OCCUPIED;   // 優先順序：用餐中
+    if (t.getStatus() == CLEANING) return TableDisplayStatus.CLEANING;   //         ＞ 待清理
+    boolean held = reservationRepo.findHolding(t.getId(),                //         ＞ 預約保留
+            now.minusMinutes(holdAfterMinutes),     // start_time 最早：now − 10 分
+            now.plusMinutes(holdBeforeMinutes))     // start_time 最晚：now + 30 分
+        .isPresent();
+    return held ? TableDisplayStatus.RESERVED : TableDisplayStatus.AVAILABLE;   // ＞ 空桌
+}
 </code></pre>
-<p><strong>代價要講清楚</strong>：櫃檯可以把現場客人安排到一張 30 分鐘後有預約的桌，系統不會阻止。
-那筆預約到時候就得等或換桌。<strong>這是刻意把決定權留給現場</strong>，不是漏掉的檢查。</p>
+<pre><code class="language-sql">-- findHolding：這張桌現在被哪筆訂位保留
+-- 「現在落在 start − 30 ～ start + 10」換成查 start_time，就是「start_time 落在 now − 10 ～ now + 30」
+SELECT * FROM reservation
+ WHERE table_id = :tableId
+   AND status = 'CONFIRMED'
+   AND hold_released_at IS NULL
+   AND start_time BETWEEN :fromStart AND :toStart
+ ORDER BY start_time
+ LIMIT 1;
+</code></pre>
+<p>兩個數字放 <code>application.yml</code>：</p>
+<pre><code class="language-yaml">reservation:
+  hold-before-minutes: 30   # 最早可報到的時間，保留從這裡開始
+  hold-after-minutes: 10    # 訂位保留時間，過了就是 NO_SHOW，保留也到這裡結束
+</code></pre>
+<p><strong>為什麼這樣就沒有舊 <code>RESERVED</code> 的不同步問題</strong></p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>舊做法（排程寫進桌位欄位）</th>
+<th>現在（查詢時算）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>資料有幾份</td>
+<td><code>dining_table.status</code> 和 <code>reservation</code> 兩份</td>
+<td>只有 <code>reservation</code> 一份，桌況是從它推出來的</td>
+</tr>
+<tr>
+<td>排程沒跑、晚跑、伺服器重啟</td>
+<td>桌態跟訂位對不上</td>
+<td>沒有排程可以漏，每次查詢都是當下的答案</td>
+</tr>
+<tr>
+<td>訂位取消／NO_SHOW／報到</td>
+<td>每條路都要記得把桌態改回去</td>
+<td>訂位一離開 <code>CONFIRMED</code>，條件就不成立，保留自己消失</td>
+</tr>
+<tr>
+<td>時間到了</td>
+<td>要等排程下一輪才轉</td>
+<td>時間窗寫在查詢條件裡，18:00:00 一到就算保留</td>
+</tr>
+<tr>
+<td>櫃檯要解鎖</td>
+<td>改桌態，還要防排程又把它鎖回去</td>
+<td>只寫 <code>reservation.hold_released_at</code>，條件多一句 <code>IS NULL</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>一句話：<strong>能從別的資料算出來的狀態，就不要另外存一份。</strong> 存一份就得同步，同步就會漏。</p>
+<p><strong>擋在哪裡</strong></p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>動作</th>
+<th>目標桌正在保留中</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>現場開桌 <code>POST /api/admin/tables/{id}/open</code></td>
+<td><code>409 TABLE_RESERVED</code>「這張桌保留給 陳怡君 18:30，要先取消保留」</td>
+</tr>
+<tr>
+<td>候位入座 <code>POST /api/admin/waitlist/{id}/seat</code></td>
+<td>同上</td>
+</tr>
+<tr>
+<td>預約報到 <code>POST /api/admin/reservations/{id}/seat</code></td>
+<td>保留給<strong>別筆</strong>訂位 → <code>409 TABLE_RESERVED</code>；是<strong>自己的</strong>保留桌 → 正常開桌</td>
+</tr>
+<tr>
+<td>一鍵開桌清單 <code>GET /api/admin/tables/available</code></td>
+<td>保留中的桌不列；從預約報到時，自己的保留桌排第一、標「原保留桌」</td>
+</tr>
+</tbody>
+</table></div>
+<p>檢查要放在開桌那個交易裡、<code>FOR UPDATE</code> 鎖住桌位<strong>之後</strong>再算一次，不要相信畫面上的顏色。</p>
+<p><strong>櫃檯可以取消保留</strong>：<code>POST /api/admin/reservations/{id}/release-hold</code> 寫入 <code>hold_released_at</code>／<code>hold_released_by</code>，
+推 <code>TABLE_STATUS</code>，A08 立刻變回空桌。訂位本身<strong>仍是 <code>CONFIRMED</code></strong>，陳怡君到了照樣可以報到，只是改從 S-07b 選別張桌。
+<strong>取消是單向的，不能恢復</strong>（沒有「恢復保留」的 API），所以前端一定要二次確認「取消後無法恢復。A08 會變回空桌，陳怡君到店時再幫他選別張桌」。</p>
+<p><strong>兩個邊界</strong></p>
+<ol>
+<li><strong>配到的桌到時間還在用餐中</strong> → 顯示「用餐中」，不顯示保留（優先順序）。陳怡君到了，櫃檯從 S-07b 幫她選別張桌。</li>
+<li><strong>保留窗之外</strong>（例如 19:30 才有訂位、現在 18:00）→ 不鎖，只在開桌頁頂部黃字提醒「這張桌 19:30 有預約」（<code>upcomingOnThisTable</code>），
+   <strong>不擋開桌</strong>。窗外的調度仍然留給現場判斷。</li>
+</ol>
+<p><strong>代價要講清楚</strong>：保留窗開始或結束的那一刻沒有任何事件可以推（沒有排程），所以桌況頁除了收 WebSocket，
+還要每 60 秒重抓一次 <code>GET /api/admin/tables</code>，最多晚一分鐘才換色。按開桌時後端會重算，不會因為畫面舊而開錯。</p>
 <p><strong>開桌有兩個入口，後端是同一組 API。</strong></p>
 <div class="tablewrap"><table>
 <thead>
@@ -546,7 +647,7 @@ Optional&lt;ReservationDto&gt; upcoming = reservationRepo.findNextOnTable(tableI
 <tbody>
 <tr>
 <td>從桌子出發</td>
-<td>S-02 點空桌 → S-02b／S-02c／S-02d</td>
+<td>S-02 點空桌 → S-02b／S-02c／S-02d；點保留中的桌 → S-02d 預約頁籤、這筆置頂</td>
 <td>桌已經定了，選來源（現場／候位／預約）</td>
 </tr>
 <tr>
@@ -556,37 +657,46 @@ Optional&lt;ReservationDto&gt; upcoming = reservationRepo.findNextOnTable(tableI
 </tr>
 </tbody>
 </table></div>
-<p>S-07b／S-10b 的清單只列 <code>AVAILABLE</code> 且 <code>seats ≥ 人數</code> 的桌，依座位數由小到大、再依桌號排；
+<p>開桌頁要的清單都是即時查的：</p>
+<pre><code class="language-java">// 開桌頁要的清單，都是即時查 reservation / waitlist，不存狀態
+List&lt;ReservationDto&gt; arrivals = reservationRepo.findSeatable(
+        tableId, now.minusMinutes(10), now.plusMinutes(30), table.getSeats());   // −10 保留時間、+30 最早報到
+Optional&lt;ReservationDto&gt; heldFor  = reservationRepo.findHolding(tableId, now.minusMinutes(10), now.plusMinutes(30));
+Optional&lt;ReservationDto&gt; upcoming = reservationRepo.findNextOnTable(tableId, now);   // 窗外的，只提醒
+</code></pre>
+<p>S-07b／S-10b 的清單只列 <code>AVAILABLE</code>、<code>seats ≥ 人數</code>、<strong>沒有保留中</strong>的桌，依座位數由小到大、再依桌號排
+（從預約報到時，自己的保留桌排第一）；
 這張桌稍後有預約就在卡片上用暖黃小字提醒「19:30 有預約」（只提醒不擋，跟開桌頁一致）。
 選好之後呼叫 <code>POST /api/admin/reservations/{id}/seat</code> 或 <code>POST /api/admin/waitlist/{id}/seat</code>（帶 <code>tableId</code>），
 收尾跟開桌頁完全一樣。兩個櫃檯同時搶同一張桌 → 開桌本來就有 <code>FOR UPDATE</code>，後到的拿 <code>409 TABLE_OCCUPIED</code>，對話框重新載入清單。
 沒有坐得下的空桌 → 空狀態「目前沒有坐得下的空桌」＋「清潔完成或有桌結帳後再試一次」。</p>
 <hr />
 <p><strong>想更進一步的話：手動保留（延伸功能 2.E5，基礎不做）</strong></p>
-<p>如果櫃檯判斷「這張桌就是要留給 19:30 那組」，可以按一下保留把桌鎖起來。
-要做的話，加一個 <code>HELD</code> 狀態與四個欄位（<code>held_for_reservation_id</code> /
-<code>held_for_waitlist_id</code> / <code>held_note</code> / <code>held_at</code>，三者最多一個不為 NULL）。</p>
+<p><strong>跟 7.10 的差別</strong>：7.10 是<strong>有訂位</strong>時系統算出來的保留（時間到自己開始、自己結束）；
+2.E5 是<strong>沒有訂位</strong>時櫃檯手動按的保留（例如候位的客人去停車、熟客來電說晚點到），人按的、人來解。</p>
+<p>如果櫃檯判斷「這張桌就是要留給 A12 那組候位」，可以按一下保留把桌鎖起來。
+要做的話，加一個 <code>HELD</code> 狀態與三個欄位（<code>held_for_waitlist_id</code> / <code>held_note</code> / <code>held_at</code>，
+前兩者最多一個不為 NULL）。原本規劃的 <code>held_for_reservation_id</code> 不需要了——有訂位的保留交給 7.10。</p>
 <pre><code class="language-java">@Transactional
 public void hold(Long tableId, HoldRequest req) {
     DiningTable t = tableRepo.findByIdForUpdate(tableId);
-    if (t.getStatus() != AVAILABLE)
+    if (t.getStatus() != AVAILABLE || isHeldByReservation(t))   // 7.10 保留中的桌也不能再手動保留
         throw new BusinessException(&quot;TABLE_NOT_AVAILABLE&quot;, &quot;這張桌現在不是空桌&quot;, CONFLICT);
     t.setStatus(HELD);
     t.setHeldAt(LocalDateTime.now());
-    t.setHeldForReservationId(req.reservationId());   // 三者最多一個
-    t.setHeldForWaitlistId(req.waitlistId());
+    t.setHeldForWaitlistId(req.waitlistId());   // 兩者最多一個
     t.setHeldNote(req.note());
 }
 </code></pre>
 <p><strong>兩條規則不能破</strong>，破了就變回舊版 <code>RESERVED</code> 的老問題：</p>
 <ol>
-<li><strong>只能人手動進出，不准有任何排程碰它。</strong> 狀態是人的決定，不是系統從訂位推導的，
-   才不會有「兩份資料不同步」這件事。</li>
-<li><strong>保留關係只記在桌位這一側。</strong> 被保留的那筆訂位狀態完全不變（還是 <code>CONFIRMED</code>），
-   取消保留就只是清掉 <code>dining_table</code> 的四個欄位，不用回頭修訂位。</li>
+<li><strong>只能人手動進出，不准有任何排程碰它。</strong> 狀態是人的決定，不是系統從別的資料推導的，
+   才不會有「兩份資料不同步」這件事。（這也是為什麼它可以存成狀態，而 7.10 不行。）</li>
+<li><strong>保留關係只記在桌位這一側。</strong> 被保留的那組候位狀態完全不變（還是 <code>CALLED</code>），
+   取消保留就只是清掉 <code>dining_table</code> 的三個欄位，不用回頭改候位。</li>
 </ol>
-<p><strong>為什麼列進階</strong>：它多了一個狀態、四個欄位、兩支 API、桌況總覽多一種顏色，
-開桌頁每一列還要多一顆按鈕——而基礎不做它，整條「訂位到報到開桌」照樣跑得完。
+<p><strong>為什麼列進階</strong>：它多了一個狀態、三個欄位、兩支 API、桌況總覽再多一種顏色，
+開桌頁每一列還要多一顆按鈕——而基礎不做它，有訂位的桌照樣會被 7.10 保留，「訂位到報到開桌」照樣跑得完。
 第 4 週的預算花在這裡不划算。</p>
 <hr />
 <h2 id="六週切分">六週切分</h2>
@@ -608,11 +718,11 @@ public void hold(Long tableId, HoldRequest req) {
 </tr>
 <tr>
 <td><strong>W3</strong></td>
-<td>店家端桌況總覽頁；開桌／關桌／取消用餐；<strong>掃碼進入頁（顧客端）</strong>；QR code 產生</td>
+<td>店家端桌況總覽頁；開桌／關桌；取消用餐（<code>SESSION_HAS_ORDERS</code>、<code>reason: CANCELLED</code>、桌位直接回空桌）；<code>dining_session_guest</code> 與 <code>X-Device-Id</code>；<strong>掃碼進入頁（顧客端）</strong>；QR code 產生</td>
 </tr>
 <tr>
 <td><strong>W4</strong></td>
-<td>候位登記、清單、叫號、報到；候位過號排程；<code>GET /api/admin/tables/available</code> 與 S-07b／S-10b 選桌對話框</td>
+<td>候位登記、清單、叫號、報到；候位過號排程；<code>GET /api/admin/tables/available</code> 與 S-07b／S-10b 選桌對話框；<strong>預約保留</strong>（桌況 <code>displayStatus</code>／<code>heldFor</code>、開桌三支的 <code>TABLE_RESERVED</code>、第四種色塊，跟 M7 7.10 一起做）</td>
 </tr>
 <tr>
 <td><strong>W5</strong></td>
@@ -649,6 +759,22 @@ public void hold(Long tableId, HoldRequest req) {
 <td><strong>候位表的狀態跟排程對不上</strong></td>
 <td>只有 <code>CALLED</code> 狀態會被排程標成 <code>EXPIRED</code>，<code>WAITING</code> 不會</td>
 </tr>
+<tr>
+<td><strong>想把預約保留存進 <code>dining_table.status</code></strong></td>
+<td>不要。它是算出來的顯示狀態，存了就要同步（問題 5）</td>
+</tr>
+<tr>
+<td><strong>保留中的桌還是被開走了</strong></td>
+<td>開桌交易裡鎖住桌位之後要重算一次保留，不能只看前端顏色</td>
+</tr>
+<tr>
+<td><strong>預約保留晚了一陣子才出現在桌況上</strong></td>
+<td>保留窗開始沒有事件可推，桌況頁要每 60 秒重抓</td>
+</tr>
+<tr>
+<td><strong>取消用餐後手機停在「已結帳」面板</strong></td>
+<td><code>SESSION_CLOSED</code> 要看 <code>reason</code>，<code>CANCELLED</code> 直接回 C-00</td>
+</tr>
 </tbody>
 </table></div>
 <h2 id="驗收-demo-腳本">驗收 Demo 腳本</h2>
@@ -657,9 +783,14 @@ public void hold(Long tableId, HoldRequest req) {
 <li>店家端對 A03 開桌（2 大 1 小）→ 桌況變紅色「用餐中」</li>
 <li>手機重新掃同一個 QR → <strong>這次直接進入點餐</strong></li>
 <li>第二支手機掃同一個 QR → 也能進入（同桌共享）</li>
-<li>櫃檯在 S-03 標記已結清 → 桌況變「待清理」→ <strong>手機即時變成「已結帳」；按「回到首頁」回到 C-00，再掃同一個 QR 顯示「整理中，請稍候」</strong></li>
+<li>櫃檯在 S-03 按「現金」、倒數到 0 結帳完成 → 桌況變「待清理」→ <strong>手機即時變成「已結帳」；按「回到首頁」回到 C-00，再掃同一個 QR 顯示「整理中，請稍候」</strong></li>
 <li>候位登記一組 → 叫號 → 候位螢幕即時顯示 → S-10 按「報到開桌」→ <strong>只列出坐得下的空桌</strong> → 選一張 → 開桌</li>
 <li>把空桌都開掉再按一次「報到開桌」→ 顯示「目前沒有坐得下的空桌」</li>
+<li>種子資料裡 30 分鐘內要到的訂位 → 它配到的桌（例如 A08）在桌況上是暖黃「預約保留」，格內「18:30 陳○君 4 位」，統計列「預約保留 1」</li>
+<li>點 A08 → 開桌頁的預約頁籤，這筆置頂；切到現場頁籤 → 頂部暖黃條、開桌按鈕停用；用 Postman 直接打現場開桌 → <code>409 TABLE_RESERVED</code></li>
+<li>按「取消保留」→ 二次確認「取消後無法恢復。A08 會變回空桌，陳怡君到店時再幫他選別張桌」→ A08 變回空桌（訂位仍是已確認）；畫面上找不到「恢復保留」</li>
+<li>另開一張桌、不點餐 → 店長在 S-03 按「取消該次用餐」→ 桌位<strong>直接回空桌</strong>，<strong>手機不顯示面板、直接回到 C-00</strong>；
+    對點過餐的桌按取消 → 「已經有點餐紀錄，請改用結帳」</li>
 </ol><div class="pager"><a href="../../spec/modules/M1-菜單與品項.html"><div class="k">← 上一篇</div><div class="n">M1 菜單與品項</div></a><a class="next" href="../../spec/modules/M3-點餐與服務鈴.html"><div class="k">下一篇 →</div><div class="n">M3 點餐與服務鈴</div></a></div>
 </article>
 <aside class="toc"><div class="tt">本頁目錄</div><a href="#這個模組在做什麼">這個模組在做什麼</a><a href="#難易度為什麼是三顆星">難易度為什麼是三顆星</a><a href="#基礎必做功能">基礎必做功能</a><a href="#延伸加分功能">延伸加分功能</a><a href="#會用到的技術">會用到的技術</a><a href="#問題思考與解決思路">問題思考與解決思路</a><a href="#六週切分">六週切分</a><a href="#常見卡關">常見卡關</a><a href="#驗收-demo-腳本">驗收 Demo 腳本</a></aside>

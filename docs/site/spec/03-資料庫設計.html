@@ -227,7 +227,8 @@ ER 圖見 <a href="../spec/06-圖表總覽.html">06-圖表總覽</a>。本文件
 <pre><code>db/migration/
 ├── V1__create_account_tables.sql       member, verification_code, staff
 ├── V2__create_menu_tables.sql          menu_category, menu_item, option_group, option_value, menu_item_option_group
-├── V3__create_dining_tables.sql        dining_table, dining_session, order_ticket, order_item, order_item_option
+├── V3__create_dining_tables.sql        dining_table, dining_session, dining_session_guest, cart_item, cart_item_option,
+│                                       order_ticket, order_item, order_item_option
 ├── V4__create_inventory_tables.sql     inventory_item, inventory_log
 ├── V5__create_payment_tables.sql       payment
 ├── V6__create_reservation_tables.sql   reservation, reservation_preorder_item, reservation_preorder_option
@@ -277,7 +278,7 @@ ER 圖見 <a href="../spec/06-圖表總覽.html">06-圖表總覽</a>。本文件
 <td>birth_date</td>
 <td>DATE</td>
 <td>NULL</td>
-<td>供年齡層推薦</td>
+<td>供年齡層推薦、生日優惠（8.E6）；櫃檯確認會員本人時會顯示給店員看（8.10，只顯示、不寫進任何紀錄）</td>
 </tr>
 <tr>
 <td>points</td>
@@ -604,15 +605,33 @@ ER 圖見 <a href="../spec/06-圖表總覽.html">06-圖表總覽</a>。本文件
 </table></div>
 <p>種子：12 張桌（2 人 ×2、4 人 ×6、6 人 ×2、8 人 ×2），其中 8 張 <code>reservable = 1</code>。</p>
 <blockquote>
-<p><strong>桌位狀態只有三種，而且只反映現場當下。</strong>
-桌位、訂位、候位是三套獨立的東西，不互相連動；唯一的接點是
-<strong>開桌成功時，把來源那筆訂位或候位轉成已報到</strong>。</p>
-<p>舊版有第四種 <code>RESERVED</code>，由排程在訂位前 30 分鐘自動轉入——那等於把 <code>reservation</code>
+<p><strong>桌位狀態只有三種，而且只反映現場當下。</strong> 這個欄位<strong>不存</strong>「預約保留」。</p>
+<p><strong>預約保留（M7 7.10）是查詢時算出來的顯示狀態。</strong> <code>AVAILABLE</code> 的桌如果有一筆訂位同時符合
+配到這張桌、<code>CONFIRMED</code>、現在落在 <code>start_time − 30 分</code> ～ <code>start_time + 10 分</code>、<code>hold_released_at IS NULL</code>，
+桌況 API 就回 <code>displayStatus = RESERVED</code>。所以訂位會在時間窗內鎖住配到的桌；<strong>候位不鎖桌</strong>。
+另一個接點照舊：<strong>開桌成功時，把來源那筆訂位或候位轉成已報到</strong>。</p>
+<p>舊版也有一個 <code>RESERVED</code>，但它<strong>存在這個欄位裡</strong>，由排程在訂位前 30 分鐘自動轉入——那等於把 <code>reservation</code>
 複製一份到桌位上、還要靠 cron 同步，一旦不同步就會出現
-「畫面顯示空桌、按開桌卻被擋」這種最難查的狀況。已經移除。</p>
-<p><strong>想讓櫃檯手動「保留」某張桌，是延伸功能（<a href="../spec/modules/M2-桌位開桌與候位.html">M2 的 2.E5</a>）。</strong>
-要做的話加一個 <code>HELD</code> 狀態與 <code>held_for_reservation_id</code> / <code>held_for_waitlist_id</code> /
-<code>held_note</code> / <code>held_at</code> 四個欄位，三者最多一個不為 NULL。
+「畫面顯示空桌、按開桌卻被擋」這種最難查的狀況。那個做法已經移除；
+現在每次查詢現算，不存、不靠排程，就沒有同步這件事（見 <a href="../spec/modules/M2-桌位開桌與候位.html">M2 問題 5</a>）。</p>
+</blockquote>
+<pre><code class="language-sql">-- 這張桌現在被哪筆訂位保留（查不到就是沒保留）
+-- 「現在落在 start − 30 ～ start + 10」換成查 start_time，就是「start_time 落在 now − 10 ～ now + 30」
+SELECT * FROM reservation
+ WHERE table_id = :tableId
+   AND status = 'CONFIRMED'
+   AND hold_released_at IS NULL
+   AND start_time BETWEEN :now - INTERVAL 10 MINUTE AND :now + INTERVAL 30 MINUTE
+ ORDER BY start_time
+ LIMIT 1;
+</code></pre>
+<p>30、10 兩個數字從 <code>application.yml</code> 讀（<code>reservation.hold-before-minutes</code>、<code>reservation.hold-after-minutes</code>），上面寫死只是好讀。
+<code>idx_reservation_table_time (table_id, start_time, end_time)</code> 可以直接用上（先比 <code>table_id</code>，再掃 <code>start_time</code> 的範圍）。</p>
+<blockquote>
+<p><strong>想讓櫃檯手動「保留」某張桌，是延伸功能（<a href="../spec/modules/M2-桌位開桌與候位.html">M2 的 2.E5</a>）</strong>，給<strong>沒有訂位</strong>的保留用
+（例如候位的客人去停車、熟客來電說晚點到）；有訂位的保留已經由 7.10 算出來了。
+要做的話加一個 <code>HELD</code> 狀態與 <code>held_for_waitlist_id</code> / <code>held_note</code> / <code>held_at</code> 三個欄位
+（原本規劃的 <code>held_for_reservation_id</code> 不需要了）。
 關鍵是它<strong>只能人手動進出、沒有任何排程</strong>，這樣才不會變回舊版 <code>RESERVED</code> 的老問題。</p>
 </blockquote>
 <h3 id="dining_session-用餐紀錄帳單核心"><code>dining_session</code> 用餐紀錄（＝帳單）★核心</h3>
@@ -638,7 +657,7 @@ ER 圖見 <a href="../spec/06-圖表總覽.html">06-圖表總覽</a>。本文件
 <tr>
 <td>member_id</td>
 <td>BIGINT FK <strong>NULL</strong></td>
-<td>匿名點餐時為 NULL</td>
+<td>匿名點餐時為 NULL；綁會員（進階 8.10）有兩個入口：C-09 線上登入、S-03 櫃檯結清時帶 <code>memberId</code>（同一個交易寫入）</td>
 </tr>
 <tr>
 <td>reservation_id</td>
@@ -678,7 +697,7 @@ ER 圖見 <a href="../spec/06-圖表總覽.html">06-圖表總覽</a>。本文件
 <tr>
 <td>discount</td>
 <td>DECIMAL(10,2) DEFAULT 0</td>
-<td>優惠券或點數折抵，<strong>進階 A6 才用</strong>，基礎永遠是 0</td>
+<td>優惠券＋點數折抵合計（可以同時用），<strong>進階 A6 才用</strong>，基礎永遠是 0</td>
 </tr>
 <tr>
 <td>total</td>
@@ -703,6 +722,139 @@ ER 圖見 <a href="../spec/06-圖表總覽.html">06-圖表總覽</a>。本文件
 三個地方都在交易裡 <code>SELECT ... FOR UPDATE</code> 這一列；結清／付款帶 <code>expectedTotal</code>，
 重算不相等回 <code>409 BILL_CHANGED</code>，已經不是 <code>OPEN</code> 回 <code>409 SESSION_CLOSED</code>。
 所以這張表不需要額外的鎖定欄位，詳見 <a href="../spec/modules/M6-結帳.html">M6 問題 1</a>。</p>
+</blockquote>
+<h3 id="dining_session_guest-同桌客人這桌的誰2026-09-16-新增"><code>dining_session_guest</code> 同桌客人（這桌的「誰」）★2026-09-16 新增</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>型別</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>BIGINT PK</td>
+<td></td>
+</tr>
+<tr>
+<td>dining_session_id</td>
+<td>BIGINT FK</td>
+<td></td>
+</tr>
+<tr>
+<td>device_id</td>
+<td>VARCHAR(36)</td>
+<td>前端第一次開啟時產生的 UUID，存 localStorage，請求時用 <code>X-Device-Id</code> 帶上來</td>
+</tr>
+<tr>
+<td>display_name</td>
+<td>VARCHAR(50)</td>
+<td>有登入會員、而且有填暱稱就用暱稱，否則依加入順序給「客人 1」「客人 2」…</td>
+</tr>
+<tr>
+<td>member_id</td>
+<td>BIGINT FK NULL</td>
+<td>加入時有帶會員 <a class="gloss" href="../tech/backend/21-JWT.html" title="看這個技術的白話說明">JWT</a> 才填</td>
+</tr>
+<tr>
+<td>joined_at</td>
+<td>DATETIME(3)</td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<p>索引：<code>UNIQUE(dining_session_id, device_id)</code>（同一支手機重複加入拿到同一筆）</p>
+<blockquote>
+<p><strong>為什麼要這張表？</strong> 同一桌只有一個 <code>session_token</code>，分不出是哪支手機在操作；
+共用購物車要顯示「陳小美 加的」，就得另外記「誰」。
+<strong><code>device_id</code> 只拿來標示誰加的，不是身分驗證</strong>——驗證仍然靠 <code>session_token</code>；被人偽造頂多顯示錯名字。</p>
+</blockquote>
+<h3 id="cart_item-共用購物車-2026-09-16-新增"><code>cart_item</code> 共用購物車 ★2026-09-16 新增</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>型別</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>BIGINT PK</td>
+<td></td>
+</tr>
+<tr>
+<td>dining_session_id</td>
+<td>BIGINT FK</td>
+<td><strong>整桌共用一份</strong>，不分手機</td>
+</tr>
+<tr>
+<td>menu_item_id</td>
+<td>BIGINT FK</td>
+<td></td>
+</tr>
+<tr>
+<td>quantity</td>
+<td>INT</td>
+<td></td>
+</tr>
+<tr>
+<td>note</td>
+<td>VARCHAR(50) NULL</td>
+<td></td>
+</tr>
+<tr>
+<td>unit_price</td>
+<td>DECIMAL(10,2)</td>
+<td>加入當下的單價（基礎價＋選項價差），<strong>只給畫面顯示</strong>；送單時仍以菜單現價重算</td>
+</tr>
+<tr>
+<td>added_by_guest_id</td>
+<td>BIGINT FK</td>
+<td>→ <code>dining_session_guest</code>，畫面上的「陳小美 加的」</td>
+</tr>
+<tr>
+<td>created_at, updated_at</td>
+<td>DATETIME(3)</td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<p>索引：<code>INDEX(dining_session_id)</code></p>
+<h3 id="cart_item_option-購物車選項"><code>cart_item_option</code> 購物車選項</h3>
+<p><code>cart_item_id</code> FK、<code>option_value_id</code> FK；主鍵 <code>PRIMARY KEY(cart_item_id, option_value_id)</code></p>
+<blockquote>
+<p><strong>購物車階段不快照</strong>，只記選了哪個 <code>option_value_id</code>；送單時才讀當下的名稱與價差，寫進 <code>order_item_option</code>。</p>
+<p><strong>為什麼存 DB，不放前端、HTTP session 或 Redis？</strong></p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>放哪裡</th>
+<th>問題</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>前端 state／localStorage</td>
+<td>每支手機各一份，同桌看不到彼此加了什麼</td>
+</tr>
+<tr>
+<td>HTTP session</td>
+<td>一樣是每支手機各一份，伺服器重啟也會消失</td>
+</tr>
+<tr>
+<td>Redis</td>
+<td>送出時要「寫 <code>order_ticket</code>＋刪購物車」一起成功或一起失敗，跨 Redis 和 MySQL 做不到同一個交易</td>
+</tr>
+</tbody>
+</table></div>
+<p>送出點餐時：鎖 <code>dining_session</code> 那列 → 讀整桌 <code>cart_item</code> → 驗證、扣庫存、快照 → 寫 <code>order_ticket</code>／<code>order_item</code> → 刪掉這些 <code>cart_item</code>，
+全部在同一個交易裡（見 <a href="../spec/04-API規格.html">04 §4.5</a>）。
+session 進終態（<code>PAID</code> 或 <code>CANCELLED</code>）時，整桌購物車在同一個交易裡刪掉——還沒送出的東西直接捨棄，不算錢。
+櫃檯代客加點（<code>source = STAFF</code>）與預先點餐（<code>reservation_preorder_item</code>）都<strong>不經過</strong>這張表。</p>
 </blockquote>
 <h3 id="order_ticket-點餐單-核心"><code>order_ticket</code> 點餐單 ★核心</h3>
 <div class="tablewrap"><table>
@@ -743,6 +895,11 @@ ER 圖見 <a href="../spec/06-圖表總覽.html">06-圖表總覽</a>。本文件
 <td>source</td>
 <td>VARCHAR(20)</td>
 <td><code>CUSTOMER</code>／<code>STAFF</code>（櫃檯代點）</td>
+</tr>
+<tr>
+<td>submitted_by_guest_id</td>
+<td>BIGINT FK NULL</td>
+<td>誰按的「送出整桌點餐」（→ <code>dining_session_guest</code>），同桌通知「王大明 送出 6 項」用；櫃檯代點與預點轉單為 NULL</td>
 </tr>
 <tr>
 <td>placed_at</td>
@@ -1049,6 +1206,16 @@ ER 圖見 <a href="../spec/06-圖表總覽.html">06-圖表總覽</a>。本文件
 <td>最後一次預點異動時間；<code>NULL</code> = 沒預點（進階）</td>
 </tr>
 <tr>
+<td><strong>hold_released_at</strong></td>
+<td>DATETIME(3) NULL</td>
+<td>櫃檯按「取消保留」的時間；不是 NULL 就不再保留配到的桌（M7 7.10）。<strong>訂位狀態不變</strong></td>
+</tr>
+<tr>
+<td>hold_released_by</td>
+<td>BIGINT FK NULL</td>
+<td>→ <code>staff</code>，誰取消保留的</td>
+</tr>
+<tr>
 <td>created_at / cancelled_at</td>
 <td>DATETIME(3)</td>
 <td></td>
@@ -1059,10 +1226,12 @@ ER 圖見 <a href="../spec/06-圖表總覽.html">06-圖表總覽</a>。本文件
 <p><strong>狀態只有四種，沒有 <code>PENDING</code>。</strong> 舊流程是「先建訂位 → 預付成功才確認」，
 所以需要一個中間狀態。現在<strong>選完時段送出就直接是 <code>CONFIRMED</code></strong>，沒有任何路徑會產生 <code>PENDING</code>，
 留著只會讓人猜。之後要做訂金（M7 的 7.E7）再加回來。</p>
-<p><strong><code>access_token</code> 是給匿名客人的。</strong> 會員靠 <a class="gloss" href="../tech/backend/21-JWT.html" title="看這個技術的白話說明">JWT</a> 就能存取自己的訂位；
+<p><strong><code>access_token</code> 是給匿名客人的。</strong> 會員靠 JWT 就能存取自己的訂位；
 匿名沒有帳號，但一樣要能回來看訂位、改預點內容。作法跟 <code>dining_session.session_token</code>
 完全一樣：建立時發一個隨機字串，前端存 localStorage。
 沒有它的話，只要猜到 <code>reservation.id</code> 就能改別人的單。</p>
+<p><strong>預約保留不另外存狀態。</strong> 保不保留由 <code>table_id</code>、<code>status</code>、<code>start_time</code>、<code>hold_released_at</code> 當場算出來（見上面 <code>dining_table</code> 的說明）。
+櫃檯取消保留只是把 <code>hold_released_at</code>／<code>hold_released_by</code> 填上，客人到了照樣可以報到，只是改坐別張桌。</p>
 </blockquote>
 <p><strong>關鍵索引</strong></p>
 <pre><code class="language-sql">-- 資料庫層的保險：同一桌、同一開始時間不能有兩筆
@@ -1074,11 +1243,13 @@ CREATE INDEX idx_reservation_start ON reservation (start_time, status);
 CREATE INDEX idx_reservation_phone ON reservation (contact_phone);
 </code></pre>
 <blockquote>
-<p><strong>重疊判斷式</strong>：<code>existing.start_time &lt; :newEnd AND :newStart &lt; existing.end_time</code>
+<p><strong>重疊判斷式</strong>：<code>existing.start_time &lt; :newEnd AND :newStart &lt; existing.end_time</code>，而且只看 <code>status IN ('CONFIRMED', 'SEATED')</code>
+——已報到的客人還坐著，到 <code>end_time</code> 為止都算佔用；只算 <code>CONFIRMED</code> 的話，客人一報到名額就被讓出去，同時段會被多訂一組。
 <strong>用 <code>&lt;</code> 不是 <code>&lt;=</code></strong>，因為「剛好接續」不算衝突。詳見 <a href="../tech/advanced/46-區間重疊與訂位排程.html">區間重疊與訂位排程</a>。</p>
 <p><strong>取消時把 <code>table_id</code> 設為 NULL</strong>，這樣唯一約束就不會擋住「取消後同一時段重新訂」。狀態紀錄仍然保留。</p>
 <p><strong><code>reservation.table_id</code> 是「訂位當下配的桌」，不是「客人實際坐的桌」。</strong>
-它的用途只有一個：<strong>容量與<a class="gloss" href="../tech/advanced/46-區間重疊與訂位排程.html" title="看這個技術的白話說明">區間重疊</a>判斷</strong>——這個時段還有沒有位子可以再賣。</p>
+它的用途有兩個：<strong>容量與<a class="gloss" href="../tech/advanced/46-區間重疊與訂位排程.html" title="看這個技術的白話說明">區間重疊</a>判斷</strong>——這個時段還有沒有位子可以再賣；
+以及<strong>訂位時間窗內保留那張桌</strong>（7.10）。</p>
 <p>客人到店後實際坐哪一張，由 <code>dining_session.table_id</code> 與 <code>dining_session.reservation_id</code>
 這一組記錄。<strong>開桌時不回頭改 <code>reservation.table_id</code></strong>，因為那會讓區間重疊的歷史資料
 跟著現場調度一起變動，訂位容量就算不準了。</p>
@@ -1094,6 +1265,10 @@ CREATE INDEX idx_reservation_phone ON reservation (contact_phone);
 <tr>
 <td>19:00 這個時段還能不能再接訂位</td>
 <td><code>reservation.table_id</code> + <code>start_time</code> / <code>end_time</code></td>
+</tr>
+<tr>
+<td>18:30 的訂位現在該不該鎖住 A08</td>
+<td><code>reservation.table_id</code> + <code>start_time</code> + <code>status</code> + <code>hold_released_at</code></td>
 </tr>
 <tr>
 <td>陳小姐今天實際坐哪一桌、消費多少</td>
@@ -1132,7 +1307,7 @@ CREATE INDEX idx_reservation_phone ON reservation (contact_phone);
 <tr>
 <td>method</td>
 <td>VARCHAR(20)</td>
-<td>櫃檯結清：<code>CASH</code>/<code>MOCK_PAY</code>；進階 A5 線上付款：<code>APPLE_PAY</code>/<code>GOOGLE_PAY</code>/<code>LINE_PAY</code></td>
+<td>櫃檯結清：<code>CASH</code>/<code>CARD</code>/<code>BARCODE</code>（按下後倒數 5 秒的模擬流程）；進階 A5 線上付款：<code>APPLE_PAY</code>/<code>GOOGLE_PAY</code>/<code>LINE_PAY</code>。<strong>沒有 <code>MOCK_PAY</code></strong></td>
 </tr>
 <tr>
 <td>amount</td>
@@ -1165,7 +1340,7 @@ CREATE INDEX idx_reservation_phone ON reservation (contact_phone);
 <p><code>dining_session_id</code> 與 <code>reservation_id</code> 恰有一個不為 NULL，在 Service 層檢查。
 <strong>所有付款都是模擬的，不串接任何真實金流 API。</strong>
 櫃檯結清（<code>POST /api/admin/dining-sessions/{id}/settle</code>）也寫一筆 <code>status = SUCCESS</code> 的紀錄，
-報表才分得出現金與模擬支付；<code>PENDING</code>／<code>FAILED</code> 只有 A5 線上付款會出現。</p>
+報表才分得出現金、信用卡、條碼；櫃檯結清不做失敗機率，<code>PENDING</code>／<code>FAILED</code> 只有 A5 線上付款會出現。</p>
 <p><strong>訂位與預先點餐都不產生 payment。</strong> 餐點金額一律在到店結帳時才算，
 所以「調整預點」「取消訂位」沒有退款這回事。<code>reservation_id</code> 這欄先留著，
 是給之後可能要做的訂金功能用的。</p>
@@ -1311,6 +1486,8 @@ CREATE INDEX idx_reservation_phone ON reservation (contact_phone);
 <p>id、member_id、dining_session_id NULL、<code>change_amount</code>（正負）、<code>balance_after</code>、<code>type</code>（<code>EARN</code>/<code>REDEEM</code>/<code>EXPIRE</code>/<code>ADJUST</code>）、created_at</p>
 <blockquote>
 <p><code>member.points</code> 是快取欄位，真實來源是這張表的 <code>SUM(change_amount)</code>。</p>
+<p><code>EARN</code>：以<strong>實付金額</strong>計，每滿 100 元 1 點、無條件捨去（1,562 元 → 15 點），付款成功後才寫。
+<code>REDEEM</code>：1 點折 1 元。優惠券與點數可以同一次一起用：先扣券（一次最多一張）→ 再扣點，最多折到 0 元；<code>dining_session.discount</code> 存兩者合計。</p>
 </blockquote>
 <h3 id="coupon-member_coupon"><code>coupon</code> / <code>member_coupon</code></h3>
 <p><code>coupon</code>：code、name、type（<code>AMOUNT</code>/<code>PERCENT</code>）、value、min_spend、valid_from、valid_to、active
@@ -1347,6 +1524,16 @@ CREATE INDEX idx_reservation_phone ON reservation (contact_phone);
 <td>每次顧客端請求都要驗</td>
 </tr>
 <tr>
+<td>dining_session_guest</td>
+<td><code>UNIQUE(dining_session_id, device_id)</code></td>
+<td>同一支手機重複加入拿到同一筆</td>
+</tr>
+<tr>
+<td>cart_item</td>
+<td><code>(dining_session_id)</code></td>
+<td>撈整桌購物車</td>
+</tr>
+<tr>
 <td>order_ticket</td>
 <td><code>(dining_session_id, sequence_no)</code></td>
 <td>本桌訂單</td>
@@ -1359,7 +1546,7 @@ CREATE INDEX idx_reservation_phone ON reservation (contact_phone);
 <tr>
 <td>order_item</td>
 <td><code>(menu_item_id)</code></td>
-<td><strong>人氣推薦統計</strong></td>
+<td><strong>人氣推薦統計</strong>（進階 A7）</td>
 </tr>
 <tr>
 <td>service_call</td>
@@ -1379,7 +1566,7 @@ CREATE INDEX idx_reservation_phone ON reservation (contact_phone);
 <tr>
 <td>reservation</td>
 <td><code>(table_id, start_time, end_time)</code></td>
-<td><strong>區間重疊檢查</strong></td>
+<td><strong>區間重疊檢查</strong>、預約保留判斷</td>
 </tr>
 <tr>
 <td>reservation</td>
@@ -1470,7 +1657,7 @@ CREATE INDEX idx_reservation_phone ON reservation (contact_phone);
 <tr>
 <td>未來訂位</td>
 <td>未來 7 天約 20 筆</td>
-<td>另放今天兩筆：一筆 30 分鐘內要到（開桌頁看得到）、一筆已過訂位時間 10 分鐘以上（demo 逾時與 <code>RESERVATION_EXPIRED</code>）</td>
+<td>另放今天幾筆：三筆 30 分鐘內要到、配到不同桌（開桌頁看得到，配到的桌顯示「預約保留」；M7 demo 報到、原保留桌、取消保留各用一筆）、一筆約 1 小時後（demo「18:00 起可報到」與 <code>RESERVATION_TOO_EARLY</code>）、一筆已過訂位時間 10 分鐘以上（demo 逾時與 <code>RESERVATION_EXPIRED</code>）</td>
 </tr>
 <tr>
 <td>候位</td>

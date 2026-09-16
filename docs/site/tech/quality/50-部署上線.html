@@ -298,12 +298,12 @@ ENTRYPOINT [&quot;java&quot;, &quot;-jar&quot;, &quot;app.jar&quot;]
 <li><input type="checkbox" disabled> 店家端網址打得開</li>
 <li><input type="checkbox" disabled> 後端 <code>/actuator/health</code> 回 <code>UP</code></li>
 <li><input type="checkbox" disabled> <a class="gloss" href="../../tech/backend/19-Swagger.html" title="看這個技術的白話說明">Swagger</a> 打得開（demo 時建議開著）</li>
-<li><input type="checkbox" disabled> 櫃檯開桌 → 手機掃碼 → 點餐 → 送出 → 櫃檯結清，整條路通</li>
-<li><input type="checkbox" disabled> <strong>兩支手機同一桌，即時同步有作用</strong>（<a class="gloss" href="../../tech/realtime/41-WebSocket與STOMP.html" title="看這個技術的白話說明">WebSocket</a> 通了）</li>
+<li><input type="checkbox" disabled> 櫃檯點空桌開桌 → 手機掃碼 → 加進購物車 → 送出整桌點餐 → 櫃檯結清（付款倒數跑完），整條路通</li>
+<li><input type="checkbox" disabled> <strong>兩支手機同一桌，即時同步有作用</strong>（<a class="gloss" href="../../tech/realtime/41-WebSocket與STOMP.html" title="看這個技術的白話說明">WebSocket</a> 通了）：一支加進購物車，另一支的購物車角標跟著變、跳出「誰加了什麼」（加的那支自己不跳）</li>
 <li><input type="checkbox" disabled> 店家端登入、桌況、KDS 正常</li>
 <li><input type="checkbox" disabled> 在 <code>/order/menu</code> 按 F5 不會 404</li>
 <li><input type="checkbox" disabled> 手機實機測過（<strong>iOS Safari 一定要測</strong>）</li>
-<li><input type="checkbox" disabled> 種子資料有進去（推薦不是空的；有做進階 A4 報表的話，報表也不是空的）</li>
+<li><input type="checkbox" disabled> 種子資料有進去（菜單、桌位都有；有做進階 A7 人氣推薦或 A4 報表的話，推薦和報表也不是空的）</li>
 <li><input type="checkbox" disabled> 測試帳號寫進 README</li>
 </ul>
 <h2 id="readme-要有什麼">README 要有什麼</h2>

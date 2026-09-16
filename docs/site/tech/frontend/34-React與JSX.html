@@ -192,6 +192,7 @@ $('#cart-bar').show();
 setCart([...cart, { name: '牛五花', quantity: 2, price: 280 }]);
 </code></pre>
 <p><strong>就這一行。</strong> 數量、總額、購物車列表、底部橫條——全部自己變。</p>
+<p>（我們專案的購物車其實存在後端、整桌共用，資料是打 API 抓回來再 <code>setCart</code>；但「只改資料、畫面自己變」這件事完全一樣。）</p>
 <p>因為你在別的地方已經描述過「<strong>畫面應該長什麼樣子</strong>」：</p>
 <pre><code class="language-jsx">&lt;div&gt;
   &lt;ul&gt;

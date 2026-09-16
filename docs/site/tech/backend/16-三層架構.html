@@ -247,10 +247,10 @@ public class OrderController {
 
     private final OrderService orderService;
 
-    @PostMapping(&quot;/me/orders&quot;)
+    @PostMapping(&quot;/me/orders&quot;)                        // 不帶 body：整桌購物車就是這張單的內容
     public OrderTicketDto submit(@RequestHeader(&quot;X-Session-Token&quot;) String token,
-                                 @Valid @RequestBody SubmitOrderRequest request) {
-        return orderService.submitOrder(token, request);
+                                 @RequestHeader(&quot;X-Device-Id&quot;) String deviceId) {
+        return orderService.submitOrder(token, deviceId);
     }
 }
 </code></pre>
@@ -261,19 +261,29 @@ public class OrderController {
 public class OrderService {
 
     private final DiningSessionRepository sessionRepo;
+    private final CartItemRepository cartItemRepo;
     private final OrderTicketRepository ticketRepo;
     private final InventoryService inventoryService;
 
     @Transactional
-    public OrderTicketDto submitOrder(String token, SubmitOrderRequest req) {
-        DiningSession session = sessionRepo.findByTokenForUpdate(token)   // 鎖住這一列，跟櫃檯結清搶同一把鎖
-            .orElseThrow(() -&gt; new BusinessException(&quot;INVALID_SESSION_TOKEN&quot;));
+    public OrderTicketDto submitOrder(String token, String deviceId) {
+        DiningSession session = sessionRepo.findByTokenForUpdate(token)   // 鎖住這一列，跟櫃檯結清、同桌其他人的送出搶同一把鎖
+            .orElseThrow(() -&gt; new BusinessException(&quot;INVALID_SESSION_TOKEN&quot;, &quot;用餐權杖已失效&quot;, HttpStatus.UNAUTHORIZED));
 
         if (session.getStatus() != SessionStatus.OPEN) {
-            throw new BusinessException(&quot;SESSION_CLOSED&quot;, &quot;這桌已經結帳，不能再加點&quot;);
+            throw new BusinessException(&quot;SESSION_CLOSED&quot;, &quot;這桌已經結帳，不能再加點&quot;, HttpStatus.CONFLICT)
+                .with(&quot;reason&quot;, session.getStatus().name());   // PAID 或 CANCELLED（見全域例外處理）
         }
 
-        // 檢查必選選項、檢查鍋底、扣庫存、建立點餐單、算金額 ...
+        // 鎖到了才讀整桌購物車；空的通常是同桌另一個人剛送出
+        List&lt;CartItem&gt; cart = cartItemRepo.findByDiningSessionId(session.getId());
+        if (cart.isEmpty()) {
+            throw new BusinessException(&quot;CART_EMPTY&quot;, &quot;購物車是空的，可能同桌已經送出了&quot;, HttpStatus.CONFLICT);
+        }
+
+        // 檢查必選選項、檢查鍋底、扣庫存、建立點餐單（記下 deviceId 對到的同桌客人）、算金額 ...
+        cartItemRepo.deleteAll(cart);                   // 同一個交易裡清空購物車
+        // ... 回傳 OrderTicketDto
     }
 }
 </code></pre>
@@ -306,7 +316,7 @@ public class OrderService {
 </tr>
 <tr>
 <td><strong>可以重用</strong></td>
-<td>顧客自己點餐和櫃檯代客加點，用的是同一個 Service 方法</td>
+<td>顧客送出整桌購物車、櫃檯代客加點（不經過購物車，body 直接帶品項，<code>source = STAFF</code>），共用同一段「驗證、扣庫存、寫單」的 Service 邏輯</td>
 </tr>
 </tbody>
 </table></div>

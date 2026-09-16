@@ -294,7 +294,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td>2.5</td>
-<td>櫃檯開桌（三種來源：現場填人數／候位／預約，同一頁三頁籤）</td>
+<td>開桌（三種來源：現場填人數／候位／預約，同一頁三頁籤；目標桌預約保留中回 <code>409 TABLE_RESERVED</code>）</td>
 <td>☐</td>
 </tr>
 <tr>
@@ -314,7 +314,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td>2.6</td>
-<td>顧客加入（取得用餐權杖）</td>
+<td>顧客加入（取得用餐權杖與同桌身分 <code>guest</code>，給共用購物車標示誰加的）</td>
 <td>☐</td>
 </tr>
 <tr>
@@ -329,7 +329,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td>2.8</td>
-<td>桌況總覽（即時）</td>
+<td>桌況總覽（即時；進入保留窗的桌顯示第四種色塊「預約保留」，見 7.10）</td>
 <td>☐</td>
 </tr>
 <tr>
@@ -359,7 +359,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td>2.14</td>
-<td>取消該次用餐</td>
+<td>取消該次用餐（僅店長；沒點過餐才可以，否則 <code>409 SESSION_HAS_ORDERS</code>；桌位直接回空桌、同桌手機直接回首頁）</td>
 <td>☐</td>
 </tr>
 </tbody>
@@ -376,12 +376,12 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tbody>
 <tr>
 <td>3.1</td>
-<td>購物車（前端狀態，不存後端）</td>
+<td>購物車（<strong>存後端、整桌共用</strong>，加入時廣播 <code>CART_UPDATED</code>，每列標示誰加的；自己的動作不通知自己）</td>
 <td>☐</td>
 </tr>
 <tr>
 <td>3.2</td>
-<td>送出點餐（建立一張 <code>order_ticket</code>）</td>
+<td>送出整桌點餐（不帶品項，整份購物車變一張 <code>order_ticket</code>；購物車空的回 <code>409 CART_EMPTY</code>）</td>
 <td>☐</td>
 </tr>
 <tr>
@@ -446,6 +446,10 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 </tbody>
 </table></div>
+<blockquote>
+<p>原 3.E4「誰加的」標示已併入 3.1（2026-09-16，購物車改成存後端、整桌共用之後就變成基礎），編號不重編。
+不經過整桌購物車的只有兩種：櫃檯代客加點（S-03 直接出單，同桌通知顯示「櫃檯 送出 N 項」），以及 C-17 預先點餐（A2，購物車只存在那支手機）。</p>
+</blockquote>
 <h3 id="m4-出菜看板-kds">M4 <a href="../spec/modules/M4-出菜看板.html">出菜看板 KDS</a>　★★★☆☆</h3>
 <div class="tablewrap"><table>
 <thead>
@@ -593,7 +597,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td>6.7</td>
-<td>櫃檯結清（現金／模擬支付，S-03）</td>
+<td>櫃檯結清（現金／信用卡／條碼三顆，按下後倒數 5 秒、可取消，S-03／S-03b）</td>
 <td>☐</td>
 </tr>
 <tr>
@@ -634,7 +638,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td>7.2</td>
-<td><strong><a class="gloss" href="../tech/advanced/46-區間重疊與訂位排程.html" title="看這個技術的白話說明">區間重疊</a>檢查</strong>（<code>A.start &lt; B.end AND B.start &lt; A.end</code>）</td>
+<td><strong><a class="gloss" href="../tech/advanced/46-區間重疊與訂位排程.html" title="看這個技術的白話說明">區間重疊</a>檢查</strong>（<code>A.start &lt; B.end AND B.start &lt; A.end</code>；<code>CONFIRMED</code> 與 <code>SEATED</code> 都算佔用）</td>
 <td>☐</td>
 </tr>
 <tr>
@@ -669,7 +673,12 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td>7.9</td>
-<td>報到開桌（S-07b 選桌；逾時回 <code>409 RESERVATION_EXPIRED</code>）</td>
+<td>報到開桌（S-07b 選桌；最早提前 30 分，太早回 <code>409 RESERVATION_TOO_EARLY</code>，逾時回 <code>409 RESERVATION_EXPIRED</code>）</td>
+<td>☐</td>
+</tr>
+<tr>
+<td>7.10</td>
+<td><strong>訂位保留桌位</strong>（配到的桌在訂位前 30 分～後 10 分鎖住；<strong>算出來的，不是排程</strong>；櫃檯可取消保留）</td>
 <td>☐</td>
 </tr>
 <tr>
@@ -699,7 +708,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td>7.16</td>
-<td>開桌時列出可報到的預約（給 S-02d，現在 −10～+45 分）</td>
+<td>開桌時列出可報到的預約（給 S-02d，現在 −10～+30 分）</td>
 <td>☐</td>
 </tr>
 <tr>
@@ -710,7 +719,9 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tbody>
 </table></div>
 <blockquote>
-<p>7.10（排程：桌位預留轉換）已移除——桌位不再跟訂位連動，見 M2 問題 5。編號留空號不重編。</p>
+<p>7.10 原本是「排程：桌位預留轉換」，那支排程已經刪掉，<strong>排程仍是九支</strong>。2026-09-16 這個編號恢復使用，
+改成<strong>算出來的</strong>訂位保留：桌位欄位一樣只有三種，查桌況時才判斷要不要顯示「預約保留」，不存桌態、不靠排程。
+為什麼這樣就沒有舊版的同步問題，見 <a href="../spec/modules/M2-桌位開桌與候位.html">M2 問題 5</a>。</p>
 <p><strong>預先點餐不在基礎裡。</strong> 基礎交出來的是「選時間 → 訂位成立 → 到店報到開桌」這條線；
 預點、事後調整、報到轉單整塊在進階（M7 的 7.E1～7.E3）。</p>
 </blockquote>
@@ -774,6 +785,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <blockquote>
 <p><strong>8.8、8.9（消費歷史、單次消費明細）移到進階</strong>，見 §4.1。那是 C-15 那一頁。
 <strong>8.10（匿名轉會員）也移到進階</strong>：基礎沒有點數也沒有消費紀錄，綁了會員看不出差別；它是 A1／A6 的前提。
+8.10 有兩個入口：C-09 線上登入（A5），以及 S-03 櫃檯輸入手機查詢、唸生日確認後綁定（<code>GET /api/admin/members/lookup</code>）。
 基礎的會員只剩登入、訂位免填資料、我的預約。會員中心（8.7）留在基礎，只是少兩個入口。編號沿用不重編。</p>
 </blockquote>
 <hr />
@@ -781,9 +793,10 @@ pre.mermaid svg{max-width:100%;height:auto}
 <blockquote>
 <p><strong>基礎全部綠燈才動工。</strong> 每一項都是獨立的，做不做都不影響基礎層運作。</p>
 </blockquote>
-<h3 id="41-本專題真的要切出去的六塊2026-09-15-定案">4.1 本專題真的要切出去的六塊（2026-09-15 定案）</h3>
-<p>下面這六塊是<strong>已經畫了設計稿、但排在基礎後面</strong>的，共八張畫面：C-09、C-10、C-11、C-15、C-17、C-20、S-09、S-12。
-其餘進階項目連稿都沒畫，是「未來規劃」等級；這六塊是「時間不夠就整塊不做，時間夠就照稿做」等級。</p>
+<h3 id="41-本專題真的要切出去的七塊2026-09-15-定案09-16-補-a7">4.1 本專題真的要切出去的七塊（2026-09-15 定案，09-16 補 A7）</h3>
+<p>下面這七塊是<strong>已經畫了設計稿、但排在基礎後面</strong>的：A1～A6 各有自己的畫面，共八張（C-09、C-10、C-11、C-15、C-17、C-20、S-09、S-12）；
+A7 人氣推薦<strong>沒有獨立畫面</strong>，只是 C-04 菜單主頁裡的一塊。
+其餘進階項目連稿都沒畫，是「未來規劃」等級；這七塊是「時間不夠就整塊不做，時間夠就照稿做」等級。</p>
 <div class="tablewrap"><table>
 <thead>
 <tr>
@@ -830,11 +843,20 @@ pre.mermaid svg{max-width:100%;height:auto}
 <td>M8 8.E1、8.E2、M6 6.E5（8.10 是前提）</td>
 <td>沒有點數也沒有優惠券；基礎畫面上本來就不出現這兩樣</td>
 </tr>
+<tr>
+<td>A7</td>
+<td>人氣推薦（C-04 的「本店人氣 TOP 5」區塊，沒有獨立畫面）</td>
+<td>M3 3.E1（<code>GET /api/menu/recommendations?type=POPULAR</code>）</td>
+<td>C-04 少一條橫向捲動的推薦卡片，整塊拿掉即可，不影響點餐；「推薦」頁籤與品項的「人氣」膠囊也來自推薦統計，一起拿掉，預設頁籤改「鍋底」</td>
+</tr>
 </tbody>
 </table></div>
 <blockquote>
-<p>畫面總數 42 張：顧客端 25（C-00、C-01、C-04、C-04b、C-04c、C-05～C-12、C-12b、C-13～C-16、C-16b、C-16c、C-17～C-21，C-02、C-03 空號）、
-店家端 17（S-01、S-02、S-02b、S-02c、S-02d、S-03～S-07、S-07b、S-08～S-10、S-10b、S-11、S-12），另有 8 張元件總表（DS-01～DS-08）。
+<p><strong>A6 的折抵規則</strong>（2026-09-16）：優惠券與點數<strong>可以同一次一起用</strong>——先扣優惠券（一次最多一張）→ 再用點數（1 點折 1 元，最多折到 0 元）。
+點數以<strong>實付金額</strong>計，每滿 100 元 1 點、無條件捨去（1,562 元 → 15 點），付款成功後才入帳。</p>
+<p>畫面總數 43 張：顧客端 25（C-00、C-01、C-04、C-04b、C-04c、C-05～C-12、C-12b、C-13～C-16、C-16b、C-16c、C-17～C-21，C-02、C-03 空號）、
+店家端 18（S-01、S-02、S-02b、S-02c、S-02d、S-03、S-03b、S-04～S-07、S-07b、S-08～S-10、S-10b、S-11、S-12），另有 8 張元件總表（DS-01～DS-08）。
+進階畫面仍是 8 張；進階塊數 7（A7 沒有獨立畫面）。
 頁面清單以 <a href="../ui/10-UI-UX規格.html">10-UI-UX 規格</a> 的頁面表為準。</p>
 </blockquote>
 <p><strong>刻意不列進階的四條線：</strong></p>
@@ -859,13 +881,13 @@ pre.mermaid svg{max-width:100%;height:auto}
 <td>候位是開桌三頁籤的其中一條，抽掉 S-02c 要重畫；服務鈴是多裝置即時同步最好示範的一段，成本又低</td>
 </tr>
 <tr>
-<td><strong>櫃檯結帳</strong>（S-03，M6 6.1～6.3、6.7、6.9～6.11）</td>
+<td><strong>櫃檯結帳</strong>（S-03、S-03b，M6 6.1～6.3、6.7、6.9～6.11）</td>
 <td>客人預設到櫃檯結帳，這條不能砍——砍了整家店收不了錢</td>
 </tr>
 </tbody>
 </table></div>
 <blockquote>
-<p><strong>驗收怎麼講</strong>：這六塊是「刻意排在後面」，不是「沒做完」。
+<p><strong>驗收怎麼講</strong>：這七塊是「刻意排在後面」，不是「沒做完」。
 簡報時直接說「基礎全綠燈，進階做了幾塊」，比含糊帶過好得多。</p>
 </blockquote>
 <h3 id="42-其餘進階項目連稿都沒畫">4.2 其餘進階項目（連稿都沒畫）</h3>
@@ -883,11 +905,11 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td>M2 桌位</td>
-<td>併桌拆桌換桌、候位自動遞補、預估等待時間、候位通知、樓層平面圖</td>
+<td>併桌拆桌換桌、候位自動遞補、預估等待時間、候位通知、手動保留 2.E5（給沒有訂位的保留用）、樓層平面圖</td>
 </tr>
 <tr>
 <td>M3 點餐</td>
-<td>人氣推薦、個人化推薦、屬性推薦、「誰加的」標示</td>
+<td><strong>人氣推薦（A7）</strong>、個人化推薦、屬性推薦（「誰加的」標示已併入基礎 3.1）</td>
 </tr>
 <tr>
 <td>M4 KDS</td>
@@ -899,7 +921,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td>M6 結帳</td>
-<td><strong>報表 S-12（A4）</strong>、<strong>顧客線上結帳 C-09～C-11（A5）</strong>、<strong>優惠券折抵（A6）</strong>、發票模擬、翻桌率統計、熱門品項報表</td>
+<td><strong>報表 S-12（A4）</strong>、<strong>顧客線上結帳 C-09～C-11（A5）</strong>、<strong>優惠券與點數折抵（A6，可同一次一起用）</strong>、發票模擬、翻桌率統計、熱門品項報表</td>
 </tr>
 <tr>
 <td>M7 訂位</td>
@@ -907,7 +929,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td>M8 會員</td>
-<td><strong>消費紀錄 C-15（A1）</strong>、<strong>匿名轉會員 8.10</strong>、<strong>集點與優惠券 C-20（A6）</strong>、會員分級、生日優惠、Refresh Token 輪替</td>
+<td><strong>消費紀錄 C-15（A1）</strong>、<strong>匿名轉會員 8.10（C-09 線上、S-03 櫃檯查手機兩個入口）</strong>、<strong>集點與優惠券 C-20（A6）</strong>、會員分級、生日優惠、Refresh Token 輪替</td>
 </tr>
 </tbody>
 </table></div>
@@ -943,12 +965,34 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td><code>CANCELLED</code></td>
-<td>未消費即離開（櫃檯取消該次用餐）</td>
+<td>沒點餐就離開（店長在 S-03 取消該次用餐；送出過點餐單的不能取消，回 <code>409 SESSION_HAS_ORDERS</code>）</td>
 <td>（終態）</td>
 </tr>
 </tbody>
 </table></div>
-<p><strong>只有 <code>OPEN</code> 可以建立新的 <code>OrderTicket</code>。</strong> 進入終態時該桌所有用餐權杖立刻失效。</p>
+<p><strong>只有 <code>OPEN</code> 可以建立新的 <code>OrderTicket</code>，也只有 <code>OPEN</code> 可以增刪改購物車</strong>（否則 <code>409 SESSION_CLOSED</code>）。進入終態時該桌所有用餐權杖立刻失效，整桌購物車一起刪掉（還沒送出的品項直接捨棄，不算錢；櫃檯結帳前 S-03 會提醒「還有 N 項沒送出，結帳後會捨棄」）。</p>
+<p>兩種終態推同一個事件 <code>SESSION_CLOSED</code>，用 <code>reason</code> 分：</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th><code>reason</code></th>
+<th>桌位</th>
+<th>顧客手機</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PAID</code></td>
+<td>→ <code>CLEANING</code> 待清理</td>
+<td>C-04 顯示「已結帳」面板，按「回到首頁」到 C-00</td>
+</tr>
+<tr>
+<td><code>CANCELLED</code></td>
+<td>→ 直接回 <code>AVAILABLE</code>（沒用過，不用清潔）</td>
+<td><strong>不顯示任何面板</strong>，清掉權杖直接導回 C-00（<code>/</code>）</td>
+</tr>
+</tbody>
+</table></div>
 <p><strong>「結帳時剛好有人加點」靠金額比對 + 列鎖處理，不靠狀態。</strong> 送出點餐與結清／付款都在交易裡
 <code>SELECT ... FOR UPDATE</code> 同一筆 <code>dining_session</code>，所以一定一先一後：
 加點先 → 結清拿到 <code>409 BILL_CHANGED</code>（合計跟 <code>expectedTotal</code> 不同）；結清先 → 加點拿到 <code>409 SESSION_CLOSED</code>。
@@ -973,12 +1017,17 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td><code>AVAILABLE</code> 空桌</td>
 <td><code>OCCUPIED</code></td>
-<td>櫃檯開桌</td>
+<td>開桌（S-02 點空桌，或 S-07／S-10 報到開桌）</td>
 </tr>
 <tr>
 <td><code>OCCUPIED</code> 用餐中</td>
 <td><code>CLEANING</code></td>
 <td>櫃檯結清（或 A5 線上付款成功）</td>
+</tr>
+<tr>
+<td><code>OCCUPIED</code> 用餐中</td>
+<td><code>AVAILABLE</code></td>
+<td>店長取消該次用餐（沒點過餐，不用清潔）</td>
 </tr>
 <tr>
 <td><code>CLEANING</code> 待清理</td>
@@ -988,17 +1037,51 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tbody>
 </table></div>
 <p><strong>沒有「結帳中／待結帳」這種桌態</strong>，任何畫面都不可以出現。</p>
-<p><strong>桌位系統跟訂位、候位是三套獨立的東西，不互相連動。</strong>
-訂位與候位各自管自己的狀態；桌位只反映現場當下。兩邊只有一個接點：
-<strong>開桌成功時，把來源那筆訂位或候位轉成已報到。</strong></p>
+<p><strong>桌位跟訂位有一個「算出來的」接點，跟候位沒有。</strong>（2026-09-16 定案，推翻舊的「三套互不連動」）</p>
+<p><code>dining_table.status</code> 仍然只有上面三種，只反映現場當下；但查桌況時，<code>AVAILABLE</code> 的桌如果有一筆訂位同時符合
+配到這張桌（<code>reservation.table_id</code>）、<code>CONFIRMED</code>、現在落在 <code>start_time − 30 分</code> ～ <code>start_time + 10 分</code>、<code>hold_released_at IS NULL</code>，
+就<strong>顯示成 <code>RESERVED</code>（預約保留）</strong>：不能開給別人（<code>409 TABLE_RESERVED</code>），櫃檯可以取消保留（M7 7.10）。</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>顯示優先順序</th>
+<th>條件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 用餐中</td>
+<td><code>status = OCCUPIED</code>（配到的桌到時間還在用餐中，就不顯示保留，櫃檯從 S-07b 幫客人選別張桌）</td>
+</tr>
+<tr>
+<td>2 待清理</td>
+<td><code>status = CLEANING</code></td>
+</tr>
+<tr>
+<td>3 預約保留</td>
+<td><code>status = AVAILABLE</code> 且符合上面的保留條件</td>
+</tr>
+<tr>
+<td>4 空桌</td>
+<td>其他</td>
+</tr>
+</tbody>
+</table></div>
+<p>候位仍然不鎖桌。另一個接點照舊：<strong>開桌成功時，把來源那筆訂位或候位轉成已報到</strong>（轉成 <code>SEATED</code> 之後保留條件不成立，保留自己消失）。</p>
 <p>開桌有兩個入口：從桌子出發（S-02 點空桌 → S-02b／S-02c／S-02d），從人出發（S-07／S-10 → S-07b／S-10b），後端是同一組 API。</p>
-<p>舊版有第四種 <code>RESERVED</code>，由排程在訂位前 30 分鐘自動轉入，已經移除。
-櫃檯手動保留桌位是延伸功能（M2 的 2.E5），基礎不做。詳見 <a href="../spec/modules/M2-桌位開桌與候位.html">M2 問題 5</a>。</p>
+<p>舊版的 <code>RESERVED</code> 是<strong>存在桌位欄位裡、靠排程在訂位前 30 分鐘轉入</strong>的，cron 一沒跑就跟訂位對不上，已經移除；
+現在的 <code>RESERVED</code> 只是顯示狀態，每次查詢現算，不存、不靠排程。
+櫃檯手動保留（<code>HELD</code>，給沒有訂位的保留用）仍是延伸功能 M2 的 2.E5，基礎不做。詳見 <a href="../spec/modules/M2-桌位開桌與候位.html">M2 問題 5</a>。</p>
 <h3 id="64-預約-reservationstatus">6.4 預約 <code>Reservation.status</code></h3>
 <p><code>CONFIRMED</code> → <code>SEATED</code>，或 → <code>CANCELLED</code>（客人或櫃檯取消）／ <code>NO_SHOW</code>（排程標記）。</p>
+<p><strong>報到最早在訂位時間前 30 分鐘</strong>，更早按回 <code>409 RESERVATION_TOO_EARLY</code>「還沒到可報到時間（18:00 起）」。
+櫃檯「取消保留」只寫 <code>hold_released_at</code>，<strong>訂位狀態不變</strong>（仍是 <code>CONFIRMED</code>），客人到了照樣可以報到，改從 S-07b 選別張桌。
+取消保留是<strong>單向</strong>的，沒有恢復的 API，按之前要二次確認「取消後無法恢復。…」。</p>
+<p><strong>區間重疊時 <code>CONFIRMED</code> 與 <code>SEATED</code> 都算佔用</strong>（到 <code>end_time</code> 為止）。只算 <code>CONFIRMED</code> 的話，客人一報到名額就被讓出去，同一時段會被線上多訂一組。</p>
 <p><strong>訂位保留 10 分鐘</strong>：訂位時間過了 10 分鐘還沒報到就視為 <code>NO_SHOW</code>，只能現場候位。
-排程每 5 分鐘跑一次，最多晚 5 分鐘才標，所以開桌頁的預約清單只列 <code>start_time</code> 在現在 −10～+45 分的，
-報到 API 也自己檢查，逾時回 <code>409 RESERVATION_EXPIRED</code>。<code>NO_SHOW</code> 不用動桌位（桌位本來就沒被鎖）。</p>
+排程每 5 分鐘跑一次，最多晚 5 分鐘才標，所以開桌頁的預約清單只列 <code>start_time</code> 在現在 −10～+30 分的，
+報到 API 也自己檢查，逾時回 <code>409 RESERVATION_EXPIRED</code>。<code>NO_SHOW</code> 不用動桌位：預約保留在訂位時間後 10 分鐘就自己結束（它是算出來的，排程晚跑也不影響）。</p>
+<p>顧客端 C-19 我的預約把 <code>NO_SHOW</code> 放在「已取消」頁籤，狀態膠囊「逾時未到」＋「需要的話請重新訂位」。</p>
 <p><strong>沒有 <code>PENDING</code></strong>：選完時段送出就直接成立。舊設計的 <code>PENDING</code> 是為了「預付成功才確認」，
 這一版訂位不收錢，這個狀態沒有任何路徑會產生，已經移除。</p>
 <h3 id="65-候位-waitliststatus">6.5 候位 <code>Waitlist.status</code></h3>
@@ -1033,7 +1116,8 @@ pre.mermaid svg{max-width:100%;height:auto}
 <h3 id="66-付款-paymentstatus">6.6 付款 <code>Payment.status</code></h3>
 <p><code>PENDING</code> → <code>SUCCESS</code> → <code>REFUNDED</code>；<code>PENDING</code> → <code>FAILED</code>（可建立新的 <code>PENDING</code> 重試）。</p>
 <ul>
-<li>櫃檯結清（基礎）直接寫一筆 <code>SUCCESS</code>，<code>method</code> 是 <code>CASH</code> 或 <code>MOCK_PAY</code></li>
+<li>櫃檯結清（基礎）直接寫一筆 <code>SUCCESS</code>，<code>method</code> 是 <code>CASH</code>／<code>CARD</code>／<code>BARCODE</code>（按下後倒數 5 秒的模擬流程，<strong>不做失敗機率</strong>）；沒有 <code>MOCK_PAY</code></li>
+<li>A5 線上付款的 <code>method</code> 是 <code>APPLE_PAY</code>／<code>GOOGLE_PAY</code>／<code>LINE_PAY</code></li>
 <li><code>PENDING</code>／<code>FAILED</code> 只有進階 A5 的線上模擬付款才會出現</li>
 <li><code>REFUNDED</code> 只給延伸 7.E7（訂金）用，<strong>這一版沒有任何退款流程</strong></li>
 </ul>
@@ -1080,7 +1164,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td><strong>可用性</strong></td>
-<td>內文 ≥16px、可點擊區 ≥48×48px、對比度 ≥4.5:1</td>
+<td>內文 ≥16px、可點擊區 ≥44×44px（步進器等例外見 11）、對比度 ≥4.5:1</td>
 <td>見 <a href="../ui/11-設計系統.html">11-設計系統</a></td>
 </tr>
 <tr>

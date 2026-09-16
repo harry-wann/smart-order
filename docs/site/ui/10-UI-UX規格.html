@@ -197,7 +197,7 @@ Figma 上每個畫框右邊那張說明卡的內容在 <code>13-畫框註解.md<
 </tr>
 <tr>
 <td><strong>長輩與兒童友善</strong></td>
-<td>內文最小 16px、主要按鈕高度 ≥ 52px、可點擊區 ≥ 48×48px（步進器與 <code>+</code> 例外，28×28）、對比度 ≥ 4.5:1、<strong>不依賴顏色傳達資訊</strong>（售完要有文字標籤，不能只變灰）</td>
+<td>內文最小 16px、主要按鈕高度 ≥ 52px、可點擊區 ≥ 44×44px（例外：步進器與 <code>+</code> 28×28；菜單列進詳情的箭頭 32×32，整列本來就可點）、對比度 ≥ 4.5:1、<strong>不依賴顏色傳達資訊</strong>（售完要有文字標籤，不能只變灰）</td>
 </tr>
 <tr>
 <td><strong>食物是主角</strong></td>
@@ -245,7 +245,7 @@ Figma 上每個畫框右邊那張說明卡的內容在 <code>13-畫框註解.md<
 <p>分層判準見 <code>../spec/02-需求規格.md</code> §1：<strong>拿掉它，這家店還開不開得成？</strong>
 開得成就是進階。下面這張表是「頁面層級」的結論，模組內的細項分層看那份文件。</p>
 </blockquote>
-<p><strong>進階共六塊（A1～A6）、八張畫面：C-09、C-10、C-11、C-15、C-17、C-20、S-09、S-12，全部集中在這裡：</strong></p>
+<p><strong>進階共七塊（A1～A7），其中六塊有獨立畫面、共八張：C-09、C-10、C-11、C-15、C-17、C-20、S-09、S-12；A7 人氣推薦沒有獨立畫面，是 C-04 裡的一塊。全部集中在這裡：</strong></p>
 <div class="tablewrap"><table>
 <thead>
 <tr>
@@ -292,6 +292,12 @@ Figma 上每個畫框右邊那張說明卡的內容在 <code>13-畫框註解.md<
 <td>沒有集點、沒有優惠券；基礎畫面上本來就不出現任何點數與優惠券字樣</td>
 <td>M8 8.E1、8.E2、M6 6.E5（8.10 是前提）</td>
 </tr>
+<tr>
+<td>A7</td>
+<td>C-04 的「本店人氣 TOP 5」區塊（人氣推薦，沒有獨立畫面）</td>
+<td>菜單頂部少一排橫向卡片、少「推薦」頁籤與「人氣」膠囊，客人照分類點餐不受影響；不做就整塊拿掉</td>
+<td>M3 3.E1、<code>GET /api/menu/recommendations?type=POPULAR</code>（進階）</td>
+</tr>
 </tbody>
 </table></div>
 <blockquote>
@@ -306,12 +312,13 @@ Figma 上每個畫框右邊那張說明卡的內容在 <code>13-畫框註解.md<
 <li><strong>選項群組管理 S-06</strong>——一度列進階（用 <a class="gloss" href="../tech/database/22-關聯式資料庫與SQL.html" title="看這個技術的白話說明">SQL</a> 種資料就能 demo），2026-09-15 改回基礎</li>
 <li><strong>候位</strong>（S-10、S-10b、S-02c）與<strong>服務鈴</strong>（C-21、S-11）——候位是開桌三頁籤的其中一條，
   拿掉 S-02b 就要重畫；服務鈴是多裝置即時同步最好講的一段，成本又低</li>
-<li><strong>櫃檯結帳</strong>（S-03，M6 6.1～6.3、6.7、6.9～6.11）——客人預設走到櫃檯結帳，
+<li><strong>櫃檯結帳</strong>（S-03、S-03b，M6 6.1～6.3、6.7、6.9～6.11）——客人預設走到櫃檯結帳，
   A5 線上結帳不做的話這是<strong>唯一</strong>的結帳路徑，這條不能砍。結帳防呆（<code>expectedTotal</code> 金額比對）跟著留在基礎</li>
 </ul>
 <p><strong>設計稿上怎麼標</strong>：Figma 每個畫框的標題旁邊有一顆膠囊（<code>基礎必做</code> ／ <code>進階・有空才做</code>），
 進階的那八張整格墊一張金黃虛線底板。<strong>位置不動</strong>——C-17 仍然排在預約那一列的原位、
-C-20 排在會員那一列 C-15 後面、C-09～C-11 仍然是結帳那一列，才看得出「這條線少了這幾張還是通的」。</p>
+C-20 排在會員那一列 C-15 後面、C-09～C-11 仍然是結帳那一列，才看得出「這條線少了這幾張還是通的」。
+A7 沒有獨立畫面，C-04 照樣標基礎，人氣區塊是進階這件事只寫在 C-04 的說明卡與本文件。</p>
 <hr />
 <h2 id="2-顧客端頁面手機優先375px-起">2. 顧客端頁面（手機優先，375px 起）</h2>
 <div class="tablewrap"><table>
@@ -559,7 +566,8 @@ C-20 排在會員那一列 C-15 後面、C-09～C-11 仍然是結帳那一列，
 </table></div>
 <blockquote>
 <p>舊版有第四種 <code>RESERVED</code>（「此桌已預約，請洽櫃檯」）。桌位狀態拿掉它之後，
-已被預約但還沒報到的桌就是空桌，客人掃到一樣是「請洽櫃檯帶位」——<strong>結果相同，少一個分支</strong>。</p>
+已被預約但還沒報到的桌就是空桌，客人掃到一樣是「請洽櫃檯帶位」——<strong>結果相同，少一個分支</strong>。
+櫃檯桌況上的「預約保留」（見 S-02）是店家端查詢時算出來的顯示狀態，顧客端的桌位查詢不回它，這裡照樣三種。</p>
 </blockquote>
 <ul>
 <li>底部小字：「有訂位？查詢我的預約」</li>
@@ -582,7 +590,7 @@ C-20 排在會員那一列 C-15 後面、C-09～C-11 仍然是結帳那一列，
 ├─────────────────────────────┤
 │ 鍋底 肉品 海鮮 蔬菜 火鍋料 ▸│  ← 橫向滑動頁籤，固定
 ├─────────────────────────────┤
-│ ┌─── 本店人氣 TOP 5 ───┐    │  ← P1，橫向捲動卡片
+│ ┌─── 本店人氣 TOP 5 ───┐    │  ← 進階 A7，橫向捲動卡片，不做就整塊拿掉
 │ │ [圖] [圖] [圖] [圖]   │    │
 │ └──────────────────────┘    │
 │                              │
@@ -612,6 +620,9 @@ C-20 排在會員那一列 C-15 後面、C-09～C-11 仍然是結帳那一列，
 <li><code>[+]</code> 按鈕：<strong>無選項的品項直接加入購物車</strong>（少一次點擊）；<strong>有必選選項的品項</strong>點擊整列進入詳情</li>
 <li>售完品項：照片灰階、價格劃線、名稱旁「售完」文字標籤＋照片上斜蓋「售完」印章、整列不可點</li>
 <li>分類頁籤固定在頂部，捲動時自動高亮目前分類</li>
+<li><strong>「本店人氣 TOP 5」是進階 A7（人氣推薦）</strong>：資料來源 <code>GET /api/menu/recommendations?type=POPULAR</code>（進階）；不做就整塊拿掉，分類頁籤下面直接接品項列。
+  同一份資料也決定「推薦」頁籤與品項名旁的「人氣」膠囊，不做 A7 就一起拿掉，預設頁籤改成「鍋底」</li>
+<li>底部購物車列顯示的是<strong>整桌共用購物車</strong>的項數與金額（見 C-06，<code>GET /me/cart</code> 回的 <code>totalQuantity</code>、<code>subtotal</code>），同桌有人加減會跟著變</li>
 </ul>
 <h4 id="鍋底規則原本的-c-03-併進來">鍋底規則（原本的 C-03 併進來）</h4>
 <ul>
@@ -626,7 +637,18 @@ C-20 排在會員那一列 C-15 後面、C-09～C-11 仍然是結帳那一列，
 </blockquote>
 <ul>
 <li>通知條從上方滑下、蓋在 appbar 上，停 4 秒自己收回，<strong>不用客人關掉</strong></li>
-<li>兩種內容：<strong>有人加入購物車</strong>（誰＋加了什麼）、<strong>有人送出訂單</strong>（第幾單＋幾項幾元）</li>
+<li>兩種內容，資料都來自 <a class="gloss" href="../tech/realtime/41-WebSocket與STOMP.html" title="看這個技術的白話說明">WebSocket</a> <code>/topic/session/{id}</code>：</li>
+<li><strong>C-04b 有人加入購物車</strong>：收到 <code>CART_UPDATED</code> 且 <code>action = ADDED</code> 才跳，標題「陳小美 加了一樣東西」、說明「安格斯霜降牛五花 ×1」（<code>byGuest</code>、<code>itemName</code>、<code>quantity</code>）；
+    <code>UPDATED</code>／<code>REMOVED</code> 不跳通知條，只更新購物車角標</li>
+<li><strong>C-04c 有人送出訂單</strong>：收到送單事件 <code>NEW_TICKET</code>（推給同桌的那份多帶 <code>byGuest</code>、<code>byGuestId</code>），標題「第 2 單已送出廚房」、說明「王大明 送出 6 項・NT$ 1,420」；
+    <strong>「N 項」是這張單的品項列數</strong>（不是份數加總）</li>
+<li><strong>自己的動作不通知自己</strong>：<code>CART_UPDATED</code> 與 <code>NEW_TICKET</code> 都帶 <code>byGuestId</code>（<code>dining_session_guest.id</code>），
+  前端跟這支手機掃碼加入時拿到的 guest id（<code>POST /api/dining-sessions/join</code> 回的 <code>guest.id</code>）比對，<strong>相同就只更新畫面</strong>（角標、購物車），不跳通知條。
+  比 id 不比名字：會員暱稱可能重複</li>
+<li><strong>櫃檯代客加點</strong>（S-03）不經過整桌購物車，送單事件的 <code>byGuest</code> 是「<strong>櫃檯</strong>」、<code>byGuestId</code> 是 <code>null</code>，
+  所以同桌每支手機都會跳「櫃檯 送出 3 項」；預點轉單（報到開桌當下，還沒有手機加入）兩個都是 <code>null</code>，不跳通知</li>
+<li>「誰」（<code>byGuest</code>）是 <code>dining_session_guest.display_name</code>：有登入會員用會員暱稱，沒登入就依加入這桌的順序叫「客人 1」「客人 2」…
+  （掃碼加入時前端帶 <code>X-Device-Id</code>，這支手機第一次開啟時產生的 UUID，存 localStorage；<strong>只拿來標示誰加的，不是身分驗證</strong>，驗證仍靠用餐權杖）</li>
 <li>後來的蓋掉前一則，不堆疊</li>
 <li><strong>出現在結帳前的所有點餐畫面</strong>：C-04、C-05、C-06、C-08。設計稿只畫 C-04b／C-04c 兩張，
   其餘畫面共用同一個元件</li>
@@ -638,15 +660,17 @@ C-20 排在會員那一列 C-15 後面、C-09～C-11 仍然是結帳那一列，
 <blockquote>
 <p><strong>沒有「結帳中」這個狀態。</strong> 舊版按下「我要結帳」就把整桌鎖成「結帳中」、再推一個鎖定事件給所有手機，
 還要一條「請服務生取消結帳」的解鎖路徑。現在基礎是客人走到櫃檯結帳，
-櫃檯按下「標記已結清」的那一刻這次用餐就結束，結清之前同桌照樣可以加點。</p>
+櫃檯在 S-03 結帳完成的那一刻這次用餐就結束，結清之前同桌照樣可以加點。</p>
 </blockquote>
 <ul>
-<li>設計稿 meta 標籤寫 <code>已結帳</code>：櫃檯在 S-03 結清（或進階 A5 線上付款成功）後，<strong>整桌手機收到 <a class="gloss" href="../tech/realtime/41-WebSocket與STOMP.html" title="看這個技術的白話說明">WebSocket</a> <code>SESSION_CLOSED</code></strong> 一起切到這個狀態</li>
+<li>設計稿 meta 標籤寫 <code>已結帳</code>：櫃檯在 S-03 結清（或進階 A5 線上付款成功）後，<strong>整桌手機收到 WebSocket <code>SESSION_CLOSED</code>（<code>reason: "PAID"</code>）</strong> 一起切到這個狀態</li>
 <li>菜單內容整個變暗、分類頁籤停用，底部面板換成：
   「這桌已經結帳完成」／「謝謝光臨，歡迎再來」＋按鈕「回到首頁」（→ C-00）</li>
+<li><strong>底部購物車列消失</strong>：還沒送出的購物車品項，在結清的同一個交易裡<strong>直接捨棄</strong>（櫃檯結帳或 A5 線上付款成功都一樣），不算錢、也不會留到下次</li>
 <li>前端收到事件就清掉這支手機的用餐權杖；之後再打 <code>/api/dining-sessions/me/**</code> 會是 <code>401 INVALID_SESSION_TOKEN</code>，前端同樣清掉權杖、導到 C-00（<code>/</code>）</li>
 <li>送出點餐剛好跟結清撞在一起時，後端回 <code>409 SESSION_CLOSED</code>「這桌已經結帳，不能再加點」，前端一樣切到這個狀態</li>
 <li><strong>不再有</strong>「請服務生取消結帳」——沒有鎖定，就沒有解鎖</li>
+<li><strong>只有 <code>reason = PAID</code> 才顯示這個面板。</strong> <code>reason = CANCELLED</code>（店長在 S-03 按「取消該次用餐」）<strong>不顯示任何面板</strong>，清掉權杖直接導回 C-00（<code>/</code>）——客人沒點過餐，沒有「結帳完成」可講</li>
 </ul>
 <h3 id="c-05-品項詳情與選項">C-05 品項詳情與選項</h3>
 <ul>
@@ -661,10 +685,25 @@ C-20 排在會員那一列 C-15 後面、C-09～C-11 仍然是結帳那一列，
 <li><strong>固定底欄</strong>：「加入購物車 · $740」，必選未選時停用並顯示「請選擇份量」</li>
 </ul>
 <h3 id="c-06-購物車">C-06 購物車</h3>
+<blockquote>
+<p><strong>購物車是整桌共用的一份，存在後端</strong>（<code>cart_item</code>，掛在這次用餐底下）。
+同桌每支手機看到同一份，任何人都能增減、刪除；送出時整份變成一張點餐單。
+不放在各自手機的畫面狀態裡，是因為那樣同桌看不到彼此點了什麼，C-04b 的通知也接不起來。</p>
+</blockquote>
 <ul>
-<li>每列：品項名、已選選項（小字灰色）、備註、數量步進器、小計</li>
+<li>頂部一句「<strong>這是整桌共用的購物車</strong>」</li>
+<li>資料來源 <code>GET /api/dining-sessions/me/cart</code>，回 <code>{ items: [...], totalQuantity, subtotal }</code>；收到 <code>CART_UPDATED</code> 就重抓一次（自己改的也重抓，只是不跳通知條），<strong>畫面上的內容以後端為準</strong></li>
+<li>每列：品項名、品名下方小字「<strong>陳小美 加的</strong>」（<code>addedBy: { guestId, displayName }</code> 的 <code>displayName</code>）、已選選項（小字灰色）、備註、數量步進器、小計</li>
+<li>誰加的都可以改：數量與備註打 <code>PATCH</code>、刪除打 <code>DELETE /api/dining-sessions/me/cart/items/{id}</code></li>
 <li>左滑刪除 + 明顯的刪除按鈕（長輩不會左滑，兩種都要有）</li>
-<li>底部：合計 + 主按鈕「送出點餐」</li>
+<li>小計用加入當下的價格顯示；送單時後端以菜單現價重算，金額以送出後的點餐單為準</li>
+<li>底部：合計 + 主按鈕「<strong>送出整桌點餐</strong>」</li>
+<li>送 <code>POST /api/dining-sessions/me/orders</code>，<strong>不帶品項</strong>，後端把整桌購物車轉成一張點餐單後清空購物車</li>
+<li><code>409 CART_EMPTY</code>「<strong>購物車是空的，可能同桌已經送出了</strong>」：兩個人幾乎同時按送出，後到的那個拿到這句。
+    前端顯示提示並重抓購物車（換成空狀態），不用重送</li>
+<li><code>409 SESSION_CLOSED</code>：看回應的 <code>reason</code>，<code>PAID</code> 切到 C-04 的「已結帳」、<code>CANCELLED</code> 直接回 C-00；加入、修改、刪除購物車也一樣</li>
+<li><strong>結帳時還沒送出的品項直接捨棄</strong>：櫃檯結清（或 A5 付款成功）時整桌購物車一起刪掉；
+  停在這頁時收到 <code>SESSION_CLOSED</code>（<code>reason: "PAID"</code>）就切到 C-04 的「已結帳」，購物車不再顯示</li>
 <li>空購物車 → 空狀態插圖 + 「去看看菜單」</li>
 </ul>
 <h3 id="c-07-送出成功">C-07 送出成功</h3>
@@ -706,17 +745,21 @@ C-20 排在會員那一列 C-15 後面、C-09～C-11 仍然是結帳那一列，
 <li>未登入：登入入口「登入會員，這次消費會記到你的帳戶」＋「登入／註冊會員」按鈕 → C-12，
   下面一行小字「不登入也可以直接付款」（M8 8.10 匿名轉會員，進階）</li>
 <li><strong>這是最後一次能登入的地方。</strong> 付款完成後就補不回來了（見 C-11）</li>
-<li>「使用優惠券／點數折抵」整塊屬於<strong>進階 A6</strong>（規則見 C-20）；不做 A6 就整塊拿掉</li>
+<li>「使用優惠券／點數折抵」整塊屬於<strong>進階 A6</strong>（規則見 C-20）；不做 A6 就整塊拿掉。
+  區塊裡<strong>券與點數各一列，可以同時用</strong>：</li>
+<li>優惠券一列：一次最多選一張</li>
+<li>點數一列：「使用 N 點」，1 點折 1 元</li>
+<li>折抵順序固定：<strong>先扣優惠券，再用點數</strong>，最多折到 0 元；計算區在合計下面多兩行「優惠券 −NT$ 100」「點數 −NT$ 50」與實付金額</li>
 <li>主按鈕「前往付款」，把畫面上的合計當成 <code>expectedTotal</code> 帶進 C-10</li>
 </ul>
 <h3 id="c-10-付款方式進階-a5">C-10 付款方式（進階 A5）</h3>
 <ul>
 <li>三顆大按鈕，各自的品牌樣式（Apple Pay 黑底白字、Google Pay 白底、LINE Pay 綠底）</li>
 <li>要付現金的客人：一行提示「要付現金，請直接到櫃檯結帳」，<strong>不發任何通知</strong>（服務鈴已經沒有結帳這一類）；
-  付現金走基礎流程，櫃檯在 S-03 標記已結清</li>
+  付現金走基礎流程，櫃檯在 S-03 結帳</li>
 <li><strong>明顯標註「本系統為教學專題，付款為模擬流程，不會產生實際交易」</strong>（誠實，而且評審會欣賞）</li>
 <li>按下後：按鈕轉為處理中、全頁遮罩、<strong>禁止重複點擊</strong>、2 秒動畫</li>
-<li>送 <code>POST /api/payments</code>，body <code>{ "diningSessionId", "method", "expectedTotal" }</code>（A6 再加 <code>couponId</code>、<code>usePoints</code>）</li>
+<li>送 <code>POST /api/payments</code>，body <code>{ "diningSessionId", "method", "expectedTotal" }</code>（A6 再加 <code>couponId</code>、<code>usePoints</code>，兩個可以同時帶）</li>
 <li>成功 → C-11；失敗 → 錯誤提示 + 重試</li>
 <li><code>409 BILL_CHANGED</code> → 回 C-09 並提示「<strong>剛剛有人加點，金額更新了，請再確認一次</strong>」</li>
 <li><code>409 SESSION_CLOSED</code>（櫃檯剛好先結清了）→ 切到 C-04 的「已結帳」狀態，不會重複收款</li>
@@ -726,9 +769,10 @@ C-20 排在會員那一列 C-15 後面、C-09～C-11 仍然是結帳那一列，
 <li>勾勾動畫、交易編號、金額、付款方式</li>
 <li><strong>這裡沒有任何登入或註冊入口。</strong> 結帳完這次用餐就結束了，
   這時才叫人註冊，這筆消費也記不回去，只是在關門的時候硬塞一張表單</li>
-<li>「本次獲得 15 點」那一行屬於<strong>進階 A6</strong>（NT$ 1,562 × 每 100 元 1 點）（回應裡的 <code>pointsEarned</code>）；不做 A6 就不顯示</li>
+<li>「本次獲得 15 點」那一行屬於<strong>進階 A6</strong>（回應裡的 <code>pointsEarned</code>）；不做 A6 就不顯示。
+  點數以<strong>實付金額</strong>計，每滿 100 元 1 點、無條件捨去（實付 NT$ 1,562 → 15 點）</li>
 <li>「感謝光臨，歡迎再來」</li>
-<li>付款成功的同時：用餐轉 <code>PAID</code>、桌位轉待清理、同桌其他手機收到 <code>SESSION_CLOSED</code>，顯示 C-04 的「已結帳」</li>
+<li>付款成功的同時：用餐轉 <code>PAID</code>、桌位轉待清理、整桌還沒送出的購物車捨棄、同桌其他手機收到 <code>SESSION_CLOSED</code>，顯示 C-04 的「已結帳」</li>
 </ul>
 <h3 id="c-12-會員登入註冊">C-12 會員登入／註冊</h3>
 <blockquote>
@@ -757,7 +801,9 @@ C-20 排在會員那一列 C-15 後面、C-09～C-11 仍然是結帳那一列，
 <li>手機欄位唯讀並標「已驗證」</li>
 <li>怎麼稱呼你、性別、生日三欄，<strong>都不是必填</strong>；次要按鈕「跳過，只留手機就好」</li>
 <li>同意條款勾選：「<strong>我同意店家保存我的訂位與消費紀錄</strong>」＋條款連結（不提點數）</li>
-<li>生日只給延伸功能 8.E6 生日優惠用，不顯示在任何地方</li>
+<li>生日只有兩個用途：延伸功能 8.E6 生日優惠，以及櫃檯結帳時確認是不是本人——
+  <strong>櫃檯確認會員時，生日會顯示給店員看</strong>（S-03 查會員，只在查詢結果顯示、不寫進任何紀錄，見 E2 的規則）；
+  不會顯示給其他客人，也不會出現在顧客端任何畫面</li>
 </ul>
 <h3 id="c-14-會員中心">C-14 會員中心</h3>
 <ul>
@@ -823,8 +869,9 @@ Figma 排在「會員」那一列 C-15 後面。</p>
 </ul>
 <p><strong>規則</strong></p>
 <ul>
-<li>一次結帳<strong>最多用一張券，不疊加</strong></li>
-<li>點數在<strong>付款成功後才入帳</strong>（<code>POST /api/payments</code> 回應的 <code>pointsEarned</code>）</li>
+<li>一次結帳<strong>最多用一張券</strong>（券跟券不疊加），<strong>可以再加點數折抵</strong>；頁面上的規則文案寫「一次結帳最多用一張券，可以再加點數折抵」</li>
+<li>折抵順序：<strong>先扣優惠券，再用點數</strong>（1 點折 1 元），最多折到 0 元</li>
+<li>點數回饋以<strong>實付金額</strong>計，<strong>每滿 100 元 1 點</strong>、無條件捨去（實付 1,562 元 → 15 點）；<strong>付款成功後才入帳</strong>（<code>POST /api/payments</code> 回應的 <code>pointsEarned</code>）</li>
 <li>優惠券與點數<strong>只能在 C-09（進階 A5）使用</strong>；櫃檯結帳（S-03）要用的話是 A6 的延伸，這次沒畫</li>
 <li>前提是 M8 8.10 匿名轉會員（C-09 的登入入口），不然消費記不到會員身上</li>
 <li>店家端沒有發券畫面，先用種子資料建券</li>
@@ -902,6 +949,9 @@ Figma 排在「會員」那一列 C-15 後面。</p>
   進到這一頁就代表客人已經選了要先點</li>
 <li>頂部：訂位摘要條（日期時段、人數、桌號）+ 「可修改到 9/20（日）20:00」</li>
 <li>主體：<strong>完全重用菜單流程</strong>（C-04 菜單主頁、C-05 品項詳情、C-06 購物車），不另外做一套</li>
+<li><strong>購物車是例外</strong>：店裡的 C-06 是整桌共用、存在後端、掛在用餐紀錄底下的那份；預先點餐時還沒有用餐紀錄，
+    這裡的購物車<strong>只存在這支手機</strong>的畫面狀態，不走後端共用購物車（不打 <code>/me/cart</code>），送出時整批 <code>PUT /api/reservations/{id}/preorder</code>。
+    畫面長得一樣，但不顯示「誰加的」、也沒有同桌通知與「這是整桌共用的購物車」那句</li>
 <li>差別只在購物車那一步的底部按鈕：</li>
 <li>第一次：<strong>「送出預先點餐」</strong></li>
 <li>已有內容：<strong>「更新餐點」</strong>，旁邊一顆 ghost 的「清空預點」</li>
@@ -913,6 +963,7 @@ Figma 排在「會員」那一列 C-15 後面。</p>
 <h3 id="c-19-我的預約">C-19 我的預約</h3>
 <ul>
 <li>三個頁籤：即將到來／已完成／已取消</li>
+<li><strong>逾時未到（<code>NO_SHOW</code>）放在「已取消」頁籤</strong>：卡片狀態膠囊「逾時未到」＋一句「需要的話請重新訂位」，沒有任何按鈕</li>
 <li>「即將到來」頁籤最上面一行提示：「<strong>訂位保留 10 分鐘，逾時視同未到，需現場候位</strong>」（跟 C-18 同一句）</li>
 <li>「即將到來」的卡片，依預點狀態顯示不同的操作：</li>
 </ul>
@@ -1017,6 +1068,12 @@ Figma 排在「會員」那一列 C-15 後面。</p>
 <td><code>/admin/tables/:tableNo</code></td>
 </tr>
 <tr>
+<td>S-03b</td>
+<td>櫃檯結帳・付款倒數</td>
+<td>基礎</td>
+<td>對話框，疊在 S-03 上，不是獨立路由</td>
+</tr>
+<tr>
 <td>S-04</td>
 <td>出菜看板 KDS</td>
 <td>基礎</td>
@@ -1085,19 +1142,29 @@ Figma 排在「會員」那一列 C-15 後面。</p>
 </tbody>
 </table></div>
 <blockquote>
-<p>店家端共 <strong>17 張</strong>。兩邊合計 <strong>42 張畫面</strong>，另有 8 張元件總表（DS-01～DS-08）；
+<p>店家端共 <strong>18 張</strong>。兩邊合計 <strong>43 張畫面</strong>（顧客端 25、店家端 18），另有 8 張元件總表（DS-01～DS-08）；
 C-04 與 S-02 的三態示範是同一張畫面的狀態畫框，不另算張數。</p>
 </blockquote>
 <h3 id="s-02-桌況總覽櫃檯主畫面">S-02 桌況總覽（櫃檯主畫面）</h3>
 <blockquote>
-<p><strong>桌位、訂位、候位是三套獨立的東西，不互相連動。</strong>
-訂位與候位各自管自己的狀態；桌位只反映現場當下。
-兩邊只有一個接點：<strong>開桌成功時，把來源那筆訂位或候位轉成已報到。</strong></p>
-<p>舊版還有一個排程式的 <code>RESERVED</code>（訂位前 30 分鐘自動把桌鎖起來），已經移除——
-那等於把訂位複製一份到桌位上、還要靠 cron 同步，一旦不同步就會出現
-「畫面顯示空桌、按開桌卻被擋」這種最難查的狀況。</p>
-<p>櫃檯手動「保留」某張桌是<strong>延伸功能</strong>（M2 的 2.E5），基礎不做——
-它會多一個狀態、多一種顏色、開桌頁每列多一顆按鈕，但不做也不影響主線跑完。</p>
+<p><strong>桌位、訂位、候位各自管自己的狀態，接點只有兩個：</strong></p>
+<ol>
+<li><strong>開桌成功時，把來源那筆訂位或候位轉成已報到</strong>（<code>SEATED</code>）。</li>
+<li><strong>線上訂位會在時間窗內鎖住配到的桌</strong>（2026-09-16 定案，推翻原本的「訂位與桌位不連動」）：
+   現在落在訂位時間 <strong>−30 分 ～ +10 分</strong>、訂位還是 <code>CONFIRMED</code>、櫃檯沒有取消保留，
+   那張空桌在桌況上就顯示成「<strong>預約保留</strong>」，不能直接開給別人；櫃檯可以取消保留。
+   <strong>候位仍然不鎖桌。</strong></li>
+</ol>
+<p><strong>這個保留是查詢時算出來的，不存進桌位狀態、不靠排程。</strong> <code>dining_table.status</code> 仍然只有
+<code>AVAILABLE</code>／<code>OCCUPIED</code>／<code>CLEANING</code> 三種；<code>GET /api/admin/tables</code> 每張桌多回 <code>displayStatus</code>
+（多一種 <code>RESERVED</code>）與 <code>heldFor</code>（保留給哪一筆訂位，沒有就是 <code>null</code>）。
+舊版排程式的 <code>RESERVED</code>（訂位前 30 分鐘由排程把桌鎖起來）仍然不用——
+那等於把訂位複製一份到桌位上、還要靠排程同步，一旦不同步就會出現
+「畫面顯示空桌、按開桌卻被擋」這種最難查的狀況。現在每次查詢都從訂位現算，不會不同步。
+−30 是最早可報到的時間，+10 是訂位保留時間，兩個數字放在 <code>application.yml</code>
+（<code>reservation.hold-before-minutes: 30</code>、<code>reservation.hold-after-minutes: 10</code>）。</p>
+<p>櫃檯手動「保留」某張桌（沒有訂位也要先留桌）仍是<strong>延伸功能</strong>（M2 的 2.E5），基礎不做——
+它是存起來的狀態、開桌頁每列多一顆按鈕，跟這裡算出來的預約保留是兩回事。</p>
 </blockquote>
 <ul>
 <li>左側固定側邊欄（寬 212px、淺底 <code>surface-2</code>，選中項 <code>brand-100</code> 底）：桌況總覽／出菜看板／預約管理／候位管理；
@@ -1128,6 +1195,12 @@ C-04 與 S-02 的三態示範是同一張畫面的狀態畫框，不另算張數
 <td>→ <strong>S-02b 開桌</strong></td>
 </tr>
 <tr>
+<td>預約保留（顯示狀態 <code>RESERVED</code>）</td>
+<td>暖黃：底 <code>accent-100</code> <code>#FCF0DC</code>、邊框 <code>accent-500</code> <code>#E8A33D</code></td>
+<td>預約保留</td>
+<td>→ <strong>S-02d 開桌・預約</strong>，這筆保留的訂位置頂（見下方「點到預約保留的桌」）</td>
+</tr>
+<tr>
 <td>用餐中 <code>OCCUPIED</code></td>
 <td>朱紅 <code>#C8442E</code></td>
 <td>用餐中</td>
@@ -1141,15 +1214,38 @@ C-04 與 S-02 的三態示範是同一張畫面的狀態畫框，不另算張數
 </tr>
 </tbody>
 </table></div>
-<p><strong>沒有「結帳中／待結帳」這種桌態。</strong> 結清之前都是用餐中，櫃檯在 S-03 按下結清的那一刻直接變待清理。</p>
+<p><strong>沒有「結帳中／待結帳」這種桌態。</strong> 結清之前都是用餐中，櫃檯在 S-03 結帳完成的那一刻直接變待清理。</p>
+<p><strong>預約保留不是第四種存起來的桌態</strong>，是 <code>AVAILABLE</code> 的桌在保留窗內「顯示成」這樣。下面四個條件全部符合才算：
+  <code>reservation.table_id</code> 是這張桌、<code>status = CONFIRMED</code>、現在落在 <code>start_time − 30 分</code> ～ <code>start_time + 10 分</code>、<code>hold_released_at IS NULL</code>。
+  - 格內顯示「18:30 陳○君 4 位」（姓名中間遮一字）
+  - <strong>優先順序：用餐中 ＞ 待清理 ＞ 預約保留 ＞ 空桌。</strong> 配到的桌到時間還在用餐中或待清理，就不顯示保留；
+    客人到了由櫃檯在 S-07 按報到開桌，從 S-07b 選別張桌
+  - 過了 +10 分鐘還沒報到，保留自己消失（這筆視為逾時未到），桌子變回空桌，不用任何人去解鎖</p>
 <ul>
-<li>頂部統計列（一條橫排數字，不是一排等寬卡片）：空桌 6／用餐中 6／待清理 2／<strong>待報到預約 4</strong>／候位 3 組</li>
+<li>頂部統計列（一條橫排數字，不是一排等寬卡片）：空桌 3／用餐中 5／待清理 2／<strong>預約保留 2</strong>／<strong>待報到預約 4</strong>／候位 3 組</li>
+<li>「空桌」不含預約保留的桌；「預約保留」是現在顯示成預約保留的桌數</li>
 <li>「待報到預約」是今天狀態還是 <code>CONFIRMED</code>、而且還沒超過保留時間（用餐時間 +10 分鐘）的筆數，
-    <strong>這就是系統唯一的全域提醒</strong>，點它去 S-07</li>
-<li>桌格上<strong>不顯示</strong>「幾點有預約」——預約資訊在 S-02b 開桌那一刻才出現，見下一節</li>
+    點它去 S-07。它跟桌格上的預約保留是櫃檯僅有的兩個預約提醒</li>
+<li><strong>只有進入保留窗的桌</strong>才在桌格上顯示預約（上面的預約保留）；其他桌照舊<strong>不顯示</strong>「幾點有預約」——
+    稍後才有預約的桌，要到 S-02b 開桌那一刻才在頂部出現黃字提醒，見下一節</li>
+<li>頂欄<strong>沒有「櫃檯開桌」按鈕</strong>：開桌的入口只有「點空桌」（→ S-02b）與 S-07／S-10 那一列的「報到開桌」</li>
 <li><strong>右上角服務鈴通知面板</strong>（S-11）：未處理的呼叫以卡片堆疊顯示，含桌號與類型，點一下標記已處理。
   類型只有呼叫服務生／加湯／換鍋撈渣三種，<strong>沒有「我要結帳」</strong></li>
-<li><strong>透過 WebSocket 即時更新</strong>，不輪詢</li>
+<li><strong>透過 WebSocket 即時更新</strong>（<code>TABLE_STATUS</code> 帶 <code>displayStatus</code>）。唯一的例外是預約保留：
+  它是算出來的，<strong>開始與結束的那一刻沒有事件</strong>，所以這一頁另外每 60 秒重抓一次 <code>GET /api/admin/tables</code>，
+  最多晚一分鐘換色；按開桌時後端會重算，不會因為畫面舊而開錯</li>
+</ul>
+<h4 id="點到預約保留的桌">點到預約保留的桌</h4>
+<ul>
+<li>進開桌頁，<strong>一定停在「預約」頁籤（S-02d）</strong>，這筆保留的訂位<strong>置頂</strong>、標「保留中」</li>
+<li>這一列兩顆按鈕：</li>
+<li>「<strong>報到開桌</strong>」（primary）：客人到了，照一般預約開桌（<code>POST /api/admin/reservations/{id}/seat</code>，<code>tableId</code> 就是這張桌）</li>
+<li>「<strong>取消保留</strong>」（secondary）：先跳二次確認「<strong>取消後無法恢復。A08 會變回空桌，陳怡君到店時再幫他選別張桌</strong>」，
+    確認後送 <code>POST /api/admin/reservations/{id}/release-hold</code>（COUNTER、MANAGER），
+    後端寫入 <code>hold_released_at</code>／<code>hold_released_by</code>、推 <code>TABLE_STATUS</code> 給其他櫃檯，桌格就地變回空桌</li>
+<li><strong>取消保留不是取消訂位。</strong> 訂位仍是 <code>CONFIRMED</code>，客人到了照樣能報到，只是改從 S-07b 選別張桌</li>
+<li><strong>取消保留不能恢復</strong>：<code>release-hold</code> 是單向的，沒有恢復的 API。按錯了只能等客人到店，從 S-07b 選桌（A08 還空著的話照樣會列出來）</li>
+<li>現場、候位兩個頁籤遇到保留中的桌怎麼顯示，見 S-02b「這張桌正在預約保留的話」</li>
 </ul>
 <h4 id="待清理的確認框">待清理的確認框</h4>
 <ul>
@@ -1172,7 +1268,7 @@ C-04 與 S-02 的三態示範是同一張畫面的狀態畫框，不另算張數
 <ul>
 <li>頂部：<code>A06・走道 6 人桌</code>，右上角關閉</li>
 <li>三個頁籤，<strong>數字就是提醒</strong>：<code>現場</code> ／ <code>候位 3</code> ／ <code>預約 2</code></li>
-<li>預設停在哪一頁：有可報到的預約 → <code>預約</code>；否則有候位 → <code>候位</code>；都沒有 → <code>現場</code></li>
+<li>預設停在哪一頁：這張桌正在預約保留、或有可報到的預約 → <code>預約</code>；否則有候位 → <code>候位</code>；都沒有 → <code>現場</code></li>
 <li>數字為 0 的頁籤仍然看得到，但點進去是空狀態</li>
 </ul>
 <div class="tablewrap"><table>
@@ -1209,11 +1305,22 @@ C-04 與 S-02 的三態示範是同一張畫面的狀態畫框，不另算張數
 <blockquote>
 <p><strong>延伸功能（M2 的 2.E5）要做手動保留的話</strong>，每一列再多一顆 secondary 的「保留」
 （客人還沒到但要先留桌），保留中的桌再點進來時頂部顯示「這張桌保留給誰」＋「取消保留」。
-基礎不做。</p>
+基礎不做。它跟下面的「預約保留」是兩回事：預約保留是線上訂位自動算出來的，基礎就有。</p>
 </blockquote>
+<h4 id="這張桌正在預約保留的話">這張桌正在預約保留的話</h4>
+<ul>
+<li><strong>現場（S-02b）與候位（S-02c）頁籤</strong>頂部顯示一條暖黃條：
+  「<strong>這張桌保留給 陳怡君 18:30（4 位），要先取消保留才能開給別人</strong>」</li>
+<li>這兩個頁籤的「開桌」按鈕<strong>全部停用</strong>；要開給別人，先到預約頁籤按「取消保留」</li>
+<li><strong>預約頁籤（S-02d）</strong>：保留的那筆置頂，可以報到開桌或取消保留；其他訂位那幾列的「開桌」一樣停用</li>
+<li>硬送的話後端回 <code>409 TABLE_RESERVED</code>「這張桌保留給 陳怡君 18:30，要先取消保留」
+  （現場開桌、候位入座、用別筆訂位報到都會擋），前端顯示這句並重新載入</li>
+<li>這個狀態只寫在文件與說明卡，設計稿不另畫畫框</li>
+</ul>
 <h4 id="預約清單的範圍">預約清單的範圍</h4>
 <ul>
-<li>條件：<code>status = CONFIRMED</code>、用餐時間落在 <strong>現在 −10 分鐘 ～ +45 分鐘</strong>、<code>party_size ≤ 這張桌的座位數</code></li>
+<li>條件：<code>status = CONFIRMED</code>、用餐時間落在 <strong>現在 −10 分鐘 ～ +30 分鐘</strong>、<code>party_size ≤ 這張桌的座位數</code></li>
+<li><strong>+30 就是最早可報到的時間</strong>（用餐前 30 分鐘起可以報到），跟預約保留的時間窗是同一組數字</li>
 <li><strong>−10 就是訂位保留時間</strong>：過了用餐時間 10 分鐘還沒到，視為 <code>NO_SHOW</code>，只能現場登記候位。
   清單<strong>自己看時間，不等排程</strong>——NO_SHOW 排程每 5 分鐘才跑一次，最多晚 5 分鐘才把那筆標掉</li>
 <li>按下開桌時後端再檢查一次：<code>now &gt; start_time + 10 分</code> → <code>409 RESERVATION_EXPIRED</code>
@@ -1221,12 +1328,14 @@ C-04 與 S-02 的三態示範是同一張畫面的狀態畫框，不另算張數
 <li><strong>不限定原本配到哪一張桌。</strong> 客人被帶到別張桌是現場常態，清單只看「人數坐得下、時間對得上」</li>
 <li>每列標示預點狀態：「已預先點餐 4 項」或「未預點」，讓櫃檯知道等下 KDS 會不會跳單</li>
 <li>「原本配到 A08」只是附帶資訊，開桌後<strong>不會</strong>去改那筆訂位的桌號（見下面）</li>
+<li><strong>這張桌正在保留的那筆訂位置頂</strong>，標「保留中」，列上多一顆「取消保留」（見 S-02「點到預約保留的桌」）</li>
 </ul>
 <h4 id="這張桌稍後有預約的話">這張桌稍後有預約的話</h4>
 <p>頂部顯示一條暖黃警示：</p>
 <pre><code>⚠ 這張桌 19:30 有預約（陳小姐 4 位），預計用餐到 21:25
 </code></pre>
 <ul>
+<li>只針對<strong>還沒進保留窗</strong>的預約（用餐時間在 30 分鐘之後）；已經進保留窗的會擋，見上面「這張桌正在預約保留的話」</li>
 <li><strong>只是提醒，不擋開桌。</strong> 系統不知道這組客人會坐多久、也不知道櫃檯有沒有別的安排</li>
 <li>三個頁籤都會顯示這條，因為不管從哪個來源開桌都一樣會撞到</li>
 </ul>
@@ -1270,17 +1379,37 @@ C-04 與 S-02 的三態示範是同一張畫面的狀態畫框，不另算張數
 <li>資料來源 <code>GET /api/admin/dining-sessions/{id}</code></li>
 <li>上半：桌號、人數、已用餐分鐘數、目前金額</li>
 <li>中段：<strong>這一桌的點餐紀錄</strong>，依單分組，每單顯示送出時間與品項出餐狀態</li>
-<li>「代客加點」按鈕 → 櫃檯幫客人點（<code>source = STAFF</code>）</li>
-<li>下半「結帳」區：小計 → 服務費 10% → 合計，按「<strong>標記已結清</strong>」選 <code>現金</code> 或 <code>模擬支付</code></li>
-<li>送 <code>POST /api/admin/dining-sessions/{id}/settle</code>，body <code>{ "method": "CASH" | "MOCK_PAY", "expectedTotal": 1562.00 }</code>，
-    <code>expectedTotal</code> 就是畫面上顯示的合計</li>
+<li>「代客加點」按鈕 → 櫃檯幫客人點（<code>source = STAFF</code>）：<strong>直接送單，不經過整桌購物車</strong>；
+  送單事件 <code>NEW_TICKET</code> 的 <code>byGuest</code> 是「櫃檯」、<code>byGuestId</code> 是 <code>null</code>，同桌手機跳「櫃檯 送出 N 項」</li>
+<li>下半「結帳」區：小計 → 服務費 10% → 合計，再往下是「會員（選填）」與三顆付款按鈕</li>
+<li><strong>會員（選填）</strong>：M8 8.10 匿名轉會員的<strong>櫃檯入口</strong>（C-09 是線上入口），屬於進階 A1／A6 的前提——
+  整塊標進階，不做就拿掉，結帳照常</li>
+<li>輸入手機 → 按「查詢」→ <code>GET /api/admin/members/lookup?phone=0912345678</code>（COUNTER、MANAGER），回 <code>{ memberId, nickname, birthday }</code></li>
+<li>查到：顯示<strong>姓名＋生日</strong>「陳小美・1998/04/21」讓櫃檯唸給客人確認，下方兩顆小按鈕「確認是本人」／「不是」；
+    生日沒填顯示「未提供」</li>
+<li>按「確認是本人」才算綁定；按「不是」清空重查</li>
+<li>查無：<code>404 MEMBER_NOT_FOUND</code> →「查無此會員」</li>
+<li><strong>綁定不另開 API</strong>：結帳時 settle 的 body 帶 <code>memberId</code>，後端在同一個交易裡寫進 <code>dining_session.member_id</code></li>
+<li>生日是個資：<strong>只在查詢結果顯示，不寫進任何紀錄</strong></li>
+<li><strong>整桌購物車還有沒送出的品項</strong>：三顆付款按鈕下方一行暖黃小字「<strong>還有 N 項沒送出，結帳後會捨棄</strong>」（N＝購物車列數，跟 C-04c 的算法一樣），
+  <strong>只提醒、不擋</strong>——櫃檯可以請客人先按送出，或直接結帳。N 來自 <code>GET /api/admin/dining-sessions/{id}</code> 的 <code>cartItemCount</code>，是 0 就不顯示；
+  這個數字跟著桌位詳情一起抓，購物車事件只推給同桌手機，這頁不會即時更新</li>
+<li>三顆付款按鈕：<strong>現金／信用卡／條碼</strong>。點任何一顆（現金也一樣）→ 跳 <strong>S-03b 付款倒數</strong>，倒數到 0 才送出</li>
+<li>送 <code>POST /api/admin/dining-sessions/{id}/settle</code>，body <code>{ "method": "CASH" | "CARD" | "BARCODE", "expectedTotal": 1562.00, "memberId": 12 | null }</code>，
+    <code>expectedTotal</code> 就是畫面上顯示的合計；沒有確認會員就帶 <code>null</code></li>
 <li>送出中按鈕停用，防重複送出（M6 6.11）</li>
-<li>成功：用餐紀錄轉 <code>PAID</code>、桌位轉 <code>CLEANING</code>、這桌的用餐權杖全部失效、
+<li>成功：用餐紀錄轉 <code>PAID</code>、桌位轉 <code>CLEANING</code>、<strong>整桌還沒送出的購物車刪掉</strong>（同一個交易）、這桌的用餐權杖全部失效、
     WebSocket 推 <code>SESSION_CLOSED</code> 給同桌手機與其他櫃檯；客人手機切到 C-04 的「已結帳」狀態</li>
-<li><code>409 BILL_CHANGED</code>「金額有變動，請重新確認」：客人剛好在這時加點了。回應帶最新帳單，
-    結帳區就地換成新金額並顯示這句提示，櫃檯跟客人確認後再按一次</li>
+<li><code>409 BILL_CHANGED</code>：客人剛好在這時加點了。S-03b 對話框關閉，回應帶最新帳單，
+    結帳區就地換成新金額並提示「<strong>剛剛有人加點，金額更新了</strong>」，櫃檯跟客人確認後再按一次</li>
 <li><code>409 SESSION_CLOSED</code>：客人已經在手機上付完（進階 A5），畫面直接轉成已結清，不會重複收款</li>
-<li>「取消該次用餐」（僅 MANAGER）：客人沒消費就走，桌位直接回空桌</li>
+<li>設計稿畫的是會員已查到、等待確認的樣子：手機欄有值、下方「陳小美・1998/04/21」＋「確認是本人」「不是」，再下面三顆付款按鈕；
+  付款按鈕下方有一行「還有 2 項沒送出，結帳後會捨棄」（樣式見 11 §5.6b 後面的說明）</li>
+<li>「取消該次用餐」（僅 MANAGER）：客人<strong>還沒點餐</strong>就離開時用，按下要二次確認</li>
+<li><code>POST /api/admin/dining-sessions/{id}/cancel</code> → 用餐轉 <code>CANCELLED</code>、桌位<strong>直接回空桌</strong>（沒用過，不用清潔）、
+    權杖全部失效、整桌購物車刪掉，推 <code>SESSION_CLOSED</code>（<code>reason: "CANCELLED"</code>）</li>
+<li>客人手機收到 <code>CANCELLED</code> <strong>不顯示任何面板</strong>，清掉權杖直接回 C-00（結帳是 <code>reason: "PAID"</code>，才顯示 C-04「已結帳」）</li>
+<li><strong>已經送出過點餐單的桌不能取消</strong>：<code>409 SESSION_HAS_ORDERS</code>「已經有點餐紀錄，請改用結帳」</li>
 </ul>
 <blockquote>
 <p><strong>為什麼不用「結帳中」把整桌鎖住。</strong> 舊版櫃檯一按結帳就推鎖定事件把客人手機鎖住，
@@ -1288,6 +1417,71 @@ C-04 與 S-02 的三態示範是同一張畫面的狀態畫框，不另算張數
 結清與送出點餐在各自的交易裡搶同一列的鎖（<code>SELECT ... FOR UPDATE</code> 那筆 <code>dining_session</code>），一定一先一後——
 點餐先到，結清重算就發現金額不對（<code>BILL_CHANGED</code>）；結清先到，點餐看到狀態不是 <code>OPEN</code>（<code>SESSION_CLOSED</code>）。</p>
 </blockquote>
+<h3 id="s-03b-櫃檯結帳付款倒數">S-03b 櫃檯結帳・付款倒數</h3>
+<blockquote>
+<p>對話框，疊在 S-03 上，不是獨立路由。設計稿 <code>s03b-checkout-countdown.html</code>（1280×800），
+背景是壓暗的 S-03，對話框停在「信用卡付款中・倒數 3」；Figma 排在「現場桌況」那一列 S-03 後面。
+<strong>三種付款都是模擬，不串刷卡機或條碼掃描。</strong> 倒數 5 秒是給櫃檯一個「按錯付款方式還來得及反悔」的空檔。</p>
+</blockquote>
+<ul>
+<li>在 S-03 點「現金」「信用卡」「條碼」任一顆就跳出</li>
+<li><strong>三種付款都倒數 5 秒</strong>，同一個對話框，只有標題跟著付款方式：</li>
+</ul>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>付款方式</th>
+<th>標題</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>現金 <code>CASH</code></td>
+<td>「<strong>收款中，請把現金放進收銀機</strong>」</td>
+</tr>
+<tr>
+<td>信用卡 <code>CARD</code></td>
+<td>「<strong>信用卡付款中</strong>」</td>
+</tr>
+<tr>
+<td>條碼 <code>BARCODE</code></td>
+<td>「<strong>條碼付款中</strong>」</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li>中間<strong>大數字倒數 5 → 0</strong>，每秒一格；下面一行金額「NT$ 1,562」（就是要送出的 <code>expectedTotal</code>）</li>
+<li>小字「本系統為教學專題，付款為模擬流程」</li>
+<li>ghost「取消」：<strong>倒數中隨時可以取消</strong>，關掉對話框、什麼都不送</li>
+<li>倒數到 0 才送 <code>POST /api/admin/dining-sessions/{id}/settle</code>（body 見 S-03），送出中停用「取消」</li>
+</ul>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>回應</th>
+<th>對話框</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>成功</td>
+<td>換成勾勾＋「<strong>結帳完成</strong>」，<strong>約 1.5 秒後自動關閉</strong>回 S-02（不需要按按鈕），這張桌變待清理</td>
+</tr>
+<tr>
+<td><code>409 BILL_CHANGED</code></td>
+<td>對話框關閉，S-03 帳單刷新並提示「剛剛有人加點，金額更新了」，櫃檯確認後再選一次付款方式</td>
+</tr>
+<tr>
+<td><code>409 SESSION_CLOSED</code></td>
+<td>對話框關閉，S-03 轉成已結清（客人已經在手機上付完，進階 A5），不會重複收款</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><strong>櫃檯結帳不做失敗機率</strong>，模擬付款一定成功；線上 A5 的 95% 成功率照舊（那是給 C-10 示範失敗處理用的）</li>
+<li>勾勾沿用 DS-07 的「完成」回饋（描邊 0.6 秒後停住）</li>
+<li>櫃檯結帳用優惠券或點數仍然沒有畫（A6 的延伸），這個對話框只有金額，沒有折抵</li>
+</ul>
 <h3 id="s-04-出菜看板-kds廚房主畫面">S-04 出菜看板 KDS（廚房主畫面）</h3>
 <ul>
 <li><strong>深色背景</strong>（廚房光線強，深色反而清楚）——這是全站唯一使用深色的頁面</li>
@@ -1320,6 +1514,7 @@ C-04 與 S-02 的三態示範是同一張畫面的狀態畫框，不另算張數
 <li>今日預約清單：時段、姓名、電話（中間遮住）、人數、配桌、預先點餐、狀態、操作；
   頂部統計今日預約／已報到／待報到／逾時未到／已預先點餐</li>
 <li>看得出這筆是會員還是匿名（C-16b 那條）</li>
+<li>頂欄<strong>沒有「電話代訂」按鈕</strong>（不做電話代訂）</li>
 <li>狀態與操作：</li>
 </ul>
 <div class="tablewrap"><table>
@@ -1332,9 +1527,24 @@ C-04 與 S-02 的三態示範是同一張畫面的狀態畫框，不另算張數
 </thead>
 <tbody>
 <tr>
-<td><code>CONFIRMED</code>，還在保留時間內</td>
+<td><code>CONFIRMED</code>，離用餐時間還超過 30 分鐘</td>
 <td>已確認</td>
-<td>primary「<strong>報到開桌</strong>」→ S-07b 選一張空桌</td>
+<td>沒有報到按鈕，灰字「<strong>18:00 起可報到</strong>」（用餐時間 −30 分）</td>
+</tr>
+<tr>
+<td><code>CONFIRMED</code>，在報到時間窗內（−30 ～ +10 分），配到的桌保留中（<code>holding = true</code>）</td>
+<td>已確認＋小字「<strong>保留 A08</strong>」</td>
+<td>primary「<strong>報到開桌</strong>」→ S-07b 選一張空桌（A08 排第一）；ghost「<strong>取消保留</strong>」</td>
+</tr>
+<tr>
+<td>同上，但配到的桌還在用餐中或待清理（沒有保留）</td>
+<td>已確認</td>
+<td>primary「報到開桌」→ S-07b</td>
+</tr>
+<tr>
+<td>同上，櫃檯已經取消保留（<code>holdReleasedAt</code> 有值）</td>
+<td>已確認＋小字「<strong>已取消保留</strong>」</td>
+<td>primary「報到開桌」→ S-07b</td>
 </tr>
 <tr>
 <td><code>CONFIRMED</code>，已過用餐時間 10 分鐘（排程還沒標）</td>
@@ -1360,10 +1570,14 @@ C-04 與 S-02 的三態示範是同一張畫面的狀態畫框，不另算張數
 </table></div>
 <ul>
 <li>逾時那一列<strong>自己看時間</strong>，不等 NO_SHOW 排程——跟 S-02d 的清單、報到 API 的 <code>RESERVATION_EXPIRED</code> 是同一條規則</li>
+<li><strong>報到最早提前 30 分鐘</strong>：「報到開桌」只在 <code>start_time − 30 分</code> ～ <code>+10 分</code> 出現。
+  太早硬送 → <code>409 RESERVATION_TOO_EARLY</code>「還沒到可報到時間（18:00 起）」</li>
+<li>「取消保留」跟 S-02d 同一個二次確認（「取消後無法恢復。A08 會變回空桌，陳怡君到店時再幫他選別張桌」）、同一支 <code>release-hold</code>；
+  訂位本身不變，這一列改顯示「已取消保留」，<strong>之後沒有恢復的按鈕</strong></li>
 <li>兩支排程，都要有手動觸發 API（demo 時不用等到時間）：</li>
 <li>NO_SHOW：每 5 分鐘，<code>status = CONFIRMED AND start_time &lt; now − 10 分鐘</code> → <code>NO_SHOW</code></li>
 <li>訂位提醒：用餐前 2 小時發通知（模擬簡訊）</li>
-<li>標成 <code>NO_SHOW</code> 之後<strong>桌位不用動</strong>——桌位本來就沒被鎖，只是這筆不再出現在開桌清單</li>
+<li>標成 <code>NO_SHOW</code> 之後<strong>桌位不用動</strong>——預約保留是算出來的，過了 +10 分鐘桌格自己變回空桌，這筆也不再出現在開桌清單</li>
 <li>報到開桌做三件事：建立用餐紀錄、有預點（進階 A2）就轉單、<strong>這時候才扣庫存</strong>；扣不到的品項回 soldOut 清單。
   有預點的預約變 <code>NO_SHOW</code>：預點不轉單、不扣庫存，也就不需要回補</li>
 </ul>
@@ -1386,10 +1600,12 @@ C-04 與 S-02 的三態示範是同一張畫面的狀態畫框，不另算張數
 </blockquote>
 <ul>
 <li>標題：預約是 <code>陳怡君・4 位</code>，候位是 <code>A12 王先生・3 位</code>；副標「列出座位數坐得下的空桌」</li>
-<li>清單來源 <code>GET /api/admin/tables/available?partySize=4</code>（COUNTER、MANAGER），
-  回 <code>[{ "tableId", "tableNo", "area", "seats", "upcomingReservationAt": "19:30" | null }]</code></li>
-<li>只列 <code>AVAILABLE</code> 且 <code>seats ≥ 人數</code> 的桌</li>
+<li>清單來源 <code>GET /api/admin/tables/available?partySize=4</code>（COUNTER、MANAGER；預約報到多帶 <code>reservationId</code>），
+  回 <code>[{ "tableId", "tableNo", "area", "seats", "upcomingReservationAt": "19:30" | null, "isOwnHold": false }]</code></li>
+<li>只列 <code>AVAILABLE</code> 且 <code>seats ≥ 人數</code> 的桌，<strong>排除預約保留中的桌</strong>（候位與預約都一樣，保留給別筆訂位的桌不能開）</li>
 <li>排序：<strong>座位數由小到大，同座位數再依桌號</strong>——剛好坐得下的排最前面，大桌留給大組</li>
+<li><strong>預約報到時，這筆自己的保留桌排第一</strong>（<code>isOwnHold = true</code>），卡片標「原保留桌」（S-07b 設計稿第一張是「A08・原保留桌」）；
+    保留已經被取消、或那張桌還在用餐中，就沒有這張置頂的「原保留桌」卡片；A08 如果還空著，照上面的規則排在清單裡</li>
 <li>每張卡片顯示桌號、區域、座位數</li>
 <li>這張桌稍後有預約（<code>upcomingReservationAt</code> 有值）→ 卡片上用暖黃小字提醒「19:30 有預約」，
     <strong>只提醒、不擋</strong>，跟 S-02b 頂部那條黃字一致</li>
@@ -1399,6 +1615,8 @@ C-04 與 S-02 的三態示範是同一張畫面的狀態畫框，不另算張數
   預約有預點就轉單扣庫存並回 soldOut 清單；關掉對話框、那一列變成已報到／已入座，WebSocket 推播給其他櫃檯</li>
 <li><strong>空狀態</strong>：沒有坐得下的空桌 →「目前沒有坐得下的空桌」＋說明「清潔完成或有桌結帳後再試一次」＋按鈕「關閉」</li>
 <li><strong>兩個櫃檯同時搶同一張桌</strong>：開桌本來就有 <code>FOR UPDATE</code>，後到的拿 <code>409 TABLE_OCCUPIED</code>，對話框重新載入清單（被開走的那張就不見了）</li>
+<li>選的桌剛好進了別筆訂位的保留窗：<code>409 TABLE_RESERVED</code>，一樣重新載入清單</li>
+<li>預約那邊太早按（離用餐時間還超過 30 分鐘）：<code>409 RESERVATION_TOO_EARLY</code>，S-07 本來就不會出現按鈕，這是保底</li>
 <li>預約那邊拖到超過保留時間才按：<code>409 RESERVATION_EXPIRED</code>「已超過保留時間，請改登記候位」，關掉對話框，那一列變成逾時未到</li>
 </ul>
 <h3 id="s-09-庫存管理">S-09 庫存管理</h3>
@@ -1417,16 +1635,20 @@ C-04 與 S-02 的三態示範是同一張畫面的狀態畫框，不另算張數
     A["客人掃描桌上固定 QR code"] --> B{"桌位狀態"}
     B -->|空桌| Z1["請洽櫃檯帶位<br/>不能自己開桌"]
     B -->|待清理| Z2["整理中 請稍候"]
-    B -->|使用中| D["取得用餐權杖 加入"]
+    B -->|使用中| D["取得用餐權杖 加入<br/>這支手機記成客人幾"]
     D --> F["菜單主頁 鍋底也是一個分類"]
     F --> G{"品項有必選選項"}
-    G -->|否| H["直接加入購物車"]
+    G -->|否| H["加進整桌共用購物車<br/>存在後端"]
     G -->|是| I["進入品項詳情選規格"]
     I --> H
     H --> F
-    F --> J["購物車確認"]
-    J --> K["送出點餐"]
-    K --> K2{"本桌有鍋底了嗎<br/>或這張單有"}
+    H -.-> H2["同桌其他手機跳通知條<br/>誰加了什麼"]
+    F --> J["整桌購物車確認<br/>每列標誰加的 誰都能改"]
+    J --> K["送出整桌點餐"]
+    K --> K0{"購物車還有東西嗎"}
+    K0 -->|空的 同桌剛送出| K1["購物車是空的<br/>可能同桌已經送出了"]
+    K1 --> F
+    K0 -->|有| K2{"本桌有鍋底了嗎<br/>或這張單有"}
     K2 -->|沒有| K3["擋下來 這桌還沒點鍋底<br/>共鍋每桌至少一份"]
     K3 --> F
     K2 -->|有| L{"庫存檢查"}
@@ -1436,8 +1658,8 @@ C-04 與 S-02 的三態示範是同一張畫面的狀態畫框，不另算張數
     N --> O["本桌訂單頁<br/>WebSocket 即時更新出菜進度<br/>同桌其他手機同步看到"]
     O --> P{"還要加點"}
     P -->|要| F
-    P -->|不要| Q["走到櫃檯結帳<br/>櫃檯在 S-03 標記已結清<br/>小計加服務費"]
-    Q --> T["用餐結束 桌位轉待清理<br/>同桌手機收到 SESSION_CLOSED<br/>顯示已結帳"]
+    P -->|不要| Q["走到櫃檯結帳<br/>櫃檯在 S-03 選付款方式<br/>倒數 5 秒後結清"]
+    Q --> T["用餐結束 桌位轉待清理<br/>沒送出的購物車捨棄<br/>同桌手機收到 SESSION_CLOSED<br/>顯示已結帳"]
     P -.->|進階 A5 手機結帳| R["C-09 結帳明細<br/>C-10 選擇付款方式"]
     R --> S{"模擬付款<br/>帶 expectedTotal"}
     S -->|失敗 5%| R
@@ -1449,29 +1671,37 @@ C-04 與 S-02 的三態示範是同一張畫面的狀態畫框，不另算張數
     classDef stop fill:#EFE9E1,stroke:#9C8E84,color:#6B5D54
     classDef adv fill:#FFFFFF,stroke:#C9862A,stroke-dasharray:5 3,color:#2B211C
     class S0,A,D,F,H,I,J,K,N,O,Q,T ok
-    class M,L,G,B,P,K2,K3 warn
-    class Z1,Z2 stop
+    class M,L,G,B,P,K0,K1,K2,K3 warn
+    class Z1,Z2,H2 stop
     class R,S adv
 </pre>
-<p><strong>圖例</strong>：紅框 = 正常流程；黃框 = 判斷或例外處理；灰框 = 中止；
+<p><strong>圖例</strong>：紅框 = 正常流程；黃框 = 判斷或例外處理；灰框 = 中止或旁支（同桌通知）；
 金色虛線框與虛線箭頭 = 進階 A5 顧客線上結帳，不做的話客人一律走「到櫃檯結帳」那條。</p>
+<blockquote>
+<p><strong>購物車是整桌一份。</strong> 任何一支手機按「送出整桌點餐」都會把整份送出；
+兩個人幾乎同時按，後端鎖住同一筆用餐紀錄讓兩筆排隊，後到的讀到空購物車，回 <code>CART_EMPTY</code>。</p>
+</blockquote>
 <h3 id="42-店家端一日流程">4.2 店家端一日流程</h3>
 <pre class="mermaid">flowchart TD
-    A["開店 員工登入"] --> C["S-02 桌況總覽<br/>三種狀態 WebSocket 即時更新"]
+    A["開店 員工登入"] --> C["S-02 桌況總覽<br/>三種桌態加預約保留<br/>WebSocket 即時更新"]
     C --> T{"點了哪一種桌"}
 
     T -->|空桌| O["S-02b 開桌<br/>三個頁籤"]
+    T -->|預約保留| RH["S-02d 預約頁籤<br/>保留的那筆置頂"]
+    RH -->|客人到了 報到開桌| F
+    RH -->|取消保留 二次確認| RL["桌子變回空桌 不能恢復<br/>訂位仍有效<br/>到店再選別張桌"]
+    RL --> C
     O --> O1{"選來源"}
     O1 -->|現場| E["填大人小孩人數"]
     O1 -->|候位| W["該列按開桌<br/>帶入登記人數<br/>候位轉 SEATED"]
     O1 -->|預約| F["該列按開桌<br/>帶入訂位人數<br/>訂位轉 SEATED<br/>有預點就轉單扣庫存"]
-    O -.->|這張桌等下有預約| WARN["頂部黃字警示<br/>只提醒 不擋開桌"]
+    O -.->|這張桌稍後有預約 還沒進保留窗| WARN["頂部黃字警示<br/>只提醒 不擋開桌"]
     E --> G["桌位轉用餐中<br/>客人掃碼自助點餐"]
     W --> G
     F --> G
 
     C -->|點待報到預約 或 候位| P7["S-07 預約／S-10 候位<br/>該列按報到開桌"]
-    P7 --> P7B["S-07b／S-10b 選一張空桌<br/>只列坐得下的 小桌排前面"]
+    P7 --> P7B["S-07b／S-10b 選一張空桌<br/>只列坐得下的 小桌排前面<br/>保留中的桌不列 自己的保留桌排第一"]
     P7B --> G
 
     T -->|用餐中| S3["S-03 桌位詳情<br/>點餐紀錄 代客加點<br/>櫃檯結帳"]
@@ -1484,10 +1714,17 @@ C-04 與 S-02 的三態示範是同一張畫面的狀態畫框，不另算張數
     J -->|要| G
     J -->|不要| K["客人走到櫃檯結帳"]
     K --> S3
-    S3 --> K1{"標記已結清<br/>現金或模擬支付<br/>金額還對嗎"}
+    S3 -.->|進階 會員選填| MB["輸入手機查會員<br/>唸姓名生日 確認是本人"]
+    MB -.-> PM
+    S3 --> PM["選付款方式<br/>現金 信用卡 條碼"]
+    PM --> CD["S-03b 付款倒數 5 秒"]
+    CD -->|按錯了 取消| S3
+    CD -->|倒數到 0 送出| K1{"金額還對嗎"}
     K1 -->|剛好有人加點 BILL_CHANGED| S3
-    K1 -->|對| L["用餐轉已付款 桌位轉待清理<br/>同桌手機顯示已結帳"]
+    K1 -->|對| L["結帳完成 約 1.5 秒自動關閉<br/>用餐轉已付款 桌位轉待清理<br/>沒送出的購物車捨棄<br/>同桌手機顯示已結帳"]
     L --> C
+    S3 -.->|沒點餐就走 僅店長| CX["取消該次用餐<br/>桌位直接回空桌<br/>客人手機回首頁"]
+    CX -.-> C
     J -.->|進階 A5| PAY["客人在手機上線上付款"]
     PAY -.-> L
     C --> N["庫存告罄自動下架<br/>即時推播全場"]
@@ -1497,22 +1734,24 @@ C-04 與 S-02 的三態示範是同一張畫面的狀態畫框，不另算張數
     classDef warn fill:#FCF0DC,stroke:#D98324,color:#2B211C
     classDef quiet fill:#EFE9E1,stroke:#9C8E84,color:#6B5D54
     classDef adv fill:#FFFFFF,stroke:#C9862A,stroke-dasharray:5 3,color:#2B211C
-    class A,C,O,E,W,F,G,H,I,K,L,S3,P7,P7B ok
+    class A,C,O,E,W,F,G,H,I,K,L,S3,P7,P7B,RH,RL,PM,CD ok
     class T,O1,J,CL,K1 warn
-    class WARN,N,SV quiet
-    class PAY adv
+    class WARN,N,SV,CX quiet
+    class PAY,MB adv
 </pre>
-<p><strong>圖例</strong>：紅框 = 正常流程；黃框 = 判斷或確認；灰框 = 提醒與旁支；金色虛線框 = 進階 A5。</p>
+<p><strong>圖例</strong>：紅框 = 正常流程；黃框 = 判斷或確認；灰框 = 提醒與旁支；金色虛線框 = 進階（A5 線上付款、櫃檯的會員確認）。</p>
 <p><strong>這張圖的四個重點</strong></p>
 <ol>
-<li><strong>桌況總覽的三種狀態，各自只有一個去向。</strong> 空桌去開桌頁、用餐中去桌位詳情、
-   待清理跳確認框。櫃檯不用記「這張桌現在能做什麼」，顏色就是答案。<strong>沒有「結帳中」這種桌態。</strong></li>
+<li><strong>桌況總覽的四種顯示，各自只有一個去向。</strong> 空桌去開桌頁、預約保留去開桌頁的預約頁籤（保留那筆置頂）、
+   用餐中去桌位詳情、待清理跳確認框。櫃檯不用記「這張桌現在能做什麼」，顏色就是答案。
+   <strong>沒有「結帳中」這種桌態</strong>；預約保留也不是存起來的桌態，是查詢時從訂位算出來的。</li>
 <li><strong>開桌有兩個入口、後端同一組 API。</strong> 從桌子出發是「點空桌 → 選頁籤 → 開桌」（S-02b／c／d）；
    從人出發是「S-07／S-10 那一列按報到開桌 → 選一張空桌」（S-07b／S-10b）。</li>
-<li><strong>基礎的結帳只有櫃檯一條。</strong> 客人走到櫃檯，櫃檯在 S-03 按「標記已結清」；
-   剛好有人加點就用金額比對擋下來（<code>BILL_CHANGED</code>），重新確認再按一次。手機線上付款是進階 A5。</li>
-<li><strong>灰色虛線那條是提醒，不是流程。</strong> 這張桌等下有預約只會顯示黃字，不會擋住開桌——
-   要不要把桌留給等下那組，是現場的判斷。</li>
+<li><strong>基礎的結帳只有櫃檯一條。</strong> 客人走到櫃檯，櫃檯在 S-03 選現金／信用卡／條碼，
+   S-03b 倒數 5 秒才送出（按錯可以取消）；剛好有人加點就用金額比對擋下來（<code>BILL_CHANGED</code>），重新確認再按一次。
+   手機線上付款是進階 A5。</li>
+<li><strong>灰色虛線那條是提醒，不是流程。</strong> 這張桌<strong>稍後</strong>（還沒進保留窗）有預約只會顯示黃字，不會擋住開桌——
+   要不要把桌留給等下那組，是現場的判斷。進了保留窗（用餐前 30 分鐘起）才會變成預約保留、擋住開桌。</li>
 </ol>
 <h3 id="43-訂位與預先點餐流程">4.3 訂位與預先點餐流程</h3>
 <pre class="mermaid">flowchart TD
@@ -1537,10 +1776,15 @@ C-04 與 S-02 的三態示範是同一張畫面的狀態畫框，不另算張數
     M1 --> K
     M2 --> K
     L -->|否| N["鎖定 只能看<br/>要改請來電"]
-    K --> AR{"到店時 用餐時間<br/>過了 10 分鐘嗎"}
-    N --> AR
-    AR -->|沒有 還在保留時間內| O["報到開桌<br/>S-02d 預約頁籤按開桌<br/>或 S-07 報到開桌再選桌"]
-    AR -->|超過 10 分鐘| NS["視為 NO_SHOW<br/>只能現場登記候位"]
+    K --> HW["用餐前 30 分鐘起<br/>配到的桌顯示預約保留<br/>別人開不了這張桌"]
+    N --> HW
+    HW -.->|櫃檯取消保留| HR["桌子變回空桌 不能恢復<br/>訂位仍然有效"]
+    HW --> AR{"客人到店的時間"}
+    HR -.-> AR
+    AR -->|用餐前 30 分鐘以前| TE["還不能報到<br/>請稍候 18:00 起可報到"]
+    TE --> HW
+    AR -->|用餐前 30 分 到 用餐後 10 分| O["報到開桌<br/>S-02d 預約頁籤按開桌<br/>或 S-07 報到開桌再選桌<br/>保留桌還在就排第一"]
+    AR -->|超過用餐時間 10 分鐘| NS["視為 NO_SHOW<br/>保留自動消失<br/>只能現場登記候位"]
     O --> P{"有預點內容嗎"}
     P -->|沒有| Q["單純開桌<br/>客人掃碼自己點"]
     P -->|有| R["轉成正式單 扣庫存<br/>KDS 排最前 金色邊框"]
@@ -1553,9 +1797,9 @@ C-04 與 S-02 的三態示範是同一張畫面的狀態畫框，不另算張數
     classDef base fill:#FBE8E3,stroke:#C8442E,color:#2B211C
     classDef adv fill:#FCF0DC,stroke:#D98324,color:#2B211C
     classDef stop fill:#EFE9E1,stroke:#9C8E84,color:#6B5D54
-    class A,B,B1,B2,C,D,E,F,G,K,L,M1,AR,O,Q,U base
+    class A,B,B1,B2,C,D,E,F,G,K,L,M1,AR,O,Q,U,HW,HR base
     class I,M2,P,R,S,T adv
-    class D1,H,N,NS stop
+    class D1,H,N,NS,TE stop
 </pre>
 <p><strong>圖例</strong></p>
 <div class="tablewrap"><table>
@@ -1580,7 +1824,7 @@ C-04 與 S-02 的三態示範是同一張畫面的狀態畫框，不另算張數
 </tr>
 </tbody>
 </table></div>
-<p><strong>這張圖的四個重點</strong></p>
+<p><strong>這張圖的五個重點</strong></p>
 <ol>
 <li><strong>「訂位成立」在問「要不要先點餐」之前。</strong> 這是這次改版的全部重點：
    客人按下確認就訂到位了，先點餐是訂到之後的加值選項，不是訂位的必經關卡。</li>
@@ -1590,7 +1834,11 @@ C-04 與 S-02 的三態示範是同一張畫面的狀態畫框，不另算張數
    進階 A5 才是手機上的 C-09～C-11），所以改單與取消都不需要退款流程。</li>
 <li><strong>訂位只保留 10 分鐘。</strong> 過了用餐時間 10 分鐘還沒報到就視為 <code>NO_SHOW</code>，只能現場候位。
    開桌清單與報到 API 都自己看時間（<code>RESERVATION_EXPIRED</code>），不等每 5 分鐘一次的排程。
-   有預點的也一樣：預點不轉單、不扣庫存，沒有東西要回補。</li>
+   有預點的也一樣：預點不轉單、不扣庫存，沒有東西要回補。
+   報到最早可以提前 30 分鐘，再早按會回 <code>RESERVATION_TOO_EARLY</code>。</li>
+<li><strong>訂位會在時間窗內鎖住配到的桌。</strong> 用餐前 30 分鐘到用餐後 10 分鐘，那張桌在桌況上顯示「預約保留」，
+   別人開不了；櫃檯可以取消保留，訂位本身仍然有效，客人到了改選別張桌。
+   保留是查詢時從訂位算出來的，不存進桌位狀態、不靠排程。</li>
 </ol>
 <hr />
 <h2 id="5-rwd-斷點">5. RWD 斷點</h2>
@@ -1643,7 +1891,7 @@ C-04 與 S-02 的三態示範是同一張畫面的狀態畫框，不另算張數
 <tr>
 <td><strong>畫面代號</strong></td>
 <td>C-00 ～ C-21（25 張）</td>
-<td>S-01 ～ S-12（17 張）</td>
+<td>S-01 ～ S-12（18 張）</td>
 </tr>
 <tr>
 <td><strong>設計稿畫框</strong></td>
@@ -1671,7 +1919,7 @@ C-04 與 S-02 的三態示範是同一張畫面的狀態畫框，不另算張數
 <p>實作完每個頁面後逐條檢查：</p>
 <ul>
 <li><input type="checkbox" disabled> 內文 ≥ 16px，重要數字 ≥ 20px</li>
-<li><input type="checkbox" disabled> 所有可點擊區 ≥ 48×48px（含 padding）。<strong>唯一例外：數量步進器與菜單列的 <code>+</code> 是 28×28，見 <code>11-設計系統.md</code> §5.4</strong></li>
+<li><input type="checkbox" disabled> 所有可點擊區 ≥ 44×44px（含 padding）。<strong>例外只有兩個：數量步進器與菜單列的 <code>+</code> 是 28×28；菜單列進詳情的箭頭是 32×32（整列本來就可點）。見 <code>11-設計系統.md</code> §5.4</strong></li>
 <li><input type="checkbox" disabled> 文字與背景對比度 ≥ 4.5:1（用 WebAIM Contrast Checker 檢查）</li>
 <li><input type="checkbox" disabled> <strong>狀態不只用顏色表達</strong>（售完、已出餐、桌況都要有文字或圖示）</li>
 <li><input type="checkbox" disabled> 所有圖片有 <code>alt</code></li>
@@ -1679,7 +1927,7 @@ C-04 與 S-02 的三態示範是同一張畫面的狀態畫框，不另算張數
 <li><input type="checkbox" disabled> 錯誤訊息是中文、具體、可行動（「請輸入 10 位數手機號碼」而非「格式錯誤」）</li>
 <li><input type="checkbox" disabled> 可用鍵盤 Tab 走完整個表單</li>
 <li><input type="checkbox" disabled> 按鈕在載入中時停用並顯示狀態，防止重複送出</li>
-<li><input type="checkbox" disabled> 重要操作（送出點餐、櫃檯標記已結清、取消預約；進階 A5 的付款）有二次確認或明確的選擇步驟</li>
+<li><input type="checkbox" disabled> 重要操作（送出整桌點餐、櫃檯結帳（S-03b 倒數中可取消）、取消該次用餐、取消預約、取消保留；進階 A5 的付款）有二次確認或明確的選擇步驟</li>
 <li><input type="checkbox" disabled> 動畫可被 <code>prefers-reduced-motion</code> 關閉</li>
 </ul>
 <hr />

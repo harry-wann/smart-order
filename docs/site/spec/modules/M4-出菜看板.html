@@ -387,7 +387,7 @@ WHERE status IN ('PENDING', 'PREPARING')
 ORDER BY is_preorder DESC, placed_at ASC
 </code></pre>
 <p><strong>一個 <code>ORDER BY</code> 就解決了。</strong> 再加上視覺區隔（金色邊框 + 標籤），廚師一眼就知道要先做哪張。</p>
-<p><strong>關鍵細節</strong>：<code>placed_at</code> 要用「<strong>櫃檯開桌的時間</strong>」而不是「客人線上點餐的時間」。否則一張三天前點的預約單，<code>placed_at</code> 是三天前，會被算成「等待了 4320 分鐘」，警示一直閃。</p>
+<p><strong>關鍵細節</strong>：<code>placed_at</code> 要用「<strong>報到開桌的時間</strong>」而不是「客人線上點餐的時間」。否則一張三天前點的預約單，<code>placed_at</code> 是三天前，會被算成「等待了 4320 分鐘」，警示一直閃。</p>
 <hr />
 <h3 id="問題-3廚房的-ui-為什麼要跟別的頁面不一樣">問題 3：廚房的 UI 為什麼要跟別的頁面不一樣</h3>
 <p><strong>情境</strong>

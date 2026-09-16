@@ -279,15 +279,16 @@ export async function request(path, options = {}) {
 async function handleSubmit() {
   setLoading(true);
   try {
-    const ticket = await request('/dining-sessions/me/orders', {
-      method: 'POST',
-      body: JSON.stringify({ items: cart }),
-    });
+    // 不帶品項：購物車早就一項一項存在後端了，送出＝把整桌購物車變成一張點餐單
+    const ticket = await request('/dining-sessions/me/orders', { method: 'POST' });
     toast.success(`第 ${ticket.sequenceNo} 單已送出`);
-    setCart([]);
+    await reloadCart();       // 購物車以後端為準：送出後重抓，會是空的
   } catch (err) {
     if (err.code === 'ITEM_SOLD_OUT') {
       markSoldOutItems(err.details);
+    } else if (err.code === 'CART_EMPTY') {   // 同桌另一個人剛好先送出了
+      toast.error(err.message);
+      await reloadCart();
     } else {
       toast.error(err.message);
     }

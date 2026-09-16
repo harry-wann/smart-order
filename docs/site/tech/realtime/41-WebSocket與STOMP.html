@@ -185,7 +185,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <p>網頁平常用的 <a href="../../tech/web/07-HTTP請求與回應.html">HTTP</a> 就是寫信：前端問一次，後端答一次，關係結束。<strong>後端沒辦法主動來找前端。</strong></p>
 <p>WebSocket 就是講電話：連線接通後一直掛著，兩邊誰想說話都可以直接說。</p>
 <h2 id="在我們的火鍋店裡">在我們的火鍋店裡</h2>
-<p>你和朋友坐 A03 桌，各自拿手機點餐。你加了一盤牛五花，朋友的手機要馬上看到。</p>
+<p>你和朋友坐 A03 桌，各自拿手機點餐。購物車是整桌共用的：你把一盤牛五花加進購物車，朋友的手機要馬上看到。</p>
 <ul>
 <li>沒有 WebSocket：朋友的手機每 3 秒問一次「有新的嗎」，多數時候答案是「沒有」</li>
 <li>有 WebSocket：你一送出，伺服器直接推到朋友手機上</li>
@@ -208,7 +208,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td>A03 桌的喇叭</td>
 <td>只有坐 A03 的手機</td>
-<td>新的一單、牛五花出餐了</td>
+<td>陳小美加了牛五花、新的一單、牛五花出餐了、這桌結帳了</td>
 </tr>
 <tr>
 <td>廚房的喇叭</td>
@@ -360,7 +360,7 @@ public class OrderService {
   &quot;serverTime&quot;: &quot;2026-09-13T18:42:11+08:00&quot;
 }
 </code></pre>
-<p>我們的事件類型：</p>
+<p>我們的事件類型（常用的幾個，完整清單見 <a href="../../spec/04-API規格.html">04-API 規格</a> §3.4）：</p>
 <div class="tablewrap"><table>
 <thead>
 <tr>
@@ -371,9 +371,14 @@ public class OrderService {
 </thead>
 <tbody>
 <tr>
+<td><code>CART_UPDATED</code></td>
+<td>session</td>
+<td>整桌購物車有人加、改、刪（帶 <code>action</code>、<code>byGuest</code>、<code>byGuestId</code>、<code>itemName</code>、<code>quantity</code>），同桌手機重抓購物車；<code>byGuestId</code> 是自己的就不跳通知</td>
+</tr>
+<tr>
 <td><code>NEW_TICKET</code></td>
 <td>session、kitchen</td>
-<td>有新的點餐單</td>
+<td>有新的點餐單（推給同桌的那份多帶 <code>byGuest</code>、<code>byGuestId</code>：誰按了送出；櫃檯代客加點是「櫃檯」／<code>null</code>）</td>
 </tr>
 <tr>
 <td><code>ITEM_SERVED</code></td>
@@ -393,7 +398,7 @@ public class OrderService {
 <tr>
 <td><code>SESSION_CLOSED</code></td>
 <td>session、counter</td>
-<td>櫃檯結清了，同桌手機切到「已結帳」並清掉權杖</td>
+<td>這桌收場了，帶 <code>reason</code>：<code>PAID</code>（結清，沒送出的購物車一起捨棄）→ 同桌手機切到「已結帳」；<code>CANCELLED</code>（店長取消用餐）→ 直接回首頁。兩種都清掉權杖</td>
 </tr>
 <tr>
 <td><code>MENU_SOLD_OUT</code></td>
@@ -413,7 +418,7 @@ public class OrderService {
 <tr>
 <td><code>TABLE_STATUS</code></td>
 <td>counter</td>
-<td>桌況變了</td>
+<td>桌況變了（開桌、清潔完成、櫃檯取消訂位保留…）</td>
 </tr>
 <tr>
 <td><code>WAITLIST_CALLED</code></td>

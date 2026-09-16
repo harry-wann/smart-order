@@ -221,16 +221,17 @@ function App() {
 </code></pre>
 <p><strong>② <code>useNavigate</code> —— 用程式換頁</strong></p>
 <pre><code class="language-jsx">import { useNavigate } from 'react-router-dom';
+import { submitCart } from '../api/cart';
 
 function CartPage() {
   const navigate = useNavigate();
 
   async function handleSubmit() {
-    const ticket = await request('/dining-sessions/me/orders', { ... });
+    await submitCart();                           // 不帶品項：整桌購物車一起送出（見 fetch 那頁）
     navigate('/order/tickets');                   // 送出後跳到訂單頁
   }
 
-  return &lt;button onClick={handleSubmit}&gt;送出點餐&lt;/button&gt;;
+  return &lt;button onClick={handleSubmit}&gt;送出整桌點餐&lt;/button&gt;;
 }
 </code></pre>
 <p><code>navigate(-1)</code> 是「回上一頁」。</p>
@@ -315,7 +316,7 @@ function ItemDetailPage() {
 <tr>
 <td>C-06</td>
 <td><code>/order/cart</code></td>
-<td>購物車</td>
+<td>購物車（整桌共用）</td>
 <td>基礎</td>
 </tr>
 <tr>

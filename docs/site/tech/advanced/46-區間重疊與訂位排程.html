@@ -217,7 +217,7 @@ WHERE t.active = 1
       SELECT 1
       FROM reservation r
       WHERE r.table_id = t.id
-        AND r.status = 'CONFIRMED'            -- ← 只有還沒報到的訂位算佔位
+        AND r.status IN ('CONFIRMED', 'SEATED')  -- ← 還沒到的、已經入座的都算佔位
         AND r.start_time &lt; :newEnd            -- ← 重疊判斷
         AND :newStart   &lt; r.end_time
   )
@@ -227,9 +227,14 @@ LIMIT 1;
 <p>三個重點：</p>
 <ol>
 <li><code>NOT EXISTS</code> ＋ 重疊條件 = 「這張桌在這段時間沒有衝突的訂位」</li>
-<li><code>status = 'CONFIRMED'</code> — <strong>只有還沒報到的訂位算數</strong>；取消、未到（NO_SHOW）、已入座（改由 <code>dining_session</code> 管）都不算。訂位送出就直接是 <code>CONFIRMED</code>，沒有 <code>PENDING</code> 這種狀態</li>
+<li><code>status IN ('CONFIRMED', 'SEATED')</code> — <strong>還沒到的和已經報到入座的都算佔用</strong>，一直算到 <code>end_time</code>；只有取消（<code>CANCELLED</code>）和逾時未到（<code>NO_SHOW</code>）不算。訂位送出就直接是 <code>CONFIRMED</code>，沒有 <code>PENDING</code> 這種狀態</li>
 <li><code>ORDER BY seats ASC</code> — <strong>best-fit</strong>：2 個人不要佔 8 人桌</li>
 </ol>
+<blockquote>
+<p><strong>為什麼 <code>SEATED</code> 也要算？</strong> 如果只算 <code>CONFIRMED</code>，客人一報到，這筆就不算了——18:00 那組人明明還坐著吃，
+系統卻以為那張桌 18:30 空出來了，同一時段就會被線上<strong>多訂一組</strong>。報到只代表「人到了」，桌子還是被佔著，要佔到 <code>end_time</code> 為止。</p>
+<p>客人現場被安排到別張桌時，<code>reservation.table_id</code> 也<strong>不跟著改</strong>：佔用算的是「訂位當下配的那張」，容量才不會跟著現場調度亂跳。</p>
+</blockquote>
 <h2 id="best-fit-為什麼重要">best-fit 為什麼重要</h2>
 <p>假設你有 4 人桌和 8 人桌各一張，來了一組 2 人。</p>
 <ul>
@@ -271,6 +276,9 @@ CREATE UNIQUE INDEX uk_reservation_table_start
   ON reservation (table_id, start_time);
 </code></pre>
 <p>就算程式有 bug，資料庫也會擋下來。<strong>「應用層 + 資料庫層」雙重保護</strong>是正確的做法。</p>
+<blockquote>
+<p>取消訂位時要把 <code>table_id</code> 設成 <code>NULL</code>，不然這個唯一<a class="gloss" href="../../tech/database/24-索引.html" title="看這個技術的白話說明">索引</a>會擋住「取消之後，同一時段重新訂同一桌」。</p>
+</blockquote>
 <h2 id="查詢可訂時段">查詢可訂時段</h2>
 <p>前端要顯示「哪些時間還能訂」，做法是把營業時間切成 30 分鐘一格，每格跑一次重疊檢查：</p>
 <pre><code class="language-java">public List&lt;SlotAvailability&gt; checkAvailability(LocalDate date, int partySize) {
@@ -288,11 +296,62 @@ CREATE UNIQUE INDEX uk_reservation_table_start
 }
 </code></pre>
 <p>一天大約 20 格，每格一次查詢——資料量小的時候完全沒問題。</p>
+<h2 id="訂位保留桌位算出來的鎖定不是排程">訂位保留桌位：算出來的鎖定，不是排程</h2>
+<p>線上訂位成立後，配到的那張桌會在用餐時間前後<strong>鎖住</strong>，不讓櫃檯開給現場或候位的客人（M7 的 7.10）。鎖住的這段叫<strong>保留窗</strong>：</p>
+<pre><code>            開始前 30 分              開始              開始後 10 分
+   ────────────|═══════════════════════|══════════════════|──────────→
+               └──────── 保留窗：桌況顯示「預約保留」 ────────┘
+          最早可以來報到                              超過就算逾時未到
+</code></pre>
+<ul>
+<li>30 分＝最早可以提前報到的時間；10 分＝保留時間。兩個都放 <code>application.yml</code>：<code>reservation.hold-before-minutes: 30</code>、<code>reservation.hold-after-minutes: 10</code></li>
+<li>櫃檯可以按「取消保留」，後端寫入 <code>hold_released_at</code>／<code>hold_released_by</code>。訂位本身還是 <code>CONFIRMED</code>，客人到了照樣能報到，只是改坐別張桌</li>
+<li><strong>取消保留是單向的</strong>：沒有恢復的 API，<code>hold_released_at</code> 寫了就不會清掉；所以前端的二次確認要寫明「取消後無法恢復」</li>
+</ul>
+<p><strong>保留是查詢的時候算出來的，不是排程。</strong> <code>dining_table.status</code> 仍然只有 <code>AVAILABLE</code>／<code>OCCUPIED</code>／<code>CLEANING</code> 三種，沒有人會去把欄位改成 <code>RESERVED</code>：</p>
+<pre><code class="language-sql">-- 桌況總覽：每張桌的「顯示狀態」
+SELECT t.id, t.table_no, t.status,
+       CASE
+         WHEN t.status &lt;&gt; 'AVAILABLE' THEN t.status      -- 用餐中、待清理優先
+         WHEN r.id IS NOT NULL        THEN 'RESERVED'    -- 空桌、但落在保留窗內 → 預約保留
+         ELSE 'AVAILABLE'
+       END AS display_status,
+       r.id AS held_reservation_id, r.reservation_no, r.contact_name, r.party_size, r.start_time
+FROM dining_table t
+LEFT JOIN reservation r
+       ON r.table_id = t.id
+      AND r.status = 'CONFIRMED'
+      AND r.start_time - INTERVAL 30 MINUTE &lt;= NOW()
+      AND NOW() &lt;= r.start_time + INTERVAL 10 MINUTE
+      AND r.hold_released_at IS NULL
+WHERE t.active = 1
+ORDER BY t.table_no;
+</code></pre>
+<p>幾個重點：</p>
+<ol>
+<li><strong>優先順序：用餐中 ＞ 待清理 ＞ 預約保留 ＞ 空桌。</strong> 配到的桌到時間還有人在吃，就照樣顯示用餐中；客人到了，櫃檯從報到對話框（S-07b）幫他選別張桌</li>
+<li><strong>用 <code>LEFT JOIN</code></strong>：大部分桌子沒有保留，用 <code>JOIN</code> 的話它們會整列消失（見 <a href="../../tech/database/22-關聯式資料庫與SQL.html">關聯式資料庫與 SQL</a>）</li>
+<li><strong>不會對到兩筆</strong>：同一張桌的兩筆訂位至少隔 115 分鐘（上面的區間重疊擋掉了），保留窗只有 40 分鐘寬，不會撞在一起</li>
+<li><strong>範例把 30、10 寫死是為了好讀</strong>，實作時從 <code>application.yml</code> 讀進來當參數；<code>NOW()</code> 也建議改成傳 <code>:now</code> 進去，寫測試時才能指定「現在是 18:05」</li>
+</ol>
+<p><strong>開桌前也要用同一個條件檢查：</strong></p>
+<pre><code class="language-java">// 現場開桌、候位開桌：目標桌正在保留中 → 擋下來
+reservationRepo.findActiveHold(tableId, now).ifPresent(hold -&gt; {
+    throw new BusinessException(&quot;TABLE_RESERVED&quot;,
+        &quot;這張桌保留給 &quot; + hold.getContactName() + &quot; &quot; + hold.getStartTime().toLocalTime() + &quot;，要先取消保留&quot;,
+        HttpStatus.CONFLICT);
+});
+</code></pre>
+<p>預約報到開桌也一樣檢查，只是「保留給自己這筆」的桌可以直接開，被<strong>別筆</strong>訂位保留的才回 <code>409 TABLE_RESERVED</code>。
+還沒到開始前 30 分就來報到，回 <code>409 RESERVATION_TOO_EARLY</code>；超過開始後 10 分，回 <code>409 RESERVATION_EXPIRED</code>。</p>
+<p><strong>為什麼不用排程在 18:00 把桌子改成 <code>RESERVED</code>？</strong> 那等於把訂位複製一份到桌位上，還要靠排程同步：
+排程晚跑幾分鐘、伺服器剛好重開、櫃檯取消保留後又被排程改回去……畫面就會出現「顯示空桌、按開桌卻被擋」這種最難查的 bug。
+<strong>算得出來的東西就不要存</strong>，每次查的時候算，永遠跟訂位資料一致。（排程仍然是九支，見 <a href="../../tech/realtime/43-排程與Cron.html">排程任務與 Cron</a>。）</p>
 <h2 id="索引">索引</h2>
 <pre><code class="language-sql">CREATE INDEX idx_reservation_table_time
   ON reservation (table_id, start_time, end_time);
 </code></pre>
-<p>重疊檢查每次都用 <code>table_id</code> + 時間範圍，這個<a class="gloss" href="../../tech/database/24-索引.html" title="看這個技術的白話說明">索引</a>是必要的。</p>
+<p>重疊檢查每次都用 <code>table_id</code> + 時間範圍，這個索引是必要的。</p>
 <h2 id="15-分鐘動手小練習">15 分鐘動手小練習</h2>
 <p><strong>先用紙筆做，不要寫程式。</strong></p>
 <p>已訂：<code>A03: 18:00–19:55</code>、<code>A03: 20:00–21:55</code></p>
@@ -326,6 +385,11 @@ CREATE UNIQUE INDEX uk_reservation_table_start
 23:30 開始、用餐 100 分鐘 → 隔天 01:10。<strong>用 <code>DATETIME</code> 存完整時間就沒問題</strong>，如果只存「日期 + 時間」兩個欄位就會出錯。</p>
 <p><strong>⑥ 時區</strong>
 統一用 <code>Asia/Taipei</code>。</p>
+<p><strong>⑦ 客人一報到就不算佔用</strong>
+重疊檢查只算 <code>CONFIRMED</code>，報到後那組人還在吃，同一時段卻被線上多訂一組。
+→ <code>SEATED</code> 也要算，佔到 <code>end_time</code> 為止。</p>
+<p><strong>⑧ 用排程去改桌位狀態做保留</strong>
+→ 保留是查詢時算出來的，見上面「訂位保留桌位」。</p>
 <h2 id="常見錯誤訊息對照">常見錯誤訊息對照</h2>
 <div class="tablewrap"><table>
 <thead>
@@ -361,6 +425,16 @@ CREATE UNIQUE INDEX uk_reservation_table_start
 <td>缺索引</td>
 <td>加 <code>(table_id, start_time, end_time)</code></td>
 </tr>
+<tr>
+<td>客人還在吃，同時段卻又被訂走</td>
+<td>重疊檢查只算 <code>CONFIRMED</code></td>
+<td>改成 <code>status IN ('CONFIRMED', 'SEATED')</code></td>
+</tr>
+<tr>
+<td>取消後同一時段再也訂不到那張桌</td>
+<td>取消時沒把 <code>table_id</code> 設成 NULL，唯一索引擋住</td>
+<td>取消時清掉 <code>table_id</code></td>
+</tr>
 </tbody>
 </table></div>
 <h2 id="術語對照表">術語對照表</h2>
@@ -392,6 +466,14 @@ CREATE UNIQUE INDEX uk_reservation_table_start
 <td>資料庫層的保險</td>
 <td>唯一約束 Unique Constraint</td>
 </tr>
+<tr>
+<td>用餐前後鎖住配到的桌</td>
+<td>保留窗 hold window</td>
+</tr>
+<tr>
+<td>查的時候才算出來的狀態</td>
+<td>衍生狀態 derived state</td>
+</tr>
 </tbody>
 </table></div>
 <h2 id="自我檢核">自我檢核</h2>
@@ -400,6 +482,8 @@ CREATE UNIQUE INDEX uk_reservation_table_start
 <li>為什麼要用 <code>&lt;</code> 不是 <code>&lt;=</code>？</li>
 <li>緩衝時間應該加在哪裡？為什麼判斷式不用改？</li>
 <li>兩個人同時訂同一桌，怎麼防？（講兩層保護）</li>
+<li>為什麼已經入座（<code>SEATED</code>）的訂位也要算佔用？</li>
+<li>保留窗是哪一段時間？為什麼不用排程把桌子改成 <code>RESERVED</code>？</li>
 </ol>
 <h2 id="學習資源">學習資源</h2>
 <div class="tablewrap"><table>
@@ -432,7 +516,7 @@ CREATE UNIQUE INDEX uk_reservation_table_start
 <h2 id="相關頁面">相關頁面</h2>
 <p><a href="../../tech/database/28-鎖與併發.html">鎖與併發</a>　<a href="../../tech/database/24-索引.html">索引是什麼</a>　<a href="../../tech/realtime/43-排程與Cron.html">排程任務與 Cron</a>　<a href="../../tech/database/27-交易Transaction.html">交易 Transaction</a></p><div class="pager"><a href="../../tech/advanced/45-訊息佇列RabbitMQ.html"><div class="k">← 上一篇</div><div class="n">45 訊息佇列 RabbitMQ</div></a><a class="next" href="../../tech/quality/47-單元測試.html"><div class="k">下一篇 →</div><div class="n">47 單元測試 JUnit + Mockito</div></a></div>
 </article>
-<aside class="toc"><div class="tt">本頁目錄</div><a href="#一句話">一句話</a><a href="#想像一下">想像一下</a><a href="#那條判斷式">那條判斷式</a><a href="#加上清桌緩衝">加上清桌緩衝</a><a href="#sql-怎麼寫">SQL 怎麼寫</a><a href="#best-fit-為什麼重要">best-fit 為什麼重要</a><a href="#併發問題">併發問題</a><a href="#查詢可訂時段">查詢可訂時段</a><a href="#索引">索引</a><a href="#15-分鐘動手小練習">15 分鐘動手小練習</a><a href="#你會遇到的坑">你會遇到的坑</a><a href="#常見錯誤訊息對照">常見錯誤訊息對照</a><a href="#術語對照表">術語對照表</a><a href="#自我檢核">自我檢核</a><a href="#學習資源">學習資源</a><a href="#相關頁面">相關頁面</a></aside>
+<aside class="toc"><div class="tt">本頁目錄</div><a href="#一句話">一句話</a><a href="#想像一下">想像一下</a><a href="#那條判斷式">那條判斷式</a><a href="#加上清桌緩衝">加上清桌緩衝</a><a href="#sql-怎麼寫">SQL 怎麼寫</a><a href="#best-fit-為什麼重要">best-fit 為什麼重要</a><a href="#併發問題">併發問題</a><a href="#查詢可訂時段">查詢可訂時段</a><a href="#訂位保留桌位算出來的鎖定不是排程">訂位保留桌位：算出來的鎖定，不是排程</a><a href="#索引">索引</a><a href="#15-分鐘動手小練習">15 分鐘動手小練習</a><a href="#你會遇到的坑">你會遇到的坑</a><a href="#常見錯誤訊息對照">常見錯誤訊息對照</a><a href="#術語對照表">術語對照表</a><a href="#自我檢核">自我檢核</a><a href="#學習資源">學習資源</a><a href="#相關頁面">相關頁面</a></aside>
 </div></div>
 </div>
 <script src="../../vendor/mermaid.min.js"></script>

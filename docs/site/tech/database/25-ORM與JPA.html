@@ -328,7 +328,7 @@ repo.findAll(pageable);       // 分頁
 List&lt;Object[]&gt; findPopularItems(@Param(&quot;since&quot;) LocalDateTime since,
                                @Param(&quot;limit&quot;) int limit);
 </code></pre>
-<p><strong>我們的原則</strong>：簡單查詢用方法命名，推薦／報表／統計這種複雜的用 <code>nativeQuery</code>。不要為了「純 JPA」去硬湊 Criteria API。</p>
+<p><strong>我們的原則</strong>：簡單查詢用方法命名，推薦（進階 A7）／報表（進階 A4）／統計這種複雜的用 <code>nativeQuery</code>。不要為了「純 JPA」去硬湊 Criteria API。</p>
 <h2 id="15-分鐘動手小練習">15 分鐘動手小練習</h2>
 <ol>
 <li>建一個 <code>Note</code> Entity（id、title、content、createdAt）</li>

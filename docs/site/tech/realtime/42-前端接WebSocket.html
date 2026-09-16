@@ -246,13 +246,25 @@ export function useStomp({ topics, onEvent, onReconnect, enabled = true }) {
 }
 </code></pre>
 <p>用起來：</p>
-<pre><code class="language-jsx">function TicketsPage() {
+<pre><code class="language-jsx">// 這桌收場了（SESSION_CLOSED）：兩種 reason，兩種畫面
+function handleSessionClosed(payload, { navigate, setClosed }) {
+  localStorage.removeItem('sessionToken');
+  if (payload.reason === 'CANCELLED') {
+    navigate('/', { replace: true });   // 店長取消這次用餐：不顯示任何面板，直接回 C-00
+  } else {
+    setClosed(true);                    // reason === 'PAID'：顯示「已結帳」面板
+  }
+}
+
+function TicketsPage() {
   const [tickets, setTickets] = useState([]);
-  const [closed, setClosed] = useState(false);        // 櫃檯結清後變 true
+  const [closed, setClosed] = useState(false);        // 結帳完成後變 true
   const { sessionId } = useContext(SessionContext);
+  const navigate = useNavigate();
 
   const refetch = useCallback(async () =&gt; {
-    setTickets(await request('/dining-sessions/me/orders'));
+    const data = await request('/dining-sessions/me/orders');   // { sessionStatus, subtotal, tickets }
+    setTickets(data.tickets);
   }, []);
 
   const handleEvent = useCallback((event) =&gt; {
@@ -266,14 +278,15 @@ export function useStomp({ topics, onEvent, onReconnect, enabled = true }) {
       case 'TICKET_CANCELLED':
         setTickets(prev =&gt; prev.filter(t =&gt; t.ticketId !== event.payload.ticketId));
         break;
-      case 'SESSION_CLOSED':          // 櫃檯結清了：清掉權杖，畫面切到「已結帳」
-        localStorage.removeItem('sessionToken');
-        setClosed(true);
+      case 'SESSION_CLOSED':          // payload：{ sessionId, reason: 'PAID' | 'CANCELLED' }
+        handleSessionClosed(event.payload, { navigate, setClosed });
+        break;
+      case 'CART_UPDATED':            // 購物車的事，訂單頁不用管（菜單頁、購物車頁才處理）
         break;
       default:
         refetch();          // 不認識的事件就整包重抓，最安全
     }
-  }, [refetch]);
+  }, [refetch, navigate]);
 
   useStomp({
     topics: [`/topic/session/${sessionId}`, '/topic/menu'],
@@ -287,6 +300,88 @@ export function useStomp({ topics, onEvent, onReconnect, enabled = true }) {
   return &lt;TicketList tickets={tickets} /&gt;;
 }
 </code></pre>
+<h2 id="同桌共用購物車cart_updated">同桌共用購物車：CART_UPDATED</h2>
+<p>購物車存在後端、整桌共用。同桌任何人加、改、刪，後端都會推一個 <code>CART_UPDATED</code> 到 <code>/topic/session/{id}</code>：</p>
+<pre><code class="language-json">{
+  &quot;type&quot;: &quot;CART_UPDATED&quot;,
+  &quot;payload&quot;: { &quot;action&quot;: &quot;ADDED&quot;, &quot;byGuest&quot;: &quot;陳小美&quot;, &quot;byGuestId&quot;: 7, &quot;itemName&quot;: &quot;安格斯霜降牛五花&quot;, &quot;quantity&quot;: 1 }
+}
+</code></pre>
+<p><code>action</code> 有 <code>ADDED</code>／<code>UPDATED</code>／<code>REMOVED</code> 三種。<code>byGuest</code> 是顯示名稱（給通知條用），<code>byGuestId</code> 是做這件事的那支手機在這桌的 guest id。
+送單事件 <code>NEW_TICKET</code> 推給同桌的那份也帶這兩個欄位；櫃檯在 S-03 代客加點不經過購物車，<code>byGuest</code> 是「櫃檯」、<code>byGuestId</code> 是 <code>null</code>；
+預點轉單（開桌當下，還沒有手機加入）兩個都是 <code>null</code>，不跳通知。</p>
+<p><strong>自己的動作不通知自己</strong>：前端拿 <code>byGuestId</code> 跟這支手機掃碼加入時拿到的 <code>guest.id</code>（<code>POST /join</code> 的回應）比，相同就只更新畫面、不跳通知條。
+不要比 <code>byGuest</code>——會員暱稱可能重複，兩個「小美」同桌就會互相吃掉通知。</p>
+<p>菜單頁（C-04）這樣接：</p>
+<pre><code class="language-jsx">import { fetchCart } from '../api/cart';
+
+function MenuPage() {
+  const [cart, setCart] = useState([]);           // 畫面狀態：拿來畫底部購物車角標
+  const [notice, setNotice] = useState(null);     // 同桌通知條（C-04b／C-04c）
+  const [closed, setClosed] = useState(false);
+  const { sessionId, guest } = useContext(SessionContext);   // guest：join 時拿到的 { id, displayName }
+  const navigate = useNavigate();
+
+  const reloadCart = useCallback(async () =&gt; {
+    setCart(await fetchCart());                   // 購物車內容以後端為準
+  }, []);
+
+  const flash = useCallback((text) =&gt; {           // 通知條顯示 3 秒
+    setNotice(text);
+    setTimeout(() =&gt; setNotice(null), 3000);
+  }, []);
+
+  const handleEvent = useCallback((event) =&gt; {
+    const p = event.payload;
+    switch (event.type) {
+      case 'CART_UPDATED':
+        reloadCart();                             // 不管誰改的、改了什麼，整份重抓
+        if (p.action === 'ADDED' &amp;&amp; p.byGuestId !== guest.id) {         // 自己加的不用通知自己
+          flash(`${p.byGuest} 加了 ${p.itemName} ×${p.quantity}`);        // C-04b
+        }
+        break;
+      case 'NEW_TICKET':                          // 有人把整桌購物車送出了
+        reloadCart();                             // 購物車被清空，角標歸零
+        if (p.byGuest &amp;&amp; p.byGuestId !== guest.id) {   // 櫃檯代客加點：「櫃檯」／null → 會跳；預點轉單：null／null → 不跳
+          flash(`${p.byGuest} 送出 ${p.items.length} 項`);                 // C-04c：N＝這張單的品項列數
+        }
+        break;
+      case 'SESSION_CLOSED':                      // PAID 時，沒送出的購物車已經在結清的交易裡捨棄了
+        handleSessionClosed(p, { navigate, setClosed });
+        break;
+      default:
+        reloadCart();                             // 售完、補貨等菜單事件這裡省略，至少把購物車對齊
+    }
+  }, [reloadCart, flash, guest, navigate]);
+
+  useStomp({
+    topics: [`/topic/session/${sessionId}`, '/topic/menu'],
+    onEvent: handleEvent,
+    onReconnect: reloadCart,                      // ★ 重連一樣重抓
+  });
+
+  useEffect(() =&gt; { reloadCart(); }, [reloadCart]);
+
+  const cartCount = cart.reduce((sum, i) =&gt; sum + i.quantity, 0);   // 算得出來的就不要存 state
+
+  if (closed) return &lt;SessionClosed /&gt;;          // 已結帳面板：底部購物車列跟著消失
+  return (
+    &lt;&gt;
+      {notice &amp;&amp; &lt;NotifyBar text={notice} /&gt;}
+      &lt;MenuList /&gt;
+      &lt;CartBar count={cartCount} /&gt;
+    &lt;/&gt;
+  );
+}
+</code></pre>
+<p>四個重點：</p>
+<ol>
+<li><strong>收到 <code>CART_UPDATED</code> 就重抓，不要自己合併。</strong> payload 只有「誰、做了什麼」，是給通知條用的，不是完整的購物車；拿它去改本機陣列，很快就會跟後端對不上。</li>
+<li><strong>送出點餐推的是 <code>NEW_TICKET</code>，不是 <code>CART_UPDATED</code>。</strong> 但送出會把整桌購物車清空，所以收到 <code>NEW_TICKET</code> 也要重抓購物車，不然別人手機上的角標會停在舊數字。</li>
+<li><strong>兩個人同時按「送出整桌點餐」</strong>：後端用列鎖讓兩筆排隊，先到的送出整份，後到的拿到 <code>409 CART_EMPTY</code>（「購物車是空的，可能同桌已經送出了」），前端提示後重抓就好（見 <a href="../../tech/frontend/40-fetch串接API.html">fetch 串接後端 API</a>、<a href="../../tech/database/28-鎖與併發.html">鎖與併發</a>）。</li>
+<li><strong>自己做的不跳通知，比 <code>byGuestId</code> 不比名字。</strong> 自己加的、自己送出的，只重抓購物車；櫃檯代客加點的 <code>byGuestId</code> 是 <code>null</code>，同桌每支手機都會跳「櫃檯 送出 3 項」。</li>
+</ol>
+<p><code>SESSION_CLOSED</code> 兩頁都用同一個 <code>handleSessionClosed</code>：<code>PAID</code> 顯示「已結帳」面板，<code>CANCELLED</code> 什麼都不顯示、清掉權杖直接回 <code>/</code>。</p>
 <h2 id="兩件一定要做的事">兩件一定要做的事</h2>
 <p><strong>① <code>onConnect</code> 裡一定要 <code>refetch()</code></strong></p>
 <p>每次連上（包含斷線後重連）都重抓一次完整資料。斷線那幾秒漏掉的東西，就靠這個補回來。</p>
@@ -420,6 +515,9 @@ HTTPS 網站只能用 <code>wss://</code>。
 <li>不寫 <code>deactivate()</code> 會發生什麼？</li>
 <li>有了 WebSocket，進頁面時還需要用 API 抓一次資料嗎？</li>
 <li>HTTPS 的網站要用 <code>ws://</code> 還是 <code>wss://</code>？</li>
+<li>收到 <code>CART_UPDATED</code> 為什麼要重抓整份購物車，而不是用 payload 自己改陣列？</li>
+<li><code>SESSION_CLOSED</code> 的 <code>reason</code> 是 <code>PAID</code> 和 <code>CANCELLED</code> 時，畫面各該怎麼做？</li>
+<li>判斷「這是不是我自己加的」，為什麼要比 <code>byGuestId</code>，不比 <code>byGuest</code>？</li>
 </ol>
 <h2 id="學習資源">學習資源</h2>
 <div class="tablewrap"><table>
@@ -449,7 +547,7 @@ HTTPS 網站只能用 <code>wss://</code>。
 <h2 id="相關頁面">相關頁面</h2>
 <p><a href="../../tech/realtime/41-WebSocket與STOMP.html">WebSocket 與 STOMP</a>　<a href="../../tech/frontend/37-useEffect.html">useEffect</a>　<a href="../../tech/frontend/40-fetch串接API.html">fetch 串接後端 API</a></p><div class="pager"><a href="../../tech/realtime/41-WebSocket與STOMP.html"><div class="k">← 上一篇</div><div class="n">41 WebSocket 與 STOMP</div></a><a class="next" href="../../tech/realtime/43-排程與Cron.html"><div class="k">下一篇 →</div><div class="n">43 排程任務與 Cron</div></a></div>
 </article>
-<aside class="toc"><div class="tt">本頁目錄</div><a href="#一句話">一句話</a><a href="#要裝什麼">要裝什麼</a><a href="#最小的例子">最小的例子</a><a href="#包成一個-hook我們的做法">包成一個 Hook（我們的做法）</a><a href="#兩件一定要做的事">兩件一定要做的事</a><a href="#讓即時看得見">讓「即時」看得見</a><a href="#連線狀態指示">連線狀態指示</a><a href="#15-分鐘動手小練習">15 分鐘動手小練習</a><a href="#你會遇到的坑">你會遇到的坑</a><a href="#常見錯誤訊息對照">常見錯誤訊息對照</a><a href="#術語對照表">術語對照表</a><a href="#自我檢核">自我檢核</a><a href="#學習資源">學習資源</a><a href="#相關頁面">相關頁面</a></aside>
+<aside class="toc"><div class="tt">本頁目錄</div><a href="#一句話">一句話</a><a href="#要裝什麼">要裝什麼</a><a href="#最小的例子">最小的例子</a><a href="#包成一個-hook我們的做法">包成一個 Hook（我們的做法）</a><a href="#同桌共用購物車cart_updated">同桌共用購物車：CART_UPDATED</a><a href="#兩件一定要做的事">兩件一定要做的事</a><a href="#讓即時看得見">讓「即時」看得見</a><a href="#連線狀態指示">連線狀態指示</a><a href="#15-分鐘動手小練習">15 分鐘動手小練習</a><a href="#你會遇到的坑">你會遇到的坑</a><a href="#常見錯誤訊息對照">常見錯誤訊息對照</a><a href="#術語對照表">術語對照表</a><a href="#自我檢核">自我檢核</a><a href="#學習資源">學習資源</a><a href="#相關頁面">相關頁面</a></aside>
 </div></div>
 </div>
 <script src="../../vendor/mermaid.min.js"></script>

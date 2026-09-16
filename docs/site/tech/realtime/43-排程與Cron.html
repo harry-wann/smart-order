@@ -328,11 +328,14 @@ public class DiningScheduler {
 </tbody>
 </table></div>
 <blockquote>
-<p>原本還有第十支「桌位預留轉換」（M7 的 7.10），桌位不再跟訂位連動之後整條刪掉了，編號留空不重編，所以是九支。
+<p>原本還有第十支「桌位預留轉換」（時間到了把桌位欄位改成 <code>RESERVED</code>），已經整條刪掉，所以是九支。
+現在線上訂位<strong>還是會鎖住配到的桌</strong>（M7 的 7.10「訂位保留桌位」），但<strong>不用排程</strong>：查桌況的時候，看這張桌有沒有一筆 <code>CONFIRMED</code> 訂位落在「開始前 30 分～開始後 10 分」、而且沒被櫃檯取消保留，有就顯示「預約保留」。
+桌位欄位本身仍然只存 <code>AVAILABLE</code>／<code>OCCUPIED</code>／<code>CLEANING</code>。寫法見 <a href="../../tech/advanced/46-區間重疊與訂位排程.html">區間重疊與訂位排程</a>。
 九支裡的「低庫存檢查」屬進階 A3（M5 的 5.10）；「營業日結算」產生的是報表快照，報表畫面 S-12 屬進階 A4；「明日備貨建議」屬進階（M5 的 5.E2）。
 這三支跟著進階功能走，基礎要交的是前六支。</p>
 <p><strong>排程不是即時的。</strong> NO_SHOW 每 5 分鐘才跑一次，最慢會晚 5 分鐘才標上。所以開桌頁的預約清單、報到開桌 API 都要自己看時間：
-超過用餐時間 10 分鐘就不列、報到時回 <code>409 RESERVATION_EXPIRED</code>（請改登記候位），不能只靠排程。</p>
+清單只列用餐時間在「現在 −10 分～+30 分」之間的（也就是開始前 30 分到開始後 10 分）；
+超過用餐時間 10 分鐘報到回 <code>409 RESERVATION_EXPIRED</code>（請改登記候位），還沒到開始前 30 分就報到回 <code>409 RESERVATION_TOO_EARLY</code>。不能只靠排程。</p>
 </blockquote>
 <h2 id="最重要的一個提醒要能手動觸發">最重要的一個提醒：要能手動觸發</h2>
 <p><strong>你不可能在 demo 時等到晚上 11:30。</strong></p>
@@ -419,6 +422,9 @@ public TaskScheduler taskScheduler() {
 → 批次處理、限制每次處理筆數。</p>
 <p><strong>⑥ 忘記加 <code>@EnableScheduling</code></strong>
 <code>@Scheduled</code> 完全沒反應，而且<strong>不會報錯</strong>。</p>
+<p><strong>⑦ 用排程去改「算得出來」的狀態</strong>
+例如到時間把桌子改成「預約保留」。排程晚跑幾分鐘、伺服器剛好重開、櫃檯取消保留後又被排程改回去——桌況就跟訂位對不上。
+→ 能從現有資料當場算出來的（訂位保留），就在查詢時算，不要存、也不要排程同步。</p>
 <h2 id="常見錯誤訊息對照">常見錯誤訊息對照</h2>
 <div class="tablewrap"><table>
 <thead>
@@ -498,6 +504,7 @@ public TaskScheduler taskScheduler() {
 <li>為什麼每個排程都要配一支手動觸發的 API？</li>
 <li>排程任務裡的例外不接住會怎樣？</li>
 <li>部署兩台伺服器時，排程會發生什麼問題？</li>
+<li>訂位保留桌位為什麼不用排程？</li>
 </ol>
 <h2 id="學習資源">學習資源</h2>
 <div class="tablewrap"><table>

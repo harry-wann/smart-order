@@ -178,7 +178,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <p><strong>難易度</strong> ★★☆☆☆　<strong>里程碑</strong> 第 3 週</p>
 <h2 id="這個模組在做什麼">這個模組在做什麼</h2>
 <p>算清楚這桌總共多少錢，收款，然後把桌子放回可用狀態。</p>
-<p><strong>基礎版是客人到櫃檯結帳</strong>：櫃檯在 S-03 桌位詳情看帳單，按「標記已結清」選現金或模擬支付。
+<p><strong>基礎版是客人到櫃檯結帳</strong>：櫃檯在 S-03 桌位詳情看帳單，結帳區有三顆付款按鈕「現金／信用卡／條碼」，三顆都先跳同一個 5 秒倒數（S-03b，可取消），倒數到 0 才真的送出，成功後約 1.5 秒自動關閉。
 客人在自己手機上付款（「我要結帳」→ C-09～C-11）是<strong>進階 A5</strong>（6.E7），基礎全綠燈後才動工。</p>
 <p><strong>這裡要記得我們的定位：半輔助工具。</strong> 系統管的是「點什麼、出到哪、坐多久」，<strong>不管錢怎麼進抽屜</strong>。所以我們<strong>不做</strong>找零、交班、日結、稽核、發票、折讓——那些留給店家原本的收銀機。</p>
 <h2 id="難易度為什麼只有兩顆星">難易度為什麼只有兩顆星</h2>
@@ -221,7 +221,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td>6.7</td>
 <td><strong>櫃檯結清</strong></td>
-<td>S-03 按「標記已結清」選 <code>現金</code> 或 <code>模擬支付</code>，<code>POST /api/admin/dining-sessions/{id}/settle</code>，不管找零</td>
+<td>S-03 結帳區三顆按鈕 <strong>現金／信用卡／條碼</strong>（<code>CASH</code>／<code>CARD</code>／<code>BARCODE</code>）。點任何一顆 → S-03b 同一個倒數對話框，標題跟著方式變（現金「收款中，請把現金放進收銀機」、信用卡「信用卡付款中」、條碼「條碼付款中」）＋大數字倒數 5 → 0（每秒一格）＋金額＋小字「本系統為教學專題，付款為模擬流程」＋ghost「取消」；倒數到 0 才送 <code>POST /api/admin/dining-sessions/{id}/settle</code>；成功換成勾勾「結帳完成」，<strong>約 1.5 秒後自動關閉</strong>回 S-02（不用按）。<strong>不做失敗機率</strong>、不管找零</td>
 <td>☐</td>
 </tr>
 <tr>
@@ -233,13 +233,13 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td>6.10</td>
 <td>權杖失效＋同桌顯示已結帳</td>
-<td>該桌用餐權杖立刻失效；推 <code>SESSION_CLOSED</code>，同桌手機的 C-04 切到「已結帳」狀態</td>
+<td>該桌用餐權杖立刻失效、整桌購物車刪掉（還沒送出的品項直接捨棄，不算錢）；推 <code>SESSION_CLOSED</code>（<code>reason: PAID</code>），同桌手機的 C-04 切到「已結帳」狀態</td>
 <td>☐</td>
 </tr>
 <tr>
 <td>6.11</td>
 <td>防重複送出</td>
-<td>櫃檯「標記已結清」送出中停用；兩邊同時結帳由列鎖擋，後到的拿 <code>409 SESSION_CLOSED</code></td>
+<td>倒數到 0 送出後，對話框按鈕停用、不能再取消；兩邊同時結帳由列鎖擋，後到的拿 <code>409 SESSION_CLOSED</code></td>
 <td>☐</td>
 </tr>
 </tbody>
@@ -247,7 +247,14 @@ pre.mermaid svg{max-width:100%;height:auto}
 <blockquote>
 <p><strong>6.4（取消結帳）刪除，空號不重編</strong>——沒有鎖定狀態，就沒有「解鎖」這件事。
 <strong>原 6.5、6.6、6.8、6.12 移到 6.E7（A5 顧客線上結帳），編號留空。</strong>
-客人預設到櫃檯結帳；C-08 底部只留一行「用餐完畢請到櫃檯結帳」，服務鈴也沒有「我要結帳」。</p>
+客人預設到櫃檯結帳；C-08 底部只留一行「用餐完畢請到櫃檯結帳」，服務鈴也沒有「我要結帳」。
+付款方式從「現金／模擬支付」改成「現金／信用卡／條碼」（2026-09-16），<code>payment.method</code> 沒有 <code>MOCK_PAY</code> 了。</p>
+<p><strong>S-03 結帳區的「會員（選填）」那一塊是進階 8.10 的櫃檯入口</strong>（A1／A6 的前提）：輸入手機 → 查詢 → 顯示「陳小美・1998/04/21」讓櫃檯唸給客人確認 →
+「確認是本人」才把 <code>memberId</code> 放進 settle 的 body，同一個交易寫進 <code>dining_session.member_id</code>。不做 8.10 就整塊拿掉，settle 不帶 <code>memberId</code>。細節見 <a href="../../spec/modules/M8-會員.html">M8</a> 8.10。</p>
+<p><strong>結帳前整桌購物車還有東西</strong>：S-03 結帳區顯示暖黃小字「還有 N 項沒送出，結帳後會捨棄」（<code>GET /api/admin/dining-sessions/{id}</code> 的 <code>cartItemCount</code>），<strong>只提醒、不擋</strong>。
+客人真的要那幾樣，就請他先在手機上送出，或由櫃檯代客加點。</p>
+<p><strong>S-03 還有一顆「取消該次用餐」</strong>（僅店長，<a href="../../spec/modules/M2-桌位開桌與候位.html">M2</a> 2.14），跟結帳是兩條路：沒點過餐才能取消，
+點過餐就只能結帳（<code>409 SESSION_HAS_ORDERS</code>）。取消推的也是 <code>SESSION_CLOSED</code>，但 <code>reason: CANCELLED</code>，手機不顯示「已結帳」面板、直接回 C-00。</p>
 </blockquote>
 <h2 id="延伸加分功能">延伸加分功能</h2>
 <div class="tablewrap"><table>
@@ -281,8 +288,8 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td>6.E5</td>
-<td>優惠券折抵（<strong>A6 的一部分</strong>）</td>
-<td>只能在 C-09（A5）使用；一次結帳最多一張、不疊加。櫃檯結帳（S-03）要用券是 A6 的延伸，這次沒畫</td>
+<td>優惠券與點數折抵（<strong>A6 的一部分</strong>）</td>
+<td>只能在 C-09（A5）使用。<strong>券和點數可以同一次一起用</strong>：先扣優惠券（一次最多一張）→ 再用點數（1 點折 1 元，最多折到 0 元）。櫃檯結帳（S-03）要用券或點數是 A6 的延伸，這次沒畫</td>
 </tr>
 <tr>
 <td>6.E7</td>
@@ -345,7 +352,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <h2 id="問題思考與解決思路">問題思考與解決思路</h2>
 <h3 id="問題-1結帳到一半有人加點">問題 1：結帳到一半有人加點</h3>
 <p><strong>情境</strong>
-櫃檯在 S-03 看到這桌合計 1562，正要按「標記已結清」；同一時間，桌上的朋友在手機上又加了一盤肉。</p>
+櫃檯在 S-03 看到這桌合計 1562，正要按「信用卡」；同一時間，桌上的朋友在手機上又加了一盤肉。</p>
 <p><strong>如果不處理</strong>
 櫃檯收的是 1562，實際帳單已經變成 1914。<strong>錢收了，金額卻不對。</strong></p>
 <p><strong>舊做法：先鎖再付（已拿掉）</strong>
@@ -362,7 +369,8 @@ public SettleResult settle(Long sessionId, SettleRequest req) {
         .orElseThrow(() -&gt; new BusinessException(&quot;NOT_FOUND&quot;, &quot;查無此筆用餐&quot;, NOT_FOUND));
 
     if (session.getStatus() != SessionStatus.OPEN) {
-        throw new BusinessException(&quot;SESSION_CLOSED&quot;, &quot;這桌已經結帳，不能再加點&quot;, CONFLICT);
+        throw new BusinessException(&quot;SESSION_CLOSED&quot;, &quot;這桌已經結帳，不能再加點&quot;, CONFLICT)
+            .with(&quot;reason&quot;, session.getStatus().name());          // PAID 或 CANCELLED，前端靠它決定顯示什麼
     }
 
     CheckoutAmount amount = calculator.calculate(session);        // 重算，不相信畫面
@@ -371,7 +379,11 @@ public SettleResult settle(Long sessionId, SettleRequest req) {
             .with(&quot;bill&quot;, toBillDto(session, amount));             // 附最新帳單，前端直接重畫
     }
 
-    paymentRepo.save(Payment.settled(session, req.method(), amount.total()));  // CASH 或 MOCK_PAY
+    if (req.memberId() != null) {                                 // 進階 8.10 的櫃檯入口：客人確認是本人才會帶
+        session.attachMember(req.memberId());                     // 已綁了別的會員 → 409 ALREADY_ATTACHED
+    }
+
+    paymentRepo.save(Payment.settled(session, req.method(), amount.total()));  // CASH、CARD 或 BARCODE
     closeSession(session, amount);
     return toResult(session);
 }
@@ -380,7 +392,8 @@ public SettleResult settle(Long sessionId, SettleRequest req) {
 private void closeSession(DiningSession session, CheckoutAmount amount) {
     session.markPaid(amount);                                     // → PAID，用餐權杖一起失效
     session.getTable().setStatus(TableStatus.CLEANING);
-    var event = new WsEvent(&quot;SESSION_CLOSED&quot;, Map.of(&quot;sessionId&quot;, session.getId()));
+    cartRepo.deleteBySessionId(session.getId());                  // 還沒送出的購物車直接捨棄，不算錢
+    var event = new WsEvent(&quot;SESSION_CLOSED&quot;, Map.of(&quot;sessionId&quot;, session.getId(), &quot;reason&quot;, &quot;PAID&quot;));
     events.publishAfterCommit(&quot;/topic/session/&quot; + session.getId(), event);  // 同桌手機切到「已結帳」
     events.publishAfterCommit(&quot;/topic/counter&quot;, event);                     // 櫃檯更新桌況
 }
@@ -389,7 +402,8 @@ private void closeSession(DiningSession session, CheckoutAmount amount) {
 <pre><code class="language-java">// OrderService.submitOrder()，同一個 @Transactional 裡、扣庫存之前
 DiningSession session = sessionRepo.findByIdForUpdate(sessionId).orElseThrow(...);
 if (session.getStatus() != SessionStatus.OPEN) {
-    throw new BusinessException(&quot;SESSION_CLOSED&quot;, &quot;這桌已經結帳，不能再加點&quot;, CONFLICT);
+    throw new BusinessException(&quot;SESSION_CLOSED&quot;, &quot;這桌已經結帳，不能再加點&quot;, CONFLICT)
+        .with(&quot;reason&quot;, session.getStatus().name());   // 409 回應也帶 reason（04 §1.2）
 }
 </code></pre>
 <p><strong>兩邊搶同一把鎖，所以一定一先一後：</strong></p>
@@ -468,7 +482,7 @@ public PaymentDto pay(PayRequest req) {
         &quot;MOCK-&quot; + LocalDate.now().format(BASIC_ISO_DATE) + &quot;-&quot; + nextSeq()));
 
     if (success) {                                    // 成功：收尾跟櫃檯結清完全一樣（04 §4.9）
-        closeSession(session, amount);                // PAID、桌位 CLEANING、權杖失效、推 SESSION_CLOSED
+        closeSession(session, amount);                // PAID、桌位 CLEANING、權杖失效、刪購物車、推 SESSION_CLOSED
     }
     return toDto(payment);   // FAILED 由 Controller 轉成 422 PAYMENT_FAILED
 }
@@ -517,6 +531,33 @@ public PaymentDto pay(PayRequest req) {
 </table></div>
 <p><strong>這點一定要寫進文件</strong>，不然組員會問「為什麼要收集人數卻不用」，或者更糟——<strong>自己加一個人頭費的計算進去</strong>。</p>
 <hr />
+<h3 id="問題-5櫃檯按錯付款方式怎麼辦">問題 5：櫃檯按錯付款方式怎麼辦</h3>
+<p><strong>情境</strong>
+客人說要刷卡，櫃檯手滑按到「現金」。</p>
+<p><strong>如果一按就送出</strong>
+帳就記成現金了。這一版沒有「改付款方式」也沒有退款流程，只能進資料庫改。</p>
+<p><strong>正確做法：倒數 5 秒，倒數中可以取消</strong>（S-03b）</p>
+<p>點任何一顆付款按鈕，先跳同一個倒數對話框：大數字 5 → 0＋金額＋「取消」，標題跟著方式變——
+現金「收款中，請把現金放進收銀機」、信用卡「信用卡付款中」、條碼「條碼付款中」。<strong>倒數到 0 才送 settle</strong>；
+倒數期間按「取消」，什麼都不會發生。成功後換成勾勾「結帳完成」，<strong>約 1.5 秒後自動關閉</strong>回 S-02，櫃檯不用多按一下。</p>
+<blockquote>
+<p><strong>現金也要倒數嗎？</strong> 要（2026-09-16 定案）。三顆走同一個流程，程式只有一條路；現金的倒數剛好是「把錢放進收銀機」的時間。</p>
+</blockquote>
+<pre><code class="language-jsx">// 倒數只在前端：取消不需要任何 API，因為還沒送出任何東西
+useEffect(() =&gt; {
+  if (!paying) return;
+  if (count === 0) { settle(paying.method); return; }      // 到 0 才送，送出中按鈕停用（6.11）；成功後 setTimeout 1500 自動關閉
+  const t = setTimeout(() =&gt; setCount(c =&gt; c - 1), 1000);
+  return () =&gt; clearTimeout(t);                             // 按「取消」→ setPaying(null)，計時器被清掉
+}, [paying, count]);
+</code></pre>
+<blockquote>
+<p><strong>倒數途中有人加點</strong>：倒到 0 送出時照樣走問題 1 的 <code>expectedTotal</code> 比對，拿到 <code>409 BILL_CHANGED</code> →
+對話框關閉、帳單刷新、提示「剛剛有人加點，金額更新了」，櫃檯再按一次。</p>
+</blockquote>
+<p><strong>為什麼櫃檯結帳不做失敗機率？</strong> 櫃檯是真的收到錢、刷過卡才按的，系統只是記錄；
+「付款失敗、可重試」是客人自己在手機上付款（A5）才有的情境。</p>
+<hr />
 <h2 id="六週切分">六週切分</h2>
 <div class="tablewrap"><table>
 <thead>
@@ -536,7 +577,7 @@ public PaymentDto pay(PayRequest req) {
 </tr>
 <tr>
 <td><strong>W3</strong></td>
-<td>★ 櫃檯結清 <code>POST /api/admin/dining-sessions/{id}/settle</code>（含列鎖與 <code>expectedTotal</code> 比對）；S-03 下半的結帳區；<strong>主流程全綠燈</strong></td>
+<td>★ 櫃檯結清 <code>POST /api/admin/dining-sessions/{id}/settle</code>（含列鎖與 <code>expectedTotal</code> 比對）；S-03 下半的結帳區（現金／信用卡／條碼三顆）與 S-03b 倒數對話框；<strong>主流程全綠燈</strong></td>
 </tr>
 <tr>
 <td><strong>W4</strong></td>
@@ -544,7 +585,7 @@ public PaymentDto pay(PayRequest req) {
 </tr>
 <tr>
 <td><strong>W5</strong></td>
-<td>權杖失效驗證；WebSocket <code>SESSION_CLOSED</code> 通知同桌（C-04「已結帳」狀態）</td>
+<td>權杖失效驗證；WebSocket <code>SESSION_CLOSED</code> 通知同桌（<code>reason: PAID</code> → C-04「已結帳」狀態；<code>CANCELLED</code> → 直接回 C-00，跟 M2 2.14 一起測）</td>
 </tr>
 <tr>
 <td><strong>W6</strong></td>
@@ -552,7 +593,7 @@ public PaymentDto pay(PayRequest req) {
 </tr>
 <tr>
 <td><strong>有餘力才做</strong></td>
-<td>6.E7 顧客線上結帳（A5）：<code>GET /api/dining-sessions/me/bill</code>、<code>POST /api/payments</code>（模擬付款 Service、失敗重試）、C-09／C-10／C-11。<strong>基礎全綠燈之前不要動它</strong></td>
+<td>6.E7 顧客線上結帳（A5）：<code>GET /api/dining-sessions/me/bill</code>、<code>POST /api/payments</code>（模擬付款 Service、失敗重試）、C-09／C-10／C-11；8.10 的櫃檯入口（S-03 會員查詢、settle 帶 <code>memberId</code>）。<strong>基礎全綠燈之前不要動它</strong></td>
 </tr>
 </tbody>
 </table></div>
@@ -586,6 +627,22 @@ public PaymentDto pay(PayRequest req) {
 <td>前端 <code>disabled={submitting}</code>；後端第二次會拿到 <code>409 SESSION_CLOSED</code></td>
 </tr>
 <tr>
+<td><strong>結帳完成的對話框一直停著</strong></td>
+<td>成功後要自己 <code>setTimeout</code> 約 1.5 秒關閉並回 S-02，不是等櫃檯按</td>
+</tr>
+<tr>
+<td><strong>結帳後購物車的東西還在</strong></td>
+<td><code>closeSession</code> 漏了刪 <code>cart_item</code>；A5 線上付款成功也走同一個 <code>closeSession</code></td>
+</tr>
+<tr>
+<td><strong>按了取消還是結帳了</strong></td>
+<td>一按就送了 settle、倒數只是動畫；要倒數到 0 才送（問題 5）</td>
+</tr>
+<tr>
+<td><strong>取消用餐後手機顯示「已結帳」</strong></td>
+<td><code>SESSION_CLOSED</code> 沒看 <code>reason</code>，<code>CANCELLED</code> 要直接回 C-00</td>
+</tr>
+<tr>
 <td><strong>結清一直回 <code>BILL_CHANGED</code></strong></td>
 <td>前端送的是舊金額；收到 409 要用回傳的最新帳單重畫，再讓櫃檯按一次</td>
 </tr>
@@ -603,9 +660,9 @@ public PaymentDto pay(PayRequest req) {
 <h3 id="基礎一定要演完">基礎（一定要演完）</h3>
 <ol>
 <li>手機點三樣東西（含一個有選項價差的）→ 送出；C-08 底部看得到「用餐完畢請到櫃檯結帳」</li>
-<li>櫃檯 S-03 點開這桌：品項明細、小計、服務費 10%、合計</li>
-<li><strong>櫃檯畫面先不動，手機再加點一盤</strong> → 櫃檯按「標記已結清」→ <strong>顯示「金額有變動，請重新確認」，合計換成新金額</strong></li>
-<li>再按一次「標記已結清」→ 選「現金」→ 成功</li>
+<li>櫃檯 S-03 點開這桌：品項明細、小計、服務費 10%、合計（先在手機加一樣東西不送出 → 結帳區多一行「還有 1 項沒送出，結帳後會捨棄」）</li>
+<li><strong>櫃檯畫面先不動，手機再加點一盤</strong> → 櫃檯按「信用卡」→ 倒數 5 → 0 → <strong>對話框關閉，提示「剛剛有人加點，金額更新了」，合計換成新金額</strong></li>
+<li>按「現金」→ 倒數中按「取消」→ <strong>什麼都沒發生</strong>；再按一次「現金」等倒數到 0 → 勾勾「結帳完成」→ <strong>約 1.5 秒後自動關閉</strong>回 S-02（對話框標題是「收款中，請把現金放進收銀機」）</li>
 <li>桌況變「待清理」；<strong>兩支手機的 C-04 同時變成「已結帳」</strong>，菜單變暗、不能再加點</li>
 <li>手機按「回到首頁」→ C-00；再掃一次桌上 QR → C-01 顯示「整理中，請稍候」（權杖已失效，沒關掉的舊分頁再打 API 會拿到 <code>401 INVALID_SESSION_TOKEN</code>，一樣清掉權杖導到 C-00）</li>
 </ol>
@@ -615,6 +672,11 @@ public PaymentDto pay(PayRequest req) {
 <li>同桌另一支手機加點 → C-10 按付款 → <strong>回 C-09 並提示「剛剛有人加點，金額更新了，請再確認一次」</strong></li>
 <li>再付一次 → 選 LINE Pay → 2 秒動畫 → C-11 成功畫面 + 交易編號
 10.（重複幾次可以演到失敗）失敗時顯示原因並可重試</li>
+</ol>
+<h3 id="有做-810-櫃檯入口才加演">有做 8.10 櫃檯入口才加演</h3>
+<ol start="11">
+<li>櫃檯結帳前在「會員（選填）」輸入手機 → 查詢 → 顯示「陳小美・1998/04/21」→ 按「確認是本人」→ 結帳 → 這次消費記到她名下</li>
+<li>輸入沒註冊的號碼 → 「查無此會員」；會員沒填生日 → 顯示「未提供」</li>
 </ol><div class="pager"><a href="../../spec/modules/M5-庫存.html"><div class="k">← 上一篇</div><div class="n">M5 庫存</div></a><a class="next" href="../../spec/modules/M7-訂位.html"><div class="k">下一篇 →</div><div class="n">M7 訂位</div></a></div>
 </article>
 <aside class="toc"><div class="tt">本頁目錄</div><a href="#這個模組在做什麼">這個模組在做什麼</a><a href="#難易度為什麼只有兩顆星">難易度為什麼只有兩顆星</a><a href="#基礎必做功能">基礎必做功能</a><a href="#延伸加分功能">延伸加分功能</a><a href="#明確不做">明確不做</a><a href="#會用到的技術">會用到的技術</a><a href="#問題思考與解決思路">問題思考與解決思路</a><a href="#六週切分">六週切分</a><a href="#常見卡關">常見卡關</a><a href="#驗收-demo-腳本">驗收 Demo 腳本</a></aside>

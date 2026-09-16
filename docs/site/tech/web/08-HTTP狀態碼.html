@@ -311,13 +311,19 @@ pre.mermaid svg{max-width:100%;height:auto}
 <h2 id="在我們的火鍋店裡">在我們的火鍋店裡</h2>
 <pre><code>送出點餐 → 201  第 2 單已送出
 送出點餐 → 409  ITEM_SOLD_OUT  牛五花已售完
-櫃檯開桌 → 409  TABLE_OCCUPIED 這桌已經在使用中
-已結帳還加點 → 409  SESSION_CLOSED 這桌已經結帳，不能再加點
+送出點餐 → 409  CART_EMPTY     購物車是空的，可能同桌已經送出了
+開桌 → 409  TABLE_OCCUPIED 這桌已經在使用中
+開桌 → 409  TABLE_RESERVED 這張桌保留給 陳怡君 18:30，要先取消保留
+預約報到太早 → 409  RESERVATION_TOO_EARLY 還沒到可報到時間（18:00 起）
+預約報到太晚 → 409  RESERVATION_EXPIRED   已超過保留時間，請改登記候位
+取消已經點過餐的桌 → 409  SESSION_HAS_ORDERS 已經有點餐紀錄，請改用結帳
+已結帳還加點 → 409  SESSION_CLOSED 這桌已經結帳，不能再加點（回應帶 reason：PAID／CANCELLED）
 櫃檯結清時有人剛加點 → 409  BILL_CHANGED 金額有變動，請重新確認
 廚房人員想改菜單 → 403 FORBIDDEN
 用餐結束後還拿舊 token → 401 INVALID_SESSION_TOKEN
 </code></pre>
-<p><strong>409 在我們的系統裡特別常用</strong>，因為火鍋店有大量「狀態不對」的情況。</p>
+<p><strong>409 在我們的系統裡特別常用</strong>，因為火鍋店有大量「狀態不對」的情況。
+<code>CART_EMPTY</code> 也是 409 而不是 400：請求本身沒寫錯，是同桌另一個人剛把購物車送出去，<strong>狀態變了</strong>。</p>
 <h2 id="15-分鐘動手小練習">15 分鐘動手小練習</h2>
 <p>用瀏覽器直接試：</p>
 <ol>

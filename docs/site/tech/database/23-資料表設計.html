@@ -310,6 +310,21 @@ pre.mermaid svg{max-width:100%;height:auto}
 <p><strong>為什麼要重複存？</strong> 因為菜單價格會改。</p>
 <p>如果不存快照，老闆把牛五花從 280 調到 320，那<strong>三個月前的帳單金額會跟著變成 320</strong>。歷史帳單必須凍結在當下的價格。</p>
 <p>這是少數「<strong>故意重複存資料</strong>」是對的情況。</p>
+<h3 id="購物車也是一張表">購物車也是一張表</h3>
+<p>我們的購物車是<strong>整桌共用</strong>的：同桌每支手機看到同一份，誰都能加、改、刪，按「送出整桌點餐」就整份變成一張 <code>order_ticket</code>。</p>
+<pre><code>dining_session
+  ├── dining_session_guest（同桌的「誰」：一支手機一筆，顯示「陳小美 加的」用）
+  ├── cart_item（還沒送出的品項，記下 added_by_guest_id）
+  │     └── cart_item_option（選了哪些選項，只記 option_value_id）
+  └── order_ticket（送出時從 cart_item 搬過來，同一個交易裡刪掉那些 cart_item）
+</code></pre>
+<ul>
+<li><strong>為什麼不放前端或 HTTP session？</strong> 那都是「每支手機各一份」，同桌看不到彼此加了什麼；伺服器重開還會不見。</li>
+<li><strong>為什麼不放 <a class="gloss" href="../../tech/realtime/44-Redis.html" title="看這個技術的白話說明">Redis</a>？</strong> 送出時購物車要跟寫單在<strong>同一個交易</strong>裡搬進 <code>order_ticket</code>，放在同一個資料庫最單純（見 <a href="../../tech/database/27-交易Transaction.html">交易 Transaction</a>）。</li>
+<li><strong><code>dining_session_guest</code> 的 <code>UNIQUE(dining_session_id, device_id)</code></strong>：同一支手機在同一桌只算一個人，重新掃碼也不會變成「客人 3」。<code>device_id</code> 只拿來標示誰加的，不是身分驗證。</li>
+</ul>
+<p><code>cart_item</code> 也有一個 <code>unit_price</code>（加入當下的價格），但<strong>它只給畫面顯示</strong>——送出時還是用菜單現價重算，再寫進 <code>order_item</code> 的快照。
+選項也一樣：購物車階段不快照，送出時才快照名稱與價差。<strong>快照只在「成交」那一刻做。</strong></p>
 <h2 id="命名規定">命名規定</h2>
 <div class="tablewrap"><table>
 <thead>

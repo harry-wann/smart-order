@@ -183,9 +183,13 @@ pre.mermaid svg{max-width:100%;height:auto}
 <p>Redis 像<strong>掛在牆上的小白板</strong>：寫和看都是一瞬間，但<strong>它在記憶體裡，伺服器重開就沒了</strong>。</p>
 <p>所以規則很清楚：</p>
 <ul>
-<li><strong>不能掉的東西</strong>（訂單、會員、帳單）→ My<a class="gloss" href="../../tech/database/22-關聯式資料庫與SQL.html" title="看這個技術的白話說明">SQL</a></li>
+<li><strong>不能掉的東西</strong>（訂單、會員、帳單，還有整桌共用的購物車）→ My<a class="gloss" href="../../tech/database/22-關聯式資料庫與SQL.html" title="看這個技術的白話說明">SQL</a></li>
 <li><strong>掉了也還好、但要很快的東西</strong>（驗證碼、快取）→ Redis</li>
 </ul>
+<blockquote>
+<p><strong>購物車為什麼不放 Redis？</strong> 送出點餐時，購物車要跟寫單、扣庫存在<strong>同一個資料庫交易</strong>裡搬進 <code>order_ticket</code> 再清掉。
+放在兩個地方就沒辦法一起成功、一起失敗（見 <a href="../../tech/database/27-交易Transaction.html">交易 Transaction</a>），所以放 MySQL 最單純。</p>
+</blockquote>
 <h2 id="三個基本觀念">三個基本觀念</h2>
 <p><strong>① 它是「鍵值」儲存</strong></p>
 <pre><code>key                          value

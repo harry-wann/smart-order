@@ -281,6 +281,10 @@ function MenuItemRow({ item, onAdd }) {
 }
 </code></pre>
 <p><strong>這是 React 最常見的模式</strong>：狀態放在父元件，函式往下傳，子元件只負責觸發。</p>
+<blockquote>
+<p>這裡為了專心練「函式往下傳」，<code>handleAdd</code> 直接改本機陣列。
+<strong>我們專案的購物車存在後端、整桌共用</strong>，實際的 <code>handleAdd</code> 是先打 API 加進去、再把整桌那份抓回來 <code>setCart</code>（見 <a href="../../tech/frontend/36-useState.html">useState</a> 的「購物車」那段）。函式往下傳的寫法完全一樣。</p>
+</blockquote>
 <h2 id="狀態該放在哪一層">狀態該放在哪一層</h2>
 <p>規則：<strong>放在「所有需要它的元件」的最近共同父元件上。</strong></p>
 <p>我們的購物車例子：</p>
@@ -290,6 +294,7 @@ function MenuItemRow({ item, onAdd }) {
 └── CartBar                  （要顯示數量和金額）
 </code></pre>
 <p><code>MenuItemRow</code> 和 <code>CartBar</code> 都需要 cart，所以放在 <code>OrderPage</code>。</p>
+<p>（這個 <code>cart</code> 是從後端抓回來的畫面副本。同桌別人改了購物車，也是 <code>OrderPage</code> 收到通知後重抓，兩個子元件跟著一起更新。）</p>
 <p><strong>這叫「狀態提升」（lifting state up）。</strong></p>
 <h2 id="如果傳太多層怎麼辦">如果傳太多層怎麼辦</h2>
 <p>當狀態要傳五六層下去，中間的元件根本用不到卻要幫忙傳，這叫 <strong>prop drilling（逐層鑽透）</strong>，很煩。</p>

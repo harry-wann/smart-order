@@ -285,16 +285,23 @@ pre.mermaid svg{max-width:100%;height:auto}
 </table></div>
 <p><strong>最重要的規則</strong>：<code>GET</code> <strong>絕對不能改資料</strong>。因為瀏覽器可能會自動幫你重複發 GET 請求（預先載入、重新整理），如果 GET 會扣庫存，庫存會被莫名其妙扣光。</p>
 <h2 id="一個真實的例子">一個真實的例子</h2>
-<p>送出點餐的請求：</p>
-<pre><code class="language-http">POST /api/dining-sessions/me/orders          ← 方法 + 網址
+<p>把兩份牛五花加進購物車的請求：</p>
+<pre><code class="language-http">POST /api/dining-sessions/me/cart/items      ← 方法 + 網址
 X-Session-Token: eyJ0IjoxMDUyLi4u            ← 標頭：證明我坐在 A03 桌
+X-Device-Id: 3f2a9c1e-…                      ← 標頭：這是哪一支手機（顯示「陳小美 加的」用）
 Content-Type: application/json               ← 標頭：我送的是 JSON
 
 {                                            ← 內容
-  &quot;items&quot;: [
-    { &quot;menuItemId&quot;: 12, &quot;quantity&quot;: 2, &quot;optionValueIds&quot;: [12, 41] }
-  ]
+  &quot;menuItemId&quot;: 12,
+  &quot;quantity&quot;: 2,
+  &quot;optionValueIds&quot;: [12, 41],
+  &quot;note&quot;: &quot;不要太熟&quot;
 }
+</code></pre>
+<p>購物車是整桌共用的，大家一項一項加進去；最後按「送出整桌點餐」時，請求<strong>沒有內容</strong>，後端直接拿整桌購物車出單：</p>
+<pre><code class="language-http">POST /api/dining-sessions/me/orders          ← 沒有 body
+X-Session-Token: eyJ0IjoxMDUyLi4u
+X-Device-Id: 3f2a9c1e-…
 </code></pre>
 <p>後端的回應：</p>
 <pre><code class="language-http">201 Created                                  ← 狀態碼：建立成功

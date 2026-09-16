@@ -245,7 +245,7 @@ public class MenuItem {
 <tr>
 <td><strong>Request DTO</strong></td>
 <td>前端送進來的</td>
-<td><code>SubmitOrderRequest</code></td>
+<td><code>AddCartItemRequest</code></td>
 </tr>
 <tr>
 <td><strong>Response DTO</strong></td>
@@ -260,12 +260,8 @@ public class MenuItem {
 </tbody>
 </table></div>
 <p>Request DTO 上要加驗證：</p>
-<pre><code class="language-java">public record SubmitOrderRequest(
-    @NotEmpty(message = &quot;至少要點一樣東西&quot;)
-    List&lt;@Valid OrderItemRequest&gt; items
-) {}
-
-public record OrderItemRequest(
+<pre><code class="language-java">// POST /api/dining-sessions/me/cart/items 加入購物車
+public record AddCartItemRequest(
     @NotNull(message = &quot;請選擇品項&quot;)
     Long menuItemId,
 
@@ -280,6 +276,11 @@ public record OrderItemRequest(
 ) {}
 </code></pre>
 <p>Controller 加 <code>@Valid</code>，Spring 就會自動幫你檢查，不通過會回 400。</p>
+<blockquote>
+<p>為什麼範例是「加入購物車」而不是「送出點餐」？因為我們的購物車存在後端、整桌共用，
+品項是一項一項加進去的；送出點餐（<code>POST /api/dining-sessions/me/orders</code>）<strong>不帶 body</strong>，後端直接拿整桌購物車出單。
+所以欄位驗證放在加入這一步；送出時後端還會用菜單現況再檢查一次（品項可能剛售完、選項可能剛改過）。</p>
+</blockquote>
 <h2 id="怎麼轉換">怎麼轉換</h2>
 <p><strong>手寫（我們用這個，最單純）</strong></p>
 <pre><code class="language-java">private MenuItemDto toDto(MenuItem entity) {

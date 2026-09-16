@@ -230,7 +230,8 @@ Optional&lt;InventoryItem&gt; findByMenuItemIdForUpdate(@Param(&quot;id&quot;) L
 <li><strong>優點</strong>：拿到鎖之後你可以放心做任何複雜判斷</li>
 <li><strong>缺點</strong>：別人要排隊等，高併發時會慢；而且有<strong>死鎖</strong>風險</li>
 </ul>
-<p><strong>我們在訂位配桌時用這個</strong>，因為配桌要做<a class="gloss" href="../../tech/advanced/46-區間重疊與訂位排程.html" title="看這個技術的白話說明">區間重疊</a>計算，沒辦法寫成一句 UPDATE。</p>
+<p><strong>我們在訂位配桌時用這個</strong>，因為配桌要做<a class="gloss" href="../../tech/advanced/46-區間重疊與訂位排程.html" title="看這個技術的白話說明">區間重疊</a>計算，沒辦法寫成一句 UPDATE。
+送出點餐也會用到：先鎖住這桌的 <code>dining_session</code> 那一列，再讀整桌購物車（見下面的場景表）。</p>
 <h2 id="解法三樂觀鎖">解法三：樂觀鎖</h2>
 <p>「我先假設沒人會跟我搶。真的撞到了再重試。」</p>
 <pre><code class="language-java">@Entity
@@ -275,7 +276,7 @@ WHERE id = ? AND version = ?     -- 版本對不上就更新 0 筆
 </tr>
 </tbody>
 </table></div>
-<h2 id="我們專案的四個併發場景">我們專案的四個併發場景</h2>
+<h2 id="我們專案的五個併發場景">我們專案的五個併發場景</h2>
 <div class="tablewrap"><table>
 <thead>
 <tr>
@@ -301,12 +302,27 @@ WHERE id = ? AND version = ?     -- 版本對不上就更新 0 筆
 <td>悲觀鎖 <code>SELECT ... FOR UPDATE</code>，後到的回 <code>409 TABLE_OCCUPIED</code></td>
 </tr>
 <tr>
+<td><strong>同桌兩個人同時按「送出整桌點餐」</strong></td>
+<td>同一份購物車被送兩次，變成兩張一樣的單</td>
+<td>送出時先鎖這桌的 <code>dining_session</code>（<code>SELECT ... FOR UPDATE</code>），兩筆排隊；先到的讀購物車 → 扣庫存 → 寫單 → 清購物車，後到的讀到空購物車，回 <code>409 CART_EMPTY</code></td>
+</tr>
+<tr>
 <td><strong>櫃檯正在結清，同桌客人又送出加點</strong></td>
 <td>收的錢跟帳單對不上</td>
-<td>結清和送出點餐都先鎖同一筆 <code>dining_session</code>；結清時帶畫面上的合計 <code>expectedTotal</code>，重算不相等回 <code>409 BILL_CHANGED</code>，已結清後才到的加點回 <code>409 SESSION_CLOSED</code></td>
+<td>結清和送出點餐都先鎖同一筆 <code>dining_session</code>；結清時帶畫面上的合計 <code>expectedTotal</code>，重算不相等回 <code>409 BILL_CHANGED</code>，已結清後才到的加點回 <code>409 SESSION_CLOSED</code>；結清的同一個交易也把整桌還沒送出的購物車刪掉</td>
 </tr>
 </tbody>
 </table></div>
+<h3 id="同桌兩人同時送出時間軸長這樣">同桌兩人同時送出，時間軸長這樣</h3>
+<pre><code>時間 →
+小美：鎖住 A03 的 dining_session → 讀購物車（6 項）→ 扣庫存、寫單、清購物車 → 提交，放開鎖
+大明：    想鎖同一列（排隊等小美）………………………………………………→ 拿到鎖 → 讀購物車（0 項）→ 409 CART_EMPTY
+</code></pre>
+<p><strong>關鍵是「先鎖，再讀購物車」。</strong> 順序反過來（還沒鎖就先讀購物車），大明手上拿的是過期的 6 項，就有機會再送出一次。
+大明的手機收到 <code>CART_EMPTY</code>，提示「購物車是空的，可能同桌已經送出了」並重抓購物車；同時也會收到小美送單的通知。</p>
+<blockquote>
+<p>所以同一桌的人<strong>不會</strong>互相超賣——他們在排隊。超賣發生在<strong>不同桌</strong>同時搶最後一份庫存，那是上面的條件式 UPDATE 在擋的。</p>
+</blockquote>
 <h2 id="死鎖是什麼">死鎖是什麼</h2>
 <p>兩個交易互相等對方的鎖：</p>
 <pre><code>交易 A：鎖住品項 1 → 想鎖品項 2（但 2 被 B 鎖著，等）
@@ -426,6 +442,7 @@ latch.await();
 <li>悲觀鎖和樂觀鎖的差別？各適合什麼場景？</li>
 <li>怎麼避免死鎖？</li>
 <li>用 <code>synchronized</code> 為什麼不行？</li>
+<li>同桌兩個人同時按送出，為什麼不會變成兩張單？為什麼一定要「先鎖、再讀購物車」？</li>
 </ol>
 <h2 id="學習資源">學習資源</h2>
 <div class="tablewrap"><table>
@@ -461,7 +478,7 @@ latch.await();
 <h2 id="相關頁面">相關頁面</h2>
 <p><a href="../../tech/database/27-交易Transaction.html">交易 Transaction</a>　<a href="../../tech/database/22-關聯式資料庫與SQL.html">關聯式資料庫與 SQL</a>　<a href="../../tech/realtime/44-Redis.html">Redis</a>　<a href="../../tech/advanced/46-區間重疊與訂位排程.html">區間重疊與訂位排程</a></p><div class="pager"><a href="../../tech/database/27-交易Transaction.html"><div class="k">← 上一篇</div><div class="n">27 交易 Transaction</div></a><a class="next" href="../../tech/database/29-Flyway.html"><div class="k">下一篇 →</div><div class="n">29 Flyway 資料庫版本控管</div></a></div>
 </article>
-<aside class="toc"><div class="tt">本頁目錄</div><a href="#一句話">一句話</a><a href="#想像一下">想像一下</a><a href="#為什麼不能加個判斷解決">為什麼不能「加個判斷」解決</a><a href="#解法一把條件寫進-update我們用這個">解法一：把條件寫進 UPDATE（我們用這個）</a><a href="#解法二悲觀鎖">解法二：悲觀鎖</a><a href="#解法三樂觀鎖">解法三：樂觀鎖</a><a href="#三種解法怎麼選">三種解法怎麼選</a><a href="#我們專案的四個併發場景">我們專案的四個併發場景</a><a href="#死鎖是什麼">死鎖是什麼</a><a href="#15-分鐘動手小練習">15 分鐘動手小練習</a><a href="#你會遇到的坑">你會遇到的坑</a><a href="#常見錯誤訊息對照">常見錯誤訊息對照</a><a href="#術語對照表">術語對照表</a><a href="#自我檢核">自我檢核</a><a href="#學習資源">學習資源</a><a href="#相關頁面">相關頁面</a></aside>
+<aside class="toc"><div class="tt">本頁目錄</div><a href="#一句話">一句話</a><a href="#想像一下">想像一下</a><a href="#為什麼不能加個判斷解決">為什麼不能「加個判斷」解決</a><a href="#解法一把條件寫進-update我們用這個">解法一：把條件寫進 UPDATE（我們用這個）</a><a href="#解法二悲觀鎖">解法二：悲觀鎖</a><a href="#解法三樂觀鎖">解法三：樂觀鎖</a><a href="#三種解法怎麼選">三種解法怎麼選</a><a href="#我們專案的五個併發場景">我們專案的五個併發場景</a><a href="#死鎖是什麼">死鎖是什麼</a><a href="#15-分鐘動手小練習">15 分鐘動手小練習</a><a href="#你會遇到的坑">你會遇到的坑</a><a href="#常見錯誤訊息對照">常見錯誤訊息對照</a><a href="#術語對照表">術語對照表</a><a href="#自我檢核">自我檢核</a><a href="#學習資源">學習資源</a><a href="#相關頁面">相關頁面</a></aside>
 </div></div>
 </div>
 <script src="../../vendor/mermaid.min.js"></script>

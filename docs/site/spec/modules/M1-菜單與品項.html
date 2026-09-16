@@ -443,7 +443,7 @@ menu_item「鴛鴦鍋底」      price 0,   is_soup_base=true
 <ol>
 <li>庫存歸零時，後端推 <code>MENU_SOLD_OUT</code> 到 <code>/topic/menu</code></li>
 <li>所有正在點餐的裝置收到，把那個品項標成售完</li>
-<li><strong>但這還不夠</strong>——已經在購物車裡的怎麼辦？</li>
+<li><strong>但這還不夠</strong>——已經在購物車裡的怎麼辦？（購物車存在後端、整桌共用，重抓時每列會帶 <code>soldOut</code>，前端標紅）</li>
 <li>所以<strong>送出點餐時後端一定要再檢查一次</strong>，不夠就回 409</li>
 </ol>
 <p><strong>前端的顯示是體驗，後端的檢查才是真相。</strong></p>
@@ -471,7 +471,7 @@ menu_item「鴛鴦鍋底」      price 0,   is_soup_base=true
 </tr>
 <tr>
 <td><strong>W4</strong></td>
-<td>飲食標示、免費續加品項；人氣推薦查詢（<code>GROUP BY</code> + <code>SUM</code>）</td>
+<td>飲食標示、免費續加品項</td>
 </tr>
 <tr>
 <td><strong>W5</strong></td>
@@ -480,6 +480,10 @@ menu_item「鴛鴦鍋底」      price 0,   is_soup_base=true
 <tr>
 <td><strong>W6</strong></td>
 <td>不寫新功能。檢查售完顯示、圖片載入、RWD</td>
+</tr>
+<tr>
+<td><strong>有餘力才做</strong></td>
+<td>人氣推薦查詢（進階 A7，M3 3.E1：<code>GROUP BY</code> + <code>SUM</code>，給 C-04 的「本店人氣 TOP 5」）。<strong>基礎完成後才做</strong></td>
 </tr>
 </tbody>
 </table></div>

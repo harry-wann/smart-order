@@ -180,8 +180,8 @@ pre.mermaid svg{max-width:100%;height:auto}
 <p><strong>這是整個專案最核心、也最難的模組。</strong> 不論之後怎麼分工，這個模組的送出點餐交易一定要有第二個人 review。</p>
 </blockquote>
 <h2 id="這個模組在做什麼">這個模組在做什麼</h2>
-<p>客人從菜單挑東西、放進購物車、按下「送出點餐」，然後在自己手機上看到全桌點了什麼、哪些出了。另外還有一顆呼叫服務生的按鈕。</p>
-<p><strong>「送出點餐」那一支 API 是整個系統技術含量最高的地方</strong>：它要在一個交易裡完成驗證、扣庫存、建立三層資料、更新金額，任何一步失敗全部回滾。</p>
+<p>客人從菜單挑東西、放進<strong>整桌共用的購物車</strong>（同桌每支手機看到同一份，每列標出是誰加的），按下「送出整桌點餐」，然後在自己手機上看到全桌點了什麼、哪些出了。另外還有一顆呼叫服務生的按鈕。</p>
+<p><strong>「送出點餐」那一支 API 是整個系統技術含量最高的地方</strong>：它要在一個交易裡完成讀整桌購物車、驗證、扣庫存、建立三層資料、清空購物車、更新金額，任何一步失敗全部回滾。</p>
 <h2 id="難易度為什麼是四顆星">難易度為什麼是四顆星</h2>
 <div class="tablewrap"><table>
 <thead>
@@ -197,7 +197,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td><strong><a class="gloss" href="../../tech/database/27-交易Transaction.html" title="看這個技術的白話說明">交易邊界</a></strong></td>
-<td>九個步驟要綁在一起，中間任何一步失敗都要乾淨回滾</td>
+<td>鎖列、讀購物車、驗證、扣庫存、寫單、清購物車要綁在一起，中間任何一步失敗都要乾淨回滾</td>
 </tr>
 <tr>
 <td><strong>三層資料結構</strong></td>
@@ -205,7 +205,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td><strong>多裝置同步</strong></td>
-<td><a class="gloss" href="../../tech/realtime/41-WebSocket與STOMP.html" title="看這個技術的白話說明">WebSocket</a> + 斷線重連 + 前端狀態合併</td>
+<td>購物車存後端、整桌共用；<a class="gloss" href="../../tech/realtime/41-WebSocket與STOMP.html" title="看這個技術的白話說明">WebSocket</a> + 斷線重連，收到事件就重抓</td>
 </tr>
 <tr>
 <td><strong>選項驗證</strong></td>
@@ -226,20 +226,20 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tbody>
 <tr>
 <td>3.1</td>
-<td>購物車</td>
-<td>前端狀態，<strong>不存後端</strong>；可增減數量、刪除、加備註</td>
+<td>購物車（整桌共用）</td>
+<td><strong>存後端</strong>（<code>cart_item</code>），同桌每支手機看到同一份，任何人都能增減數量、刪除、加備註；每列品名下方小字「陳小美 加的」（原 3.E4 併入）；加入／修改／刪除後推 <code>CART_UPDATED</code>，同桌 1 秒內更新角標，加入時<strong>其他手機</strong>跳通知條「陳小美 加了 安格斯霜降牛五花 ×1」（比對 <code>byGuestId</code>，自己加的不跳）；已結帳 → <code>409 SESSION_CLOSED</code></td>
 <td>☐</td>
 </tr>
 <tr>
 <td>3.2</td>
-<td>送出點餐</td>
-<td>建立<strong>一張</strong> <code>order_ticket</code>，內含多筆 <code>order_item</code></td>
+<td>送出整桌點餐</td>
+<td>按「送出整桌點餐」，<strong>不帶品項</strong>：後端把整桌購物車變成<strong>一張</strong> <code>order_ticket</code>（記下 <code>submitted_by_guest_id</code>）並清空購物車，同桌其他手機跳「王大明 送出 6 項」（N＝這張單的品項列數；按的人自己不跳）；購物車已經空了 → <code>409 CART_EMPTY</code>「購物車是空的，可能同桌已經送出了」</td>
 <td>☐</td>
 </tr>
 <tr>
 <td>3.3</td>
 <td>鍋底規則</td>
-<td>共鍋<strong>每桌至少一份</strong>：本桌還沒有鍋底（含預點轉來的單）而這張單也沒有 → <code>400 SOUP_BASE_REQUIRED</code>。鍋底是 C-04 的分類頁籤，沒有獨立的選鍋底頁</td>
+<td>共鍋<strong>每桌至少一份</strong>：本桌還沒有鍋底（含預點轉來的單）而這次購物車裡也沒有 → <code>400 SOUP_BASE_REQUIRED</code>。鍋底是 C-04 的分類頁籤，沒有獨立的選鍋底頁</td>
 <td>☐</td>
 </tr>
 <tr>
@@ -299,7 +299,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td>3.13</td>
 <td>防重複送出</td>
-<td>送出中按鈕停用，連按三下只成立一張單</td>
+<td>送出中按鈕停用，連按三下只成立一張單；同桌兩人同時按也只成立一張（後到的 <code>CART_EMPTY</code>，見問題 7）</td>
 <td>☐</td>
 </tr>
 <tr>
@@ -322,8 +322,8 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tbody>
 <tr>
 <td>3.E1</td>
-<td>人氣推薦</td>
-<td><code>GROUP BY</code> + <code>SUM(quantity)</code>，大人／小孩分流</td>
+<td><strong>人氣推薦（A7）</strong></td>
+<td>已有設計稿，但沒有獨立畫面：C-04 的「本店人氣 TOP 5」區塊。<code>GET /api/menu/recommendations?type=POPULAR</code>，<code>GROUP BY</code> + <code>SUM(quantity)</code>，大人／小孩分流。不做就整塊拿掉</td>
 </tr>
 <tr>
 <td>3.E2</td>
@@ -337,8 +337,8 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td>3.E4</td>
-<td>「誰加的」標示</td>
-<td>同桌多人時顯示是誰加進購物車的</td>
+<td>（已併入 3.1）</td>
+<td>「誰加的」標示。2026-09-16 購物車改成存後端、整桌共用之後變成基礎，編號留著不重編</td>
 </tr>
 <tr>
 <td>3.E5</td>
@@ -364,7 +364,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td><a href="../../tech/database/27-交易Transaction.html">交易 Transaction</a></td>
-<td>九個步驟綁在一起</td>
+<td>送出點餐的每一步綁在一起</td>
 <td>★★★☆☆</td>
 </tr>
 <tr>
@@ -384,7 +384,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td><a href="../../tech/frontend/36-useState.html">useState</a></td>
-<td>購物車狀態</td>
+<td>畫面狀態；購物車內容以後端為準，收到 <code>CART_UPDATED</code> 就重抓</td>
 <td>★★☆☆☆</td>
 </tr>
 <tr>
@@ -447,19 +447,26 @@ if (affected == 0) {
 前兩項的庫存已經扣掉了，但訂單沒成立。<strong>庫存憑空少了兩份，而且沒有人會發現。</strong></p>
 <p><strong>正確做法</strong></p>
 <pre><code class="language-java">@Transactional                         // ← 整個方法綁在一起
-public OrderTicketDto submitOrder(String token, SubmitOrderRequest req) {
+public OrderTicketDto submitOrder(String token, String deviceId) {   // 不收品項：送出的是整桌購物車
     DiningSession session = sessionService.lockOrderable(token);  // FOR UPDATE，不是 OPEN → 409 SESSION_CLOSED
+    DiningSessionGuest guest = guestService.find(session, deviceId);   // 誰按的送出
 
-    validateSoupBaseRule(session, req);        // ① 鍋底規則
-    validateOptions(req);                      // ② 必選／上限
+    List&lt;CartItem&gt; cart = cartRepo.findBySessionId(session.getId());   // 拿到鎖之後才讀（問題 7）
+    if (cart.isEmpty()) {
+        throw new BusinessException(&quot;CART_EMPTY&quot;, &quot;購物車是空的，可能同桌已經送出了&quot;, CONFLICT);   // 409：同桌剛送出，是狀態衝突
+    }
+
+    validateSoupBaseRule(session, cart);       // ① 鍋底規則
+    validateOptions(cart);                     // ② 必選／上限
 
     // ③ 依 id 排序後逐項扣庫存（避免死鎖）
-    req.items().stream()
-       .sorted(comparing(OrderItemRequest::menuItemId))
-       .forEach(this::decreaseStockOrThrow);   // 任一項失敗 → 例外 → 全部回滾
+    cart.stream()
+        .sorted(comparing(CartItem::getMenuItemId))
+        .forEach(this::decreaseStockOrThrow);  // 任一項失敗 → 例外 → 全部回滾（購物車也原封不動）
 
-    OrderTicket ticket = buildTicketWithSnapshots(session, req);  // ④⑤⑥
-    session.recalculate();                                        // ⑦
+    OrderTicket ticket = buildTicketWithSnapshots(session, guest, cart);  // ④⑤⑥ 以菜單現價重算、存快照
+    cartRepo.deleteAll(cart);                                            // ⑦ 同一個交易裡清空購物車
+    session.recalculate();                                               // ⑧
 
     return toDto(ticket);
 }
@@ -491,6 +498,8 @@ public OrderTicketDto submitOrder(String token, SubmitOrderRequest req) {
 }
 </code></pre>
 <p><strong>這一行讓你同時拿到「即時」和「不會錯」。</strong> 就算 WebSocket 完全掛掉，只要使用者重新整理，資料還是對的。</p>
+<p><strong>購物車也走同一條路</strong>：誰加了東西，後端推 <code>CART_UPDATED</code>，其他手機收到就重抓 <code>GET /api/dining-sessions/me/cart</code>。
+不要拿事件內容自己去拼購物車——事件只拿來跳通知條「陳小美 加了 安格斯霜降牛五花 ×1」，內容一律以後端為準。</p>
 <hr />
 <h3 id="問題-4客人連按三下送出">問題 4：客人連按三下送出</h3>
 <p><strong>情境</strong>
@@ -499,13 +508,17 @@ public OrderTicketDto submitOrder(String token, SubmitOrderRequest req) {
 成立三張一模一樣的單，廚房做三份。</p>
 <p><strong>做法 A：前端擋</strong></p>
 <pre><code class="language-jsx">&lt;Button disabled={submitting} loading={submitting} onClick={handleSubmit}&gt;
-  送出點餐
+  送出整桌點餐
 &lt;/Button&gt;
 </code></pre>
 <p>必要，但<strong>不夠</strong>——<a href="../../tech/web/06-前端後端在做什麼.html">前端的檢查不算數</a>。</p>
 <p><strong>做法 B：後端也擋（冪等鍵）</strong></p>
 <p>前端每次送出時產生一個唯一的 <code>requestId</code>，後端在短時間內收到相同的就直接回上一次的結果。</p>
 <p><strong>我們的決定</strong>：基礎版做 A（前端停用按鈕），並在文件標明 B 是進階項。理由是我們的 API 是「建立新單」，重複送出的後果是多一張單而不是金額錯誤，且櫃檯可以取消。<strong>但要在簡報時說明你們知道這個限制。</strong></p>
+<blockquote>
+<p>購物車搬到後端之後，這個限制小了很多：第一次送出成功就把購物車清空了，第二、三下拿到的是空購物車（<code>409 CART_EMPTY</code>），
+不會再成立一張。同桌<strong>兩個人</strong>同時按也是同一個道理，見問題 7。</p>
+</blockquote>
 <hr />
 <h3 id="問題-5服務鈴要不要存資料庫">問題 5：服務鈴要不要存資料庫？</h3>
 <p><strong>情境</strong>
@@ -526,6 +539,72 @@ public OrderTicketDto submitOrder(String token, SubmitOrderRequest req) {
 </code></pre>
 <p>成本只多一點點，但櫃檯體驗完全不同。</p>
 <hr />
+<h3 id="問題-6購物車要放在哪裡">問題 6：購物車要放在哪裡</h3>
+<p><strong>情境</strong>
+陳小美和王大明同桌。陳小美加了一盤牛五花，王大明的手機要看得到；而且不管誰按送出，兩個人加的都要一起送出去。</p>
+<p><strong>做法 A：前端 state／localStorage</strong>（舊版就是這樣）
+每支手機各一份。同桌看不到彼此加了什麼，兩個人各送各的，鍋底還可能各點一份。</p>
+<p><strong>做法 B：HTTP session</strong>
+還是每支手機各一份（session 跟著各自瀏覽器的 cookie 走），伺服器重啟就消失。</p>
+<p><strong>做法 C：<a class="gloss" href="../../tech/realtime/44-Redis.html" title="看這個技術的白話說明">Redis</a></strong>
+可以整桌共用，但送出時要「寫 <code>order_ticket</code>＋清購物車」一起成功或一起失敗，跨 Redis 和 <a class="gloss" href="../../tech/database/22-關聯式資料庫與SQL.html" title="看這個技術的白話說明">MySQL</a> 做不到同一個交易。</p>
+<p><strong>做法 D：存 My<a class="gloss" href="../../tech/database/22-關聯式資料庫與SQL.html" title="看這個技術的白話說明">SQL</a>，整桌一份</strong> ← 我們選這個</p>
+<p><code>cart_item</code> 掛在 <code>dining_session</code> 底下，不分手機。送出時在同一個交易裡搬進 <code>order_ticket</code> 再刪掉（問題 2 的第 ⑦ 步）。</p>
+<p><strong>「誰加的」怎麼知道？</strong> 同一桌只有一個 <code>session_token</code>，分不出是哪支手機。所以：</p>
+<ol>
+<li>前端第一次開啟時產生一個 UUID，存 localStorage，每個請求用 <code>X-Device-Id</code> 帶上來</li>
+<li>加入用餐時，後端在 <code>dining_session_guest</code> 建一筆（有登入會員用暱稱，否則依加入順序「客人 1」「客人 2」…），同一個 UUID 重複加入拿到同一筆</li>
+<li><code>cart_item.added_by_guest_id</code>、<code>order_ticket.submitted_by_guest_id</code> 都指向它</li>
+</ol>
+<blockquote>
+<p><strong><code>device_id</code> 不是身分驗證</strong>，驗證仍然靠 <code>session_token</code>。有人偽造 <code>X-Device-Id</code>，頂多讓購物車上顯示錯的名字，拿不到別桌的東西。</p>
+</blockquote>
+<p><strong>前端怎麼配合</strong>：購物車內容以後端為準，<code>useState</code> 只放畫面狀態（例如哪一列展開了）；收到 <code>CART_UPDATED</code> 或 <code>NEW_TICKET</code> 就重抓。
+<code>cart_item.unit_price</code> 只給畫面顯示，送單時一律用菜單現價重算——加進購物車之後老闆改價，以送出那一刻為準。</p>
+<p><strong>自己的動作不通知自己</strong>：<code>CART_UPDATED</code> 與 <code>NEW_TICKET</code> 都帶 <code>byGuestId</code>，前端跟 join 時拿到的 <code>guest.id</code> 比對，相同就只重抓、不跳通知條。
+不要拿 <code>byGuest</code> 名稱比——兩個會員暱稱一樣就會互相吃掉通知。</p>
+<p><strong>不經過整桌購物車的兩種單</strong></p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>情境</th>
+<th>怎麼送</th>
+<th>同桌看到什麼</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>櫃檯代客加點（S-03）</td>
+<td>店員直接帶品項出單（<code>POST /api/admin/dining-sessions/{id}/orders</code>，<code>source = STAFF</code>），跟送出購物車共用驗證、扣庫存、寫單那一段</td>
+<td><code>NEW_TICKET</code> 的 <code>byGuest</code> 是「櫃檯」、<code>byGuestId</code> 是 <code>null</code> →「櫃檯 送出 2 項」；客人購物車不受影響</td>
+</tr>
+<tr>
+<td>C-17 預先點餐（A2）</td>
+<td>還沒有用餐紀錄，購物車只存在那支手機，送出是整批 <code>PUT /api/reservations/{id}/preorder</code></td>
+<td>沒有同桌、沒有「誰加的」</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>結帳或取消時還沒送出的品項直接捨棄</strong>：session 進終態的同一個交易裡刪掉整桌 <code>cart_item</code>，不算錢；
+櫃檯在 S-03 結帳前會看到暖黃小字「還有 N 項沒送出，結帳後會捨棄」（只提醒、不擋），已結帳的 C-04／C-06 購物車列直接消失。</p>
+<hr />
+<h3 id="問題-7兩個人同時按送出整桌點餐">問題 7：兩個人同時按「送出整桌點餐」</h3>
+<p><strong>情境</strong>
+購物車裡有 6 項。陳小美和王大明幾乎同時按下送出。</p>
+<p><strong>如果不處理</strong>
+兩個請求都讀到同一份 6 項，各建一張單 → 廚房做兩份、庫存扣兩次、帳單多一倍。</p>
+<p><strong>正確做法：列鎖讓兩筆排隊，讀購物車放在拿到鎖之後</strong></p>
+<p>送出點餐一開頭就 <code>SELECT ... FOR UPDATE</code> 鎖住 <code>dining_session</code>（本來就為了擋「結帳時加點」而鎖，見 <a href="../../spec/modules/M6-結帳.html">M6 問題 1</a>），
+這把鎖順便讓同桌的兩次送出排隊：</p>
+<pre><code>時間 →
+王大明：鎖 session ─→ 讀到 6 項 ─→ 扣庫存、建單、刪購物車 ─→ 提交、放鎖
+陳小美：   等鎖 ·································································→ 拿到鎖 ─→ 讀到 0 項 ─→ 409 CART_EMPTY
+</code></pre>
+<p>陳小美的手機顯示「購物車是空的，可能同桌已經送出了」，同時也會收到 <code>NEW_TICKET</code>（通知條「王大明 送出 6 項」），重抓本桌訂單就看到了。</p>
+<blockquote>
+<p><strong>讀購物車一定要在鎖之後。</strong> 先讀再鎖的話，兩邊讀到的都是 6 項，鎖只是讓它們排隊各建一張單。</p>
+</blockquote>
+<hr />
 <h2 id="六週切分">六週切分</h2>
 <div class="tablewrap"><table>
 <thead>
@@ -537,19 +616,19 @@ public OrderTicketDto submitOrder(String token, SubmitOrderRequest req) {
 <tbody>
 <tr>
 <td><strong>W1</strong></td>
-<td><a class="gloss" href="../../tech/database/29-Flyway.html" title="看這個技術的白話說明">Flyway</a> 建好 <code>order_ticket</code> / <code>order_item</code> / <code>order_item_option</code>；Entity 三層關聯設定完成</td>
+<td><a class="gloss" href="../../tech/database/29-Flyway.html" title="看這個技術的白話說明">Flyway</a> 建好 <code>dining_session_guest</code> / <code>cart_item</code> / <code>cart_item_option</code> / <code>order_ticket</code> / <code>order_item</code> / <code>order_item_option</code>；Entity 三層關聯設定完成</td>
 </tr>
 <tr>
 <td><strong>W2</strong></td>
-<td><strong><code>POST /orders</code> 送出點餐</strong>（交易＋防超賣＋快照＋驗證）；<code>GET /orders</code> 查詢；顧客端菜單頁、品項詳情頁、購物車頁</td>
+<td>共用購物車四支 API（<code>X-Device-Id</code>、<code>dining_session_guest</code>）；<strong><code>POST /orders</code> 送出整桌購物車</strong>（交易＋防超賣＋快照＋驗證＋清空購物車＋<code>CART_EMPTY</code>）；<code>GET /orders</code> 查詢；顧客端菜單頁、品項詳情頁、購物車頁（每列「誰加的」）</td>
 </tr>
 <tr>
 <td><strong>W3</strong></td>
-<td>★ 本桌訂單頁 + <strong>WebSocket 同桌同步</strong>；取消單品；結帳後不可加點（<code>SESSION_CLOSED</code>，跟 M6 對好同一把鎖）；<strong>完整主流程走通</strong></td>
+<td>★ 本桌訂單頁 + <strong>WebSocket 同桌同步</strong>（<code>CART_UPDATED</code>、<code>NEW_TICKET</code> 的 <code>byGuest</code>／<code>byGuestId</code>、C-04b／C-04c 通知條、自己的動作不通知自己）；取消單品；結帳後不可加點（<code>SESSION_CLOSED</code>，跟 M6 對好同一把鎖）；<strong>完整主流程走通</strong></td>
 </tr>
 <tr>
 <td><strong>W4</strong></td>
-<td>服務鈴（後端表 + 前端按鈕 + 櫃檯推播）；人氣推薦 API</td>
+<td>服務鈴（後端表 + 前端按鈕 + 櫃檯推播）</td>
 </tr>
 <tr>
 <td><strong>W5</strong></td>
@@ -557,7 +636,11 @@ public OrderTicketDto submitOrder(String token, SubmitOrderRequest req) {
 </tr>
 <tr>
 <td><strong>W6</strong></td>
-<td>不寫新功能。<strong>寫多執行緒防超賣測試</strong>、跑 demo 腳本</td>
+<td>不寫新功能。<strong>寫多執行緒防超賣測試</strong>、同桌同時送出測試、跑 demo 腳本</td>
+</tr>
+<tr>
+<td><strong>有餘力才做</strong></td>
+<td>3.E1 人氣推薦（A7）：<code>GET /api/menu/recommendations?type=POPULAR</code> 與 C-04 的「本店人氣 TOP 5」區塊。<strong>基礎全綠燈之前不要動它</strong></td>
 </tr>
 </tbody>
 </table></div>
@@ -592,7 +675,23 @@ public OrderTicketDto submitOrder(String token, SubmitOrderRequest req) {
 </tr>
 <tr>
 <td><strong>送出後金額對不上</strong></td>
-<td>用了 <code>double</code>，改 <code>BigDecimal</code></td>
+<td>用了 <code>double</code>，改 <code>BigDecimal</code>；或拿了 <code>cart_item.unit_price</code> 算錢，要用菜單現價重算</td>
+</tr>
+<tr>
+<td><strong>同桌兩支手機的購物車不一樣</strong></td>
+<td>購物車還放在前端 state；改成以 <code>GET /me/cart</code> 為準，收到 <code>CART_UPDATED</code> 就重抓</td>
+</tr>
+<tr>
+<td><strong>同時按送出變成兩張單</strong></td>
+<td>讀購物車寫在鎖之前了，見問題 7</td>
+</tr>
+<tr>
+<td><strong>自己加的東西，自己的手機也跳通知</strong></td>
+<td>比的是 <code>byGuest</code> 名稱而不是 <code>byGuestId</code>，或忘了把 join 回來的 <code>guest.id</code> 存起來</td>
+</tr>
+<tr>
+<td><strong>購物車每列都顯示同一個人／名字一直變</strong></td>
+<td>前端沒帶 <code>X-Device-Id</code>，或每次重整都重新產生 UUID（要存 localStorage）</td>
 </tr>
 </tbody>
 </table></div>
@@ -602,15 +701,18 @@ public OrderTicketDto submitOrder(String token, SubmitOrderRequest req) {
 </blockquote>
 <ol>
 <li>兩支手機掃同一桌的 QR，都進到菜單</li>
-<li>手機 A 選「鴛鴦鍋底」（左麻辣、右昆布）+ 牛五花（全份、加蔥花）→ 送出</li>
-<li><strong>手機 B 在 1 秒內看到「第 1 單」出現</strong></li>
+<li>手機 A 把「鴛鴦鍋底」（左麻辣、右昆布）加進購物車 → <strong>手機 B 跳出「客人 1 加了 鴛鴦鍋底 ×1」，購物車角標同步</strong>（手機 A 自己不跳）</li>
+<li>手機 B 加牛五花（全份、加蔥花）→ <strong>兩支手機的購物車都是兩項</strong>，各自標「客人 1 加的」「客人 2 加的」；手機 A 把牛五花改成 2 份，手機 B 跟著變</li>
+<li>手機 A 按「送出整桌點餐」→ <strong>手機 B 在 1 秒內看到「第 1 單」出現、購物車清空，通知條「客人 1 送出 2 項」</strong>（手機 A 自己不跳）</li>
 <li>廚房看板同時跳出這張單</li>
 <li>手機 B 加點高麗菜 → 送出 → <strong>手機 A 看到「第 2 單」</strong></li>
+<li>兩支手機都加一樣東西，<strong>同時按送出</strong> → <strong>只成立一張單</strong>，另一支顯示「購物車是空的，可能同桌已經送出了」</li>
 <li>廚房勾選「鴛鴦鍋底已出餐」→ <strong>兩支手機同時看到狀態變成「已出餐」</strong></li>
 <li>手機 A 按「服務鈴 → 加湯」→ <strong>櫃檯畫面立刻跳出提示</strong></li>
-<li>手機 A 點一個庫存 0 的品項 → 送出 → <strong>顯示「已售完」並標紅那一項，整張單沒有成立</strong></li>
-<li>本桌還沒點鍋底時，送出一張沒有鍋底的單 → <strong>顯示「這桌還沒點鍋底，共鍋至少要一份」</strong>，整張單沒有成立</li>
-<li>櫃檯在 S-03 標記已結清 → <strong>兩支手機同時變成「已結帳」</strong>，菜單變暗、購物車列換成「這桌已經結帳完成」</li>
+<li>手機 A 先把一個品項加進購物車，再用 SQL 把它的庫存設成 0（模擬剛被別桌點完）→ 送出 → <strong>顯示「已售完」並標紅那一項，整張單沒有成立，購物車原封不動</strong></li>
+<li>本桌還沒點鍋底時，送出一份沒有鍋底的購物車 → <strong>顯示「這桌還沒點鍋底，共鍋至少要一份」</strong>，整張單沒有成立</li>
+<li>手機 B 加一樣東西但不送出 → 櫃檯打開 S-03，結帳區顯示「還有 1 項沒送出，結帳後會捨棄」</li>
+<li>櫃檯在 S-03 結帳 → <strong>兩支手機同時變成「已結帳」</strong>，菜單變暗、購物車列換成「這桌已經結帳完成」，剛剛沒送出的那一項不算錢</li>
 </ol><div class="pager"><a href="../../spec/modules/M2-桌位開桌與候位.html"><div class="k">← 上一篇</div><div class="n">M2 桌位、開桌與候位</div></a><a class="next" href="../../spec/modules/M4-出菜看板.html"><div class="k">下一篇 →</div><div class="n">M4 出菜看板（KDS）</div></a></div>
 </article>
 <aside class="toc"><div class="tt">本頁目錄</div><a href="#這個模組在做什麼">這個模組在做什麼</a><a href="#難易度為什麼是四顆星">難易度為什麼是四顆星</a><a href="#基礎必做功能">基礎必做功能</a><a href="#延伸加分功能">延伸加分功能</a><a href="#會用到的技術">會用到的技術</a><a href="#問題思考與解決思路">問題思考與解決思路</a><a href="#六週切分">六週切分</a><a href="#常見卡關">常見卡關</a><a href="#驗收-demo-腳本">驗收 Demo 腳本</a></aside>

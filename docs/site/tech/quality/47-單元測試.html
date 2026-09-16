@@ -180,7 +180,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <p>單元測試就是<strong>寫一段程式去檢查另一段程式對不對</strong>，改東西時它會自動幫你看有沒有壞掉。</p>
 <h2 id="想像一下">想像一下</h2>
 <p>你改了「服務費計算」的程式。改完之後你怎麼知道沒改壞？</p>
-<p><strong>手動測</strong>：啟動後端 → 開前端 → 櫃檯開桌 → 手機掃碼 → 點三樣東西 → 櫃檯結帳 → 看金額對不對。<strong>五分鐘。</strong></p>
+<p><strong>手動測</strong>：啟動後端 → 開前端 → 櫃檯點空桌開桌 → 手機掃碼 → 加三樣進購物車、送出 → 櫃檯結帳 → 看金額對不對。<strong>五分鐘。</strong></p>
 <p>而且你只測了一種情況。有小孩的呢？有選項加價的呢？金額是 0 的呢？</p>
 <p><strong>自動測</strong>：寫好測試之後，按一個鍵，<strong>三秒鐘測完二十種情況</strong>。</p>
 <p>這就是測試的價值：<strong>不是為了證明程式是對的，是為了讓你敢改程式。</strong></p>
@@ -229,33 +229,55 @@ pre.mermaid svg{max-width:100%;height:auto}
 <pre><code class="language-java">@ExtendWith(MockitoExtension.class)
 class OrderServiceTest {
 
+    @Mock  DiningSessionRepository sessionRepo;     // 假的
+    @Mock  CartItemRepository cartItemRepo;         // 假的
     @Mock  InventoryRepository inventoryRepo;       // 假的
     @Mock  OrderTicketRepository ticketRepo;        // 假的
     @InjectMocks OrderService orderService;         // 真的，但依賴是假的
 
+    static final String TOKEN = &quot;token-1052&quot;;
+    static final String DEVICE_ID = &quot;device-a&quot;;
+
     @Test
     void 庫存不足時應丟出售完例外() {
-        // Given：假裝扣庫存回傳 0（表示庫存不夠）
+        // Given：這桌還開著，購物車裡有 2 份牛五花（id 12），但扣庫存回傳 0（表示庫存不夠）
+        given(sessionRepo.findByTokenForUpdate(TOKEN)).willReturn(Optional.of(openSession(1052L)));
+        given(cartItemRepo.findByDiningSessionId(1052L)).willReturn(List.of(cartItem(12L, 2)));
         given(inventoryRepo.decreaseIfEnough(12L, 2)).willReturn(0);
 
         // When + Then
-        assertThatThrownBy(() -&gt; orderService.submitOrder(token, request))
+        assertThatThrownBy(() -&gt; orderService.submitOrder(TOKEN, DEVICE_ID))
             .isInstanceOf(BusinessException.class)
             .hasFieldOrPropertyWithValue(&quot;code&quot;, &quot;ITEM_SOLD_OUT&quot;);
     }
 
     @Test
-    void 庫存足夠時應建立點餐單() {
+    void 購物車是空的應丟出CART_EMPTY() {
+        // Given：同桌另一個人剛送出，購物車已經清空
+        given(sessionRepo.findByTokenForUpdate(TOKEN)).willReturn(Optional.of(openSession(1052L)));
+        given(cartItemRepo.findByDiningSessionId(1052L)).willReturn(List.of());
+
+        assertThatThrownBy(() -&gt; orderService.submitOrder(TOKEN, DEVICE_ID))
+            .hasFieldOrPropertyWithValue(&quot;code&quot;, &quot;CART_EMPTY&quot;);
+        verifyNoInteractions(inventoryRepo);              // 沒東西就不該去扣庫存
+    }
+
+    @Test
+    void 庫存足夠時應建立點餐單並清空購物車() {
+        given(sessionRepo.findByTokenForUpdate(TOKEN)).willReturn(Optional.of(openSession(1052L)));
+        given(cartItemRepo.findByDiningSessionId(1052L)).willReturn(List.of(cartItem(12L, 2)));
         given(inventoryRepo.decreaseIfEnough(anyLong(), anyInt())).willReturn(1);
         given(ticketRepo.save(any())).willAnswer(inv -&gt; inv.getArgument(0));
 
-        var result = orderService.submitOrder(token, request);
+        var result = orderService.submitOrder(TOKEN, DEVICE_ID);
 
         assertThat(result.status()).isEqualTo(&quot;PENDING&quot;);
         verify(inventoryRepo).decreaseIfEnough(12L, 2);   // 確認真的有扣庫存
+        verify(cartItemRepo).deleteAll(anyList());        // 確認購物車有清掉
     }
 }
 </code></pre>
+<p>（<code>openSession()</code>、<code>cartItem()</code> 是測試類別裡自己寫的小工具，專門造假資料；菜單、鍋底檢查這些依賴為了好讀先省略。）</p>
 <div class="tablewrap"><table>
 <thead>
 <tr>
@@ -301,12 +323,12 @@ class OrderServiceTest {
 <tr>
 <td><strong>2</strong></td>
 <td><strong>狀態轉換規則</strong></td>
-<td>已結帳不能再加點、結清時金額變了要擋、已付款不能取消</td>
+<td>已結帳不能再加點、結清時金額變了要擋、已經點過餐的桌不能取消用餐</td>
 </tr>
 <tr>
 <td><strong>3</strong></td>
 <td><strong>邊界與錯誤</strong></td>
-<td>庫存剛好 0、必選沒選、數量 0</td>
+<td>庫存剛好 0、必選沒選、數量 0、購物車是空的</td>
 </tr>
 </tbody>
 </table></div>
@@ -327,7 +349,7 @@ class OrderServiceTest {
 <td>5</td>
 </tr>
 <tr>
-<td>送出點餐（狀態檢查、必選驗證、鍋底規則）</td>
+<td>送出點餐（狀態檢查、空購物車、必選驗證、鍋底規則）</td>
 <td>5</td>
 </tr>
 <tr>
@@ -335,7 +357,7 @@ class OrderServiceTest {
 <td>3</td>
 </tr>
 <tr>
-<td>訂位重疊判斷</td>
+<td>訂位重疊判斷（含 <code>SEATED</code> 也算佔用）、保留窗判斷</td>
 <td>4</td>
 </tr>
 <tr>
@@ -347,17 +369,18 @@ class OrderServiceTest {
 <h2 id="防超賣一定要寫多執行緒測試">防超賣一定要寫「多執行緒測試」</h2>
 <p><a href="../../tech/database/28-鎖與併發.html">鎖與併發</a> 的問題<strong>單執行緒永遠測不出來</strong>：</p>
 <pre><code class="language-java">@Test
-void 十個人同時搶最後一份不應超賣() throws Exception {
-    // 先塞一筆庫存 = 1 的資料
+void 十桌同時搶最後一份不應超賣() throws Exception {
+    // 先塞一筆庫存 = 1 的資料，再開 10 桌、每桌購物車都放 1 份這個品項
     inventoryRepo.save(new InventoryItem(menuItemId, 1));
+    List&lt;String&gt; tokens = seedTablesWithCart(10, menuItemId, 1);
 
     ExecutorService pool = Executors.newFixedThreadPool(10);
     CountDownLatch latch = new CountDownLatch(10);
     AtomicInteger success = new AtomicInteger();
 
-    for (int i = 0; i &lt; 10; i++) {
+    for (String token : tokens) {
         pool.submit(() -&gt; {
-            try { orderService.submitOrder(token, oneBeefRequest); success.incrementAndGet(); }
+            try { orderService.submitOrder(token, &quot;device-test&quot;); success.incrementAndGet(); }
             catch (BusinessException ignored) { }
             finally { latch.countDown(); }
         });
@@ -368,7 +391,8 @@ void 十個人同時搶最後一份不應超賣() throws Exception {
     assertThat(inventoryRepo.findQuantity(menuItemId)).isZero();   // 庫存是 0 不是負數
 }
 </code></pre>
-<p><strong>這個測試是整個專案最值得寫的一個。</strong> 面試官看到會眼睛一亮。
+<p><strong>這個測試是整個專案最值得寫的一個。</strong> 面試官看到會眼睛一亮。</p>
+<p><strong>為什麼是十桌，不是同一桌十個人？</strong> 同一桌的送出會先鎖同一筆 <code>dining_session</code> 排隊，第一個送出後購物車就空了，後面九個拿到的是 <code>CART_EMPTY</code>，根本走不到扣庫存。<a class="gloss" href="../../tech/database/28-鎖與併發.html" title="看這個技術的白話說明">超賣</a>要「不同桌搶同一份庫存」才會發生。
 （它需要真的資料庫，用 <a href="../../tech/quality/48-Testcontainers.html">Testcontainers</a>。）</p>
 <h2 id="怎麼跑">怎麼跑</h2>
 <p>IntelliJ：測試檔案旁邊的綠色三角形。</p>

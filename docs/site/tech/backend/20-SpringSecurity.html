@@ -245,6 +245,11 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tbody>
 </table></div>
 <p>顧客端可以<strong>同時帶兩個</strong>：用餐權杖說「我坐在 A03 桌」，JWT 說「我是誰」。</p>
+<blockquote>
+<p>顧客手機每個請求還會帶 <code>X-Device-Id</code>（第一次開啟時產生、存在 localStorage 的裝置代號）。它<strong>不是身分</strong>，
+只拿來標示整桌共用購物車裡「誰加的」，被偽造頂多顯示錯名字；能不能動這桌的購物車，看的還是 <code>X-Session-Token</code>。</p>
+<p>購物車也<strong>不放 HTTP session</strong>（下面設定就是 <code>STATELESS</code>）：HTTP session 是每支手機各一份，同桌看不到彼此加了什麼，伺服器重開也會不見。購物車存在資料庫的 <code>cart_item</code>。</p>
+</blockquote>
 <h2 id="設定長什麼樣">設定長什麼樣</h2>
 <pre><code class="language-java">@Configuration
 @EnableWebSecurity
@@ -270,7 +275,7 @@ public class SecurityConfig {
                                  &quot;/api/auth/**&quot;,
                                  &quot;/api/admin/auth/login&quot;,           // 員工登入：還沒登入才要打它
                                  &quot;/ws/**&quot;).permitAll()              // WebSocket 握手；身分在 CONNECT frame 驗
-                // 菜單公開讀取（推薦的 HISTORY／PROFILE 要知道你是誰，在 Controller 裡另外檢查會員 JWT）
+                // 菜單公開讀取（進階 A7 人氣推薦的 HISTORY／PROFILE 要知道你是誰，在 Controller 裡另外檢查會員 JWT）
                 .requestMatchers(HttpMethod.GET, &quot;/api/menu/**&quot;).permitAll()
                 .requestMatchers(&quot;/swagger-ui/**&quot;, &quot;/v3/api-docs/**&quot;).permitAll()
                 // 店家端要員工身分

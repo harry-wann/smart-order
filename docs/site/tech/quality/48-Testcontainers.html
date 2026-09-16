@@ -243,16 +243,17 @@ public abstract class IntegrationTestBase {
     @Autowired InventoryRepository inventoryRepo;
 
     @Test
-    void 十個人同時搶最後一份不應超賣() throws Exception {
-        Long itemId = seedItemWithStock(1);          // 庫存 = 1
+    void 十桌同時搶最後一份不應超賣() throws Exception {
+        Long itemId = seedItemWithStock(1);                          // 庫存 = 1
+        List&lt;String&gt; tokens = seedTablesWithCart(10, itemId, 1);     // 開 10 桌，每桌購物車放 1 份（同桌客人的裝置代號是 device-test）
 
         ExecutorService pool = Executors.newFixedThreadPool(10);
         CountDownLatch latch = new CountDownLatch(10);
         AtomicInteger success = new AtomicInteger();
 
-        for (int i = 0; i &lt; 10; i++) {
+        for (String token : tokens) {
             pool.submit(() -&gt; {
-                try { orderService.submitOrder(token, requestFor(itemId, 1)); success.incrementAndGet(); }
+                try { orderService.submitOrder(token, &quot;device-test&quot;); success.incrementAndGet(); }
                 catch (BusinessException ignored) { }
                 finally { latch.countDown(); }
             });
@@ -279,12 +280,20 @@ public abstract class IntegrationTestBase {
 <td>要測資料庫的列鎖行為</td>
 </tr>
 <tr>
+<td>同桌兩人同時送出整桌購物車</td>
+<td>要測 <code>FOR UPDATE</code> 真的讓兩筆排隊：一個成功、一個 <code>CART_EMPTY</code>、只有一張單</td>
+</tr>
+<tr>
 <td>訂位重疊 + 唯一約束</td>
 <td>要測 UNIQUE INDEX 真的擋得住</td>
 </tr>
 <tr>
 <td><a class="gloss" href="../../tech/database/28-鎖與併發.html" title="看這個技術的白話說明">悲觀鎖</a>開桌</td>
 <td><code>SELECT ... FOR UPDATE</code></td>
+</tr>
+<tr>
+<td>訂位保留窗（顯示「預約保留」）</td>
+<td><code>INTERVAL</code> 的日期運算要在 MySQL 上跑才準</td>
 </tr>
 <tr>
 <td><a class="gloss" href="../../tech/database/29-Flyway.html" title="看這個技術的白話說明">Flyway</a> migration</td>

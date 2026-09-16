@@ -287,7 +287,8 @@ public class GlobalExceptionHandler {
 <p><strong>最後那個是關鍵</strong>：完整的錯誤堆疊寫進<strong>日誌</strong>（給你們 debug 用），前端只收到一句友善的中文。</p>
 <h2 id="在-service-裡怎麼用">在 Service 裡怎麼用</h2>
 <pre><code class="language-java">if (session.getStatus() != SessionStatus.OPEN) {
-    throw new BusinessException(&quot;SESSION_CLOSED&quot;, &quot;這桌已經結帳，不能再加點&quot;, HttpStatus.CONFLICT);
+    throw new BusinessException(&quot;SESSION_CLOSED&quot;, &quot;這桌已經結帳，不能再加點&quot;, HttpStatus.CONFLICT)
+        .with(&quot;reason&quot;, session.getStatus().name());   // PAID 或 CANCELLED：前端靠它決定顯示「已結帳」還是直接回首頁
 }
 
 if (affectedRows == 0) {
@@ -301,7 +302,8 @@ if (amount.total().compareTo(req.expectedTotal()) != 0) {
         .with(&quot;bill&quot;, toBillDto(session, amount));
 }
 </code></pre>
-<p><code>BILL_CHANGED</code> 的回應會在統一格式上多一個 <code>bill</code>，前端直接 <code>setBill(err.bill)</code> 重畫（見 <a href="../../spec/04-API規格.html">04-API 規格</a> §1.2）：</p>
+<p><code>SESSION_CLOSED</code> 也一樣，回應多一個 <code>"reason": "PAID"</code>（或 <code>"CANCELLED"</code>），跟 <a class="gloss" href="../../tech/realtime/41-WebSocket與STOMP.html" title="看這個技術的白話說明">WebSocket</a> 的 <code>SESSION_CLOSED</code> 同一個值。
+<code>BILL_CHANGED</code> 的回應會在統一格式上多一個 <code>bill</code>，前端直接 <code>setBill(err.bill)</code> 重畫（見 <a href="../../spec/04-API規格.html">04-API 規格</a> §1.2）：</p>
 <pre><code class="language-json">{ &quot;status&quot;: 409, &quot;code&quot;: &quot;BILL_CHANGED&quot;, &quot;message&quot;: &quot;金額有變動，請重新確認&quot;, &quot;details&quot;: [],
   &quot;bill&quot;: { &quot;subtotal&quot;: 1560.00, &quot;serviceFee&quot;: 156.00, &quot;total&quot;: 1716.00 } }
 </code></pre>

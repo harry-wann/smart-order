@@ -202,7 +202,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <pre><code class="language-jsx">const [quantity, setQuantity] = useState(1);              // 數字
 const [note, setNote] = useState('');                     // 字串
 const [loading, setLoading] = useState(false);            // 布林
-const [cart, setCart] = useState([]);                     // 陣列
+const [cart, setCart] = useState([]);                     // 陣列（購物車：畫面上的那份，內容以後端為準）
 const [session, setSession] = useState(null);             // 物件（還沒載入）
 const [selectedOptions, setSelectedOptions] = useState({}); // 物件
 </code></pre>
@@ -281,8 +281,46 @@ console.log(count);      // 還是舊的值！
 }
 </code></pre>
 <p><strong><code>loading</code> / <code>error</code> / 資料</strong> 這三個 state 是每個要打 API 的頁面都會有的標準組合。</p>
+<h2 id="購物車state-只是畫面上的那一份">購物車：state 只是「畫面上的那一份」</h2>
+<p>我們的購物車<strong>存在後端、整桌共用</strong>：同桌每支手機看到同一份，誰都能加、改、刪（資料表是 <a href="../../spec/03-資料庫設計.html">03-資料庫設計</a> 的 <code>cart_item</code>）。
+所以 <code>cart</code> 這個 state 是<strong>畫面狀態</strong>——從後端抓回來、拿來畫畫面的那一份，<strong>內容以後端為準</strong>。</p>
+<pre><code class="language-jsx">import { fetchCart, updateCartItem } from '../api/cart';   // 見 fetch 那頁的 src/api/cart.js
+
+function CartPage() {
+  const [cart, setCart] = useState([]);           // 畫面狀態：整桌購物車的最新一份
+  const [loading, setLoading] = useState(true);
+
+  const reloadCart = useCallback(async () =&gt; {
+    setCart(await fetchCart());                   // 以後端為準，整份換掉
+    setLoading(false);
+  }, []);
+
+  useEffect(() =&gt; { reloadCart(); }, [reloadCart]);
+
+  // 改數量：先打 API，成功再重抓
+  const changeQty = async (id, quantity) =&gt; {
+    await updateCartItem(id, { quantity });
+    await reloadCart();
+  };
+
+  // 同桌別人加、改、刪 → 後端推 CART_UPDATED → 一樣呼叫 reloadCart()
+  // （接法見「前端接 WebSocket」那頁）
+
+  if (loading) return &lt;Skeleton /&gt;;
+  return &lt;CartList items={cart} onChangeQty={changeQty} /&gt;;
+}
+</code></pre>
+<p><strong>為什麼不直接 <code>setCart(prev =&gt; prev.map(...))</code> 就好？</strong> 因為同桌另一支手機可能同時在改。只改自己畫面上的陣列，兩支手機就會各看到一個版本，按送出時後端送的又是資料庫裡那一份。</p>
+<p>規則很簡單：<strong>自己改完、或收到 <code>CART_UPDATED</code>，就重抓一次整份。</strong>
+（自己改的也會收到 <code>CART_UPDATED</code>，一樣重抓，只是 <code>byGuestId</code> 是自己，不跳通知條。）
+上面那些 <code>filter</code>／<code>map</code> 的寫法還是天天會用（列表、篩選、把某一列標成「更新中」），只是不要拿本機陣列當真正的購物車。
+相關：<a href="../../tech/frontend/40-fetch串接API.html">fetch 串接後端 API</a>、<a href="../../tech/realtime/42-前端接WebSocket.html">前端接 WebSocket</a>。</p>
+<blockquote>
+<p><strong>例外：C-17 預先點餐（進階 A2）的購物車只存在這支手機。</strong> 那時客人還沒到店、沒有用餐紀錄，後端共用購物車掛不上去；
+這時 <code>cart</code> 就是真正的資料（用上面的 <code>filter</code>／<code>map</code> 改），按送出再整批 <code>PUT /api/reservations/{id}/preorder</code>。</p>
+</blockquote>
 <h2 id="15-分鐘動手小練習">15 分鐘動手小練習</h2>
-<p>做一個購物車，練習三種更新：</p>
+<p>做一個本機購物車，練習三種更新（純練習；專案裡的購物車存在後端，見上面「購物車」那段）：</p>
 <pre><code class="language-jsx">export default function App() {
   const [cart, setCart] = useState([
     { id: 1, name: '牛五花', qty: 1 },
@@ -436,7 +474,7 @@ const total = cart.reduce((s, i) =&gt; s + i.price * i.qty, 0);   // ✅
 <h2 id="相關頁面">相關頁面</h2>
 <p><a href="../../tech/frontend/35-Props與State.html">Props 與 State</a>　<a href="../../tech/frontend/37-useEffect.html">useEffect</a>　<a href="../../tech/frontend/30-現代JavaScript.html">現代 JavaScript 速成</a></p><div class="pager"><a href="../../tech/frontend/35-Props與State.html"><div class="k">← 上一篇</div><div class="n">35 Props 與 State</div></a><a class="next" href="../../tech/frontend/37-useEffect.html"><div class="k">下一篇 →</div><div class="n">37 useEffect</div></a></div>
 </article>
-<aside class="toc"><div class="tt">本頁目錄</div><a href="#一句話">一句話</a><a href="#為什麼不能用普通變數">為什麼不能用普通變數</a><a href="#語法">語法</a><a href="#最重要的規則永遠產生新的">最重要的規則：永遠產生新的</a><a href="#用函式更新連續改的時候">用函式更新（連續改的時候）</a><a href="#setstate-是非同步的">setState 是非同步的</a><a href="#我們專案的實際用法">我們專案的實際用法</a><a href="#15-分鐘動手小練習">15 分鐘動手小練習</a><a href="#你會遇到的坑">你會遇到的坑</a><a href="#常見錯誤訊息對照">常見錯誤訊息對照</a><a href="#術語對照表">術語對照表</a><a href="#自我檢核">自我檢核</a><a href="#學習資源">學習資源</a><a href="#相關頁面">相關頁面</a></aside>
+<aside class="toc"><div class="tt">本頁目錄</div><a href="#一句話">一句話</a><a href="#為什麼不能用普通變數">為什麼不能用普通變數</a><a href="#語法">語法</a><a href="#最重要的規則永遠產生新的">最重要的規則：永遠產生新的</a><a href="#用函式更新連續改的時候">用函式更新（連續改的時候）</a><a href="#setstate-是非同步的">setState 是非同步的</a><a href="#我們專案的實際用法">我們專案的實際用法</a><a href="#購物車state-只是畫面上的那一份">購物車：state 只是「畫面上的那一份」</a><a href="#15-分鐘動手小練習">15 分鐘動手小練習</a><a href="#你會遇到的坑">你會遇到的坑</a><a href="#常見錯誤訊息對照">常見錯誤訊息對照</a><a href="#術語對照表">術語對照表</a><a href="#自我檢核">自我檢核</a><a href="#學習資源">學習資源</a><a href="#相關頁面">相關頁面</a></aside>
 </div></div>
 </div>
 <script src="../../vendor/mermaid.min.js"></script>

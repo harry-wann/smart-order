@@ -447,28 +447,30 @@ application-local.yml
 <h3 id="第-2-週點餐核心">第 2 週：點餐核心</h3>
 <ul>
 <li>選項群組 API、品項詳情（含選項）</li>
-<li><strong><code>POST /orders</code> 送出點餐</strong>（交易 + <a href="../tech/database/28-鎖與併發.html">防超賣</a> + 快照 + 鍋底規則 + 選項驗證）</li>
+<li>共用購物車 API（<code>/me/cart</code> 四支、<code>X-Device-Id</code> 與 <code>dining_session_guest</code>）</li>
+<li><strong><code>POST /orders</code> 送出整桌購物車</strong>（交易 + <a href="../tech/database/28-鎖與併發.html">防超賣</a> + 快照 + 鍋底規則 + 選項驗證 + 清空購物車 + <code>CART_EMPTY</code>）</li>
 <li><code>GET /orders</code> 本桌訂單、KDS 查詢 API</li>
 <li>開桌／加入／用餐狀態 API（含悲觀鎖）、用餐權杖 filter</li>
 <li>金額計算 Service</li>
-<li>顧客端：菜單頁（鍋底是其中一個分類頁籤）、品項詳情與選項、購物車</li>
+<li>顧客端：菜單頁（鍋底是其中一個分類頁籤）、品項詳情與選項、購物車（整桌共用，每列「誰加的」）</li>
 <li>店家端：登入、桌況總覽頁</li>
 <li><a href="../tech/quality/49-GitHubActions.html">CI</a>、<strong>部署技術驗證</strong>（先跑一次 Hello World 上線，確認平台支援 WebSocket）</li>
 </ul>
 <blockquote>
-<p><strong>里程碑</strong>：用 Postman 完成「櫃檯開桌 → 掃碼加入 → 送出點餐 → 查詢本桌訂單」。</p>
+<p><strong>里程碑</strong>：用 Postman 完成「開桌 → 掃碼加入（兩個不同的 <code>X-Device-Id</code>）→ 各自加入購物車 → 送出整桌點餐 → 查詢本桌訂單」。</p>
 </blockquote>
 <h3 id="第-3-週主流程打通-最關鍵">第 3 週：主流程打通 ★最關鍵</h3>
 <ul>
 <li><strong>WebSocket 設定與握手驗證</strong>、五個頻道</li>
 <li>KDS 推播、出菜勾選、狀態自動推導</li>
-<li>櫃檯結清（服務費、<code>expectedTotal</code> 金額比對、跟送出點餐搶同一把列鎖）、<code>SESSION_CLOSED</code> 推播</li>
+<li>櫃檯結清（服務費、<code>expectedTotal</code> 金額比對、跟送出點餐搶同一把列鎖）、取消該次用餐（<code>SESSION_HAS_ORDERS</code>）、<code>SESSION_CLOSED</code> 推播（<code>reason</code>：<code>PAID</code>／<code>CANCELLED</code>）</li>
+<li>同桌購物車推播 <code>CART_UPDATED</code>、C-04b／C-04c 通知條</li>
 <li>顧客端：掃碼進入頁、<strong>本桌訂單頁 + 即時同步</strong>、C-04 的「已結帳」狀態</li>
-<li>店家端：<strong>KDS 看板</strong>（深色、大字）、桌位詳情（含結帳區）、菜單管理後台</li>
+<li>店家端：<strong>KDS 看板</strong>（深色、大字）、桌位詳情（含結帳區：現金／信用卡／條碼三顆 + S-03b 倒數對話框）、菜單管理後台</li>
 </ul>
 <blockquote>
 <p><strong>★ 本週是整個專案最關鍵的里程碑</strong>：
-用手機完整走一次「掃碼 → 加入 → 點餐（含鍋底）→ 送出 → <strong>另一支手機 1 秒內看到</strong> → 廚房收到 → 勾選出餐 → <strong>手機看到已出餐</strong> → 櫃檯結清 → <strong>手機看到已結帳</strong>」。</p>
+用手機完整走一次「掃碼 → 加入 → 加進購物車（<strong>另一支手機看到誰加了什麼</strong>）→ 點餐（含鍋底）→ 送出整桌點餐 → <strong>另一支手機 1 秒內看到</strong> → 廚房收到 → 勾選出餐 → <strong>手機看到已出餐</strong> → 櫃檯結清 → <strong>手機看到已結帳</strong>」。</p>
 <p><strong>這條路通了，這個專題就算成功了一半。</strong> 第 3 週結束還沒通的話，第 4 週不要開新功能，先把它補完。</p>
 </blockquote>
 <h3 id="第-4-週訂位候位服務鈴">第 4 週：訂位、候位、服務鈴</h3>
@@ -476,22 +478,23 @@ application-local.yml
 <li><strong><a href="../spec/modules/M7-訂位.html">訂位</a></strong>：區間重疊檢查 + 悲觀鎖 + best-fit 配桌、可訂時段查詢、取消、報到開桌</li>
 <li>服務鈴（後端表 + 推播 + 顧客端按鈕 + 櫃檯面板）</li>
 <li>候位登記、叫號、報到、過號</li>
-<li>一鍵開桌：<code>GET /api/admin/tables/available</code> + S-07b／S-10b 選桌對話框；訂位保留 10 分鐘（<code>RESERVATION_EXPIRED</code>）</li>
-<li>人氣推薦 API、出餐順序建議</li>
+<li>一鍵開桌：<code>GET /api/admin/tables/available</code> + S-07b／S-10b 選桌對話框；訂位保留 10 分鐘（<code>RESERVATION_EXPIRED</code>）；報到最早提前 30 分（<code>RESERVATION_TOO_EARLY</code>）</li>
+<li><strong>7.10 預約保留</strong>：桌況 <code>displayStatus</code>／<code>heldFor</code>、<code>release-hold</code>、開桌三支的 <code>TABLE_RESERVED</code>、區間重疊把 <code>SEATED</code> 算進去</li>
+<li>出餐順序建議（人氣推薦改列進階 A7，<strong>基礎完成後才做</strong>）</li>
 <li>顧客端：訂位頁面（C-16c 選時段 → C-18 訂位完成）、服務鈴面板</li>
 <li>店家端：候位管理、訂位管理後台</li>
 </ul>
 <blockquote>
-<p><strong>里程碑</strong>：線上訂位 → 自動配到合適的桌 → 到店報到 → 選一張空桌開桌；按服務鈴櫃檯即時跳出。</p>
+<p><strong>里程碑</strong>：線上訂位 → 自動配到合適的桌 → 訂位前 30 分鐘那張桌在桌況上變「預約保留」→ 到店報到（原保留桌排第一）開桌；按服務鈴櫃檯即時跳出。</p>
 </blockquote>
 <h3 id="第-5-週會員庫存排程部署">第 5 週：會員、庫存、排程、部署 ★</h3>
 <ul>
 <li><strong><a href="../spec/modules/M5-庫存.html">庫存</a></strong>：售完自動下架與推播（補貨、低水位、異動紀錄的 S-09 是進階 A3）</li>
 <li><strong><a href="../spec/modules/M8-會員.html">會員</a></strong>：OTP + JWT + 會員中心 + 訂位自動帶入（消費歷史、匿名轉會員是進階）</li>
-<li><strong>九支<a href="../tech/realtime/43-排程與Cron.html">排程任務</a> + 對應的手動觸發 API</strong>（7.10 空號；跟著進階走的三支見 <a href="../spec/00-架構分層與技術選型.html">00 §3.4</a>）</li>
+<li><strong>九支<a href="../tech/realtime/43-排程與Cron.html">排程任務</a> + 對應的手動觸發 API</strong>（7.10 現在是算出來的預約保留、不是排程，不要把舊的預留轉換排程加回來；跟著進階走的三支見 <a href="../spec/00-架構分層與技術選型.html">00 §3.4</a>）</li>
 <li><a href="../tech/quality/47-單元測試.html">單元測試</a>補到 15～20 個</li>
 <li>前端三態處理、RWD、<strong>iOS Safari 實機測試</strong></li>
-<li>UI 一致性檢查（把 42 張畫面並排看，進階的 8 張另外標出來）</li>
+<li>UI 一致性檢查（把 43 張畫面並排看，進階的 8 張另外標出來）</li>
 <li><strong>★ <a class="gloss" href="../tech/quality/50-部署上線.html" title="看這個技術的白話說明">部署上線</a></strong></li>
 </ul>
 <blockquote>
@@ -641,7 +644,7 @@ application-local.yml
 <td>範圍蔓延</td>
 <td><strong>高</strong></td>
 <td>高</td>
-<td>進階功能（A1～A6）一律不排進六週時程；要加必須先砍一個</td>
+<td>進階功能（A1～A7）一律不排進六週時程；要加必須先砍一個</td>
 </tr>
 <tr>
 <td>種子資料沒做，推薦報表空白</td>

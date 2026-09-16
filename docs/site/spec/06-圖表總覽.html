@@ -196,23 +196,26 @@ pre.mermaid svg{max-width:100%;height:auto}
     M2 桌位開桌候位
       桌上固定QR
       櫃檯控制開桌
-      掃碼加入取得權杖
+      掃碼加入取得權杖與同桌身分
       桌況即時總覽
       用餐計時與超時
       候位登記取號
       叫號與報到
       候位過號排程
       依人數一鍵開桌
+      取消該次用餐
       進階 併桌與遞補
     M3 點餐與服務鈴
-      共享購物車
-      送出成立點餐單
+      整桌共用購物車 存後端
+      誰加的標示
+      送出整桌購物車成立點餐單
       防超賣扣庫存
       快照寫入
       多裝置即時同步
       取消單品
       服務鈴三種
-      進階 推薦系統
+      進階 人氣推薦 A7
+      進階 個人化推薦
     M4 出菜看板
       卡片式看板
       逐項勾選出餐
@@ -232,13 +235,13 @@ pre.mermaid svg{max-width:100%;height:auto}
       進階 BOM與備貨預測
     M6 結帳
       小計加服務費
-      客人到櫃檯結清
+      櫃檯結清 現金 信用卡 條碼 倒數
       金額比對擋結帳時加點
       桌位轉待清理
       權杖失效
       進階 顧客線上結帳
       進階 報表
-      進階 優惠券折抵與發票
+      進階 券與點數折抵與發票
     M7 訂位
       選完時段即成立
       任意時間預約
@@ -246,6 +249,7 @@ pre.mermaid svg{max-width:100%;height:auto}
       best-fit配桌
       悲觀鎖防重複
       訂位保留十分鐘
+      配到的桌前三十分鎖住 算出來不靠排程
       排程未到與提醒
       報到選桌開桌
       進階 預先點餐不先結帳
@@ -326,7 +330,8 @@ pre.mermaid svg{max-width:100%;height:auto}
         A4["A4 報表<br/>S-12"]
         A5["A5 顧客線上結帳<br/>C-09 C-10 C-11"]
         A6["A6 點數與優惠券<br/>C-20"]
-        AX["其餘 連稿都沒畫<br/>推薦系統 BOM 併桌 出單機"]
+        A7["A7 人氣推薦<br/>C-04 裡的一塊 沒有獨立畫面"]
+        AX["其餘 連稿都沒畫<br/>個人化推薦 BOM 併桌 出單機"]
     end
 
     G1 --> M1
@@ -335,14 +340,15 @@ pre.mermaid svg{max-width:100%;height:auto}
     M5 --> A3
     M6 --> A5
     M8 --> A6
+    M3 --> A7
 
     classDef base fill:#FBE8E3,stroke:#C8442E,color:#2B211C
     classDef found fill:#FCF0DC,stroke:#E8A33D,color:#2B211C
     classDef adv fill:#EFE9E1,stroke:#9C8E84,color:#6B5D54,stroke-dasharray: 4 3
     class M1,M2,M3,M4,M5,M6,M7,M8 base
     class G1,G2,G3,G4,G5 found
-    class A1,A2,A3,A4,A5,A6,AX adv
-    linkStyle 0,1,2,3,4,5 stroke:#9C8E84,stroke-width:2px
+    class A1,A2,A3,A4,A5,A6,A7,AX adv
+    linkStyle 0,1,2,3,4,5,6 stroke:#9C8E84,stroke-width:2px
 </pre>
 <p><strong>圖例</strong></p>
 <div class="tablewrap"><table>
@@ -363,7 +369,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td>灰色虛線</td>
-<td><strong>進階層</strong>：拿掉它系統還能運作，只是比較笨。A1～A6 已經畫了設計稿（共 8 張畫面），時間夠就照稿做；「其餘」那一格連稿都沒畫</td>
+<td><strong>進階層</strong>：拿掉它系統還能運作，只是比較笨。A1～A7 已經畫了設計稿（A1～A6 共 8 張畫面；A7 人氣推薦只是 C-04 裡的一塊），時間夠就照稿做；「其餘」那一格連稿都沒畫</td>
 </tr>
 <tr>
 <td>★</td>
@@ -511,17 +517,17 @@ pre.mermaid svg{max-width:100%;height:auto}
 
     section 第2週 點餐核心
     選項群組與菜單 API       :c1, 2026-09-28, 2d
-    送出點餐與防超賣         :crit, c2, 2026-09-29, 4d
+    送出整桌購物車與防超賣     :crit, c2, 2026-09-29, 4d
     開桌與用餐狀態 API       :c3, 2026-09-28, 3d
     金額計算服務            :c4, 2026-10-01, 2d
-    菜單頁與購物車          :c5, 2026-09-28, 5d
+    菜單頁與共用購物車       :c5, 2026-09-28, 5d
     店家端登入與桌況頁       :c6, 2026-09-28, 5d
     CI 與部署技術驗證        :crit, c7, 2026-10-01, 2d
 
     section 第3週 主流程打通
     WebSocket 設定與握手驗證  :crit, e0, 2026-10-05, 2d
     KDS API 與出菜勾選       :e2, 2026-10-05, 3d
-    櫃檯結清與金額比對       :e1, 2026-10-06, 2d
+    櫃檯結清 付款倒數 取消用餐 :e1, 2026-10-06, 2d
     本桌訂單即時同步頁面      :crit, e3, 2026-10-06, 3d
     桌位詳情結帳區與已結帳狀態 :e4, 2026-10-08, 2d
     KDS 看板與菜單後台       :e5, 2026-10-05, 5d
@@ -530,10 +536,10 @@ pre.mermaid svg{max-width:100%;height:auto}
     section 第4週 訂位候位服務鈴
     訂位區間重疊與配桌       :crit, f2, 2026-10-12, 4d
     服務鈴後端與推播         :f1, 2026-10-12, 2d
-    人氣推薦與出餐順序       :f3, 2026-10-14, 2d
+    出餐順序建議            :f3, 2026-10-14, 2d
     顧客端訂位與服務鈴頁面    :f4, 2026-10-12, 4d
     候位管理與訂位後台       :f5, 2026-10-13, 4d
-    一鍵開桌與訂位保留十分鐘   :f6, 2026-10-14, 2d
+    一鍵開桌 預約保留 報到時間窗 :f6, 2026-10-14, 2d
     里程碑 訂位到報到全通    :milestone, m3, 2026-10-16, 0d
 
     section 進階 有餘力才做
@@ -544,6 +550,7 @@ pre.mermaid svg{max-width:100%;height:auto}
     A4 報表                 :done, x6, 2026-10-26, 3d
     A5 顧客線上結帳          :done, x7, 2026-10-20, 3d
     A6 點數與優惠券          :done, x8, 2026-10-23, 2d
+    A7 人氣推薦             :done, x9, 2026-10-22, 1d
 
     section 第5週 會員庫存排程部署
     庫存模組與售完推播       :g1, 2026-10-19, 3d
@@ -627,6 +634,7 @@ pre.mermaid svg{max-width:100%;height:auto}
         +TableStatus status
         +boolean reservable
         +boolean canAccommodate(int people)
+        +TableDisplayStatus displayStatus(LocalDateTime now)
     }
 
     class DiningSession {
@@ -641,7 +649,21 @@ pre.mermaid svg{max-width:100%;height:auto}
         +boolean isOrderable()
         +boolean hasSoupBase()
         +void recalculate()
-        +void settle(PayMethod method, BigDecimal expectedTotal)
+        +void settle(PayMethod method, BigDecimal expectedTotal, Long memberId)
+        +void cancel()
+    }
+
+    class DiningSessionGuest {
+        +Long id
+        +String deviceId
+        +String displayName
+    }
+
+    class CartItem {
+        +Long id
+        +int quantity
+        +String note
+        +BigDecimal unitPrice
     }
 
     class OrderTicket {
@@ -729,6 +751,8 @@ pre.mermaid svg{max-width:100%;height:auto}
         +boolean overlaps(LocalDateTime s, LocalDateTime e)
         +boolean isCancellable()
         +boolean isExpired(LocalDateTime now)
+        +LocalDateTime holdReleasedAt
+        +boolean isHolding(LocalDateTime now)
     }
 
     class Payment {
@@ -757,6 +781,11 @@ pre.mermaid svg{max-width:100%;height:auto}
     Member "0..1" --o "0..*" DiningSession : 可為匿名
     DiningTable "1" --o "0..*" DiningSession
     DiningSession "1" *-- "0..*" OrderTicket
+    DiningSession "1" *-- "0..*" DiningSessionGuest : 同桌的誰
+    DiningSession "1" *-- "0..*" CartItem : 整桌共用購物車
+    DiningSessionGuest "1" --o "0..*" CartItem : 誰加的
+    DiningSessionGuest "0..1" --o "0..*" OrderTicket : 誰送出的
+    MenuItem "1" --o "0..*" CartItem
     OrderTicket "1" *-- "1..*" OrderItem
     OrderItem "1" *-- "0..*" OrderItemOption
     DiningSession "1" *-- "0..*" ServiceCall
@@ -822,22 +851,24 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 </tbody>
 </table></div>
-<p><strong>四個要看懂的重點</strong></p>
+<p><strong>五個要看懂的重點</strong></p>
 <ol>
 <li><strong><code>DiningSession → OrderTicket → OrderItem</code> 是三層組合</strong>，對應「一次用餐 → 多張點餐單 → 多個品項」。這是整個系統的骨幹。</li>
 <li><strong><code>MenuItem</code> 與 <code>OptionGroup</code> 是多對多</strong>，「辣度」建立一次可掛在 20 個品項上。鴛鴦鍋也是靠這個機制（掛兩個群組）表達，<strong>不需要「鍋位」類別</strong>。</li>
 <li><strong><code>OrderItem</code> 存快照</strong>（<code>itemNameSnapshot</code> / <code>unitPriceSnapshot</code>），改菜單價格不影響歷史帳單。</li>
 <li><strong><code>ServiceCall</code> 和 <code>Waitlist</code> 是新增的兩個類別</strong>，分別支撐服務鈴與現場候位。</li>
+<li><strong><code>CartItem</code> 掛在 <code>DiningSession</code> 底下、整桌共用</strong>；<code>DiningSessionGuest</code> 只記「誰」（裝置 UUID＋顯示名稱），不是身分驗證。
+   <code>DiningTable.displayStatus()</code> 與 <code>Reservation.isHolding()</code> 是<strong>算出來的</strong>，沒有對應的欄位。</li>
 </ol>
 <hr />
 <h2 id="6-uml-狀態圖">6. UML 狀態圖</h2>
 <h3 id="61-用餐紀錄-diningsession">6.1 用餐紀錄 DiningSession</h3>
 <pre class="mermaid">stateDiagram-v2
     direction LR
-    [*] --> OPEN : 櫃檯開桌
+    [*] --> OPEN : 開桌
     OPEN --> OPEN : 送出新的點餐單 鎖列後確認仍是 OPEN
     OPEN --> PAID : 櫃檯結清 或 進階 A5 線上付款成功 金額比對通過
-    OPEN --> CANCELLED : 客人未消費離開
+    OPEN --> CANCELLED : 店長取消 還沒送出過點餐單
     PAID --> [*]
     CANCELLED --> [*]
 
@@ -850,18 +881,26 @@ pre.mermaid svg{max-width:100%;height:auto}
     note right of PAID
         進入終態時
         該桌所有用餐權杖立刻失效
-        推 SESSION_CLOSED 給同桌手機
+        整桌購物車一起刪掉
+        推 SESSION_CLOSED reason PAID
+        手機顯示已結帳面板
+    end note
+    note right of CANCELLED
+        桌位直接回空桌 不用清潔
+        推 SESSION_CLOSED reason CANCELLED
+        手機不顯示面板 直接回首頁
     end note
 </pre>
 <blockquote>
 <p><strong>沒有 <code>CHECKOUT_PENDING</code>。</strong> 舊版「要求結帳 → 鎖定 → 可取消」那一段整個拿掉了，基礎是客人到櫃檯結帳。
 「結帳時剛好有人加點」改用金額比對：結清／付款帶 <code>expectedTotal</code>，重算不相等回 <code>409 BILL_CHANGED</code>，
 狀態留在 <code>OPEN</code>，刷新後再按一次；已經不是 <code>OPEN</code> 回 <code>409 SESSION_CLOSED</code>。A5 付款失敗一樣留在 <code>OPEN</code>。</p>
+<p><strong>取消該次用餐</strong>只給沒點過餐的桌（送出過點餐單回 <code>409 SESSION_HAS_ORDERS</code>「已經有點餐紀錄，請改用結帳」）。</p>
 </blockquote>
 <h3 id="62-點餐單-orderticket">6.2 點餐單 OrderTicket</h3>
 <pre class="mermaid">stateDiagram-v2
     direction LR
-    [*] --> PENDING : 顧客送出購物車
+    [*] --> PENDING : 顧客送出整桌購物車
     PENDING --> PREPARING : 任一品項開始出餐
     PREPARING --> SERVED : 全部品項出餐完畢
     PENDING --> CANCELLED : 取消 庫存回補
@@ -880,29 +919,75 @@ pre.mermaid svg{max-width:100%;height:auto}
     [*] --> AVAILABLE
     AVAILABLE --> OCCUPIED : 開桌 現場 候位 預約 或從 S-07b S-10b 一鍵開桌
     OCCUPIED --> CLEANING : 櫃檯結清 或 A5 付款成功
+    OCCUPIED --> AVAILABLE : 店長取消該次用餐 沒點過餐不用清潔
     CLEANING --> AVAILABLE : 櫃檯確認整理完成
 
     note right of AVAILABLE
-        只有三種狀態
-        桌位只反映現場當下
-        誰訂了哪張桌存在 reservation
-        開桌時才查出來提示
+        欄位只存三種狀態
+        預約保留 RESERVED 是顯示狀態
+        查桌況時才算 不存欄位 不靠排程
         沒有結帳中桌態
     end note
 </pre>
 <blockquote>
-<p><strong>三種狀態、三個動作，剛好對得起來</strong>：空桌可以開、用餐中可以看單與結帳、待清理可以按完成。
-桌位系統跟訂位、候位是三套獨立的東西：訂位與候位各自管自己的狀態，桌位只反映現場當下。
-兩邊只有一個接點——<strong>開桌成功時，把來源那筆訂位或候位轉成已報到</strong>。</p>
-<p>舊版還有一個 <code>RESERVED</code>，由排程在訂位前 30 分鐘自動轉入，等於把 <code>reservation</code>
-複製一份到桌位上、還要靠 cron 同步，已經移除。
-櫃檯手動保留桌位是延伸功能（M2 的 2.E5），基礎不做。</p>
+<p><strong>三種狀態、四個轉移</strong>：空桌可以開、用餐中可以結帳（→ 待清理）或在沒點過餐時取消（→ 直接回空桌）、待清理可以按完成。
+欄位裡只有這三種；<strong>訂位會在時間窗內鎖住配到的桌，但那是查詢時算出來的顯示狀態</strong>（見下面 6.3b），候位不鎖桌。
+另一個接點照舊——<strong>開桌成功時，把來源那筆訂位或候位轉成已報到</strong>。</p>
+<p>舊版的 <code>RESERVED</code> 是存在桌位欄位裡、由排程在訂位前 30 分鐘自動轉入，等於把 <code>reservation</code>
+複製一份到桌位上、還要靠 cron 同步，已經移除。現在的 <code>RESERVED</code> 每次現算，不存、不靠排程。
+櫃檯手動保留桌位（<code>HELD</code>，給沒有訂位的保留用）是延伸功能（M2 的 2.E5），基礎不做。</p>
+</blockquote>
+<h3 id="63b-桌況的顯示狀態算出來的不是欄位">6.3b 桌況的顯示狀態（算出來的，不是欄位）</h3>
+<pre class="mermaid">flowchart TD
+    S["查桌況<br/>GET /api/admin/tables"] --> A{"dining_table.status"}
+    A -->|OCCUPIED| O["用餐中"]
+    A -->|CLEANING| C["待清理"]
+    A -->|AVAILABLE| R{"有沒有一筆訂位<br/>配到這張桌 而且 CONFIRMED<br/>現在在開始前 30 分到開始後 10 分<br/>而且沒被取消保留"}
+    R -->|有| H["預約保留 RESERVED<br/>帶 heldFor<br/>開給別人回 409 TABLE_RESERVED"]
+    R -->|沒有| E["空桌"]
+    H -.->|櫃檯取消保留<br/>寫 hold_released_at<br/>單向 不能恢復| E
+
+    classDef occ fill:#FBE8E3,stroke:#C8442E,color:#2B211C
+    classDef held fill:#FCF0DC,stroke:#E8A33D,color:#2B211C
+    classDef free fill:#E4EFE7,stroke:#3F7A4E,color:#2B211C
+    classDef calc fill:#EFE9E1,stroke:#9C8E84,color:#2B211C,stroke-dasharray: 4 3
+    class O,C occ
+    class H held
+    class E free
+    class R calc
+</pre>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>樣式</th>
+<th>意義</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>灰底虛線菱形</td>
+<td>每次查詢當場判斷，<strong>不寫回資料庫</strong></td>
+</tr>
+<tr>
+<td>淺黃</td>
+<td>預約保留（桌況上的暖黃色塊，格內「18:30 陳○君 4 位」）</td>
+</tr>
+<tr>
+<td>虛線箭頭</td>
+<td>取消保留只改 <code>reservation</code>，訂位仍是 <code>CONFIRMED</code>；<strong>單向</strong>，沒有恢復保留的路</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>判斷順序就是顯示優先順序：<strong>用餐中 ＞ 待清理 ＞ 預約保留 ＞ 空桌</strong>。配到的桌到時間還在用餐中，就不顯示保留，客人到了從 S-07b 選別張桌。
+30、10 兩個數字在 <code>application.yml</code>（<code>reservation.hold-before-minutes</code>、<code>reservation.hold-after-minutes</code>）。</p>
 </blockquote>
 <h3 id="64-訂位-reservation">6.4 訂位 Reservation</h3>
 <pre class="mermaid">stateDiagram-v2
     direction LR
     [*] --> CONFIRMED : 選完時段送出 當場成立
-    CONFIRMED --> SEATED : 到店報到 開桌
+    CONFIRMED --> SEATED : 到店報到 開桌 最早提前 30 分
+    CONFIRMED --> CONFIRMED : 櫃檯取消保留 只寫 hold_released_at
     CONFIRMED --> CANCELLED : 前一日 20 點前取消
     CONFIRMED --> NO_SHOW : 排程 過了訂位時間 10 分未到
     SEATED --> [*]
@@ -914,19 +999,22 @@ pre.mermaid svg{max-width:100%;height:auto}
         舊流程要預付成功才確認
         這一版訂位不收錢
         送出就直接成立
+        開始前 30 分到開始後 10 分
+        配到的桌顯示預約保留
     end note
     note right of NO_SHOW
         訂位只保留 10 分鐘
         逾時只能現場候位
-        桌位不用動
+        預約保留同時結束 桌位不用動
     end note
 </pre>
 <blockquote>
-<p><strong>訂位保留 10 分鐘。</strong> 排程每 5 分鐘才跑一次，所以開桌頁的預約清單只列現在 −10～+45 分的，
-報到 API 也自己檢查，逾時回 <code>409 RESERVATION_EXPIRED</code>，不等排程。</p>
+<p><strong>訂位保留 10 分鐘，最早提前 30 分鐘報到。</strong> 排程每 5 分鐘才跑一次，所以開桌頁的預約清單只列現在 −10～+30 分的，
+報到 API 也自己檢查：太早回 <code>409 RESERVATION_TOO_EARLY</code>，逾時回 <code>409 RESERVATION_EXPIRED</code>，不等排程。</p>
 <p>取消會把 <code>table_id</code> 設為 <code>NULL</code>，釋放 <code>UNIQUE(table_id, start_time)</code>，那個時段才能重新被訂走。
 <code>NO_SHOW</code> 發生時那個時段已經開始了，不需要釋放，<code>table_id</code> 留著當紀錄（跟 <a href="../spec/03-資料庫設計.html">03</a> 一致）；
-它本來就不算佔位（<a class="gloss" href="../tech/advanced/46-區間重疊與訂位排程.html" title="看這個技術的白話說明">區間重疊</a>只看 <code>CONFIRMED</code>），桌位狀態也完全不受影響。</p>
+它本來就不算佔位（<a class="gloss" href="../tech/advanced/46-區間重疊與訂位排程.html" title="看這個技術的白話說明">區間重疊</a>只看 <code>CONFIRMED</code> 與 <code>SEATED</code>），預約保留也在訂位時間後 10 分鐘自己結束，桌位狀態完全不受影響。</p>
+<p><strong><code>SEATED</code> 也算佔用</strong>（到 <code>end_time</code> 為止）：客人報到後還坐著，只算 <code>CONFIRMED</code> 的話同一時段會被線上多訂一組。</p>
 </blockquote>
 <h3 id="64b-預先點餐進階">6.4b 預先點餐（進階）</h3>
 <p>這不是資料庫欄位，是由「有沒有內容」加上「現在幾點」推導出來的。</p>
@@ -1007,6 +1095,13 @@ pre.mermaid svg{max-width:100%;height:auto}
     DINING_TABLE ||--o{ DINING_SESSION : "使用"
     DINING_TABLE ||--o{ RESERVATION : "被預約"
     DINING_SESSION ||--o{ ORDER_TICKET : "包含多張"
+    DINING_SESSION ||--o{ DINING_SESSION_GUEST : "同桌的誰"
+    DINING_SESSION ||--o{ CART_ITEM : "整桌共用購物車"
+    DINING_SESSION_GUEST ||--o{ CART_ITEM : "誰加的"
+    DINING_SESSION_GUEST |o--o{ ORDER_TICKET : "誰送出的"
+    CART_ITEM ||--o{ CART_ITEM_OPTION : "選了哪些"
+    MENU_ITEM ||--o{ CART_ITEM : "被加進購物車"
+    OPTION_VALUE ||--o{ CART_ITEM_OPTION : "被選"
     DINING_SESSION ||--o{ PAYMENT : "付款"
     DINING_SESSION ||--o{ SERVICE_CALL : "服務鈴"
     WAITLIST ||--o| DINING_SESSION : "報到後綁定"
@@ -1023,6 +1118,7 @@ pre.mermaid svg{max-width:100%;height:auto}
     MENU_ITEM ||--o| INVENTORY_ITEM : "庫存"
     INVENTORY_ITEM ||--o{ INVENTORY_LOG : "異動"
     STAFF ||--o{ SERVICE_CALL : "處理"
+    STAFF |o--o{ RESERVATION : "取消保留"
 
     MEMBER {
         bigint id PK
@@ -1036,7 +1132,7 @@ pre.mermaid svg{max-width:100%;height:auto}
         bigint id PK
         varchar table_no UK "A01 B02"
         int seats
-        varchar status "空桌 用餐中 待清理"
+        varchar status "空桌 用餐中 待清理 預約保留不存這裡"
         tinyint reservable "70 percent 開放訂位"
     }
     DINING_SESSION {
@@ -1052,9 +1148,29 @@ pre.mermaid svg{max-width:100%;height:auto}
         decimal discount "進階 A6"
         decimal total
     }
+    DINING_SESSION_GUEST {
+        bigint id PK
+        bigint dining_session_id FK
+        varchar device_id "前端產生的 UUID 不是身分驗證"
+        varchar display_name "會員暱稱或 客人 1"
+        bigint member_id FK "可 NULL"
+    }
+    CART_ITEM {
+        bigint id PK
+        bigint dining_session_id FK
+        bigint menu_item_id FK
+        int quantity
+        decimal unit_price "只給畫面顯示 送單時重算"
+        bigint added_by_guest_id FK
+    }
+    CART_ITEM_OPTION {
+        bigint cart_item_id PK, FK
+        bigint option_value_id PK, FK "購物車階段不快照"
+    }
     ORDER_TICKET {
         bigint id PK
         bigint dining_session_id FK
+        bigint submitted_by_guest_id FK "誰按的送出 可 NULL"
         int sequence_no "第幾單"
         varchar status
         tinyint is_preorder "KDS 排最前"
@@ -1113,12 +1229,15 @@ pre.mermaid svg{max-width:100%;height:auto}
     RESERVATION {
         bigint id PK
         varchar reservation_no UK "預約編號 R-YYMMDD-流水號"
+        bigint table_id FK "配到的桌 保留窗內鎖住"
         datetime start_time "區間重疊判斷"
         datetime end_time "含 15 分清桌緩衝"
         int party_size
         varchar status "四種 沒有 PENDING"
         varchar access_token "UK 匿名訂位的憑證"
         datetime preorder_updated_at "NULL 表示沒預點"
+        datetime hold_released_at "櫃檯取消保留 NULL 表示沒取消"
+        bigint hold_released_by FK "哪個員工"
     }
     RESERVATION_PREORDER_ITEM {
         bigint id PK
@@ -1141,7 +1260,7 @@ pre.mermaid svg{max-width:100%;height:auto}
     }
     PAYMENT {
         bigint id PK
-        varchar method "櫃檯 CASH MOCK_PAY 線上三種為進階"
+        varchar method "櫃檯 CASH CARD BARCODE 線上三種為進階"
         decimal amount
         varchar status
         varchar transaction_no "MOCK 開頭"
@@ -1179,7 +1298,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tbody>
 </table></div>
 <p>讀法範例：<code>ORDER_TICKET ||--|{ ORDER_ITEM</code> 讀作「<strong>一張</strong>點餐單包含<strong>一個以上</strong>的單品」。</p>
-<p><strong>兩個關鍵約束</strong></p>
+<p><strong>關鍵約束</strong></p>
 <pre><code class="language-sql">-- 防重複訂位（資料庫層的保險）
 CREATE UNIQUE INDEX uk_reservation_table_start ON reservation (table_id, start_time);
 
@@ -1188,10 +1307,13 @@ CREATE INDEX idx_reservation_table_time ON reservation (table_id, start_time, en
 
 -- 匿名訂位的存取憑證（沒有 JWT 的客人靠它回來改自己的單）
 CREATE UNIQUE INDEX uk_reservation_access_token ON reservation (access_token);
+
+-- 同一支手機在同一桌只有一個身分
+CREATE UNIQUE INDEX uk_guest_session_device ON dining_session_guest (dining_session_id, device_id);
 </code></pre>
 <hr />
 <h2 id="8-主流程時序圖">8. 主流程時序圖</h2>
-<h3 id="81-店內用餐掃碼-點餐-出菜-櫃檯結帳">8.1 店內用餐：掃碼 → 點餐 → 出菜 → 櫃檯結帳</h3>
+<h3 id="81-店內用餐掃碼-共用購物車-點餐-出菜-櫃檯結帳">8.1 店內用餐：掃碼 → 共用購物車 → 點餐 → 出菜 → 櫃檯結帳</h3>
 <p><strong>這就是 demo 當天要演的那條路。</strong></p>
 <pre class="mermaid">sequenceDiagram
     autonumber
@@ -1208,42 +1330,55 @@ CREATE UNIQUE INDEX uk_reservation_access_token ON reservation (access_token);
 
     G->>API: 掃碼 GET /tables/A03/status
     API-->>G: AVAILABLE 請洽櫃檯帶位
-    Note over API: 櫃檯開桌 悲觀鎖防重複
-    G->>API: 再掃一次 POST /dining-sessions/join
-    API-->>G: sessionToken + soupBaseOrdered false
+    Note over API: 櫃檯點空桌開桌 悲觀鎖防重複
+    G->>API: 再掃一次 POST /dining-sessions/join 帶 X-Device-Id
+    API-->>G: sessionToken + guest 客人 1 + soupBaseOrdered false
     G->>FE: 存 localStorage 進 C-04 菜單 鍋底是其中一個頁籤
-    G2->>API: 同一張 QR 也能加入
-    API-->>G2: sessionToken
+    G2->>API: 同一張 QR 也能加入 帶自己的 X-Device-Id
+    API-->>G2: 同一桌的 sessionToken + guest 客人 2
 
     G->>WS: 訂閱 /topic/session/1052
     G2->>WS: 訂閱 /topic/session/1052
     KDS->>WS: 訂閱 /topic/kitchen
 
-    Note over G,KDS: 階段二 點餐 共鍋每桌至少一份鍋底
+    Note over G,KDS: 階段二 整桌共用購物車 存在後端
 
-    G->>API: POST /orders 鴛鴦鍋底 + 牛五花
+    G->>API: POST /me/cart/items 鴛鴦鍋底
+    API->>DB: 寫 cart_item 記下是客人 1 加的
+    API->>WS: CART_UPDATED ADDED
+    WS-->>G2: 通知條 客人 1 加了 鴛鴦鍋底 購物車同步
+    Note over G: 自己也收到 CART_UPDATED 但 byGuestId 是自己 只重抓不跳通知
+    G2->>API: POST /me/cart/items 牛五花
+    API->>WS: CART_UPDATED ADDED
+    WS-->>G: 通知條 客人 2 加了 牛五花
+
+    Note over G,KDS: 階段三 送出整桌點餐 共鍋每桌至少一份鍋底
+
+    G->>API: POST /orders 不帶品項
     activate API
     API->>DB: 開始交易
-    API->>DB: 鎖住 session 列 檢查 OPEN 與鍋底規則
+    API->>DB: 鎖住 session 列 檢查 OPEN 後才讀整桌 cart_item
+    Note over API,DB: 購物車是空的回 409 CART_EMPTY 同時按送出的後到者就是這樣
+    API->>DB: 檢查鍋底規則 以菜單現價重算
     API->>DB: UPDATE inventory SET qty=qty-n WHERE qty>=n
     alt 庫存足夠
         DB-->>API: 影響筆數 1
-        API->>DB: 建立 ticket item option 含快照
+        API->>DB: 建立 ticket item option 含快照 刪掉這批 cart_item
         API->>DB: 提交交易
         API-->>G: 201 第 1 單已送出
         Note over API: 交易提交後才推播
-        API->>WS: NEW_TICKET
-        WS-->>G2: 新單出現 高亮 2 秒
+        API->>WS: NEW_TICKET byGuest 客人 1 byGuestId 1
+        WS-->>G2: 新單出現 購物車清空 通知條 客人 1 送出 2 項
         WS-->>KDS: 卡片跳出
     else 庫存不足
         DB-->>API: 影響筆數 0
-        API->>DB: 全部回滾
+        API->>DB: 全部回滾 購物車原封不動
         API-->>G: 409 ITEM_SOLD_OUT
         Note over G: 標紅該品項 整張單未成立
     end
     deactivate API
 
-    Note over G,KDS: 階段三 出菜
+    Note over G,KDS: 階段四 出菜
 
     KDS->>API: PATCH /order-items/8801/serve
     API->>DB: 品項改 SERVED 推導單狀態
@@ -1255,23 +1390,25 @@ CREATE UNIQUE INDEX uk_reservation_access_token ON reservation (access_token);
     API->>WS: SERVICE_CALL 到 /topic/counter
     Note over WS: 櫃檯畫面立刻跳出
 
-    Note over G,CT: 階段四 結帳 客人到櫃檯 基礎
+    Note over G,CT: 階段五 結帳 客人到櫃檯 基礎
 
     CT->>API: GET /admin/dining-sessions/1052
     API-->>CT: 小計 服務費 10% 合計 1562
-    CT->>API: POST /admin/dining-sessions/1052/settle CASH expectedTotal 1562
+    Note over CT: 按信用卡 S-03b 倒數 5 秒 可取消 倒數到 0 才送出
+    CT->>API: POST /admin/dining-sessions/1052/settle CARD expectedTotal 1562
     activate API
     API->>DB: 同一交易 SELECT FOR UPDATE 鎖住 session 重算合計
     alt 仍是 OPEN 且合計相同
-        API->>DB: Payment SUCCESS Session PAID 桌位 CLEANING 權杖失效
+        API->>DB: Payment CARD SUCCESS Session PAID 桌位 CLEANING 權杖失效 清購物車
         API->>DB: 提交交易
-        API-->>CT: 200 已結清
-        API->>WS: SESSION_CLOSED
+        API-->>CT: 200 結帳完成
+        Note over CT: 勾勾 結帳完成 約 1.5 秒自動關閉 回 S-02
+        API->>WS: SESSION_CLOSED reason PAID
         WS-->>G: C-04 顯示已結帳 清除權杖
         WS-->>G2: 同步顯示已結帳
     else 手機 B 的加點先拿到鎖 合計變了
         API-->>CT: 409 BILL_CHANGED 附最新帳單
-        Note over CT: 刷新金額後再按一次
+        Note over CT: 關掉倒數 刷新金額 提示剛剛有人加點 再按一次
     end
     deactivate API
     Note over G2,API: 結清先拿到鎖的話 晚到的加點回 409 SESSION_CLOSED
@@ -1312,14 +1449,19 @@ CREATE UNIQUE INDEX uk_reservation_access_token ON reservation (access_token);
 </tr>
 </tbody>
 </table></div>
-<p><strong>這張圖的五個重點</strong></p>
+<p><strong>這張圖的六個重點</strong></p>
 <ol>
 <li><strong>掃碼第一次被擋下來</strong>——桌位還是 <code>AVAILABLE</code>，櫃檯沒開桌。這是「半輔助工具」定位的具體呈現。</li>
-<li><strong>第 11～24 步是整個系統最重要的交易</strong>。扣庫存用 <code>WHERE qty &gt;= n</code> 判斷影響筆數，任一項失敗整張單回滾。</li>
+<li><strong>購物車是整桌共用、存在後端的（第 11～17 步）。</strong> 兩支手機各加各的，加進同一份；每次異動推 <code>CART_UPDATED</code>，
+   另一支跳通知條「客人 1 加了 鴛鴦鍋底」；事件帶 <code>byGuestId</code>，自己的動作只重抓、不跳通知。<code>X-Device-Id</code> 只拿來標示誰加的，不是身分驗證。</li>
+<li><strong>第 18～32 步是整個系統最重要的交易</strong>。送出不帶品項，<strong>鎖住 session 之後</strong>才讀整桌購物車（第 20 步）；
+   扣庫存用 <code>WHERE qty &gt;= n</code> 判斷影響筆數，任一項失敗整張單回滾、購物車原封不動；成功就在同一個交易裡刪掉購物車（第 24 步）。
+   兩個人同時按送出，後到的拿到空購物車 → <code>409 CART_EMPTY</code>。</li>
 <li><strong>推播一律在交易提交之後</strong>，否則前端收到通知去查卻查不到資料。</li>
-<li><strong>手機 B 全程沒有發過一次查詢請求</strong>，所有更新都是推過去的。但它連上時和斷線重連時，各要抓一次完整資料。</li>
-<li><strong>結帳在櫃檯（第 32～42 步），沒有「結帳中」狀態。</strong> 結清帶 <code>expectedTotal</code>，跟送出點餐（第 13 步）搶同一把列鎖：
-   加點先到，結清拿到 <code>BILL_CHANGED</code>；結清先到，加點拿到 <code>SESSION_CLOSED</code>。客人手機上的「我要結帳」是進階 A5。</li>
+<li><strong>手機 B 不輪詢</strong>，所有更新都是推過去的；收到 <code>CART_UPDATED</code> 或 <code>NEW_TICKET</code> 就重抓購物車（以後端為準），連上時和斷線重連時也各要抓一次完整資料。</li>
+<li><strong>結帳在櫃檯（第 40～50 步），沒有「結帳中」狀態。</strong> 櫃檯按付款方式（現金／信用卡／條碼都一樣）後先倒數 5 秒（S-03b，可取消），倒數到 0 才送出，成功後約 1.5 秒自動關閉；還沒送出的購物車品項在結清時直接捨棄；
+   結清帶 <code>expectedTotal</code>，跟送出點餐（第 20 步）搶同一把列鎖：
+   加點先到，結清拿到 <code>BILL_CHANGED</code>；結清先到，加點拿到 <code>SESSION_CLOSED</code>。成功推 <code>SESSION_CLOSED</code>（<code>reason: PAID</code>）。客人手機上的「我要結帳」是進階 A5。</li>
 </ol>
 <hr />
 <h3 id="82-訂位與預先點餐成立-補點-報到轉單">8.2 訂位與預先點餐：成立 → 補點 → 報到轉單</h3>
@@ -1340,7 +1482,7 @@ CREATE UNIQUE INDEX uk_reservation_access_token ON reservation (access_token);
     G->>API: POST /reservations 選好日期時段人數
     activate API
     API->>DB: 悲觀鎖候選桌 依 id 排序防死鎖
-    API->>DB: 區間重疊檢查 加 best-fit 挑最小夠坐的桌
+    API->>DB: 區間重疊檢查 CONFIRMED 與 SEATED 都算 加 best-fit 挑最小夠坐的桌
     alt 有空桌
         API->>DB: 寫入 reservation 狀態 CONFIRMED
         API-->>G: 201 預約編號 桌號 accessToken
@@ -1357,7 +1499,7 @@ CREATE UNIQUE INDEX uk_reservation_access_token ON reservation (access_token);
     alt 選 到店再點
         Note over G: 流程結束 到店掃碼再點
     else 選 先點餐
-        G->>API: PUT /reservations/442/preorder 整份購物車
+        G->>API: PUT /reservations/442/preorder 這支手機上的整份購物車
         API->>DB: 刪掉舊的 重建 preorder_item
         Note over API,DB: 不檢查庫存 不扣庫存 不產生 payment
         API-->>G: 200 預估金額 可修改到前一日 20 點
@@ -1367,15 +1509,25 @@ CREATE UNIQUE INDEX uk_reservation_access_token ON reservation (access_token);
     API-->>G: 200 整批覆蓋 同一支 API
     Note over API: 過了前一日 20 點回 409 PREORDER_LOCKED
 
-    Note over G,KDS: 階段三 到店報到 S-07 按報到開桌 S-07b 選桌
+    Note over G,KDS: 階段三 到店報到 訂位前 30 分起配到的桌顯示預約保留
 
-    CT->>API: GET /admin/tables/available partySize 4
-    API-->>CT: 坐得下的空桌 小桌在前 稍後有預約的附時間
+    CT->>API: GET /admin/tables
+    API-->>CT: A05 displayStatus RESERVED heldFor 這筆訂位 當場算出來
+    opt 櫃檯決定先把 A05 給別人
+        CT->>API: POST /admin/reservations/442/release-hold
+        API-->>CT: A05 變回空桌 訂位仍是 CONFIRMED 不能恢復
+    end
+    CT->>API: GET /admin/tables/available partySize 4 reservationId 442
+    API-->>CT: 沒取消保留的話原保留桌 A05 排第一 其他保留中的桌不列
     CT->>API: POST /admin/reservations/442/seat tableId 5
     activate API
-    alt 已過訂位時間 10 分鐘
+    alt 早於訂位時間 30 分鐘
+        API-->>CT: 409 RESERVATION_TOO_EARLY
+    else 已過訂位時間 10 分鐘
         API-->>CT: 409 RESERVATION_EXPIRED 請改登記候位
-    else 保留時間內
+    else 目標桌保留給別筆訂位
+        API-->>CT: 409 TABLE_RESERVED
+    else 可以報到
         API->>DB: 建立 dining_session 帶入人數
         opt 有預點內容
             loop 每一筆預點
@@ -1389,7 +1541,7 @@ CREATE UNIQUE INDEX uk_reservation_access_token ON reservation (access_token);
             API->>DB: 建立 order_ticket is_preorder 等於 1
             API->>KDS: NEW_TICKET 金色邊框 排最前
         end
-        API->>DB: reservation 改 SEATED 桌位改 OCCUPIED
+        API->>DB: reservation 改 SEATED 保留自然消失 桌位改 OCCUPIED
         API-->>CT: 200 session 與 soldOut 清單
     end
     deactivate API
@@ -1430,17 +1582,20 @@ CREATE UNIQUE INDEX uk_reservation_access_token ON reservation (access_token);
 </tr>
 </tbody>
 </table></div>
-<p><strong>這張圖的四個重點</strong></p>
+<p><strong>這張圖的五個重點</strong></p>
 <ol>
 <li><strong>第 7 步就結束了訂位。</strong> 沒有付款、沒有等待確認，<code>201</code> 回來訂位就成立。
    舊流程要走完「選時段 → 先點餐 → 付款」三步才算訂到位，那是把訂位綁在金流上；
    拆開之後，客人少一道門檻，我們也少一整條退款分支要寫。</li>
 <li><strong>預點是同一支 <code>PUT</code> 整批覆蓋</strong>（第 10 步與第 13 步）。「先點餐」和「事後調整」在後端是同一件事，
    前端也是同一個畫面（C-17），只差有沒有帶入現有內容。</li>
-<li><strong>庫存到第 20 步才扣</strong>。預點不鎖庫存，代價是到店可能售完 → <code>soldOut</code> 清單。
+<li><strong>庫存到第 26 步才扣</strong>。預點不鎖庫存，代價是到店可能售完 → <code>soldOut</code> 清單。
    這是設計選擇不是 bug，要在驗收時講得出來。</li>
-<li><strong>報到前先選桌（第 15～17 步）</strong>。S-07b 列出坐得下的空桌，選好才開桌；
-   過了訂位時間 10 分鐘直接回 <code>RESERVATION_EXPIRED</code>（第 18 步），不等 NO_SHOW 排程。</li>
+<li><strong>配到的桌在訂位前 30 分鐘起顯示「預約保留」（第 15～16 步）</strong>，是查桌況時當場算的，沒有排程。
+   櫃檯可以取消保留（第 17～18 步），訂位仍是 <code>CONFIRMED</code>，客人到了改坐別張桌；取消是單向的，不能恢復。</li>
+<li><strong>報到前先選桌（第 19～21 步）</strong>。S-07b 列出坐得下的空桌，原保留桌排第一，別人的保留桌不列；
+   太早回 <code>RESERVATION_TOO_EARLY</code>、過了訂位時間 10 分鐘回 <code>RESERVATION_EXPIRED</code>、開到別人的保留桌回 <code>TABLE_RESERVED</code>（第 22～24 步），
+   都不等排程。報到成功後這筆轉 <code>SEATED</code>，保留條件不成立，保留自己消失（第 30 步）。</li>
 </ol><div class="pager"><a href="../spec/05-開發流程與分工.html"><div class="k">← 上一篇</div><div class="n">05 開發流程與時程</div></a><a class="next" href="../spec/modules/M1-菜單與品項.html"><div class="k">下一篇 →</div><div class="n">M1 菜單與品項</div></a></div>
 </article>
 <aside class="toc"><div class="tt">本頁目錄</div><a href="#1-產品心智圖">1. 產品心智圖</a><a href="#2-基礎與進階分層圖">2. 基礎與進階分層圖</a><a href="#3-系統工程架構圖">3. 系統工程架構圖</a><a href="#4-建議時程甘特圖">4. 建議時程甘特圖</a><a href="#5-uml-類別圖領域模型">5. UML 類別圖（領域模型）</a><a href="#6-uml-狀態圖">6. UML 狀態圖</a><a href="#7-資料庫-er-圖">7. 資料庫 ER 圖</a><a href="#8-主流程時序圖">8. 主流程時序圖</a></aside>
