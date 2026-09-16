@@ -164,7 +164,18 @@ function walk(el, ox, oy) {
   if (cs.overflow === 'hidden' || cs.overflowX === 'hidden') node.clip = 1;
   const op = parseFloat(cs.opacity);
   if (op < 1) node.op = Math.round(op*100)/100;
-  const sh = parseShadows(cs.boxShadow);
+  let sh = parseShadows(cs.boxShadow);
+  // 設計稿有些框線是用 `box-shadow: inset 0 0 0 1.5px` 畫的（不佔版面寬度）。
+  // 照搬成 Figma 的 INNER_SHADOW + spread 不會顯示，所以沒有 border 時
+  // 把這種「零位移、零模糊」的內陰影改成內側描邊，其餘陰影照舊。
+  if (!node.st) {
+    const k = sh.findIndex(s => s.i && !s.x && !s.y && !s.b && s.s > 0);
+    if (k >= 0) {
+      node.st = sh[k].c; node.sw = sh[k].s; node.sd = 0;
+      if (sh[k].a < 1) node.sa = sh[k].a;
+      sh = sh.filter((_, j) => j !== k);
+    }
+  }
   if (sh.length) node.sh = sh;
   if (cs.transform && cs.transform !== 'none') {
     const m = cs.transform.match(/matrix\(([-\d.]+),\s*([-\d.]+)/);

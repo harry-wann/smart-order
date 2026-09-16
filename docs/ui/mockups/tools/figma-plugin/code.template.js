@@ -67,7 +67,7 @@ function makeFrame(n) {
     ? [{ type: 'SOLID', color: hex(n.fill), opacity: n.fa === undefined ? 1 : n.fa }]
     : [];
   if (n.st) {
-    f.strokes = [{ type: 'SOLID', color: hex(n.st) }];
+    f.strokes = [{ type: 'SOLID', color: hex(n.st), opacity: n.sa !== undefined ? n.sa : 1 }];
     f.strokeAlign = 'INSIDE';              // CSS border 是 border-box，對應 INSIDE
     if (n.sd) f.dashPattern = [4, 4];
     if (n.bw) {
