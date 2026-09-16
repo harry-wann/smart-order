@@ -30,6 +30,14 @@
   "levels": [
    "基礎"
   ],
+  "pkgs": [
+   {
+    "id": "A",
+    "colorName": "藍",
+    "color": "#2F6FB0",
+    "name": "顧客入口＋會員＋服務鈴"
+   }
+  ],
   "flow": 4,
   "flow_name": "入口",
   "flow_i": 0
@@ -62,6 +70,14 @@
   ],
   "levels": [
    "基礎"
+  ],
+  "pkgs": [
+   {
+    "id": "A",
+    "colorName": "藍",
+    "color": "#2F6FB0",
+    "name": "顧客入口＋會員＋服務鈴"
+   }
   ],
   "flow": 5,
   "flow_name": "點餐",
@@ -97,6 +113,14 @@
   ],
   "levels": [
    "基礎"
+  ],
+  "pkgs": [
+   {
+    "id": "B",
+    "colorName": "綠",
+    "color": "#3C8A4E",
+    "name": "菜單＋出菜看板"
+   }
   ],
   "flow": 5,
   "flow_name": "點餐",
@@ -172,6 +196,32 @@
    "基礎",
    "基礎"
   ],
+  "pkgs": [
+   {
+    "id": "B",
+    "colorName": "綠",
+    "color": "#3C8A4E",
+    "name": "菜單＋出菜看板"
+   },
+   {
+    "id": "B",
+    "colorName": "綠",
+    "color": "#3C8A4E",
+    "name": "菜單＋出菜看板"
+   },
+   {
+    "id": "B",
+    "colorName": "綠",
+    "color": "#3C8A4E",
+    "name": "菜單＋出菜看板"
+   },
+   {
+    "id": "B",
+    "colorName": "綠",
+    "color": "#3C8A4E",
+    "name": "菜單＋出菜看板"
+   }
+  ],
   "flow": 19,
   "flow_name": "狀態示範",
   "flow_i": 0
@@ -207,6 +257,14 @@
   "levels": [
    "基礎"
   ],
+  "pkgs": [
+   {
+    "id": "C",
+    "colorName": "紫",
+    "color": "#7B4FA6",
+    "name": "點餐交易＋櫃檯結帳"
+   }
+  ],
   "flow": 5,
   "flow_name": "點餐",
   "flow_i": 2
@@ -241,6 +299,14 @@
   "levels": [
    "基礎"
   ],
+  "pkgs": [
+   {
+    "id": "C",
+    "colorName": "紫",
+    "color": "#7B4FA6",
+    "name": "點餐交易＋櫃檯結帳"
+   }
+  ],
   "flow": 5,
   "flow_name": "點餐",
   "flow_i": 3
@@ -274,6 +340,14 @@
   ],
   "levels": [
    "基礎"
+  ],
+  "pkgs": [
+   {
+    "id": "B",
+    "colorName": "綠",
+    "color": "#3C8A4E",
+    "name": "菜單＋出菜看板"
+   }
   ],
   "flow": 5,
   "flow_name": "點餐",
@@ -310,6 +384,14 @@
   "levels": [
    "基礎"
   ],
+  "pkgs": [
+   {
+    "id": "C",
+    "colorName": "紫",
+    "color": "#7B4FA6",
+    "name": "點餐交易＋櫃檯結帳"
+   }
+  ],
   "flow": 5,
   "flow_name": "點餐",
   "flow_i": 5
@@ -340,6 +422,14 @@
   ],
   "levels": [
    "基礎"
+  ],
+  "pkgs": [
+   {
+    "id": "C",
+    "colorName": "紫",
+    "color": "#7B4FA6",
+    "name": "點餐交易＋櫃檯結帳"
+   }
   ],
   "flow": 5,
   "flow_name": "點餐",
@@ -376,6 +466,14 @@
   "levels": [
    "基礎"
   ],
+  "pkgs": [
+   {
+    "id": "B",
+    "colorName": "綠",
+    "color": "#3C8A4E",
+    "name": "菜單＋出菜看板"
+   }
+  ],
   "flow": 5,
   "flow_name": "點餐",
   "flow_i": 7
@@ -410,6 +508,9 @@
   ],
   "levels": [
    "進階"
+  ],
+  "pkgs": [
+   null
   ],
   "flow": 6,
   "flow_name": "結帳",
@@ -446,6 +547,9 @@
   "levels": [
    "進階"
   ],
+  "pkgs": [
+   null
+  ],
   "flow": 6,
   "flow_name": "結帳",
   "flow_i": 1
@@ -478,6 +582,9 @@
   ],
   "levels": [
    "進階"
+  ],
+  "pkgs": [
+   null
   ],
   "flow": 6,
   "flow_name": "結帳",
@@ -513,6 +620,14 @@
   "levels": [
    "基礎"
   ],
+  "pkgs": [
+   {
+    "id": "A",
+    "colorName": "藍",
+    "color": "#2F6FB0",
+    "name": "顧客入口＋會員＋服務鈴"
+   }
+  ],
   "flow": 7,
   "flow_name": "會員",
   "flow_i": 0
@@ -543,6 +658,14 @@
   ],
   "levels": [
    "基礎"
+  ],
+  "pkgs": [
+   {
+    "id": "A",
+    "colorName": "藍",
+    "color": "#2F6FB0",
+    "name": "顧客入口＋會員＋服務鈴"
+   }
   ],
   "flow": 7,
   "flow_name": "會員",
@@ -577,6 +700,14 @@
   ],
   "levels": [
    "基礎"
+  ],
+  "pkgs": [
+   {
+    "id": "A",
+    "colorName": "藍",
+    "color": "#2F6FB0",
+    "name": "顧客入口＋會員＋服務鈴"
+   }
   ],
   "flow": 7,
   "flow_name": "會員",
@@ -613,6 +744,14 @@
   "levels": [
    "基礎"
   ],
+  "pkgs": [
+   {
+    "id": "A",
+    "colorName": "藍",
+    "color": "#2F6FB0",
+    "name": "顧客入口＋會員＋服務鈴"
+   }
+  ],
   "flow": 7,
   "flow_name": "會員",
   "flow_i": 3
@@ -647,6 +786,9 @@
   "levels": [
    "進階"
   ],
+  "pkgs": [
+   null
+  ],
   "flow": 7,
   "flow_name": "會員",
   "flow_i": 4
@@ -680,6 +822,14 @@
   "levels": [
    "基礎"
   ],
+  "pkgs": [
+   {
+    "id": "A",
+    "colorName": "藍",
+    "color": "#2F6FB0",
+    "name": "顧客入口＋會員＋服務鈴"
+   }
+  ],
   "flow": 8,
   "flow_name": "預約",
   "flow_i": 0
@@ -711,6 +861,14 @@
   ],
   "levels": [
    "基礎"
+  ],
+  "pkgs": [
+   {
+    "id": "A",
+    "colorName": "藍",
+    "color": "#2F6FB0",
+    "name": "顧客入口＋會員＋服務鈴"
+   }
   ],
   "flow": 8,
   "flow_name": "預約",
@@ -744,6 +902,14 @@
   ],
   "levels": [
    "基礎"
+  ],
+  "pkgs": [
+   {
+    "id": "E",
+    "colorName": "洋紅",
+    "color": "#B5487A",
+    "name": "訂位"
+   }
   ],
   "flow": 8,
   "flow_name": "預約",
@@ -780,6 +946,9 @@
   "levels": [
    "進階"
   ],
+  "pkgs": [
+   null
+  ],
   "flow": 8,
   "flow_name": "預約",
   "flow_i": 4
@@ -814,6 +983,14 @@
   ],
   "levels": [
    "基礎"
+  ],
+  "pkgs": [
+   {
+    "id": "E",
+    "colorName": "洋紅",
+    "color": "#B5487A",
+    "name": "訂位"
+   }
   ],
   "flow": 8,
   "flow_name": "預約",
@@ -850,6 +1027,14 @@
   "levels": [
    "基礎"
   ],
+  "pkgs": [
+   {
+    "id": "E",
+    "colorName": "洋紅",
+    "color": "#B5487A",
+    "name": "訂位"
+   }
+  ],
   "flow": 8,
   "flow_name": "預約",
   "flow_i": 5
@@ -885,6 +1070,9 @@
   "levels": [
    "進階"
   ],
+  "pkgs": [
+   null
+  ],
   "flow": 7,
   "flow_name": "會員",
   "flow_i": 5
@@ -919,6 +1107,14 @@
   "levels": [
    "基礎"
   ],
+  "pkgs": [
+   {
+    "id": "A",
+    "colorName": "藍",
+    "color": "#2F6FB0",
+    "name": "顧客入口＋會員＋服務鈴"
+   }
+  ],
   "flow": 5,
   "flow_name": "點餐",
   "flow_i": 8
@@ -952,6 +1148,9 @@
   "levels": [
    "基礎"
   ],
+  "pkgs": [
+   null
+  ],
   "flow": 0,
   "flow_name": "基礎",
   "flow_i": 0
@@ -984,6 +1183,9 @@
   "levels": [
    "基礎"
   ],
+  "pkgs": [
+   null
+  ],
   "flow": 0,
   "flow_name": "基礎",
   "flow_i": 1
@@ -1014,6 +1216,9 @@
   ],
   "levels": [
    "基礎"
+  ],
+  "pkgs": [
+   null
   ],
   "flow": 1,
   "flow_name": "輸入",
@@ -1046,6 +1251,9 @@
   ],
   "levels": [
    "基礎"
+  ],
+  "pkgs": [
+   null
   ],
   "flow": 1,
   "flow_name": "輸入",
@@ -1081,6 +1289,9 @@
   "levels": [
    "基礎"
   ],
+  "pkgs": [
+   null
+  ],
   "flow": 2,
   "flow_name": "內容",
   "flow_i": 0
@@ -1113,6 +1324,9 @@
   ],
   "levels": [
    "基礎"
+  ],
+  "pkgs": [
+   null
   ],
   "flow": 2,
   "flow_name": "內容",
@@ -1149,6 +1363,9 @@
   "levels": [
    "基礎"
   ],
+  "pkgs": [
+   null
+  ],
   "flow": 3,
   "flow_name": "狀態與店家端",
   "flow_i": 0
@@ -1184,6 +1401,9 @@
   "levels": [
    "基礎"
   ],
+  "pkgs": [
+   null
+  ],
   "flow": 3,
   "flow_name": "狀態與店家端",
   "flow_i": 1
@@ -1215,6 +1435,14 @@
   ],
   "levels": [
    "基礎"
+  ],
+  "pkgs": [
+   {
+    "id": "A",
+    "colorName": "藍",
+    "color": "#2F6FB0",
+    "name": "顧客入口＋會員＋服務鈴"
+   }
   ],
   "flow": 9,
   "flow_name": "員工登入",
@@ -1250,6 +1478,14 @@
   ],
   "levels": [
    "基礎"
+  ],
+  "pkgs": [
+   {
+    "id": "D",
+    "colorName": "青",
+    "color": "#1F8A8A",
+    "name": "桌位開桌＋候位"
+   }
   ],
   "flow": 10,
   "flow_name": "現場桌況",
@@ -1321,6 +1557,32 @@
    "基礎",
    "基礎"
   ],
+  "pkgs": [
+   {
+    "id": "D",
+    "colorName": "青",
+    "color": "#1F8A8A",
+    "name": "桌位開桌＋候位"
+   },
+   {
+    "id": "D",
+    "colorName": "青",
+    "color": "#1F8A8A",
+    "name": "桌位開桌＋候位"
+   },
+   {
+    "id": "D",
+    "colorName": "青",
+    "color": "#1F8A8A",
+    "name": "桌位開桌＋候位"
+   },
+   {
+    "id": "D",
+    "colorName": "青",
+    "color": "#1F8A8A",
+    "name": "桌位開桌＋候位"
+   }
+  ],
   "flow": 19,
   "flow_name": "狀態示範",
   "flow_i": 1
@@ -1356,6 +1618,14 @@
   "levels": [
    "基礎"
   ],
+  "pkgs": [
+   {
+    "id": "D",
+    "colorName": "青",
+    "color": "#1F8A8A",
+    "name": "桌位開桌＋候位"
+   }
+  ],
   "flow": 10,
   "flow_name": "現場桌況",
   "flow_i": 1
@@ -1389,6 +1659,14 @@
   ],
   "levels": [
    "基礎"
+  ],
+  "pkgs": [
+   {
+    "id": "D",
+    "colorName": "青",
+    "color": "#1F8A8A",
+    "name": "桌位開桌＋候位"
+   }
   ],
   "flow": 10,
   "flow_name": "現場桌況",
@@ -1425,6 +1703,14 @@
   "levels": [
    "基礎"
   ],
+  "pkgs": [
+   {
+    "id": "E",
+    "colorName": "洋紅",
+    "color": "#B5487A",
+    "name": "訂位"
+   }
+  ],
   "flow": 10,
   "flow_name": "現場桌況",
   "flow_i": 3
@@ -1459,6 +1745,14 @@
   ],
   "levels": [
    "基礎"
+  ],
+  "pkgs": [
+   {
+    "id": "C",
+    "colorName": "紫",
+    "color": "#7B4FA6",
+    "name": "點餐交易＋櫃檯結帳"
+   }
   ],
   "flow": 10,
   "flow_name": "現場桌況",
@@ -1495,6 +1789,14 @@
   "levels": [
    "基礎"
   ],
+  "pkgs": [
+   {
+    "id": "C",
+    "colorName": "紫",
+    "color": "#7B4FA6",
+    "name": "點餐交易＋櫃檯結帳"
+   }
+  ],
   "flow": 10,
   "flow_name": "現場桌況",
   "flow_i": 5
@@ -1527,6 +1829,14 @@
   ],
   "levels": [
    "基礎"
+  ],
+  "pkgs": [
+   {
+    "id": "B",
+    "colorName": "綠",
+    "color": "#3C8A4E",
+    "name": "菜單＋出菜看板"
+   }
   ],
   "flow": 11,
   "flow_name": "出菜",
@@ -1561,6 +1871,14 @@
   "levels": [
    "基礎"
   ],
+  "pkgs": [
+   {
+    "id": "B",
+    "colorName": "綠",
+    "color": "#3C8A4E",
+    "name": "菜單＋出菜看板"
+   }
+  ],
   "flow": 12,
   "flow_name": "菜單管理",
   "flow_i": 0
@@ -1593,6 +1911,14 @@
   ],
   "levels": [
    "基礎"
+  ],
+  "pkgs": [
+   {
+    "id": "B",
+    "colorName": "綠",
+    "color": "#3C8A4E",
+    "name": "菜單＋出菜看板"
+   }
   ],
   "flow": 12,
   "flow_name": "菜單管理",
@@ -1629,6 +1955,14 @@
   "levels": [
    "基礎"
   ],
+  "pkgs": [
+   {
+    "id": "E",
+    "colorName": "洋紅",
+    "color": "#B5487A",
+    "name": "訂位"
+   }
+  ],
   "flow": 13,
   "flow_name": "預約管理",
   "flow_i": 0
@@ -1664,6 +1998,14 @@
   "levels": [
    "基礎"
   ],
+  "pkgs": [
+   {
+    "id": "E",
+    "colorName": "洋紅",
+    "color": "#B5487A",
+    "name": "訂位"
+   }
+  ],
   "flow": 13,
   "flow_name": "預約管理",
   "flow_i": 1
@@ -1696,6 +2038,14 @@
   ],
   "levels": [
    "基礎"
+  ],
+  "pkgs": [
+   {
+    "id": "D",
+    "colorName": "青",
+    "color": "#1F8A8A",
+    "name": "桌位開桌＋候位"
+   }
   ],
   "flow": 14,
   "flow_name": "座位設定",
@@ -1730,6 +2080,9 @@
   ],
   "levels": [
    "進階"
+  ],
+  "pkgs": [
+   null
   ],
   "flow": 15,
   "flow_name": "庫存",
@@ -1766,6 +2119,14 @@
   "levels": [
    "基礎"
   ],
+  "pkgs": [
+   {
+    "id": "D",
+    "colorName": "青",
+    "color": "#1F8A8A",
+    "name": "桌位開桌＋候位"
+   }
+  ],
   "flow": 16,
   "flow_name": "候位",
   "flow_i": 0
@@ -1801,6 +2162,14 @@
   "levels": [
    "基礎"
   ],
+  "pkgs": [
+   {
+    "id": "D",
+    "colorName": "青",
+    "color": "#1F8A8A",
+    "name": "桌位開桌＋候位"
+   }
+  ],
   "flow": 16,
   "flow_name": "候位",
   "flow_i": 1
@@ -1835,6 +2204,14 @@
   "levels": [
    "基礎"
   ],
+  "pkgs": [
+   {
+    "id": "A",
+    "colorName": "藍",
+    "color": "#2F6FB0",
+    "name": "顧客入口＋會員＋服務鈴"
+   }
+  ],
   "flow": 17,
   "flow_name": "服務鈴",
   "flow_i": 0
@@ -1866,6 +2243,9 @@
   ],
   "levels": [
    "進階"
+  ],
+  "pkgs": [
+   null
   ],
   "flow": 18,
   "flow_name": "報表",

@@ -58,8 +58,22 @@ async function loadFonts() {
 }
 
 // ── 建節點 ──────────────────────────────────────────────────────────────────
-function makeFrame(n) {
-  const f = figma.createFrame();
+// reuse：重跑匯入時沿用上一輪的同名畫框（清空內容、重設屬性），
+// 這樣畫框的 node id 不會變，文件裡連到 Figma 的超連結才不會每匯入一次就失效。
+function makeFrame(n, reuse) {
+  let f;
+  if (reuse) {
+    f = reuse;
+    for (const c of f.children.slice()) c.remove();
+    f.effects = [];
+    f.dashPattern = [];
+    f.opacity = 1;
+    f.rotation = 0;
+    f.topLeftRadius = 0; f.topRightRadius = 0;
+    f.bottomRightRadius = 0; f.bottomLeftRadius = 0;
+  } else {
+    f = figma.createFrame();
+  }
   f.name = n.n || 'frame';
   f.resizeWithoutConstraints(Math.max(n.w, 0.01), Math.max(n.h, 0.01));
   f.x = n.x; f.y = n.y;
@@ -161,6 +175,7 @@ let svgSizeWarn = 0;
 let noteMissing = 0;
 let noteTallWarn = 0;
 let advCount = 0;
+let pkgCount = 0;
 
 async function buildInto(parent, n) {
   let node;
@@ -188,10 +203,14 @@ function findPage(name) {
   return p || null;
 }
 
-function nextFreeY(page) {
-  let bottom = 0;
-  for (const c of page.children) bottom = Math.max(bottom, c.y + c.height);
-  return page.children.length ? bottom + ROW_GAP : 0;
+// skip：這一輪會沿用、等一下要搬位置的舊畫框，不算進「目前最底下」
+function nextFreeY(page, skip) {
+  let bottom = 0, any = false;
+  for (const c of page.children) {
+    if (skip && skip[c.name] === c) continue;
+    bottom = Math.max(bottom, c.y + c.height); any = true;
+  }
+  return any ? bottom + ROW_GAP : 0;
 }
 
 let TOTAL_NODES = 0;
@@ -208,7 +227,10 @@ const NOTE_PREFIX = '說明｜';
 const SHADOW_PREFIX = '陰影｜';
 const LEVEL_PREFIX = '級別｜';
 const ADV_PREFIX = '進階底｜';
-const OWNED_PREFIX = /^(標題|副標|說明|陰影|級別|進階底)｜(.+)$/;
+const PKG_PREFIX = '工作包｜';
+const PKG_BAR_PREFIX = '工作包色條｜';
+const PKG_LEGEND_PREFIX = '工作包圖例｜';
+const OWNED_PREFIX = /^(標題|副標|說明|陰影|級別|進階底|工作包|工作包色條)｜(.+)$/;
 
 // ── 版面尺寸 ────────────────────────────────────────────────────────────────
 // Figma 自己畫在畫框上方的那行圖層名是固定的螢幕字級，縮到看得見整列時
@@ -391,6 +413,65 @@ function makeLevelPill(f, page, ox, oy) {
   return g;
 }
 
+// 工作包標籤：分工的識別色（來源 spec/05 §1.4）。跟級別膠囊並排。
+function makePkgTag(f, page, ox, oy) {
+  const k = f.pkg;
+  const t = uiText({ s: '工作包 ' + k.id + '・' + k.name, fs: 22, bold: true, col: '#FFFFFF', lh: 30 });
+  const padX = 18, h = 40;
+  const bg = figma.createRectangle();
+  bg.name = '膠囊底';
+  bg.resize(t.width + padX * 2, h);
+  bg.fills = [{ type: 'SOLID', color: hex(k.color) }];
+  bg.strokes = [];
+  bg.cornerRadius = h / 2;
+  page.appendChild(bg); bg.x = ox; bg.y = oy;
+  page.appendChild(t); t.x = ox + padX; t.y = oy + (h - t.height) / 2;
+  const g = figma.group([bg, t], page);
+  g.name = PKG_PREFIX + f.name;
+  return g;
+}
+
+// 工作包色條：整格（標題到說明卡）上緣一條同色粗線，縮小檢視時也看得出是誰的。
+function makePkgBar(f, page, ox, oy, w) {
+  const r = figma.createRectangle();
+  r.name = PKG_BAR_PREFIX + f.name;
+  r.resize(Math.max(w, 1), 14);
+  r.fills = [{ type: 'SOLID', color: hex(f.pkg.color) }];
+  r.strokes = [];
+  r.cornerRadius = 7;
+  page.appendChild(r); r.x = ox; r.y = oy;
+  return r;
+}
+
+// 每頁左上角一張工作包圖例。回傳高度，排版時把整頁往下推。
+function makePkgLegend(page, pageName, ox, oy) {
+  const seen = {};
+  DATA.frames.forEach(f => { if (f.pkg) seen[f.pkg.id] = f.pkg; });
+  const ks = Object.keys(seen).sort();
+  if (!ks.length) return 0;
+  const kids = [];
+  const title = uiText({ s: '工作包（分工見 spec/05 §1.4）', fs: 40, bold: true, col: C_INK, lh: 52 });
+  page.appendChild(title); title.x = ox; title.y = oy; kids.push(title);
+  let x = ox, y = oy + 80;
+  for (const k of ks) {
+    const sw = figma.createRectangle();
+    sw.name = '色塊';
+    sw.resize(44, 44);
+    sw.fills = [{ type: 'SOLID', color: hex(seen[k].color) }];
+    sw.strokes = [];
+    sw.cornerRadius = 10;
+    page.appendChild(sw); sw.x = x; sw.y = y; kids.push(sw);
+    const t = uiText({ s: k + '　' + seen[k].name, fs: 30, bold: true, col: C_INK, lh: 44 });
+    page.appendChild(t); t.x = x + 60; t.y = y; kids.push(t);
+    x += 60 + Math.max(t.width, widthUnits(t.characters) * 30) + 72;
+  }
+  const hint = uiText({ s: '金黃虛線底板＝進階，還沒分工', fs: 26, col: C_SUB, lh: 40 });
+  page.appendChild(hint); hint.x = ox; hint.y = y + 72; kids.push(hint);
+  const g = figma.group(kids, page);
+  g.name = PKG_LEGEND_PREFIX + pageName;
+  return 80 + 72 + 40;
+}
+
 // 進階畫面整格墊一張金黃虛線底板 —— 位置不動，但一眼看得出「這一格拿掉，這條線還是通的」。
 // 先建（才會排在畫框底下），尺寸等整格排完再補上。
 function makeAdvPlate(f, page) {
@@ -501,6 +582,7 @@ async function run(groups) {
   noteMissing = 0;
   noteTallWarn = 0;
   advCount = 0;
+  pkgCount = 0;
   await figma.loadAllPagesAsync();
 
   const picked = DATA.frames.filter(f => groups.indexOf(f.batch) >= 0 ||
@@ -538,11 +620,21 @@ async function run(groups) {
     // 只刪名字對得上的，頁面上其他東西一律不碰。
     const names = {};
     list.forEach(f => { names[f.name] = 1; });
+    // 同名畫框沿用（node id 不變，文件裡的 Figma 連結才不會失效），多出來的重複才刪
+    const keep = {};
     let removed = 0;
     for (const c of page.children.slice()) {
-      if (names[c.name]) { c.remove(); removed++; }
+      if (!names[c.name]) continue;
+      if (c.type === 'FRAME' && !keep[c.name]) keep[c.name] = c;
+      else { c.remove(); removed++; }
     }
-    if (removed) log('「' + pageName + '」清掉上一輪 ' + removed + ' 個同名畫框');
+    const kept = Object.keys(keep).length;
+    if (kept) log('「' + pageName + '」沿用上一輪 ' + kept + ' 個同名畫框（id 不變，內容重建）');
+    if (removed) log('「' + pageName + '」清掉 ' + removed + ' 個重複的畫框');
+    // 圖例每次重畫
+    for (const c of page.children.slice()) {
+      if (c.name === PKG_LEGEND_PREFIX + pageName) c.remove();
+    }
 
     // 畫面被刪掉時（例如 C-02b 隨開桌碼功能移除），上一輪留下的畫框不會有人來蓋掉，
     // 會一直留在頁面上變成幽靈。把「長得像我們產的、但已經不在清單裡」的清掉。
@@ -578,7 +670,10 @@ async function run(groups) {
     }
     if (oldLbl) log('「' + pageName + '」清掉上一輪 ' + oldLbl + ' 個列標題與底板');
 
-    let y = nextFreeY(page);
+    let y = nextFreeY(page, keep);
+    if (list.some(f => f.pkg)) {
+      y += makePkgLegend(page, pageName, LABEL_X, y) + ROW_GAP;
+    }
 
     // 顧客端每條流程排成一列（點餐／結帳／會員／預約），一眼看完整條動線。
     // 沒有 flow 的（店家端）就照舊固定每列幾張。
@@ -596,10 +691,11 @@ async function run(groups) {
         page.appendChild(tt[0]); tt[0].x = x; tt[0].y = y;
         page.appendChild(tt[1]); tt[1].x = x; tt[1].y = y + 62;   // 標題 44px 一行之後
         const pill = makeLevelPill(f, page, x + tt[0].width + 24, y + 8);
+        const tag = f.pkg ? makePkgTag(f, page, pill.x + pill.width + 16, y + 8) : null;
         if (f.level === '進階') advCount++;
 
         makeFrameShadow(f, page, x, y + TITLE_H);
-        const frame = makeFrame(f.root);
+        const frame = makeFrame(f.root, keep[f.name]);
         frame.name = f.name;
         page.appendChild(frame);
         frame.x = x; frame.y = y + TITLE_H;
@@ -618,6 +714,13 @@ async function run(groups) {
           if (panel.height > f.h) noteTallWarn++;
         } else {
           noteMissing++;
+        }
+
+        if (tag) {
+          // 色條蓋住整格寬度（標題、膠囊、畫框、說明卡取最寬的），放在標題上方
+          const right = Math.max(x + slotW, tag.x + tag.width);
+          makePkgBar(f, page, x, y - 36, right - x);
+          pkgCount++;
         }
 
         if (advPlate) {
@@ -676,8 +779,10 @@ async function run(groups) {
   if (noteMissing) log('提醒：' + noteMissing + ' 個畫框沒有註解，右邊是空的（補在 ui/13-畫框註解.md）');
   if (noteTallWarn) log('提醒：' + noteTallWarn + ' 張說明卡比畫框還高，那幾則寫太長了');
   log('其中 ' + advCount + ' 張標成「進階・有空才做」，整格墊了金黃底板');
+  log(pkgCount + ' 張標上工作包顏色');
   log('全部完成，共 ' + made.length + ' 個畫框、' + built + ' 個節點');
   figma.ui.postMessage({ type: 'done' });
+  sendIds();
 }
 
 // ── 放大檢視 ────────────────────────────────────────────────────────────────
@@ -707,6 +812,26 @@ async function focusOn(q) {
   log('找不到含有「' + q + '」的文字');
 }
 
+// ── 畫框 id ─────────────────────────────────────────────────────────────────
+// 文件（spec/05 §1.4.3、mockups/index.html）裡連到 Figma 的超連結要用畫框的 node id。
+// 外掛把 {畫框名: id} 放進面板下方的文字框，按「複製畫框 id」存成
+// tools/figma-plugin/node-ids.json，再跑 tools/figma_links.py 產生連結。
+function collectIds() {
+  const out = {};
+  for (const page of figma.root.children) {
+    if (page.type !== 'PAGE') continue;
+    for (const c of page.children) {
+      if (c.type === 'FRAME' && ALL_FRAME_NAMES[c.name] && !out[c.name]) out[c.name] = c.id;
+    }
+  }
+  return out;
+}
+function sendIds() {
+  const ids = collectIds();
+  figma.ui.postMessage({ type: 'ids', ids: ids, count: Object.keys(ids).length,
+                         total: Object.keys(ALL_FRAME_NAMES).length });
+}
+
 // ── 啟動 ────────────────────────────────────────────────────────────────────
 figma.showUI(__html__, { width: 380, height: 600 });
 
@@ -732,4 +857,5 @@ figma.loadAllPagesAsync().then(() => {
   DATA.frames.forEach(f => { pages[f.page] = !!findPage(f.page); });
   figma.ui.postMessage({ type: 'init', groups: groups, pages: pages,
                          total: DATA.frames.length });
+  sendIds();
 });

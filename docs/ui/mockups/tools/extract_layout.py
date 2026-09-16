@@ -336,6 +336,10 @@ async def main():
                 # 基礎必做／進階有空才做（來源 ui/10 的頁面表）
                 lvs = (e or {}).get('levels') or []
                 fr['level'] = lvs[i] if i < len(lvs) else '基礎'
+                # 工作包（來源 spec/05 §1.4），進階與元件總表是 None
+                pks = (e or {}).get('pkgs') or []
+                if i < len(pks) and pks[i]:
+                    fr['pkg'] = pks[i]
                 # 流程分組（顧客端一條流程排一列），由 figma_prep.py 決定
                 if e and 'flow' in e:
                     fr['flow'] = e['flow']

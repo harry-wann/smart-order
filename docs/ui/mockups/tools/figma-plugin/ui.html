@@ -23,6 +23,11 @@
               font:inherit;font-size:12px;background:#fff;color:#2B211C}
   .find button{flex:0 0 92px;height:30px;background:#fff;color:#6B5D54;
                box-shadow:inset 0 0 0 1px #E6DED2}
+  .ids{display:flex;gap:6px;align-items:center;margin-top:10px}
+  .ids button{flex:0 0 120px;height:30px;background:#fff;color:#6B5D54;box-shadow:inset 0 0 0 1px #E6DED2}
+  .ids span{font-size:11px;color:#6B5D54}
+  #idbox{width:100%;box-sizing:border-box;height:44px;margin-top:6px;border:1px solid #E6DED2;border-radius:8px;
+         font:10px/1.4 ui-monospace,Menlo,monospace;color:#6B5D54;background:#fff;resize:none}
   .warn{background:#FCF0DC;border-color:#E4C68C;color:#7D4A12;padding:8px 10px;border-radius:8px;
         font-size:11px;margin-bottom:10px}
 </style>
@@ -53,6 +58,11 @@
   <button id="jump">放大檢視</button>
 </div>
 <div id="log"></div>
+<div class="ids">
+  <button id="copyids">複製畫框 id</button>
+  <span id="idstat">讀取中…</span>
+</div>
+<textarea id="idbox" readonly></textarea>
 
 <script>
 const $ = id => document.getElementById(id);
@@ -78,6 +88,9 @@ onmessage = e => {
       $('pagewarn').textContent = '這個檔案裡找不到頁面：' + bad.join('、')
         + '。請先建好同名的 page，否則那批會被跳過。';
     }
+  } else if (m.type === 'ids') {
+    $('idbox').value = JSON.stringify(m.ids, null, 1);
+    $('idstat').textContent = m.count + ' / ' + m.total + ' 個畫框有 id';
   } else if (m.type === 'log') {
     $('log').textContent += m.msg + '\n';
     $('log').scrollTop = $('log').scrollHeight;
@@ -105,6 +118,14 @@ $('go').onclick = () => {
   $('log').textContent = '';
   $('fill').style.width = '0';
   parent.postMessage({ pluginMessage: { type:'run', groups: groups } }, '*');
+};
+// 畫框 id → 貼進 tools/figma-plugin/node-ids.json，再跑 tools/figma_links.py
+$('copyids').onclick = () => {
+  const box = $('idbox');
+  box.focus(); box.select();
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+  $('idstat').textContent = ok ? '已複製，貼進 node-ids.json' : '複製失敗，請在文字框按 ⌘A、⌘C';
 };
 $('cancel').onclick = () => parent.postMessage({ pluginMessage: { type:'cancel' } }, '*');
 

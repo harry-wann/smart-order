@@ -47,6 +47,10 @@ button{font-family:inherit;font-size:inherit;color:inherit}
 .meta b{font-family:"Noto Serif TC",serif;font-size:16px;font-weight:700;color:var(--text-900)}
 .meta code{font-size:12px;background:rgba(255,255,255,.65);border:1px solid #DED2C0;
   padding:2px 10px;border-radius:999px;font-family:inherit}
+/* figma_links.py 補的「在 Figma 開啟」連結 */
+.flink{font-size:13px;font-weight:700;color:var(--brand-600);text-decoration:none;white-space:nowrap}
+.flink:hover{text-decoration:underline}
+.flink.off{font-weight:400;color:var(--text-400)}
 .frame{position:relative;overflow:hidden;background:var(--bg);
   display:flex;flex-direction:column;box-shadow:0 6px 28px rgba(43,33,28,.16)}
 .f-mobile{width:375px;height:812px}
@@ -594,6 +598,19 @@ body:has(#thumbmode:target) .frame{box-shadow:none}
 .tinfo .rt{font-size:12px;line-height:1.6;color:var(--text-400);font-variant-numeric:tabular-nums;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tinfo .tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+/* 卡片底下的工作包顏色與 Figma 連結（figma_links.py 產生；顏色來自 spec/05 §1.4.2） */
+.tcell{display:flex;flex-direction:column;gap:8px}
+.tcell > .tcard{flex:1}
+.tfoot{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 4px}
+.pkg{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;line-height:1.6;color:var(--text-900);white-space:nowrap}
+.pkg::before{content:"";width:12px;height:12px;border-radius:3px;background:var(--pc,transparent);flex:none}
+.pkg.adv::before{background:#FCF0DC;border:2px dashed #E8A33D}
+.pkg.none{font-weight:400;color:var(--text-400)}
+.pkg.none::before{display:none}
+.pkg-legend{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:12px 16px;
+  background:var(--surface);border:1px solid var(--border);border-radius:12px}
+.pkg-legend b{font-size:13px}
+.pkg-legend .flink{margin-left:auto}
 
 /* ------------------------- 預約保留的小字 ------------------------------- */
 /* S-07 狀態欄「保留 A08」、S-07b「原保留桌」、S-02d 置頂列。跟 .b-wait 同一個暖褐字色 */

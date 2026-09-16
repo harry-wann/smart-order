@@ -3,7 +3,9 @@
 //   node test_plugin.js code.js
 //
 // 真的丟進 Figma 之前先跑這支。它會檢查：
-//   - 全部畫框（目前 58 個）有沒有都建出來、分到正確的 page
+//   - 全部畫框有沒有都建出來、分到正確的 page
+//   - 再跑第二次：畫框要沿用同一個節點（id 不變），其他東西不能重複
+//   - 基礎畫面有工作包標籤與色條，進階與元件總表沒有
 //   - 有沒有 NaN 座標（量測資料壞掉時會出現）
 //   - 畫框名有沒有重複、有沒有尺寸為 0 的
 //   - 需要的字體有沒有被 loadFontAsync 載到
@@ -14,15 +16,16 @@ const fs = require('fs');
 const path = require('path').resolve(process.argv[2] || 'code.js');
 
 let created = { FRAME:0, TEXT:0, RECTANGLE:0, SVG:0, GROUP:0 };
+let nextId = 1;
 let nanHits = [], fontsLoaded = new Set(), msgs = [];
 
 function node(type){
   const n = {
-    type, name:'', children:[], parent:null,
+    type, id: String(nextId++), name:'', children:[], parent:null,
     x:0, y:0, width:0, height:0, characters:'',
     fills:[], strokes:[], effects:[], opacity:1,
-    appendChild(c){ c.parent = this; this.children.push(c); },
-    insertChild(i,c){ c.parent = this; this.children.splice(i,0,c); },
+    appendChild(c){ if (c.parent) c.parent.children = c.parent.children.filter(x=>x!==c); c.parent = this; this.children.push(c); },
+    insertChild(i,c){ if (c.parent) c.parent.children = c.parent.children.filter(x=>x!==c); c.parent = this; this.children.splice(i,0,c); },
     resize(w,h){
       if (!isFinite(w) || !isFinite(h)) nanHits.push(`resize ${this.name} ${w}x${h}`);
       this.width=w; this.height=h;
@@ -88,6 +91,15 @@ const DATA_FRAMES = (() => {
   const groups = ['00-design-system','01-customer-375','03-admin-1280','04-admin-1920','05-states-375','06-states-1280'];
   await figma.ui.onmessage({ type:'run', groups });
   await new Promise(r=>setTimeout(r,200));
+  // 第二次匯入：畫框要沿用同一個節點（id 不變），頂層節點數要跟第一次一樣
+  const firstIds = {}; const firstTop = pages.map(p=>p.children.length);
+  pages.forEach(p=>p.children.forEach(c=>{ if (c.type==='FRAME' && c.name.indexOf('說明｜')!==0) firstIds[c.name]=c.id; }));
+  await figma.ui.onmessage({ type:'run', groups });
+  await new Promise(r=>setTimeout(r,200));
+  const idChanged = []; pages.forEach(p=>p.children.forEach(c=>{ if (firstIds[c.name] && firstIds[c.name]!==c.id) idChanged.push(c.name); }));
+  const topNow = pages.map(p=>p.children.length);
+  console.log('重跑後畫框 id 改變：', idChanged.length ? idChanged.slice(0,5).join(', ')+'…共'+idChanged.length : '無');
+  console.log('重跑前後頂層節點數：', firstTop.join('/'), '→', topNow.join('/'), firstTop.join()===topNow.join() ? '✓' : '✗ 有東西重複或遺失');
   // 頂層的畫框有兩種：畫面本身，以及掛在它右邊的說明卡。下面的檢查只算畫面。
   const isScreen = c => c.type==='FRAME' && c.name.indexOf('說明｜')!==0;
   const frames = pages.flatMap(p=>p.children.filter(isScreen));
@@ -130,6 +142,14 @@ const DATA_FRAMES = (() => {
     }
   }
   console.log('襯底陰影對不上：', badPad.length ? badPad.join(', ') : '無');
+  // 工作包：有 pkg 的畫框要有標籤與色條，沒有的不能有
+  const tags = pick('工作包｜'), bars = pick('工作包色條｜');
+  const wantPkg = new Set(DATA_FRAMES.filter(f=>f.pkg).map(f=>f.name));
+  const pkgBad = [...[...wantPkg].filter(n=>!tags.has(n)||!bars.has(n)).map(n=>'少了 '+n),
+                  ...[...tags].filter(n=>!wantPkg.has(n)).map(n=>'多了 '+n)];
+  const legends = top.filter(c=>c.name.indexOf('工作包圖例｜')===0).map(c=>c.name);
+  console.log('工作包標籤與色條：', wantPkg.size + ' 張', pkgBad.length ? '✗ ' + pkgBad.slice(0,5).join(', ') : '✓',
+              '　圖例：' + legends.join('、'));
   const stray = [...titles,...subs,...notes,...shadows,...pills,...advs].filter(n=>!frames.some(f=>f.name===n));
   // 標題／說明卡不能蓋到畫面：兩兩檢查同一頁上的方框有沒有重疊
   let overlap = [];

@@ -35,6 +35,8 @@ SKIP = {'index.html'}
 
 NOTES_MD = ROOT.parent / '13-畫框註解.md'
 UIUX_MD = ROOT.parent / '10-UI-UX規格.md'
+# 工作包分工（誰負責哪張畫面、每包的識別色）的唯一來源
+PLAN_MD = ROOT.parent.parent / 'spec' / '05-開發流程與分工.md'
 
 SPACING_SCALE = {0, 4, 8, 12, 16, 24, 32, 48, 64}
 
@@ -483,7 +485,9 @@ def write_import_guide(items):
          'docs/ui/mockups/tools/figma-plugin/layout.json docs/ui/mockups/dist/frames.json`',
          '3. `python3 docs/ui/mockups/tools/figma-plugin/build_plugin.py`',
          '4. `node docs/ui/mockups/tools/figma-plugin/test_plugin.js docs/ui/mockups/tools/figma-plugin/code.js`',
-         '5. Figma 桌面版 → Plugins → Development → 執行外掛，勾要匯入的組別\n',
+         '5. Figma 桌面版 → Plugins → Development → 執行外掛，勾要匯入的組別',
+         '6. 匯入完成後按外掛面板的「複製畫框 id」，貼進 `tools/figma-plugin/node-ids.json`，'
+         '再跑 `python3 docs/ui/mockups/tools/figma_links.py` 把 Figma 連結寫回設計稿、總覽頁與 spec/05 §1.4.3\n',
          '> `dist/A-zip/` 是早期給 html.to.design 手動上傳的備援包，外掛流程用不到。\n',
          '> 字體：Figma 要有 Noto Sans TC（Regular／Medium／Bold／Black）與 Noto Serif TC（Bold／Black），'
          '缺了外掛會直接停下來。\n',
@@ -576,6 +580,33 @@ def code_of(frame_name):
     return frame_name.split('｜')[0].strip()
 
 
+# ── 工作包（分工）──────────────────────────────────────────────────────────
+# 唯一來源是 spec/05-開發流程與分工.md §1.4：
+#   §1.4.2 的工作包表：| **A** | 藍 `#2F6FB0` | 主題 | …
+#   §1.4.3 的畫面對照表：| C-00 | 入口頁 | A | 1 | Figma 連結 |
+# 狀態示範畫框（C-04｜載入中…）跟著代號走；元件總表與進階畫面沒有工作包。
+PKG_ROW_RE = re.compile(r'^\|\s*\*\*([A-E])\*\*\s*\|\s*([^|`]*?)\s*`(#[0-9A-Fa-f]{6})`\s*\|\s*([^|]+?)\s*\|')
+PKG_SCREEN_RE = re.compile(r'^\|\s*([CS]-\d{2}[a-z]?)\s*\|[^|]*\|\s*([A-E])\s*\|')
+
+
+def load_packages():
+    """回傳 ({代號: 'A'…}, {'A': {'id','color','name','colorName'}})。"""
+    if not PLAN_MD.exists():
+        return {}, {}
+    screens, pkgs = {}, {}
+    for line in PLAN_MD.read_text(encoding='utf-8').splitlines():
+        line = line.strip()
+        m = PKG_ROW_RE.match(line)
+        if m:
+            pkgs[m.group(1)] = {'id': m.group(1), 'colorName': m.group(2).strip(),
+                                'color': m.group(3).upper(), 'name': m.group(4).strip()}
+            continue
+        m = PKG_SCREEN_RE.match(line)
+        if m:
+            screens[m.group(1)] = m.group(2)
+    return screens, pkgs
+
+
 # ── 畫框註解 ────────────────────────────────────────────────────────────────
 # 右側說明卡的內容來源是 ui/13-畫框註解.md，一個「## 畫框名」對一個畫框。
 # 寫在那份 md 而不是寫在這裡，是因為它同時要給人看（build_site.py 會排版成網頁）。
@@ -622,6 +653,7 @@ def write_frames_json(items):
     import json
     notes = load_notes()
     levels = load_levels()
+    pkg_of, pkgs = load_packages()
     blank = {'sub': '', 'spec': [], 'warn': []}
     data = []
     for it in items:
@@ -630,7 +662,8 @@ def write_frames_json(items):
              'w': FRAME_SPEC[it['cls']][0], 'h': FRAME_SPEC[it['cls']][1],
              'frames': it['frame_names'],
              'notes': [notes.get(fn, blank) for fn in it['frame_names']],
-             'levels': [levels.get(code_of(fn), '基礎') for fn in it['frame_names']]}
+             'levels': [levels.get(code_of(fn), '基礎') for fn in it['frame_names']],
+             'pkgs': [pkgs.get(pkg_of.get(code_of(fn), ''), None) for fn in it['frame_names']]}
         fl = FLOW_OF.get(it['stem'] + '.html')
         if fl:
             e['flow'], e['flow_name'], e['flow_i'] = fl[0], fl[1], fl[2]
@@ -772,6 +805,26 @@ def verify(items):
     adv = sorted(c for c in codes if levels.get(c) == '進階')
     if adv:
         print('  進階畫面：%s' % '、'.join(adv))
+
+    pkg_of, pkgs = load_packages()
+    if not pkgs:
+        problems.append('讀不到 %s §1.4.2 的工作包表，Figma 上不會有工作包顏色' % PLAN_MD.name)
+    for c in sorted(codes):
+        if c.startswith('DS-'):
+            continue
+        lv = levels.get(c)
+        if lv == '基礎' and c not in pkg_of:
+            problems.append('%s 是基礎畫面，但 %s §1.4.3 沒有分給任何工作包' % (c, PLAN_MD.name))
+        if lv == '進階' and c in pkg_of:
+            problems.append('%s 是進階畫面，不應該出現在 %s §1.4.3（進階還沒分）' % (c, PLAN_MD.name))
+    for c in sorted(set(pkg_of) - codes):
+        problems.append('%s §1.4.3 的 %s 沒有對應的設計稿' % (PLAN_MD.name, c))
+    for c, k in sorted(pkg_of.items()):
+        if k not in pkgs:
+            problems.append('%s 分給工作包 %s，但 §1.4.2 沒有這一包' % (c, k))
+    if pkgs:
+        cnt = Counter(pkg_of.values())
+        print('  工作包：%s' % '、'.join('%s %d 張' % (k, cnt.get(k, 0)) for k in sorted(pkgs)))
 
     known = {f for _, fs in FLOW for f in fs}
     have = {it['stem'] + '.html' for it in items}

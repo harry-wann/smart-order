@@ -5,6 +5,7 @@ tools/
 ├─ figma_prep.py          Lint 設計稿 + 打包 + 產 frames.json 與匯入文件 + 自我驗證
 ├─ extract_layout.py      把畫框在 Chromium 裡量成 layout.json（需要 Playwright）
 ├─ fetch_fonts.py         量測前把 Noto Sans TC／Noto Serif TC 裝到這台機器
+├─ figma_links.py         匯入後把 Figma 畫框連結寫回設計稿、總覽頁與 spec/05 §1.4.3
 ├─ fontfix.css            量測專用樣式，只給 extract_layout.py 用
 └─ figma-plugin/          Figma 匯入外掛
    ├─ manifest.json
@@ -12,6 +13,7 @@ tools/
    ├─ build_plugin.py     把 layout.json 注入 template → code.js
    ├─ layout.json         量測結果（改稿後要重量，畫框數與節點數以 build_plugin.py 的輸出為準）
    ├─ test_plugin.js      用假的 Figma API 在 Node 裡實跑一次
+   ├─ node-ids.json       匯入後從外掛面板複製出來的「畫框名 → 節點 id」（要進版控）
    └─ ui.html
 ```
 
@@ -69,6 +71,28 @@ tools/
 3. 勾要匯入的組別，按「開始匯入」
 
 外掛會把畫框排成格狀放進對應的 page，**接在既有內容下方**，不會蓋掉已經有的東西。
+**同名畫框會沿用**（內容重建，節點 id 不變），所以已經貼出去的 Figma 連結不會失效。
+
+### 匯入後：把 Figma 連結寫回文件
+
+1. 匯入完成後，外掛面板最下面會列出每個畫框的 id，按 **「複製畫框 id」**
+2. 貼進 `docs/ui/mockups/tools/figma-plugin/node-ids.json`（整份覆蓋）
+3. 跑：
+   ```bash
+   python3 docs/ui/mockups/tools/figma_links.py
+   python3 docs/build_site.py
+   ```
+
+`figma_links.py` 會改三個地方，可以重複跑（每次先清掉舊連結再寫）：
+
+| 位置 | 加了什麼 |
+|---|---|
+| 每張設計稿 HTML | 畫框上方標題列最後面的「在 Figma 開啟 ↗」（打包時跟標題列一起拿掉，不會進 Figma） |
+| `mockups/index.html` | 頁首的工作包圖例；每張卡片底下的工作包顏色與「在 Figma 開啟 ↗」 |
+| `spec/05-開發流程與分工.md` §1.4.3 | 「Figma」欄 |
+
+只有**新增畫面**或**在 Figma 裡刪掉重建**時，id 才會變，才需要重貼。
+有畫框沒拿到 id 時，腳本會列出來並以非 0 結束。
 
 ---
 
@@ -128,6 +152,12 @@ node docs/ui/mockups/tools/figma-plugin/test_plugin.js \
 畫框底下另外墊一張同尺寸、同底色、帶柔陰影的矩形 ——
 **陰影不掛在畫框本身**，畫框要對得起原稿，Inspect 時多一個 CSS 裡沒有的效果會誤導前端。
 
+**工作包顏色**來自 `spec/05-開發流程與分工.md` §1.4.2（工作包表的「識別色」欄）與
+§1.4.3（畫面與工作包對照表）。`figma_prep.py` 讀進 `frames.json` 的 `pkgs`，
+外掛在畫框上方畫一條色條、在級別膠囊旁邊加「工作包 A・主題」，每頁最上面放一張圖例。
+進階畫面還沒分工，所以沒有工作包顏色；基礎畫面沒分到工作包、或進階畫面被分了，自我驗證都會擋。
+**改分工只要改 05 那兩張表，再重跑 1～4 步與外掛。**
+
 **圖片佔位**的圖層名照 `IMG／肉盤／1-1` 這種格式，直接來自 HTML 的 `data-layer`。
 
 已知會有落差的地方：
@@ -151,4 +181,6 @@ node docs/ui/mockups/tools/figma-plugin/test_plugin.js \
 - **抽取**：每個畫框的座標與原稿逐一比對（目前 59 個畫框；節點數每次重量都會變）
 - **外掛**：`node test_plugin.js code.js` 用假的 Figma API 實跑一次，確認
   節點數、所屬 page、無重疊、無 NaN 座標、無重複畫框名、
-  每個畫框都有標題／副標／說明卡，而且說明卡不是空的
+  每個畫框都有標題／副標／說明卡，而且說明卡不是空的；
+  基礎畫面都有工作包標籤與色條、進階畫面都有金黃底板；
+  **連跑兩次**，第二次畫框 id 不變、頂層節點數不變
