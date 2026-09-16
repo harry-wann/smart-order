@@ -766,6 +766,7 @@ A7 沒有獨立畫面，C-04 照樣標基礎，人氣區塊是進階這件事只
 <li><strong>明顯標註「本系統為教學專題，付款為模擬流程，不會產生實際交易」</strong>（誠實，而且評審會欣賞）</li>
 <li>按下後：按鈕轉為處理中、全頁遮罩、<strong>禁止重複點擊</strong>、2 秒動畫</li>
 <li>送 <code>POST /api/payments</code>，body <code>{ "diningSessionId", "method", "expectedTotal" }</code>（A6 再加 <code>couponId</code>、<code>usePoints</code>，兩個可以同時帶）</li>
+<li>有折抵時，<code>expectedTotal</code> 仍帶<strong>折抵前</strong>的合計（小計＋服務費）；後端比對通過才套用券與點數，實付金額看回應的 <code>amount</code></li>
 <li>成功 → C-11；失敗 → 錯誤提示 + 重試</li>
 <li><code>409 BILL_CHANGED</code> → 回 C-09 並提示「<strong>剛剛有人加點，金額更新了，請再確認一次</strong>」</li>
 <li><code>409 SESSION_CLOSED</code>（櫃檯剛好先結清了）→ 切到 C-04 的「已結帳」狀態，不會重複收款</li>
@@ -943,8 +944,8 @@ Figma 排在「會員」那一列 C-15 後面。</p>
   先點的餐可以改到 9/20（日）20:00，都沒有任何費用。
   <strong>訂位保留 10 分鐘，逾時視同未到，需現場候位。</strong>」</li>
 <li><strong>取消與改餐是兩條線</strong>：取消訂位的期限是<strong>訂位時間前 30 分鐘</strong>（<code>DELETE /api/reservations/{id}</code> 超過就回
-    <code>409 CANCEL_DEADLINE_PASSED</code>「訂位前 30 分鐘內請來電取消」）；改餐點（進階 A2）的截止<strong>仍是用餐日前一天 20:00</strong>。
-    預點截止要不要也改成前 30 分鐘，待使用者決定</li>
+    <code>409 CANCEL_DEADLINE_PASSED</code>「訂位前 30 分鐘內請來電取消」）；改餐點（進階 A2）的截止<strong>維持用餐日前一天 20:00</strong>
+    （2026-09-16 定案：不跟取消期限一起改，廚房要靠前一晚的預點備料）</li>
 <li>沒做 A2 就拿掉「先點的餐」那一行</li>
 <li>保留 10 分鐘這句跟 C-19 一字不差：過了訂位時間 10 分鐘還沒報到就視為 <code>NO_SHOW</code>，只能現場登記候位</li>
 <li><strong>匿名訂位</strong>多一行提示：「這支手機記住了你的訂位，換手機或清除瀏覽資料後要查詢請來電」</li>

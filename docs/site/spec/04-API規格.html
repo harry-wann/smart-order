@@ -369,6 +369,12 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td>409</td>
+<td><code>RESERVATION_NOT_ACTIVE</code></td>
+<td>報到開桌時，這筆訂位已經不是 <code>CONFIRMED</code>（剛被取消或已報到）</td>
+<td>顯示「這筆訂位已經取消或已報到」，重抓訂位清單</td>
+</tr>
+<tr>
+<td>409</td>
 <td><code>RESERVATION_NOT_CANCELLABLE</code></td>
 <td>取消訂位時（客人線上或櫃檯代客），這筆已經不是 <code>CONFIRMED</code>（已報到、已取消、逾時未到；例如兩個櫃檯同時按）</td>
 <td>顯示「這筆訂位已經不能取消了」，重抓訂位清單</td>
@@ -1632,6 +1638,7 @@ X-Session-Token: eyJ0IjoxMDUyLi4u
 <li>鎖列、狀態檢查、<code>expectedTotal</code> 比對與 4.8 完全相同：<code>409 BILL_CHANGED</code> → 回 C-09 提示「剛剛有人加點，金額更新了，請再確認一次」；
   <code>409 SESSION_CLOSED</code> → 櫃檯已經先結清了，不會重複收款</li>
 <li>成功後的收尾也與 4.8 相同（<code>PAID</code>、<code>CLEANING</code>、權杖失效、整桌購物車刪掉、推 <code>SESSION_CLOSED</code>（<code>reason: PAID</code>））</li>
+<li>A6 有折抵時，<code>expectedTotal</code> 帶<strong>折抵前</strong>的合計（小計＋服務費，就是 C-09 上「合計」那一行），後端比對通過才套用券與點數；實付金額看回應的 <code>amount</code>（2026-09-16 定案）</li>
 <li>A6 折抵順序：先扣優惠券（一次最多一張）→ 再用點數（1 點折 1 元，最多折到 0 元）；<code>pointsEarned</code> 以<strong>實付金額</strong>計，每滿 100 元 1 點、無條件捨去（1,562 → 15）</li>
 <li>5% 機率 → <code>422 PAYMENT_FAILED</code>，訊息「銀行端驗證失敗，請重試或更換付款方式」，<strong>session 狀態不變，可重試</strong>。
   <code>FAILED</code> 的 payment 紀錄要留下來，所以失敗不要用丟例外的方式離開交易（見 <a href="../spec/modules/M6-結帳.html">M6 問題 3</a>）</li>
@@ -1689,7 +1696,7 @@ X-Session-Token: eyJ0IjoxMDUyLi4u
 <ul>
 <li><code>cancellableUntil</code>＝<strong>訂位時間前 30 分鐘</strong>（上例 17:30）：客人線上取消的期限，剛好等於預約保留開始的時間；過了回 <code>409 CANCEL_DEADLINE_PASSED</code>，請客人來電、由櫃檯代客取消（4.11d）</li>
 <li><code>preorderEditableUntil</code>＝<strong>用餐日前一天 20:00</strong>（進階 A2）：廚房要有完整一天可以備料；過了回 <code>409 PREORDER_LOCKED</code></li>
-<li>以前兩者是同一個時間點（前一天 20:00），現在分開。<strong>預點截止是否也改成訂位前 30 分鐘，待使用者決定</strong>；決定前照上面寫</li>
+<li>以前兩者是同一個時間點（前一天 20:00），現在分開。<strong>預點截止維持前一天 20:00</strong>（2026-09-16 定案），廚房要靠前一晚的預點備料</li>
 </ul>
 <p>前端拿這兩個時間各自決定按鈕要不要停用，但<strong>後端一定要再擋一次</strong>——前端隱藏按鈕不算權限控制。</p>
 <p>後端用悲觀鎖 + <code>UNIQUE(table_id, start_time)</code> 雙重保護，見 <a href="../tech/advanced/46-區間重疊與訂位排程.html">區間重疊與訂位排程</a>。</p>
@@ -1756,7 +1763,10 @@ X-Reservation-Token: rsv_8f3c1d...        （會員改帶 Authorization: Bearer 
 <p><strong>目標桌的預約保留</strong>：保留給<strong>別筆</strong>訂位 → <code>409 TABLE_RESERVED</code>；是<strong>自己的</strong>保留桌 → 正常開桌。</p>
 <p><strong>跟取消搶同一筆</strong>：報到和櫃檯代客取消（4.11d）可能同時發生，兩支都要先 <code>SELECT ... FOR UPDATE</code> 鎖住這筆訂位、再檢查 <code>status = CONFIRMED</code>。
 取消後到 → <code>409 RESERVATION_NOT_CANCELLABLE</code>；報到後到 → 這筆已經是 <code>CANCELLED</code>，一定要擋下來、不能開桌。
-<strong>報到遇到「訂位已不是 <code>CONFIRMED</code>」目前沒有專用錯誤碼，待決定</strong>；前端收到任何 409 都重抓訂位清單。</p>
+報到遇到「訂位已不是 <code>CONFIRMED</code>」回 <code>409 RESERVATION_NOT_ACTIVE</code>「這筆訂位已經取消或已報到」；前端收到後重抓訂位清單。</p>
+<blockquote>
+<p>過了保留時間、排程還沒標成 <code>NO_SHOW</code> 之前被櫃檯取消的訂位，照實記成 <code>CANCELLED</code>（<code>cancel_source = STAFF</code>），不另外改算逾時未到（2026-09-16 定案）。</p>
+</blockquote>
 <h3 id="411d-取消訂位客人線上取消櫃檯代客取消">4.11d 取消訂位（客人線上取消／櫃檯代客取消）</h3>
 <p>兩個入口，結果一樣：訂位轉 <code>CANCELLED</code>、寫 <code>cancelled_at</code>、<strong><code>table_id</code> 設 <code>NULL</code></strong>（釋放 <code>UNIQUE(table_id, start_time)</code>），
 那張桌的預約保留與那個時段的名額一起釋出。差別只在期限與誰取消的（<code>cancel_source</code>）。</p>
