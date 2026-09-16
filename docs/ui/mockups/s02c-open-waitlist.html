@@ -44,10 +44,11 @@
 
         <div class="content">
           <div style="max-width:760px;margin:0 auto">
-            <div class="infobox ib-warn" style="margin-bottom:16px">
+            <!-- 同一張 A06：頂部是跟 S-02b 同一條強烈提醒，每一列的主按鈕都是「仍要開桌」 -->
+            <div class="infobox ib-danger" style="margin-bottom:16px">
               <svg class="ic" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0"/><path d="M12 9v4.5M12 17h.01"/></svg>
-              <div>這張桌 <b>19:30 有預約</b>（陳小姐 4 位），預計用餐到 21:25。<br>
-                <span class="t-cap">只是提醒，不會擋住開桌。要不要把桌留給那組，由現場決定。</span></div>
+              <div><b>A06 在 19:30 有訂位（陳小姐 4 位）。</b>現在開桌，客人可能還沒吃完訂位就到了。<br>
+                <span class="t-cap">只提醒、不擋。按「仍要開桌」會再確認一次；想把桌留給那組，就換一張桌。</span></div>
             </div>
 
             <nav class="tabs">
@@ -70,7 +71,7 @@
                     <div class="r g8"><b style="font-size:17px">李小姐</b><span class="badge b-wait">已叫號</span></div>
                     <div class="t-sm" style="margin:4px 0 0">4 位・已等 2 分鐘</div>
                   </div>
-                  <button class="btn btn-primary btn-md">開桌</button>
+                  <button class="btn btn-primary btn-md">仍要開桌</button>
                 </div>
               </div>
               <div class="cartrow" style="">
@@ -80,7 +81,7 @@
                     <div class="r g8"><b style="font-size:17px">王先生</b><span class="badge b-wait">已叫號</span></div>
                     <div class="t-sm" style="margin:4px 0 0">3 位・已等 18 分鐘</div>
                   </div>
-                  <button class="btn btn-primary btn-md">開桌</button>
+                  <button class="btn btn-primary btn-md">仍要開桌</button>
                 </div>
               </div>
               <div class="cartrow" style="margin-bottom:0">
@@ -90,14 +91,14 @@
                     <div class="r g8"><b style="font-size:17px">張先生</b><span class="badge b-wait">已叫號</span></div>
                     <div class="t-sm" style="margin:4px 0 0">6 位・已等 4 分鐘</div>
                   </div>
-                  <button class="btn btn-primary btn-md">開桌</button>
+                  <button class="btn btn-primary btn-md">仍要開桌</button>
                 </div>
               </div>
               </div>
 
               <div class="infobox ib-quiet mt24" style="margin-bottom:0">
                 <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 16v-4.5M12 8h.01"/></svg>
-                <div>按下「開桌」之後，這一組的候位狀態會轉成 <b>已報到</b>，從這份清單消失。
+                <div>確認開桌之後，這一組的候位狀態會轉成 <b>已報到</b>，從這份清單消失。
                   <br><span class="t-cap">沒轉狀態的話，同一組會一直出現在下一張桌的清單上。</span></div>
               </div>
             </div>
@@ -118,13 +119,22 @@
     <dd>登記取號時已經填過，直接帶入。<br>
         真要改，開桌後去 S-03 調整。</dd>
     <dt>整列不可點</dt>
-    <dd>只有「開桌」那顆按鈕可點，<br>
+    <dd>只有每列那顆按鈕可點，<br>
         避免平板上整列誤觸。</dd>
+    <dt>頂部紅色警示＋「仍要開桌」</dt>
+    <dd>A06 在 115 分鐘內有別筆訂位（19:30），<br>
+        跟 S-02b 同一條強烈提醒，每列按鈕改「仍要開桌」，<br>
+        按下再確認「確定要開 A06？」<br>
+        「確定開桌」／「換一張桌」。沒衝突時就是「開桌」</dd>
     <dt>這張桌正在預約保留</dt>
     <dd>頂部換成暖黃條「這張桌保留給 陳怡君 18:30<br>
-        （4 位），要先取消保留才能開給別人」，<br>
+        （4 位）。客人來電取消的話，<br>
+        請到預約管理取消訂位」，<br>
         每一列的開桌停用；硬送回 409 TABLE_RESERVED。<br>
-        沒另外畫畫框，取消保留在預約頁籤（S-02d）</dd>
+        沒另外畫畫框</dd>
+    <dt>候位不鎖桌</dt>
+    <dd>叫號只是通知，客人到櫃檯才在這裡選桌開桌。<br>
+        客人說不吃了就在 S-10「放棄」，沒有東西要解鎖</dd>
   </dl>
   <b class="mt16" style="display:block">按下開桌之後</b>
   <dl style="margin:0">

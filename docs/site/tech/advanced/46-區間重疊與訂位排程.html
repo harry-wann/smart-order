@@ -288,7 +288,8 @@ CREATE UNIQUE INDEX uk_reservation_table_start
 </code></pre>
 <p>就算程式有 bug，資料庫也會擋下來。<strong>「應用層 + 資料庫層」雙重保護</strong>是正確的做法。</p>
 <blockquote>
-<p>取消訂位時要把 <code>table_id</code> 設成 <code>NULL</code>，不然這個唯一<a class="gloss" href="../../tech/database/24-索引.html" title="看這個技術的白話說明">索引</a>會擋住「取消之後，同一時段重新訂同一桌」。</p>
+<p>取消訂位時要把 <code>table_id</code> 設成 <code>NULL</code>，不然這個唯一<a class="gloss" href="../../tech/database/24-索引.html" title="看這個技術的白話說明">索引</a>會擋住「取消之後，同一時段重新訂同一桌」。
+客人線上取消（只到訂位時間前 30 分鐘）和櫃檯代客取消（隨時）都一樣要清。</p>
 </blockquote>
 <h2 id="查詢可訂時段">查詢可訂時段</h2>
 <p>前端要顯示「哪些時間還能訂」，做法是把營業時間切成 30 分鐘一格，每格跑一次重疊檢查：</p>
@@ -316,9 +317,9 @@ CREATE UNIQUE INDEX uk_reservation_table_start
 </code></pre>
 <ul>
 <li>30 分＝最早可以提前報到的時間；10 分＝保留時間。兩個都放 <code>application.yml</code>：<code>reservation.hold-before-minutes: 30</code>、<code>reservation.hold-after-minutes: 10</code></li>
-<li>櫃檯可以按「取消保留」，後端寫入 <code>hold_released_at</code>／<code>hold_released_by</code>。訂位本身還是 <code>CONFIRMED</code>，客人到了照樣能報到，只是改坐別張桌</li>
-<li><strong>取消保留隨時可以按</strong>：前置條件只有 <code>status = 'CONFIRMED'</code> 和 <code>hold_released_at IS NULL</code>，<strong>不看現在是不是在保留窗內</strong>（明天的訂位也能先取消）；已經取消過再按，回 <code>409 HOLD_ALREADY_RELEASED</code></li>
-<li><strong>取消保留是單向的</strong>：沒有恢復的 API，<code>hold_released_at</code> 寫了就不會清掉；所以前端的二次確認要寫明「取消後無法恢復」</li>
+<li><strong>要解開保留，就是取消那筆訂位</strong>：客人來電說不來了，櫃檯按「取消訂位」（<code>POST /api/admin/reservations/{id}/cancel</code>），訂位轉 <code>CANCELLED</code>、<code>table_id</code> 設 <code>NULL</code>，下面的條件就對不到它了，桌子與名額一起釋出。沒有「訂位照留、只解除保留」這種操作</li>
+<li><strong>櫃檯代客取消隨時可以按</strong>，不受期限；只有 <code>CONFIRMED</code> 能取消，其他狀態回 <code>409 RESERVATION_NOT_CANCELLABLE</code>。取消是單向的，前端的二次確認要寫明「這筆訂位無法恢復」</li>
+<li><strong>客人線上取消只到開始前 30 分</strong>（回 <code>409 CANCEL_DEADLINE_PASSED</code>）——剛好就是保留窗的開頭，所以保留開始之後只剩櫃檯能取消</li>
 </ul>
 <p><strong>保留是查詢的時候算出來的，不是排程。</strong> <code>dining_table.status</code> 仍然只有 <code>AVAILABLE</code>／<code>OCCUPIED</code>／<code>CLEANING</code> 三種，沒有人會去把欄位改成 <code>RESERVED</code>：</p>
 <pre><code class="language-sql">-- 桌況總覽：每張桌的「顯示狀態」
@@ -328,14 +329,13 @@ SELECT t.id, t.table_no, t.status,
          WHEN r.id IS NOT NULL        THEN 'RESERVED'    -- 空桌、但落在保留窗內 → 預約保留
          ELSE 'AVAILABLE'
        END AS display_status,
-       r.id AS held_reservation_id, r.reservation_no, r.contact_name, r.party_size, r.start_time
+       r.id AS hold_reservation_id, r.reservation_no, r.contact_name, r.party_size, r.start_time
 FROM dining_table t
 LEFT JOIN reservation r
        ON r.table_id = t.id
       AND r.status = 'CONFIRMED'
       AND r.start_time - INTERVAL 30 MINUTE &lt;= NOW()
       AND NOW() &lt;= r.start_time + INTERVAL 10 MINUTE
-      AND r.hold_released_at IS NULL
 WHERE t.active = 1
 ORDER BY t.table_no;
 </code></pre>
@@ -350,14 +350,28 @@ ORDER BY t.table_no;
 <pre><code class="language-java">// 現場開桌、候位開桌：目標桌正在保留中 → 擋下來
 reservationRepo.findActiveHold(tableId, now).ifPresent(hold -&gt; {
     throw new BusinessException(&quot;TABLE_RESERVED&quot;,
-        &quot;這張桌保留給 &quot; + hold.getContactName() + &quot; &quot; + hold.getStartTime().toLocalTime() + &quot;，要先取消保留&quot;,
+        &quot;這張桌保留給 &quot; + hold.getContactName() + &quot; &quot; + hold.getStartTime().toLocalTime() + &quot;，客人來電取消的話請到預約管理取消訂位&quot;,
         HttpStatus.CONFLICT);
 });
 </code></pre>
 <p>預約報到開桌也一樣檢查，只是「保留給自己這筆」的桌可以直接開，被<strong>別筆</strong>訂位保留的才回 <code>409 TABLE_RESERVED</code>。
 還沒到開始前 30 分就來報到，回 <code>409 RESERVATION_TOO_EARLY</code>；超過開始後 10 分，回 <code>409 RESERVATION_EXPIRED</code>。</p>
+<p><strong>還沒進保留窗、但快到了的桌：只提醒、不擋。</strong> 現在 18:00 要開 A05，A05 19:30 有訂位——保留窗還沒開始，後端不擋；
+但現在開下去，這組大概要吃到 18:00 + 100 分 + 清桌 15 分 = 19:55，訂位的客人到了桌子還沒空。所以開桌頁要查「現在 ～ 現在 + 115 分」內有沒有別筆訂位要開始：</p>
+<pre><code class="language-sql">-- 開桌強烈提醒：這張桌 115 分鐘內要開始的別筆訂位（保留中的那筆已經另外處理）
+SELECT r.id, r.contact_name, r.party_size, r.start_time
+FROM reservation r
+WHERE r.table_id = :tableId
+  AND r.status = 'CONFIRMED'
+  AND r.start_time &gt;  :now + INTERVAL 30 MINUTE     -- 30 分內的已經是保留窗，會直接擋
+  AND r.start_time &lt;= :now + INTERVAL 115 MINUTE    -- 用餐 100 + 清桌 15
+ORDER BY r.start_time
+LIMIT 1;
+</code></pre>
+<p>查到就回 <code>upcomingOnThisTable</code>（選桌清單是 <code>upcomingReservationAt</code>），前端顯示醒目警示、主按鈕改「仍要開桌」並再確認一次；選桌清單把這種桌排在沒有衝突的桌後面。
+115 一樣不要寫死，用 <code>application.yml</code> 的用餐時長＋清桌緩衝相加。</p>
 <p><strong>為什麼不用排程在 18:00 把桌子改成 <code>RESERVED</code>？</strong> 那等於把訂位複製一份到桌位上，還要靠排程同步：
-排程晚跑幾分鐘、伺服器剛好重開、櫃檯取消保留後又被排程改回去……畫面就會出現「顯示空桌、按開桌卻被擋」這種最難查的 bug。
+排程晚跑幾分鐘、伺服器剛好重開、訂位取消了桌子卻沒被排程改回來……畫面就會出現「顯示空桌、按開桌卻被擋」這種最難查的 bug。
 <strong>算得出來的東西就不要存</strong>，每次查的時候算，永遠跟訂位資料一致。（排程仍然是九支，見 <a href="../../tech/realtime/43-排程與Cron.html">排程任務與 Cron</a>。）</p>
 <h2 id="索引">索引</h2>
 <pre><code class="language-sql">CREATE INDEX idx_reservation_table_time
@@ -449,9 +463,14 @@ reservationRepo.findActiveHold(tableId, now).ifPresent(hold -&gt; {
 <td>加 <code>EXISTS (... ds.status = 'OPEN')</code> 的條件</td>
 </tr>
 <tr>
-<td>明天的訂位按「取消保留」被擋</td>
-<td>前置條件多檢查了保留窗</td>
-<td>只看 <code>CONFIRMED</code> 與 <code>hold_released_at IS NULL</code></td>
+<td>櫃檯取消訂位被期限擋下來</td>
+<td>把客人線上取消的期限（開始前 30 分）也套到櫃檯那支</td>
+<td>櫃檯代客取消只看 <code>status = 'CONFIRMED'</code></td>
+</tr>
+<tr>
+<td>18:00 開 A05，19:30 的訂位客人到了沒桌，事前也沒提醒</td>
+<td>強烈提醒的窗只看了保留窗</td>
+<td>查「現在～現在 + 115 分」內的別筆訂位</td>
 </tr>
 <tr>
 <td>取消後同一時段再也訂不到那張桌</td>

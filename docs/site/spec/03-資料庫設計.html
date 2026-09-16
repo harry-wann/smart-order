@@ -607,8 +607,9 @@ ER 圖見 <a href="../spec/06-圖表總覽.html">06-圖表總覽</a>。本文件
 <blockquote>
 <p><strong>桌位狀態只有三種，而且只反映現場當下。</strong> 這個欄位<strong>不存</strong>「預約保留」。</p>
 <p><strong>預約保留（M7 7.10）是查詢時算出來的顯示狀態。</strong> <code>AVAILABLE</code> 的桌如果有一筆訂位同時符合
-配到這張桌、<code>CONFIRMED</code>、現在落在 <code>start_time − 30 分</code> ～ <code>start_time + 10 分</code>、<code>hold_released_at IS NULL</code>，
+配到這張桌、<code>CONFIRMED</code>、現在落在 <code>start_time − 30 分</code> ～ <code>start_time + 10 分</code>，
 桌況 API 就回 <code>displayStatus = RESERVED</code>。所以訂位會在時間窗內鎖住配到的桌；<strong>候位不鎖桌</strong>。
+要解開預約保留，就是取消那筆訂位（<code>status</code> → <code>CANCELLED</code>、<code>table_id</code> 設 NULL），條件自然不成立，桌位欄位什麼都不用改。
 另一個接點照舊：<strong>開桌成功時，把來源那筆訂位或候位轉成已報到</strong>。</p>
 <p>舊版也有一個 <code>RESERVED</code>，但它<strong>存在這個欄位裡</strong>，由排程在訂位前 30 分鐘自動轉入——那等於把 <code>reservation</code>
 複製一份到桌位上、還要靠 cron 同步，一旦不同步就會出現
@@ -620,7 +621,6 @@ ER 圖見 <a href="../spec/06-圖表總覽.html">06-圖表總覽</a>。本文件
 SELECT * FROM reservation
  WHERE table_id = :tableId
    AND status = 'CONFIRMED'
-   AND hold_released_at IS NULL
    AND start_time BETWEEN :now - INTERVAL 10 MINUTE AND :now + INTERVAL 30 MINUTE
  ORDER BY start_time
  LIMIT 1;
@@ -628,11 +628,9 @@ SELECT * FROM reservation
 <p>30、10 兩個數字從 <code>application.yml</code> 讀（<code>reservation.hold-before-minutes</code>、<code>reservation.hold-after-minutes</code>），上面寫死只是好讀。
 <code>idx_reservation_table_time (table_id, start_time, end_time)</code> 可以直接用上（先比 <code>table_id</code>，再掃 <code>start_time</code> 的範圍）。</p>
 <blockquote>
-<p><strong>想讓櫃檯手動「保留」某張桌，是延伸功能（<a href="../spec/modules/M2-桌位開桌與候位.html">M2 的 2.E5</a>）</strong>，給<strong>沒有訂位</strong>的保留用
-（例如候位的客人去停車、熟客來電說晚點到）；有訂位的保留已經由 7.10 算出來了。
-要做的話加一個 <code>HELD</code> 狀態與 <code>held_for_waitlist_id</code> / <code>held_note</code> / <code>held_at</code> 三個欄位
-（原本規劃的 <code>held_for_reservation_id</code> 不需要了）。
-關鍵是它<strong>只能人手動進出、沒有任何排程</strong>，這樣才不會變回舊版 <code>RESERVED</code> 的老問題。</p>
+<p><strong>只有訂位會鎖桌，候位不鎖桌。</strong> 桌子會被鎖只有兩種來源：預約保留（上面算出來的）與用餐中／待清理（這個欄位）。
+候位叫號只是通知，客人到櫃檯才選桌開桌，所以 <code>dining_table</code> <strong>沒有</strong>任何「保留給誰」的欄位，<code>status</code> 也只有三種。
+（原本規劃過一個「櫃檯自己把空桌鎖起來」的延伸功能與對應的狀態、欄位，已經刪除，見 <a href="../spec/modules/M2-桌位開桌與候位.html">M2 問題 5</a>。）</p>
 </blockquote>
 <h3 id="dining_session-用餐紀錄帳單核心"><code>dining_session</code> 用餐紀錄（＝帳單）★核心</h3>
 <div class="tablewrap"><table>
@@ -1206,19 +1204,24 @@ session 進終態（<code>PAID</code> 或 <code>CANCELLED</code>）時，整桌�
 <td>最後一次預點異動時間；<code>NULL</code> = 沒預點（進階）</td>
 </tr>
 <tr>
-<td><strong>hold_released_at</strong></td>
-<td>DATETIME(3) NULL</td>
-<td>櫃檯按「取消保留」的時間；不是 NULL 就不再保留配到的桌（M7 7.10）。<strong>訂位狀態不變</strong></td>
-</tr>
-<tr>
-<td>hold_released_by</td>
-<td>BIGINT FK NULL</td>
-<td>→ <code>staff</code>，誰取消保留的</td>
-</tr>
-<tr>
-<td>created_at / cancelled_at</td>
+<td>created_at</td>
 <td>DATETIME(3)</td>
 <td></td>
+</tr>
+<tr>
+<td><strong>cancelled_at</strong></td>
+<td>DATETIME(3) NULL</td>
+<td>取消的時間（客人線上取消或櫃檯代客取消）；沒取消是 NULL</td>
+</tr>
+<tr>
+<td><strong>cancelled_by_staff_id</strong></td>
+<td>BIGINT FK NULL</td>
+<td>→ <code>staff</code>，櫃檯代客取消時是哪個員工；客人自己取消時為 NULL</td>
+</tr>
+<tr>
+<td><strong>cancel_source</strong></td>
+<td>VARCHAR(10) NULL</td>
+<td><code>CUSTOMER</code>（客人線上取消，M7 7.8）/ <code>STAFF</code>（櫃檯代客取消，M7 7.18）；沒取消是 NULL。<code>STAFF</code> 時 <code>cancelled_by_staff_id</code> 一定有值</td>
 </tr>
 </tbody>
 </table></div>
@@ -1230,8 +1233,12 @@ session 進終態（<code>PAID</code> 或 <code>CANCELLED</code>）時，整桌�
 匿名沒有帳號，但一樣要能回來看訂位、改預點內容。作法跟 <code>dining_session.session_token</code>
 完全一樣：建立時發一個隨機字串，前端存 localStorage。
 沒有它的話，只要猜到 <code>reservation.id</code> 就能改別人的單。</p>
-<p><strong>預約保留不另外存狀態。</strong> 保不保留由 <code>table_id</code>、<code>status</code>、<code>start_time</code>、<code>hold_released_at</code> 當場算出來（見上面 <code>dining_table</code> 的說明）。
-櫃檯取消保留只是把 <code>hold_released_at</code>／<code>hold_released_by</code> 填上，客人到了照樣可以報到，只是改坐別張桌。</p>
+<p><strong>預約保留不另外存狀態。</strong> 保不保留由 <code>table_id</code>、<code>status</code>、<code>start_time</code> 當場算出來（見上面 <code>dining_table</code> 的說明）。
+要解開保留就是取消訂位：<code>status</code> 改 <code>CANCELLED</code>、填 <code>cancelled_at</code>／<code>cancel_source</code>（櫃檯取消再加 <code>cancelled_by_staff_id</code>）、<code>table_id</code> 設 NULL。
+沒有「訂位照留、只解除保留」的欄位。</p>
+<p><strong>取消有兩個入口，期限不同</strong>：客人線上取消只到訂位時間前 30 分鐘（之後回 <code>409 CANCEL_DEADLINE_PASSED</code>）；
+櫃檯代客取消隨時可以。兩者都只能取消 <code>CONFIRMED</code> 的訂位（其他回 <code>409 RESERVATION_NOT_CANCELLABLE</code>）。
+櫃檯取消時 body 可帶的 <code>reason</code> 只寫日誌，<strong>不存欄位</strong>。</p>
 </blockquote>
 <p><strong>關鍵索引</strong></p>
 <pre><code class="language-sql">-- 資料庫層的保險：同一桌、同一開始時間不能有兩筆
@@ -1270,7 +1277,7 @@ CREATE INDEX idx_reservation_phone ON reservation (contact_phone);
 </tr>
 <tr>
 <td>18:30 的訂位現在該不該鎖住 A08</td>
-<td><code>reservation.table_id</code> + <code>start_time</code> + <code>status</code> + <code>hold_released_at</code></td>
+<td><code>reservation.table_id</code> + <code>start_time</code> + <code>status</code></td>
 </tr>
 <tr>
 <td>陳小姐今天實際坐哪一桌、消費多少</td>
@@ -1664,7 +1671,7 @@ CREATE INDEX idx_reservation_phone ON reservation (contact_phone);
 <tr>
 <td>未來訂位</td>
 <td>未來 7 天約 20 筆</td>
-<td>另放今天幾筆（線上訂位只能訂明天以後，今天的這幾筆由種子直接寫進資料表，不走 <code>POST /api/reservations</code>）：三筆 30 分鐘內要到、配到不同桌（開桌頁看得到，配到的桌顯示「預約保留」；M7 demo 報到、原保留桌、取消保留各用一筆）、一筆約 1 小時後（demo「18:00 起可報到」與 <code>RESERVATION_TOO_EARLY</code>）、一筆已過訂位時間 10 分鐘以上（demo 逾時與 <code>RESERVATION_EXPIRED</code>）</td>
+<td>另放今天幾筆（線上訂位只能訂明天以後，今天的這幾筆由種子直接寫進資料表，不走 <code>POST /api/reservations</code>）：三筆 30 分鐘內要到、配到不同桌（開桌頁看得到，配到的桌顯示「預約保留」；M7 demo 報到、原保留桌、櫃檯代客取消各用一筆；代客取消那筆也用來 demo 客人線上取消被 <code>CANCEL_DEADLINE_PASSED</code> 擋下）、一筆約 1 小時後（demo「18:00 起可報到」與 <code>RESERVATION_TOO_EARLY</code>；它配到的桌也用來 demo 開桌強烈提醒，因為落在 115 分鐘內）、一筆已過訂位時間 10 分鐘以上（demo 逾時與 <code>RESERVATION_EXPIRED</code>）</td>
 </tr>
 <tr>
 <td>候位</td>

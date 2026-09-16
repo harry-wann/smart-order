@@ -294,7 +294,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td>2.5</td>
-<td>開桌（三種來源：現場填人數／候位／預約，同一頁三頁籤；目標桌預約保留中回 <code>409 TABLE_RESERVED</code>）</td>
+<td>開桌（三種來源：現場填人數／候位／預約，同一頁三頁籤；目標桌預約保留中回 <code>409 TABLE_RESERVED</code>；115 分鐘內有別筆訂位 → 強烈提醒＋「仍要開桌」二次確認，只提醒不擋）</td>
 <td>☐</td>
 </tr>
 <tr>
@@ -669,7 +669,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td>7.8</td>
-<td>取消（前一天 20:00 前）</td>
+<td>客人線上取消（訂位時間前 30 分鐘前；之後回 <code>409 CANCEL_DEADLINE_PASSED</code>，請來電）</td>
 <td>☐</td>
 </tr>
 <tr>
@@ -679,7 +679,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td>7.10</td>
-<td><strong>訂位保留桌位</strong>（配到的桌在訂位前 30 分～後 10 分鎖住；<strong>算出來的，不是排程</strong>；櫃檯隨時可取消保留，不限保留窗內）</td>
+<td><strong>訂位保留桌位</strong>（配到的桌在訂位前 30 分～後 10 分鎖住；<strong>算出來的，不是排程</strong>；要解開就是櫃檯代客取消訂位，見 7.18）</td>
 <td>☐</td>
 </tr>
 <tr>
@@ -715,6 +715,11 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td>7.17</td>
 <td>報到轉 <code>SEATED</code>（不動 <code>table_id</code>，本專題不做換桌）</td>
+<td>☐</td>
+</tr>
+<tr>
+<td>7.18</td>
+<td><strong>櫃檯代客取消</strong>（<code>POST /api/admin/reservations/{id}/cancel</code>；隨時可以取消、不受期限；不是 <code>CONFIRMED</code> 回 <code>409 RESERVATION_NOT_CANCELLABLE</code>；桌子與名額一起釋出）</td>
 <td>☐</td>
 </tr>
 </tbody>
@@ -906,7 +911,7 @@ A7 人氣推薦<strong>沒有獨立畫面</strong>，只是 C-04 菜單主頁裡
 </tr>
 <tr>
 <td>M2 桌位</td>
-<td>併桌拆桌換桌、候位自動遞補、預估等待時間、候位通知、手動保留 2.E5（給沒有訂位的保留用）、樓層平面圖</td>
+<td>併桌拆桌換桌、候位自動遞補、預估等待時間、候位通知、樓層平面圖</td>
 </tr>
 <tr>
 <td>M3 點餐</td>
@@ -1040,8 +1045,8 @@ A7 人氣推薦<strong>沒有獨立畫面</strong>，只是 C-04 菜單主頁裡
 <p><strong>沒有「結帳中／待結帳」這種桌態</strong>，任何畫面都不可以出現。</p>
 <p><strong>桌位跟訂位有一個「算出來的」接點，跟候位沒有。</strong>（2026-09-16 定案，推翻舊的「三套互不連動」）</p>
 <p><code>dining_table.status</code> 仍然只有上面三種，只反映現場當下；但查桌況時，<code>AVAILABLE</code> 的桌如果有一筆訂位同時符合
-配到這張桌（<code>reservation.table_id</code>）、<code>CONFIRMED</code>、現在落在 <code>start_time − 30 分</code> ～ <code>start_time + 10 分</code>、<code>hold_released_at IS NULL</code>，
-就<strong>顯示成 <code>RESERVED</code>（預約保留）</strong>：不能開給別人（<code>409 TABLE_RESERVED</code>），櫃檯可以取消保留（M7 7.10）。</p>
+配到這張桌（<code>reservation.table_id</code>）、<code>CONFIRMED</code>、現在落在 <code>start_time − 30 分</code> ～ <code>start_time + 10 分</code>，
+就<strong>顯示成 <code>RESERVED</code>（預約保留）</strong>：不能開給別人（<code>409 TABLE_RESERVED</code>）；要解開就是櫃檯代客取消那筆訂位（M7 7.10、7.18）。</p>
 <div class="tablewrap"><table>
 <thead>
 <tr>
@@ -1068,17 +1073,49 @@ A7 人氣推薦<strong>沒有獨立畫面</strong>，只是 C-04 菜單主頁裡
 </tr>
 </tbody>
 </table></div>
-<p>候位仍然不鎖桌。另一個接點照舊：<strong>開桌成功時，把來源那筆訂位或候位轉成已報到</strong>（轉成 <code>SEATED</code> 之後保留條件不成立，保留自己消失）。</p>
+<p><strong>只有訂位會鎖桌，候位不鎖桌</strong>：桌子會被鎖只有「預約保留」與「用餐中／待清理」兩種來源；候位叫號只是通知，客人到櫃檯才選桌開桌，客人不吃了就按「放棄」（<code>ABANDONED</code>），沒有東西要解鎖。另一個接點照舊：<strong>開桌成功時，把來源那筆訂位或候位轉成已報到</strong>（轉成 <code>SEATED</code> 之後保留條件不成立，保留自己消失）。</p>
 <p>開桌有兩個入口：從桌子出發（S-02 點空桌 → S-02b／S-02c／S-02d），從人出發（S-07／S-10 → S-07b／S-10b），後端是同一組 API。</p>
+<p><strong>開桌時稍後有訂位 → 強烈提醒，不擋</strong>（所有開桌入口都一樣）：這張桌在「現在 ～ 現在 + 115 分」（用餐 100 分＋清桌 15 分）內有別筆 <code>CONFIRMED</code> 訂位要開始，
+頂部顯示醒目警示條「A05 在 19:30 有訂位（陳小姐 4 位）。現在開桌，客人可能還沒吃完訂位就到了。」，主按鈕改成「仍要開桌」，按下再確認一次（「確定開桌」／「換一張桌」）；
+S-07b／S-10b 清單裡這種桌標紅字「19:30 有訂位」，排在沒有衝突的桌後面。</p>
 <p>舊版的 <code>RESERVED</code> 是<strong>存在桌位欄位裡、靠排程在訂位前 30 分鐘轉入</strong>的，cron 一沒跑就跟訂位對不上，已經移除；
 現在的 <code>RESERVED</code> 只是顯示狀態，每次查詢現算，不存、不靠排程。
-櫃檯手動保留（<code>HELD</code>，給沒有訂位的保留用）仍是延伸功能 M2 的 2.E5，基礎不做。詳見 <a href="../spec/modules/M2-桌位開桌與候位.html">M2 問題 5</a>。</p>
+沒有「櫃檯自己把空桌鎖起來」這個功能（原本的延伸項目已刪除）。詳見 <a href="../spec/modules/M2-桌位開桌與候位.html">M2 問題 5</a>。</p>
 <h3 id="64-預約-reservationstatus">6.4 預約 <code>Reservation.status</code></h3>
 <p><code>CONFIRMED</code> → <code>SEATED</code>，或 → <code>CANCELLED</code>（客人或櫃檯取消）／ <code>NO_SHOW</code>（排程標記）。</p>
 <p><strong>報到最早在訂位時間前 30 分鐘</strong>，更早按回 <code>409 RESERVATION_TOO_EARLY</code>「還沒到可報到時間（18:00 起）」。
-櫃檯「取消保留」只寫 <code>hold_released_at</code>，<strong>訂位狀態不變</strong>（仍是 <code>CONFIRMED</code>，名額照算），客人到了照樣可以報到，改從 S-07b 選別張桌。
-<strong>隨時可以按</strong>：只要訂位是 <code>CONFIRMED</code>、還沒取消過，不管現在是不是在保留窗內（重複按回 <code>409 HOLD_ALREADY_RELEASED</code>）。
-取消保留是<strong>單向</strong>的，沒有恢復的 API，按之前要二次確認「取消後，這筆訂位到時候不會鎖住 A08，而且無法恢復。客人到店時再幫他選別張桌。」。</p>
+<strong>取消有兩個入口</strong>，結果都是轉 <code>CANCELLED</code>、寫 <code>cancelled_at</code>、<code>table_id</code> 設 <code>NULL</code>（桌子與名額一起釋出），用 <code>cancel_source</code> 記是誰取消的：</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>客人線上取消（7.8）</th>
+<th>櫃檯代客取消（7.18）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>期限</td>
+<td><strong>訂位時間前 30 分鐘</strong>；之後回 <code>409 CANCEL_DEADLINE_PASSED</code>「訂位前 30 分鐘內請來電取消」</td>
+<td><strong>隨時可以取消</strong>，不受任何期限</td>
+</tr>
+<tr>
+<td>記錄</td>
+<td><code>cancel_source = CUSTOMER</code></td>
+<td><code>cancel_source = STAFF</code>、<code>cancelled_by_staff_id</code></td>
+</tr>
+<tr>
+<td>不是 <code>CONFIRMED</code></td>
+<td><code>409 RESERVATION_NOT_CANCELLABLE</code></td>
+<td><code>409 RESERVATION_NOT_CANCELLABLE</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>取消期限剛好等於預約保留開始的時間，所以<strong>保留開始之後只剩櫃檯能取消</strong>。櫃檯取消是<strong>單向</strong>的，沒有恢復的 API，
+按之前要二次確認「確定要取消 陳怡君 18:30 的訂位嗎？通常是客人來電取消。取消後 A08 會變回空桌，這筆訂位無法恢復。」。
+C-19 我的預約：櫃檯取消的顯示「店家已代為取消」，客人自己取消的顯示「已取消」。</p>
+<p><strong>取消期限和預點截止是兩條線</strong>：客人線上取消到訂位時間前 30 分鐘；預點修改（進階 A2）仍到用餐日前一天 20:00。
+以前兩者是同一個時間點，現在分開寫。<strong>預點截止是否也改成訂位前 30 分鐘，待使用者決定。</strong></p>
 <p><strong>區間重疊只算 <code>CONFIRMED</code>，以及 <code>SEATED</code> 而且那筆用餐紀錄還沒結帳（<code>dining_session.status = OPEN</code>）的訂位。</strong>
 客人還坐著就要算，不然容量少算一組；結帳（<code>PAID</code>）或取消用餐之後就不算，名額立刻釋出，不用等到原本的 <code>end_time</code>。
 桌位本身照舊：結清 → 待清理 → 清潔完成 → 空桌，接著給下一筆訂位的保留或現場、候位使用。
@@ -1106,7 +1143,7 @@ A7 人氣推薦<strong>沒有獨立畫面</strong>，只是 C-04 菜單主頁裡
 </tr>
 <tr>
 <td>已預點</td>
-<td>有內容，且現在 &lt; 用餐日前一天 20:00 → <strong>可改</strong></td>
+<td>有內容，且現在 &lt; 用餐日前一天 20:00 → <strong>可改</strong>（這是預點截止，跟取消期限「訂位前 30 分鐘」是兩條線，見 6.4）</td>
 </tr>
 <tr>
 <td>已鎖定</td>

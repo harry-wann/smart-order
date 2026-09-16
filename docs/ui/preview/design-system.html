@@ -15,7 +15,7 @@
 --text-900:#2B211C;--text-600:#6B5D54;--text-400:#9C8E84;
 --success:#3F7A4E;--success-bg:#E4EFE7;--warning:#D98324;--warning-bg:#FCF0DC;
 --danger:#B3261E;--danger-bg:#FBE8E3;--info:#2F6F8F;--info-bg:#E5EFF4;
---table-available:#E6DED2;--table-occupied:#C8442E;--table-held:#E8A33D;--table-cleaning:#9C8E84;
+--table-available:#E6DED2;--table-occupied:#C8442E;--table-cleaning:#9C8E84;
 --shadow-card:0 1px 2px rgba(43,33,28,.06),0 4px 12px rgba(43,33,28,.05);
 --shadow-pop:0 8px 24px rgba(43,33,28,.12);
 }
@@ -180,9 +180,9 @@ padding:12px 16px;border-radius:0 8px 8px 0;font-size:15px;margin:16px 0}
 <div class="tbl" style="background:var(--accent-100);color:var(--text-900);box-shadow:inset 0 0 0 1.5px var(--accent-500);text-align:center">A08<small>預約保留</small><small>18:30 陳○君 4 位</small></div>
 </div>
 <p class="note">桌位狀態（存在資料表的）只有前三種，沒有「結帳中」。第四塊「預約保留」是查桌況時算出來的顯示狀態：
-空桌有一筆已確認訂位配到它、現在落在開始前 30 分～開始後 10 分、櫃檯沒取消保留，就顯示成暖黃
+空桌有一筆已確認訂位配到它、現在落在開始前 30 分～開始後 10 分，就顯示成暖黃
 （底 <code>accent-100</code>、框 <code>accent-500</code>、文字標籤「預約保留」）。
-<code>--table-held</code>（#E8A33D）仍留給延伸功能 M2 2.E5 的手動保留，基礎不畫。</p>
+只有訂位會鎖桌，候位不鎖桌；客人來電取消時由櫃檯代客取消訂位，桌子就地變回空桌。</p>
 
 <h2>2　字體階層</h2>
 <p class="note">標題用 <strong>Noto Serif TC 明體</strong>，內文用 Noto Sans TC。

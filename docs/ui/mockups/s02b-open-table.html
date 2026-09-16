@@ -44,10 +44,11 @@
 
         <div class="content">
           <div style="max-width:760px;margin:0 auto">
-            <div class="infobox ib-warn" style="margin-bottom:16px">
+            <!-- 強烈提醒：這張桌 115 分鐘內（用餐 100＋清桌 15）有別筆訂位。三個頁籤都顯示這一條 -->
+            <div class="infobox ib-danger" style="margin-bottom:16px">
               <svg class="ic" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0"/><path d="M12 9v4.5M12 17h.01"/></svg>
-              <div>這張桌 <b>19:30 有預約</b>（陳小姐 4 位），預計用餐到 21:25。<br>
-                <span class="t-cap">只是提醒，不會擋住開桌。要不要把桌留給那組，由現場決定。</span></div>
+              <div><b>A06 在 19:30 有訂位（陳小姐 4 位）。</b>現在開桌，客人可能還沒吃完訂位就到了。<br>
+                <span class="t-cap">只提醒、不擋。按「仍要開桌」會再確認一次；想把桌留給那組，就換一張桌。</span></div>
             </div>
 
             <nav class="tabs">
@@ -92,7 +93,7 @@
               </div>
 
               <div class="r g12 mt24">
-                <button class="btn btn-primary btn-lg fill">開桌</button>
+                <button class="btn btn-primary btn-lg fill">仍要開桌</button>
                 <button class="btn btn-ghost btn-lg">取消</button>
               </div>
             </div>
@@ -113,7 +114,7 @@
         櫃檯只要記一個動作：<br>
         點桌 → 選頁籤 → 開桌。</dd>
     <dt>預設停在哪一頁</dt>
-    <dd>有可報到的預約 → 預約<br>
+    <dd>預約保留中、或有可報到的預約 → 預約<br>
         否則有候位 → 候位<br>
         都沒有 → 現場</dd>
   </dl>
@@ -123,29 +124,47 @@
     <dd>在預約管理、候位管理按「報到開桌」，<br>
         跳出選桌對話框。後端是同一組開桌 API，<br>
         這一頁是「從桌子出發」的入口。</dd>
-    <dt>手動保留是延伸功能</dt>
-    <dd>M2 的 2.E5（沒有訂位的保留），基礎不做。<br>
+    <dt>只有訂位會鎖桌</dt>
+    <dd>候位不鎖桌：叫號只是通知，客人到櫃檯才選桌開桌。<br>
         桌位狀態仍只有空桌、用餐中、待清理。</dd>
   </dl>
   <b class="mt16" style="display:block">點的是「預約保留」的桌</b>
   <dl style="margin:0">
     <dt>預設停在預約頁籤（S-02d）</dt>
-    <dd>保留的那筆置頂，「報到開桌」／「取消保留」</dd>
+    <dd>保留的那筆置頂，<br>
+        「報到開桌」／「取消訂位」</dd>
     <dt>現場、候位頁籤</dt>
-    <dd>頂部暖黃條換成「這張桌保留給 陳怡君 18:30<br>
-        （4 位），要先取消保留才能開給別人」，<br>
+    <dd>頂部暖黃條換成<br>
+        「這張桌保留給 陳怡君 18:30（4 位）。<br>
+        客人來電取消的話，<br>
+        請到預約管理取消訂位」，<br>
         開桌按鈕停用。沒另外畫畫框</dd>
     <dt>硬送的話</dt>
-    <dd>409 TABLE_RESERVED<br>
-        「這張桌保留給 陳怡君 18:30，要先取消保留」</dd>
+    <dd>409 TABLE_RESERVED，<br>
+        前端顯示後重新載入</dd>
   </dl>
-  <b class="mt16" style="display:block">頂部那條黃字</b>
+  <b class="mt16" style="display:block">頂部那條紅色警示（強烈提醒）</b>
   <dl style="margin:0">
+    <dt>什麼時候出現</dt>
+    <dd>這張桌在「現在～現在＋115 分」內<br>
+        有別筆已確認訂位要開始<br>
+        （用餐 100 分＋清桌 15 分）。<br>
+        已經進保留窗的會直接擋，<br>
+        所以實際提醒的是 30～115 分後的訂位。<br>
+        三個頁籤都顯示這一條</dd>
+    <dt>樣式</dt>
+    <dd>淺紅底＋深紅字＋紅框＋警示圖示<br>
+        （ib-danger），不是暖黃小字。<br>
+        主按鈕改成「仍要開桌」</dd>
+    <dt>按「仍要開桌」之後</dt>
+    <dd>再跳確認框（沒另外畫畫框）：<br>
+        標題「確定要開 A06？」<br>
+        「確定開桌」（primary）<br>
+        「換一張桌」（ghost，回桌況）</dd>
     <dt>只提醒，不擋</dt>
-    <dd>這張桌的預約還沒進保留窗（開始前 30 分），<br>
-        系統不知道這組客人會坐多久，<br>
+    <dd>系統不知道這組客人會坐多久，<br>
         也不知道櫃檯有沒有別的安排。<br>
-        三個頁籤都會顯示這一條。</dd>
+        資料來自 open-options 的 upcomingOnThisTable</dd>
   </dl>
 </div>
 

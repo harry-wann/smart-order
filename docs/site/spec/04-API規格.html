@@ -323,7 +323,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <td>409</td>
 <td><code>TABLE_RESERVED</code></td>
 <td>開桌時目標桌正在預約保留中（現場開桌、候位入座，或保留給<strong>別筆</strong>訂位的桌）</td>
-<td>顯示「這張桌保留給 陳怡君 18:30，要先取消保留」，開桌按鈕停用</td>
+<td>顯示「這張桌保留給 陳怡君 18:30，客人來電取消的話請到預約管理取消訂位」，開桌按鈕停用</td>
 </tr>
 <tr>
 <td>409</td>
@@ -363,9 +363,15 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td>409</td>
-<td><code>RESERVATION_LOCKED</code></td>
-<td>已過取消期限，或訂位已報到／已取消（櫃檯取消保留時，訂位不是 <code>CONFIRMED</code> 也回這個）</td>
-<td>停用取消鈕，顯示請來電；櫃檯端重抓訂位清單</td>
+<td><code>CANCEL_DEADLINE_PASSED</code></td>
+<td>客人線上取消時，已經進入訂位時間前 30 分鐘（見 4.11d）</td>
+<td>顯示「訂位前 30 分鐘內請來電取消」，停用取消鈕</td>
+</tr>
+<tr>
+<td>409</td>
+<td><code>RESERVATION_NOT_CANCELLABLE</code></td>
+<td>取消訂位時（客人線上或櫃檯代客），這筆已經不是 <code>CONFIRMED</code>（已報到、已取消、逾時未到；例如兩個櫃檯同時按）</td>
+<td>顯示「這筆訂位已經不能取消了」，重抓訂位清單</td>
 </tr>
 <tr>
 <td>409</td>
@@ -378,12 +384,6 @@ pre.mermaid svg{max-width:100%;height:auto}
 <td><code>RESERVATION_TOO_EARLY</code></td>
 <td>報到時還沒到訂位時間前 30 分鐘</td>
 <td>顯示「還沒到可報到時間（18:00 起）」</td>
-</tr>
-<tr>
-<td>409</td>
-<td><code>HOLD_ALREADY_RELEASED</code></td>
-<td>取消預約保留時，這筆已經取消過了（例如兩個櫃檯同時按）</td>
-<td>顯示「這筆訂位已經取消過保留了」，重抓訂位清單</td>
 </tr>
 <tr>
 <td>409</td>
@@ -667,7 +667,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td>DELETE</td>
 <td><code>/api/reservations/{id}</code></td>
-<td>取消（含期限判定）</td>
+<td>客人線上取消（<strong>訂位時間前 30 分鐘前</strong>才可以，之後回 <code>409 CANCEL_DEADLINE_PASSED</code>；見 4.11d）</td>
 </tr>
 <tr>
 <td>GET</td>
@@ -736,7 +736,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td>POST</td>
 <td><code>/api/admin/tables/{id}/open</code></td>
-<td>現場開桌（S-02 點空桌，帶人數；保留中回 <code>409 TABLE_RESERVED</code>）</td>
+<td>現場開桌（S-02 點空桌，帶人數；保留中回 <code>409 TABLE_RESERVED</code>；115 分鐘內有別筆訂位只由前端強烈提醒，後端不擋）</td>
 <td>COUNTER, MANAGER</td>
 </tr>
 <tr>
@@ -868,7 +868,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td>GET</td>
 <td><code>/api/admin/reservations</code></td>
-<td>訂位管理（<code>?date=</code>；每列多回 <code>assignedTableNo</code>、<code>holding</code>（現在是否保留中，決定「保留 A08」小字）、<code>holdReleasedAt</code>；<code>status = CONFIRMED</code> 且 <code>holdReleasedAt</code> 是 <code>null</code> 就顯示「取消保留」，跟 <code>holding</code> 無關）</td>
+<td>訂位管理（<code>?date=</code>；每列多回 <code>assignedTableNo</code>、<code>holding</code>（現在是否保留中，決定「保留 A08」小字）、<code>cancelSource</code>（<code>CUSTOMER</code>／<code>STAFF</code>／<code>null</code>）、<code>cancelledByStaffName</code>（櫃檯取消的才有，顯示「店家代取消・小美」）；<code>status = CONFIRMED</code> 就顯示「取消訂位」，跟 <code>holding</code> 無關）</td>
 <td>COUNTER, MANAGER</td>
 </tr>
 <tr>
@@ -879,8 +879,8 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td>POST</td>
-<td><code>/api/admin/reservations/{id}/release-hold</code></td>
-<td><strong>取消預約保留</strong>（M7 7.10，見 4.3e；訂位是 <code>CONFIRMED</code> 就能按，不限保留窗內）</td>
+<td><code>/api/admin/reservations/{id}/cancel</code></td>
+<td><strong>櫃檯代客取消訂位</strong>（M7 7.18，見 4.11d；<strong>隨時可以取消</strong>，不受期限；不是 <code>CONFIRMED</code> 回 <code>409 RESERVATION_NOT_CANCELLABLE</code>）</td>
 <td>COUNTER, MANAGER</td>
 </tr>
 <tr>
@@ -1109,7 +1109,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <td><code>TABLE_STATUS</code></td>
 <td>counter</td>
 <td><code>{tableId, tableNo, status, displayStatus, heldFor}</code></td>
-<td>依 <code>displayStatus</code> 更新桌況色塊（四種）；開桌、結清、清潔、取消用餐、取消保留都會推</td>
+<td>依 <code>displayStatus</code> 更新桌況色塊（四種）；開桌、結清、清潔、取消用餐、櫃檯代客取消訂位都會推</td>
 </tr>
 <tr>
 <td><code>TABLE_OVERTIME</code></td>
@@ -1237,7 +1237,8 @@ Authorization: Bearer &lt;員工 JWT&gt;
 { &quot;adultCount&quot;: 2, &quot;childCount&quot;: 1 }
 </code></pre>
 <p>後端用<a class="gloss" href="../tech/database/28-鎖與併發.html" title="看這個技術的白話說明">悲觀鎖</a>（<code>SELECT ... FOR UPDATE</code>）避免同一桌開出兩張帳單。鎖住桌位之後要<strong>重算一次預約保留</strong>（見 4.3e），不能相信畫面上的顏色。
-<strong>錯誤</strong>：<code>409 TABLE_OCCUPIED</code>；<code>409 TABLE_RESERVED</code>「這張桌保留給 陳怡君 18:30，要先取消保留」</p>
+<strong>錯誤</strong>：<code>409 TABLE_OCCUPIED</code>；<code>409 TABLE_RESERVED</code>「這張桌保留給 陳怡君 18:30，客人來電取消的話請到預約管理取消訂位」</p>
+<p><strong>稍後有訂位不擋</strong>：這張桌 115 分鐘內有別筆訂位（4.3b 的 <code>upcomingOnThisTable</code>），前端顯示強烈提醒、主按鈕改成「仍要開桌」並二次確認，確認後照樣打這支，後端<strong>不回錯誤</strong>。</p>
 <h3 id="43b-開桌頁的來源清單">4.3b 開桌頁的來源清單</h3>
 <pre><code class="language-http">GET /api/admin/tables/12/open-options
 </code></pre>
@@ -1269,16 +1270,19 @@ Authorization: Bearer &lt;員工 JWT&gt;
    <code>party_size ≤ seats</code>。晚到超過 10 分鐘的不列——訂位只保留 10 分鐘，不能等 NO_SHOW 排程來標；
    +30 是最早可報到的時間，跟預約保留的開頭是同一個數字。<strong>不限定 <code>table_id</code> 是這張桌</strong>——客人被帶到別張桌是現場常態，
    <code>assignedTableNo</code> 只是附帶資訊讓櫃檯知道原本配到哪。<code>preorderItemCount</code> 是預點的<strong>份數加總</strong>（「已預先點餐 4 項」），沒預點是 0。</li>
-<li><code>upcomingOnThisTable</code>：這張桌<strong>保留窗之外</strong>、接下來最近的一筆訂位，<strong>純提醒</strong>，前端畫成黃字警示，不擋開桌。
-   沒有就回 <code>null</code>。</li>
+<li><code>upcomingOnThisTable</code>：這張桌在<strong>現在 ～ 現在 + 115 分</strong>（用餐 100 分＋清桌 15 分，從 <code>application.yml</code> 的兩個設定值相加）內要開始的<strong>別筆</strong> <code>CONFIRMED</code> 訂位，取最早的一筆；
+   正在保留這張桌的那筆已經放在 <code>heldFor</code>，這裡不重複放。沒有就回 <code>null</code>。
+   不是 <code>null</code> 時前端顯示<strong>強烈提醒</strong>（所有開桌頁籤都一樣）：頂部醒目警示條（<code>--danger</code> 系淺底＋深字＋警示圖示）
+   「A03 在 19:30 有訂位（陳小姐 4 位）。現在開桌，客人可能還沒吃完訂位就到了。」，開桌主按鈕改成「仍要開桌」，
+   按下再跳確認框（標題「確定要開 A03？」、「確定開桌」primary／「換一張桌」ghost）。<strong>只提醒、不擋</strong>，後端不因此回錯誤。</li>
 <li><code>heldFor</code>：這張桌<strong>現在</strong>正保留給哪筆訂位（格式同 4.3e），沒有就回 <code>null</code>。不是 <code>null</code> 時：
-   現場、候位頁籤頂部顯示暖黃條「這張桌保留給 陳怡君 18:30（4 位），要先取消保留才能開給別人」並停用開桌按鈕；
-   預約頁籤把這筆置頂，列上兩顆「報到開桌」「取消保留」（它一定也在 <code>reservations</code> 裡，兩個時間窗是同一段）；
-   其他預約列的「開桌」一樣停用（開下去會回 <code>409 TABLE_RESERVED</code>），要先取消保留。</li>
+   現場、候位頁籤頂部顯示暖黃條「這張桌保留給 陳怡君 18:30（4 位）。客人來電取消的話，請到預約管理取消訂位」並停用開桌按鈕；
+   預約頁籤把這筆置頂，列上兩顆「報到開桌」（primary）「取消訂位」（secondary，打 4.11d 的櫃檯代客取消，二次確認文案同 4.11d）
+   （它一定也在 <code>reservations</code> 裡，兩個時間窗是同一段）；
+   其他預約列的「開桌」一樣停用（開下去會回 <code>409 TABLE_RESERVED</code>），除非這筆保留的訂位先被取消。</li>
 </ol>
 <blockquote>
-<p><strong>延伸功能（M2 的 2.E5）要做手動保留 <code>HELD</code> 的話</strong>，<code>heldFor</code> 再多一種來源（候位或一行備註），
-另外加 <code>POST</code> / <code>DELETE /api/admin/tables/{id}/hold</code> 兩支。基礎不做。</p>
+<p><strong>只有訂位會鎖桌，候位不鎖桌</strong>，所以 <code>heldFor</code> 只有「訂位」這一種來源；沒有「櫃檯自己把空桌鎖起來」的 API。</p>
 <p>這支回的全部是即時查詢，<strong>不存任何狀態</strong>；預約保留也是當場算的，理由見 <a href="../spec/modules/M2-桌位開桌與候位.html">M2 問題 5</a>。</p>
 </blockquote>
 <h3 id="43c-從候位或預約開桌">4.3c 從候位或預約開桌</h3>
@@ -1317,7 +1321,7 @@ Authorization: Bearer &lt;員工 JWT&gt;
 回頭改它會讓訂位容量的歷史資料跟著現場調度一起變動，反而算不準。
 <strong>本專題不做換桌功能</strong>——客人被帶到別張桌是現場常態，但那是用餐紀錄的事，不是訂位的事。</p>
 <p><strong>這裡不檢查區間重疊。</strong> 客人已經站在櫃檯前面了，這是人為決定，系統不該擋。
-「這張桌等下有別人訂」的資訊已經在 <code>upcomingOnThisTable</code> 給前端顯示過了。
+「這張桌等下有別人訂」的資訊已經在 <code>upcomingOnThisTable</code>／<code>upcomingReservationAt</code>（115 分鐘窗）給前端做強烈提醒，櫃檯按了「仍要開桌」就照開。
 <strong>唯一會擋的是正在保留中的桌</strong>（<code>409 TABLE_RESERVED</code>）：保留窗內那張桌已經是別人的了。
 預約報到開的是<strong>自己的</strong>保留桌就正常開；報到後這筆轉 <code>SEATED</code>，保留條件不成立，保留自己消失。</p>
 </blockquote>
@@ -1335,16 +1339,18 @@ GET /api/admin/tables/available?partySize=4&amp;reservationId=442     （從 S-0
 <pre><code class="language-json">200 OK
 [
   { &quot;tableId&quot;: 8,  &quot;tableNo&quot;: &quot;A08&quot;, &quot;area&quot;: &quot;大廳&quot;, &quot;seats&quot;: 4, &quot;upcomingReservationAt&quot;: null, &quot;isOwnHold&quot;: true },
-  { &quot;tableId&quot;: 5,  &quot;tableNo&quot;: &quot;A05&quot;, &quot;area&quot;: &quot;大廳&quot;, &quot;seats&quot;: 4, &quot;upcomingReservationAt&quot;: &quot;19:30&quot;, &quot;isOwnHold&quot;: false },
   { &quot;tableId&quot;: 6,  &quot;tableNo&quot;: &quot;A06&quot;, &quot;area&quot;: &quot;大廳&quot;, &quot;seats&quot;: 4, &quot;upcomingReservationAt&quot;: null, &quot;isOwnHold&quot;: false },
-  { &quot;tableId&quot;: 11, &quot;tableNo&quot;: &quot;B01&quot;, &quot;area&quot;: &quot;包廂&quot;, &quot;seats&quot;: 6, &quot;upcomingReservationAt&quot;: null, &quot;isOwnHold&quot;: false }
+  { &quot;tableId&quot;: 11, &quot;tableNo&quot;: &quot;B01&quot;, &quot;area&quot;: &quot;包廂&quot;, &quot;seats&quot;: 6, &quot;upcomingReservationAt&quot;: null, &quot;isOwnHold&quot;: false },
+  { &quot;tableId&quot;: 5,  &quot;tableNo&quot;: &quot;A05&quot;, &quot;area&quot;: &quot;大廳&quot;, &quot;seats&quot;: 4, &quot;upcomingReservationAt&quot;: &quot;19:30&quot;, &quot;isOwnHold&quot;: false }
 ]
 </code></pre>
 <ul>
-<li>只列 <code>status = AVAILABLE</code> 且 <code>seats ≥ partySize</code> 的桌，<strong>排除正在預約保留中的桌</strong>，依座位數由小到大、再依桌號排</li>
+<li>只列 <code>status = AVAILABLE</code> 且 <code>seats ≥ partySize</code> 的桌，<strong>排除正在預約保留中的桌</strong></li>
+<li>排序：<strong>原保留桌 → 沒有衝突的桌 → 115 分鐘內有別筆訂位的桌</strong>，各組內再依座位數由小到大、桌號排（上面的 A05 就是有衝突、排到最後）</li>
 <li>帶 <code>reservationId</code>（從 S-07 預約報到）時，這筆<strong>自己的保留桌</strong>也列出來、<strong>排第一</strong>，<code>isOwnHold = true</code>，前端標「原保留桌」；
   配到的桌還在用餐中就不會出現，櫃檯從其他空桌挑一張</li>
-<li><code>upcomingReservationAt</code>：這張桌<strong>保留窗之外</strong>、稍後最近一筆 <code>CONFIRMED</code> 訂位的時間，前端用暖黃小字提醒「19:30 有預約」，<strong>只提醒不擋</strong>（跟 <code>upcomingOnThisTable</code> 一致）</li>
+<li><code>upcomingReservationAt</code>：這張桌在<strong>現在 ～ 現在 + 115 分</strong>內要開始的別筆 <code>CONFIRMED</code> 訂位時間（帶 <code>reservationId</code> 時，排除這筆自己），跟 <code>upcomingOnThisTable</code> 同一個窗；
+  不是 <code>null</code> 時卡片用醒目紅字標「19:30 有訂位」，選了這張要按「仍要開桌」再確認一次，<strong>只提醒不擋</strong></li>
 <li>空陣列 → 對話框顯示「目前沒有坐得下的空桌」＋「清潔完成或有桌結帳後再試一次」</li>
 <li>選好之後呼叫 4.3c 的其中一支（帶 <code>tableId</code>），收尾與 S-02c／S-02d 完全一樣</li>
 <li>這支也是即時查詢，不存狀態</li>
@@ -1367,7 +1373,7 @@ GET /api/admin/tables/available?partySize=4&amp;reservationId=442     （從 S-0
 <ol>
 <li><code>status</code> 是 <code>OCCUPIED</code> 或 <code>CLEANING</code> → 照抄。配到的桌到時間還在用餐中，就<strong>不顯示保留</strong>，客人到了櫃檯從 S-07b 幫他選別張桌</li>
 <li><code>status = AVAILABLE</code>，而且有一筆訂位同時符合：<code>table_id</code> 是這張桌、<code>status = CONFIRMED</code>、
-   <strong>現在落在 <code>start_time − 30 分</code> ～ <code>start_time + 10 分</code></strong>、<code>hold_released_at IS NULL</code> → <code>RESERVED</code>，<code>heldFor</code> 帶那一筆</li>
+   <strong>現在落在 <code>start_time − 30 分</code> ～ <code>start_time + 10 分</code></strong> → <code>RESERVED</code>，<code>heldFor</code> 帶那一筆</li>
 <li>其他 → <code>AVAILABLE</code></li>
 </ol>
 <ul>
@@ -1376,25 +1382,8 @@ GET /api/admin/tables/available?partySize=4&amp;reservationId=442     （從 S-0
 <li>桌格上只有 <code>RESERVED</code> 的桌顯示預約資訊（「18:30 陳○君 4 位」）；其他桌照舊不顯示。統計列「預約保留 N」＝ <code>displayStatus = RESERVED</code> 的桌數</li>
 <li>開桌三支（4.3、4.3c）在 <code>FOR UPDATE</code> 鎖住桌位後用同一段邏輯重算，保留中就回 <code>409 TABLE_RESERVED</code></li>
 </ul>
-<p><strong>取消保留</strong></p>
-<pre><code class="language-http">POST /api/admin/reservations/442/release-hold
-Authorization: Bearer &lt;員工 JWT&gt;
-</code></pre>
-<pre><code class="language-json">200 OK
-{ &quot;reservationId&quot;: 442, &quot;status&quot;: &quot;CONFIRMED&quot;, &quot;holdReleasedAt&quot;: &quot;2026-09-15T18:05:12+08:00&quot;,
-  &quot;tableNo&quot;: &quot;A08&quot;, &quot;displayStatus&quot;: &quot;AVAILABLE&quot; }
-</code></pre>
-<ul>
-<li><strong>隨時可以按</strong>：前置條件只有兩個——訂位 <code>status = CONFIRMED</code>、<code>hold_released_at IS NULL</code>，<strong>不看現在是不是在保留窗內</strong>。
-  所以 S-07 上凡是有配桌、還沒取消保留的 <code>CONFIRMED</code> 列都有「取消保留」，明天、後天的訂位也能先取消</li>
-<li>寫入 <code>hold_released_at</code>／<code>hold_released_by</code>，<strong>交易提交後</strong>推 <code>TABLE_STATUS</code> 到 <code>/topic/counter</code>；這張桌當下正在保留中的話，A08 立刻變回空桌，
-  還沒進保留窗的話桌況本來就不是預約保留，畫面不會變，只是到時候不會鎖（回應的 <code>displayStatus</code> 是這張桌當下的顯示狀態）</li>
-<li>訂位本身<strong>仍是 <code>CONFIRMED</code></strong>，客人到了照樣可以報到（改從 S-07b 選別張桌）；<strong>名額也照算</strong>（區間重疊看的是訂位狀態，不看保留），取消保留不會讓那個時段多出一桌可以線上訂</li>
-<li>前端按下前先二次確認：「取消後，這筆訂位到時候不會鎖住 A08，而且無法恢復。客人到店時再幫他選別張桌。」</li>
-<li><strong>單向、不能恢復</strong>：沒有「恢復保留」的 API。按錯的話，客人到店時從 S-07b 選桌（A08 還空著就照樣列得出來，只是不再標「原保留桌」、不排第一）</li>
-<li>已經取消過 → <code>409 HOLD_ALREADY_RELEASED</code>「這筆訂位已經取消過保留了」（兩個櫃檯同時按時，後到的拿到這個，前端重抓清單即可）；
-  訂位不是 <code>CONFIRMED</code>（已報到、已取消、未到）→ <code>409 RESERVATION_LOCKED</code>。兩個檢查都要在 <code>SELECT ... FOR UPDATE</code> 鎖住這筆訂位之後做</li>
-</ul>
+<p><strong>要解開保留，就是取消那筆訂位</strong>（櫃檯代客取消，見 4.11d）。訂位轉 <code>CANCELLED</code>、<code>table_id</code> 設 <code>NULL</code> 之後，
+上面第 2 點的條件不成立，這張桌馬上回到 <code>AVAILABLE</code>。沒有「只解除保留、訂位照留」的 API。</p>
 <h3 id="44-品項詳情含選項群組">4.4 品項詳情（含選項群組）</h3>
 <pre><code class="language-json">GET /api/menu/items/4
 {
@@ -1684,7 +1673,7 @@ X-Session-Token: eyJ0IjoxMDUyLi4u
   &quot;startTime&quot;: &quot;2026-09-20T18:00:00+08:00&quot;,
   &quot;endTime&quot;: &quot;2026-09-20T19:55:00+08:00&quot;,
   &quot;status&quot;: &quot;CONFIRMED&quot;,
-  &quot;cancellableUntil&quot;: &quot;2026-09-19T20:00:00+08:00&quot;,
+  &quot;cancellableUntil&quot;: &quot;2026-09-20T17:30:00+08:00&quot;,
   &quot;preorderEditableUntil&quot;: &quot;2026-09-19T20:00:00+08:00&quot;,
   &quot;hasPreorder&quot;: false
 }
@@ -1696,9 +1685,13 @@ X-Session-Token: eyJ0IjoxMDUyLi4u
 <p><code>reservationNo</code> 是預約編號（格式 <code>R-YYMMDD-流水號</code>，見 03 的 <code>reservation.reservation_no</code>），C-18 用大字顯示。</p>
 <p><strong>這支回 <code>CONFIRMED</code> 就是訂位成立了</strong>——沒有付款這一關，前端拿到 201 直接跳 C-18 訂位完成頁，
 在那裡才問「要不要先點餐」。<code>accessToken</code> 只有匿名訂位需要存起來（localStorage），會員可以忽略。</p>
-<p><code>cancellableUntil</code> 與 <code>preorderEditableUntil</code> <strong>是同一個時間點</strong>（用餐日前一天 20:00）：
-一條規則比兩條好記，廚房也有完整一天可以備料。前端拿這個時間去決定按鈕要不要停用，
-但<strong>後端一定要再擋一次</strong>——前端隱藏按鈕不算權限控制。</p>
+<p><code>cancellableUntil</code> 與 <code>preorderEditableUntil</code> <strong>是兩條線</strong>：</p>
+<ul>
+<li><code>cancellableUntil</code>＝<strong>訂位時間前 30 分鐘</strong>（上例 17:30）：客人線上取消的期限，剛好等於預約保留開始的時間；過了回 <code>409 CANCEL_DEADLINE_PASSED</code>，請客人來電、由櫃檯代客取消（4.11d）</li>
+<li><code>preorderEditableUntil</code>＝<strong>用餐日前一天 20:00</strong>（進階 A2）：廚房要有完整一天可以備料；過了回 <code>409 PREORDER_LOCKED</code></li>
+<li>以前兩者是同一個時間點（前一天 20:00），現在分開。<strong>預點截止是否也改成訂位前 30 分鐘，待使用者決定</strong>；決定前照上面寫</li>
+</ul>
+<p>前端拿這兩個時間各自決定按鈕要不要停用，但<strong>後端一定要再擋一次</strong>——前端隱藏按鈕不算權限控制。</p>
 <p>後端用悲觀鎖 + <code>UNIQUE(table_id, start_time)</code> 雙重保護，見 <a href="../tech/advanced/46-區間重疊與訂位排程.html">區間重疊與訂位排程</a>。</p>
 <h3 id="411b-預先點餐進階-7e17e2">4.11b 預先點餐（進階 7.E1／7.E2）</h3>
 <pre><code class="language-http">PUT /api/reservations/442/preorder
@@ -1761,6 +1754,90 @@ X-Reservation-Token: rsv_8f3c1d...        （會員改帶 Authorization: Bearer 
   不能只靠 NO_SHOW 排程——它每 5 分鐘才跑一次，最多晚 5 分鐘才標。</li>
 </ul>
 <p><strong>目標桌的預約保留</strong>：保留給<strong>別筆</strong>訂位 → <code>409 TABLE_RESERVED</code>；是<strong>自己的</strong>保留桌 → 正常開桌。</p>
+<p><strong>跟取消搶同一筆</strong>：報到和櫃檯代客取消（4.11d）可能同時發生，兩支都要先 <code>SELECT ... FOR UPDATE</code> 鎖住這筆訂位、再檢查 <code>status = CONFIRMED</code>。
+取消後到 → <code>409 RESERVATION_NOT_CANCELLABLE</code>；報到後到 → 這筆已經是 <code>CANCELLED</code>，一定要擋下來、不能開桌。
+<strong>報到遇到「訂位已不是 <code>CONFIRMED</code>」目前沒有專用錯誤碼，待決定</strong>；前端收到任何 409 都重抓訂位清單。</p>
+<h3 id="411d-取消訂位客人線上取消櫃檯代客取消">4.11d 取消訂位（客人線上取消／櫃檯代客取消）</h3>
+<p>兩個入口，結果一樣：訂位轉 <code>CANCELLED</code>、寫 <code>cancelled_at</code>、<strong><code>table_id</code> 設 <code>NULL</code></strong>（釋放 <code>UNIQUE(table_id, start_time)</code>），
+那張桌的預約保留與那個時段的名額一起釋出。差別只在期限與誰取消的（<code>cancel_source</code>）。</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>客人線上取消（M7 7.8）</th>
+<th>櫃檯代客取消（M7 7.18）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API</td>
+<td><code>DELETE /api/reservations/{id}</code></td>
+<td><code>POST /api/admin/reservations/{id}/cancel</code></td>
+</tr>
+<tr>
+<td>誰</td>
+<td>會員帶 JWT，匿名帶 <code>X-Reservation-Token</code></td>
+<td>COUNTER、MANAGER</td>
+</tr>
+<tr>
+<td>期限</td>
+<td><strong>訂位時間前 30 分鐘</strong>；<code>now &gt; start_time − 30 分</code> → <code>409 CANCEL_DEADLINE_PASSED</code>「訂位前 30 分鐘內請來電取消」</td>
+<td><strong>隨時可以取消</strong>，不受任何期限</td>
+</tr>
+<tr>
+<td>狀態不是 <code>CONFIRMED</code></td>
+<td><code>409 RESERVATION_NOT_CANCELLABLE</code></td>
+<td><code>409 RESERVATION_NOT_CANCELLABLE</code></td>
+</tr>
+<tr>
+<td>寫入</td>
+<td><code>cancel_source = CUSTOMER</code>，<code>cancelled_by_staff_id</code> 留 <code>NULL</code></td>
+<td><code>cancel_source = STAFF</code>，<code>cancelled_by_staff_id</code> = 登入的員工</td>
+</tr>
+<tr>
+<td>推播</td>
+<td>不用推（還沒進保留窗，桌況不會變）</td>
+<td><strong>交易提交後</strong>推 <code>TABLE_STATUS</code> 到 <code>/topic/counter</code></td>
+</tr>
+<tr>
+<td>畫面</td>
+<td>C-18、C-19：「訂位時間前 30 分鐘都可以在這裡取消；之後請來電」</td>
+<td>S-07、S-02d 的「取消訂位」，按下前二次確認</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>客人線上取消</strong></p>
+<pre><code class="language-http">DELETE /api/reservations/442
+X-Reservation-Token: rsv_8f3c1d...        （會員改帶 Authorization: Bearer &lt;JWT&gt;）
+</code></pre>
+<pre><code class="language-json">200 OK
+{ &quot;reservationId&quot;: 442, &quot;status&quot;: &quot;CANCELLED&quot;, &quot;cancelSource&quot;: &quot;CUSTOMER&quot;,
+  &quot;cancelledAt&quot;: &quot;2026-09-18T21:10:05+08:00&quot; }
+</code></pre>
+<ul>
+<li>期限的 30 分就是 <code>reservation.hold-before-minutes</code>：<strong>取消期限＝預約保留開始的時間</strong>。所以客人自己取消時，那張桌一定還沒進保留窗；
+  <strong>保留開始之後只剩櫃檯能取消</strong></li>
+<li>跟預點截止（前一天 20:00）是兩條線，見 4.11</li>
+</ul>
+<p><strong>櫃檯代客取消</strong></p>
+<pre><code class="language-http">POST /api/admin/reservations/442/cancel
+Authorization: Bearer &lt;員工 JWT&gt;
+{ &quot;reason&quot;: &quot;客人來電取消&quot; }
+</code></pre>
+<pre><code class="language-json">200 OK
+{ &quot;reservationId&quot;: 442, &quot;status&quot;: &quot;CANCELLED&quot;, &quot;cancelSource&quot;: &quot;STAFF&quot;,
+  &quot;cancelledAt&quot;: &quot;2026-09-15T18:05:12+08:00&quot;, &quot;cancelledByStaffName&quot;: &quot;小美&quot; }
+</code></pre>
+<ul>
+<li>body 可以不帶；<code>reason</code> 選填，只寫進應用程式日誌（哪個員工、哪一筆、為什麼），<strong>資料表不另開欄位</strong></li>
+<li>在 <code>SELECT ... FOR UPDATE</code> 鎖住這筆訂位<strong>之後</strong>才檢查 <code>status = CONFIRMED</code>；兩個櫃檯同時按，後到的拿 <code>409 RESERVATION_NOT_CANCELLABLE</code>，前端重抓清單即可</li>
+<li>這張桌當下正在保留中的話，推播後 A08 立刻變回空桌；還沒進保留窗的話桌況本來就不是預約保留，畫面不會變</li>
+<li>前端按下前二次確認：「確定要取消 陳怡君 18:30 的訂位嗎？通常是客人來電取消。取消後 A08 會變回空桌，這筆訂位無法恢復。」</li>
+<li><strong>單向、不能恢復</strong>：沒有恢復訂位的 API。按錯了只能請客人重新訂位（線上只能訂明天以後，當天就請客人現場候位，或由櫃檯直接開桌）</li>
+<li>S-07 那一列變成狀態膠囊「已取消」＋小字「店家代取消・小美」（<code>cancelledByStaffName</code> 取 <code>staff.display_name</code>）</li>
+</ul>
+<p><strong>客人那邊怎麼看</strong>：<code>GET /api/reservations/{id}</code> 與 <code>GET /api/members/me/reservations</code> 每筆多回 <code>cancelSource</code>；
+C-19 的「已取消」頁籤裡，<code>STAFF</code> 顯示「店家已代為取消」，<code>CUSTOMER</code> 顯示「已取消」。</p>
 <h3 id="412-kds-看板">4.12 KDS 看板</h3>
 <pre><code class="language-json">GET /api/admin/kitchen/tickets
 {
@@ -1813,7 +1890,7 @@ X-Reservation-Token: rsv_8f3c1d...        （會員改帶 Authorization: Bearer 
 <li><code>GET /api/admin/kitchen/tickets</code> + <code>PATCH .../serve</code></li>
 <li>櫃檯結清 <code>settle</code>（含列鎖與 <code>expectedTotal</code> 比對；送出點餐那邊的 <code>SESSION_CLOSED</code> 一起做）、取消該次用餐 <code>cancel</code></li>
 <li>服務鈴、候位、<code>GET /api/admin/tables/available</code>（一鍵開桌）</li>
-<li>訂位與排程（<strong>先做到「訂位成立 → 報到開桌」這條線</strong>，含 7.10 預約保留：<code>displayStatus</code>、<code>release-hold</code>、<code>TABLE_RESERVED</code>；預點是後面的事）</li>
+<li>訂位與排程（<strong>先做到「訂位成立 → 報到開桌」這條線</strong>，含 7.10 預約保留：<code>displayStatus</code>、<code>TABLE_RESERVED</code>、開桌強烈提醒的 115 分鐘窗；取消訂位兩支（客人 <code>DELETE</code>、櫃檯 <code>cancel</code>）；預點是後面的事）</li>
 <li>會員</li>
 <li>（有餘力）預先點餐三支 API + 報到轉單（A2）</li>
 <li>（有餘力）顧客線上結帳 <code>bill</code> + <code>payments</code>（A5）；消費紀錄（A1）；點數與優惠券（A6）；櫃檯查會員 <code>members/lookup</code>（8.10）；人氣推薦 <code>recommendations</code>（A7）</li>

@@ -204,7 +204,7 @@ public class OrderService {
 | `MENU_SOLD_OUT` | menu | 某品項售完 |
 | `MENU_RESTOCKED` | menu | 補貨了 |
 | `SERVICE_CALL` | counter | 有人按服務鈴 |
-| `TABLE_STATUS` | counter | 桌況變了（開桌、清潔完成、櫃檯取消訂位保留…） |
+| `TABLE_STATUS` | counter | 桌況變了（開桌、清潔完成、櫃檯代客取消訂位…） |
 | `WAITLIST_CALLED` | waitlist | 叫號 |
 
 ## 最重要的一件事

@@ -572,7 +572,17 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td>預約保留</td>
 <td><code>displayStatus = RESERVED</code></td>
-<td>訂位配到的桌，在訂位時間前 30 分～後 10 分顯示「預約保留」，不能開給別人；櫃檯可以取消保留（訂位是 <code>CONFIRMED</code> 就能按，不限保留窗內；單向，取消後無法恢復）。<strong>查桌況時算出來的，不存在 <code>dining_table.status</code>、不靠排程</strong>（M7 7.10）</td>
+<td>訂位配到的桌，在訂位時間前 30 分～後 10 分顯示「預約保留」，不能開給別人；要解開就是櫃檯代客取消那筆訂位（沒有「只解除保留」的功能）。<strong>查桌況時算出來的，不存在 <code>dining_table.status</code>、不靠排程</strong>（M7 7.10）。只有訂位會鎖桌，候位不鎖桌</td>
+</tr>
+<tr>
+<td>代客取消</td>
+<td><code>cancel_source = STAFF</code></td>
+<td>客人來電說不來了，櫃檯在 S-07／S-02d 幫他取消訂位（M7 7.18）。<strong>隨時可以取消</strong>，不受期限；單向，取消後無法恢復。客人自己線上取消只到訂位時間前 30 分鐘（<code>cancel_source = CUSTOMER</code>）</td>
+</tr>
+<tr>
+<td>開桌強烈提醒</td>
+<td><code>upcomingOnThisTable</code></td>
+<td>要開的桌在「現在～現在 + 115 分」內有別筆訂位要開始，開桌頁顯示醒目警示、主按鈕改「仍要開桌」並再確認一次；<strong>只提醒不擋</strong></td>
 </tr>
 <tr>
 <td>清桌緩衝</td>
@@ -654,12 +664,12 @@ pre.mermaid svg{max-width:100%;height:auto}
 <td>70%</td>
 </tr>
 <tr>
-<td>免費取消期限</td>
-<td>用餐日前一天 20:00</td>
+<td>免費取消期限（客人線上取消）</td>
+<td>訂位時間前 30 分鐘（＝預約保留開始；之後請來電，由櫃檯代客取消，櫃檯取消不受期限）</td>
 </tr>
 <tr>
 <td>預點修改截止（進階 A2）</td>
-<td>同免費取消期限（用餐日前一天 20:00）</td>
+<td>用餐日前一天 20:00（跟取消期限是兩條線；<strong>是否也改成訂位前 30 分鐘，待使用者決定</strong>）</td>
 </tr>
 <tr>
 <td>訂位提醒</td>
@@ -696,6 +706,10 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td>預約保留結束（<code>reservation.hold-after-minutes</code>）</td>
 <td>訂位時間後 10 分鐘（＝訂位保留時間）</td>
+</tr>
+<tr>
+<td>開桌強烈提醒時間窗</td>
+<td>現在 ～ 現在 + 115 分鐘（＝用餐時長 100 分＋清桌緩衝 15 分，兩個設定值相加，不另開設定）</td>
 </tr>
 <tr>
 <td>驗證碼效期</td>

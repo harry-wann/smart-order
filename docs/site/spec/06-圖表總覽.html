@@ -250,6 +250,7 @@ pre.mermaid svg{max-width:100%;height:auto}
       悲觀鎖防重複
       訂位保留十分鐘
       配到的桌前三十分鎖住 算出來不靠排程
+      客人取消到前三十分 櫃檯代客取消隨時
       排程未到與提醒
       報到選桌開桌
       進階 預先點餐不先結帳
@@ -749,9 +750,11 @@ pre.mermaid svg{max-width:100%;height:auto}
         +int partySize
         +ReservationStatus status
         +boolean overlaps(LocalDateTime s, LocalDateTime e)
-        +boolean isCancellable()
+        +LocalDateTime cancelledAt
+        +String cancelSource
+        +boolean isCancellableByCustomer(LocalDateTime now)
+        +void cancel(String source, Long staffId)
         +boolean isExpired(LocalDateTime now)
-        +LocalDateTime holdReleasedAt
         +boolean isHolding(LocalDateTime now)
     }
 
@@ -800,6 +803,7 @@ pre.mermaid svg{max-width:100%;height:auto}
     Reservation "0..1" --o "0..1" DiningSession : 報到開桌
     Member "0..1" --o "0..*" Reservation
     DiningTable "0..1" --o "0..*" Reservation
+    Staff "0..1" --o "0..*" Reservation : 代客取消
     DiningSession "1" --o "0..*" Payment
 </pre>
 <p><strong>圖例：UML 關係符號</strong></p>
@@ -858,7 +862,8 @@ pre.mermaid svg{max-width:100%;height:auto}
 <li><strong><code>OrderItem</code> 存快照</strong>（<code>itemNameSnapshot</code> / <code>unitPriceSnapshot</code>），改菜單價格不影響歷史帳單。</li>
 <li><strong><code>ServiceCall</code> 和 <code>Waitlist</code> 是新增的兩個類別</strong>，分別支撐服務鈴與現場候位。</li>
 <li><strong><code>CartItem</code> 掛在 <code>DiningSession</code> 底下、整桌共用</strong>；<code>DiningSessionGuest</code> 只記「誰」（裝置 UUID＋顯示名稱），不是身分驗證。
-   <code>DiningTable.displayStatus()</code> 與 <code>Reservation.isHolding()</code> 是<strong>算出來的</strong>，沒有對應的欄位。</li>
+   <code>DiningTable.displayStatus()</code> 與 <code>Reservation.isHolding()</code> 是<strong>算出來的</strong>，沒有對應的欄位。
+   <code>Reservation.isCancellableByCustomer(now)</code> 只給客人線上取消用（<code>now ≤ startTime − 30 分</code>）；櫃檯代客取消 <code>cancel("STAFF", staffId)</code> 不看期限，只看狀態是不是 <code>CONFIRMED</code>。</li>
 </ol>
 <hr />
 <h2 id="6-uml-狀態圖">6. UML 狀態圖</h2>
@@ -935,17 +940,17 @@ pre.mermaid svg{max-width:100%;height:auto}
 另一個接點照舊——<strong>開桌成功時，把來源那筆訂位或候位轉成已報到</strong>。</p>
 <p>舊版的 <code>RESERVED</code> 是存在桌位欄位裡、由排程在訂位前 30 分鐘自動轉入，等於把 <code>reservation</code>
 複製一份到桌位上、還要靠 cron 同步，已經移除。現在的 <code>RESERVED</code> 每次現算，不存、不靠排程。
-櫃檯手動保留桌位（<code>HELD</code>，給沒有訂位的保留用）是延伸功能（M2 的 2.E5），基礎不做。</p>
+<strong>只有訂位會鎖桌，候位不鎖桌</strong>：叫號只是通知，客人到櫃檯才選桌開桌；沒有「櫃檯自己把空桌鎖起來」這個功能。</p>
 </blockquote>
 <h3 id="63b-桌況的顯示狀態算出來的不是欄位">6.3b 桌況的顯示狀態（算出來的，不是欄位）</h3>
 <pre class="mermaid">flowchart TD
     S["查桌況<br/>GET /api/admin/tables"] --> A{"dining_table.status"}
     A -->|OCCUPIED| O["用餐中"]
     A -->|CLEANING| C["待清理"]
-    A -->|AVAILABLE| R{"有沒有一筆訂位<br/>配到這張桌 而且 CONFIRMED<br/>現在在開始前 30 分到開始後 10 分<br/>而且沒被取消保留"}
+    A -->|AVAILABLE| R{"有沒有一筆訂位<br/>配到這張桌 而且 CONFIRMED<br/>現在在開始前 30 分到開始後 10 分"}
     R -->|有| H["預約保留 RESERVED<br/>帶 heldFor<br/>開給別人回 409 TABLE_RESERVED"]
     R -->|沒有| E["空桌"]
-    H -.->|櫃檯取消保留 隨時可按<br/>寫 hold_released_at<br/>單向 不能恢復| E
+    H -.->|櫃檯代客取消訂位 隨時可取消<br/>訂位轉 CANCELLED table_id 清空<br/>單向 不能恢復| E
 
     classDef occ fill:#FBE8E3,stroke:#C8442E,color:#2B211C
     classDef held fill:#FCF0DC,stroke:#E8A33D,color:#2B211C
@@ -974,21 +979,21 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td>虛線箭頭</td>
-<td>取消保留只改 <code>reservation</code>，訂位仍是 <code>CONFIRMED</code>；<strong>隨時可按</strong>（不限保留窗內，還沒進窗就先取消的話，到時候直接走「沒有」那條）；<strong>單向</strong>，沒有恢復保留的路</td>
+<td>要解開保留就是<strong>取消那筆訂位</strong>（櫃檯代客取消，M7 7.18）：訂位轉 <code>CANCELLED</code>、<code>table_id</code> 設 NULL，下次查詢直接走「沒有」那條；<strong>隨時可取消</strong>（不受期限）；<strong>單向</strong>，沒有恢復的路。沒有「只解除保留、訂位照留」這種操作</td>
 </tr>
 </tbody>
 </table></div>
 <blockquote>
 <p>判斷順序就是顯示優先順序：<strong>用餐中 ＞ 待清理 ＞ 預約保留 ＞ 空桌</strong>。配到的桌到時間還在用餐中，就不顯示保留，客人到了從 S-07b 選別張桌。
 30、10 兩個數字在 <code>application.yml</code>（<code>reservation.hold-before-minutes</code>、<code>reservation.hold-after-minutes</code>）。</p>
+<p>圖上沒畫的「開桌強烈提醒」不是顯示狀態：空桌在「現在 ～ 現在 + 115 分」內有別筆訂位要開始，桌格照樣是空桌，只有進開桌頁或選桌清單時才顯示醒目警示、要按「仍要開桌」再確認（只提醒不擋）。</p>
 </blockquote>
 <h3 id="64-訂位-reservation">6.4 訂位 Reservation</h3>
 <pre class="mermaid">stateDiagram-v2
     direction LR
     [*] --> CONFIRMED : 選完時段送出 當場成立
     CONFIRMED --> SEATED : 到店報到 開桌 最早提前 30 分
-    CONFIRMED --> CONFIRMED : 櫃檯取消保留 隨時可按 只寫 hold_released_at
-    CONFIRMED --> CANCELLED : 前一日 20 點前取消
+    CONFIRMED --> CANCELLED : 客人線上取消 訂位前 30 分以前 或 櫃檯代客取消 隨時
     CONFIRMED --> NO_SHOW : 排程 過了訂位時間 10 分未到
     SEATED --> [*]
     CANCELLED --> [*]
@@ -1021,7 +1026,9 @@ pre.mermaid svg{max-width:100%;height:auto}
 它本來就不算佔位（<a class="gloss" href="../tech/advanced/46-區間重疊與訂位排程.html" title="看這個技術的白話說明">區間重疊</a>只看 <code>CONFIRMED</code> 與還沒結帳的 <code>SEATED</code>），預約保留也在訂位時間後 10 分鐘自己結束，桌位狀態完全不受影響。</p>
 <p><strong><code>SEATED</code> 只在用餐紀錄還沒結帳（<code>dining_session.status = OPEN</code>）時算佔用</strong>：客人還坐著就要算；結帳或取消用餐後名額立刻釋出，不用等到 <code>end_time</code>。
 線上訂位只能訂明天以後，所以這條主要影響的是「同一天之後的訂位保留」與容量報表的正確性，不會出現當天被線上搶訂的情況。</p>
-<p><strong>取消保留隨時可按</strong>：訂位是 <code>CONFIRMED</code>、還沒取消過就能按，不限保留窗內；重複按回 <code>409 HOLD_ALREADY_RELEASED</code>。</p>
+<p><strong>取消有兩個入口</strong>：客人線上取消只到訂位時間前 30 分鐘（之後回 <code>409 CANCEL_DEADLINE_PASSED</code>），剛好是預約保留開始的時間；
+櫃檯代客取消隨時可以（<code>POST /api/admin/reservations/{id}/cancel</code>）。兩者都只能取消 <code>CONFIRMED</code> 的（其他回 <code>409 RESERVATION_NOT_CANCELLABLE</code>），
+都把 <code>table_id</code> 設 NULL，並用 <code>cancel_source</code>（<code>CUSTOMER</code>／<code>STAFF</code>）記是誰取消的。沒有「只解除保留」這條轉移。</p>
 </blockquote>
 <h3 id="64b-預先點餐進階">6.4b 預先點餐（進階）</h3>
 <p>這不是資料庫欄位，是由「有沒有內容」加上「現在幾點」推導出來的。</p>
@@ -1042,6 +1049,8 @@ pre.mermaid svg{max-width:100%;height:auto}
     end note
 </pre>
 <blockquote>
+<p><strong>「已鎖定」的時間點（前一日 20 點）跟取消訂位的期限（訂位前 30 分）是兩條線</strong>，預點鎖定之後客人仍然可以取消訂位。
+預點截止是否也改成訂位前 30 分，待使用者決定。</p>
 <p><strong>「已鎖定 → 已轉單」才扣庫存。</strong> 預點階段完全不碰庫存，
 所以到店可能有品項已售完，報到 API 會回一份 <code>soldOut</code> 清單給櫃檯。
 取捨的理由見 <a href="../spec/modules/M7-訂位.html">M7 問題 7</a>。</p>
@@ -1125,7 +1134,7 @@ pre.mermaid svg{max-width:100%;height:auto}
     MENU_ITEM ||--o| INVENTORY_ITEM : "庫存"
     INVENTORY_ITEM ||--o{ INVENTORY_LOG : "異動"
     STAFF ||--o{ SERVICE_CALL : "處理"
-    STAFF |o--o{ RESERVATION : "取消保留"
+    STAFF |o--o{ RESERVATION : "代客取消"
 
     MEMBER {
         bigint id PK
@@ -1243,8 +1252,9 @@ pre.mermaid svg{max-width:100%;height:auto}
         varchar status "四種 沒有 PENDING"
         varchar access_token "UK 匿名訂位的憑證"
         datetime preorder_updated_at "NULL 表示沒預點"
-        datetime hold_released_at "櫃檯取消保留 NULL 表示沒取消"
-        bigint hold_released_by FK "哪個員工"
+        datetime cancelled_at "NULL 表示沒取消"
+        bigint cancelled_by_staff_id FK "櫃檯代客取消的員工 客人取消為 NULL"
+        varchar cancel_source "CUSTOMER 或 STAFF"
     }
     RESERVATION_PREORDER_ITEM {
         bigint id PK
@@ -1516,17 +1526,18 @@ CREATE UNIQUE INDEX uk_guest_session_device ON dining_session_guest (dining_sess
     G->>API: 事後從 C-19 我的預約 再送一次 PUT
     API-->>G: 200 整批覆蓋 同一支 API
     Note over API: 過了前一日 20 點回 409 PREORDER_LOCKED
+    Note over G,API: 基礎 客人自己取消 DELETE /reservations/442 只到訂位前 30 分 之後回 409 CANCEL_DEADLINE_PASSED 請來電
 
     Note over G,KDS: 階段三 到店報到 訂位前 30 分起配到的桌顯示預約保留
 
     CT->>API: GET /admin/tables
     API-->>CT: A05 displayStatus RESERVED heldFor 這筆訂位 當場算出來
-    opt 櫃檯決定先把 A05 給別人 取消保留隨時可按
-        CT->>API: POST /admin/reservations/442/release-hold
-        API-->>CT: A05 變回空桌 訂位仍是 CONFIRMED 不能恢復
+    opt 客人來電說不來了 櫃檯代客取消 隨時可取消
+        CT->>API: POST /admin/reservations/442/cancel
+        API-->>CT: 訂位轉 CANCELLED table_id 清空 A05 變回空桌 不能恢復 流程到此結束
     end
     CT->>API: GET /admin/tables/available partySize 4 reservationId 442
-    API-->>CT: 沒取消保留的話原保留桌 A05 排第一 其他保留中的桌不列
+    API-->>CT: 原保留桌 A05 排第一 其他保留中的桌不列 115 分內有別筆訂位的桌排最後
     CT->>API: POST /admin/reservations/442/seat tableId 5
     activate API
     alt 早於訂位時間 30 分鐘
@@ -1600,8 +1611,9 @@ CREATE UNIQUE INDEX uk_guest_session_device ON dining_session_guest (dining_sess
 <li><strong>庫存到第 26 步才扣</strong>。預點不鎖庫存，代價是到店可能售完 → <code>soldOut</code> 清單。
    這是設計選擇不是 bug，要在驗收時講得出來。</li>
 <li><strong>配到的桌在訂位前 30 分鐘起顯示「預約保留」（第 15～16 步）</strong>，是查桌況時當場算的，沒有排程。
-   櫃檯可以取消保留（第 17～18 步），<strong>隨時可按</strong>（不限保留窗內，重複按回 <code>HOLD_ALREADY_RELEASED</code>），訂位仍是 <code>CONFIRMED</code>，客人到了改坐別張桌；取消是單向的，不能恢復。</li>
-<li><strong>報到前先選桌（第 19～21 步）</strong>。S-07b 列出坐得下的空桌，原保留桌排第一，別人的保留桌不列；
+   要解開保留就是取消訂位：客人來電時櫃檯代客取消（第 17～18 步），<strong>隨時可取消</strong>，訂位轉 <code>CANCELLED</code>、桌子與名額一起釋出，單向不能恢復（不是 <code>CONFIRMED</code> 回 <code>RESERVATION_NOT_CANCELLABLE</code>）；
+   客人自己線上取消只到訂位前 30 分（圖中第 14 步後面的註記），之後回 <code>CANCEL_DEADLINE_PASSED</code>。</li>
+<li><strong>報到前先選桌（第 19～21 步）</strong>。S-07b 列出坐得下的空桌，原保留桌排第一，別人的保留桌不列，115 分鐘內有別筆訂位的桌標紅字、排最後（選了要按「仍要開桌」再確認）；
    太早回 <code>RESERVATION_TOO_EARLY</code>、過了訂位時間 10 分鐘回 <code>RESERVATION_EXPIRED</code>、開到別人的保留桌回 <code>TABLE_RESERVED</code>（第 22～24 步），
    都不等排程。報到成功後這筆轉 <code>SEATED</code>，保留條件不成立，保留自己消失（第 30 步）。</li>
 </ol><div class="pager"><a href="../spec/05-開發流程與分工.html"><div class="k">← 上一篇</div><div class="n">05 開發流程與時程</div></a><a class="next" href="../spec/modules/M1-菜單與品項.html"><div class="k">下一篇 →</div><div class="n">M1 菜單與品項</div></a></div>

@@ -21,7 +21,7 @@
   --info:#2F6F8F;    --info-bg:#E5EFF4;
   /* 桌況 */
   --table-available:#E6DED2; --table-occupied:#C8442E;
-  --table-held:#E8A33D;  --table-cleaning:#9C8E84;
+  --table-cleaning:#9C8E84;
   /* 陰影：只有兩級，用暖黑 */
   --shadow-card:0 1px 2px rgba(43,33,28,.06),0 4px 12px rgba(43,33,28,.05);
   --shadow-pop:0 8px 24px rgba(43,33,28,.12);
@@ -385,8 +385,6 @@ body:has(#thumbmode:target) .frame{box-shadow:none}
    用 inset 陰影畫框，不用 border，桌號才會跟隔壁幾格對齊。 */
 .tt-rs{background:var(--accent-100);color:var(--text-900);box-shadow:inset 0 0 0 1.5px var(--accent-500)}
 .tt-rs .lb{background:var(--accent-500);color:var(--text-900)}
-/* 手動保留：M2 的延伸功能 2.E5，基礎的桌況總覽不會用到 */
-.tt-hd{background:var(--table-held);color:var(--text-900)}
 .tt-cl{background:var(--table-cleaning);color:#fff}
 .tt-oc .lb,.tt-cl .lb{background:rgba(255,255,255,.9)}
 .tt.over{box-shadow:inset 0 0 0 3px var(--danger)}
@@ -557,6 +555,11 @@ body:has(#thumbmode:target) .frame{box-shadow:none}
 .ib-warn{background:var(--warning-bg);color:#7D4A12}
 .ib-ok{background:var(--success-bg);color:#2A5637}
 .ib-quiet{background:var(--surface-2);color:var(--text-600)}
+/* 強烈提醒：開桌時這張桌 115 分鐘內有別筆訂位（S-02b／S-02c／S-02d）。只提醒、不擋，
+   但要比暖黃的一般提醒醒目：淺紅底＋深紅字＋紅框＋警示圖示 */
+.ib-danger{background:var(--danger-bg);color:#7A1B15;box-shadow:inset 0 0 0 1.5px var(--danger)}
+.ib-danger > .ic{color:var(--danger)}
+.ib-danger .t-cap{color:#7A1B15}
 /* 勾勾完成圈 */
 .doneball{width:96px;height:96px;border-radius:50%;background:var(--success-bg);
   display:flex;align-items:center;justify-content:center;color:var(--success)}
@@ -597,6 +600,10 @@ body:has(#thumbmode:target) .frame{box-shadow:none}
 .t-hold{display:inline-flex;align-items:center;gap:4px;font-size:13px;line-height:1.6;
   font-weight:700;color:#8A5214;white-space:nowrap}
 .t-hold .ic{width:14px;height:14px}
+/* 選桌清單（S-07b／S-10b）：這張桌 115 分鐘內有別筆訂位。紅字＋警示圖示，卡片排在沒衝突的桌後面 */
+.t-clash{display:inline-flex;align-items:center;gap:4px;font-size:13px;line-height:1.6;
+  font-weight:700;color:var(--danger);white-space:nowrap}
+.t-clash .ic{width:14px;height:14px}
 
 /* ---------------------- 櫃檯付款倒數（S-03b） --------------------------- */
 /* 大數字放在一圈進度環裡；環用 SVG 的 stroke-dasharray 畫剩下幾秒，不用漸層。

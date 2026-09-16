@@ -248,7 +248,6 @@ pre.mermaid svg{max-width:100%;height:auto}
   /* 桌況專用 */
   --table-available: #E6DED2;
   --table-occupied:  #C8442E;
-  --table-held:      #E8A33D;   /* 保留：延伸功能 2.E5 才會用到 */
   /* 預約保留（算出來的顯示狀態，不是存起來的桌態）不另開色票，
      直接用 accent-100 底＋accent-500 邊框，見 §2.5 */
   --table-cleaning:  #9C8E84;
@@ -385,8 +384,8 @@ export default {
 <ul>
 <li><strong>預約保留</strong>是 2026-09-16 加的第四種<strong>顯示</strong>：空桌在訂位前 30 分～後 10 分被這筆訂位鎖住（<code>10-UI-UX規格.md</code> S-02）。
   格內第二行寫「18:30 陳○君 4 位」。邊框用 <code>inset</code> 陰影畫（<code>_shared.css</code> 的 <code>.tt-rs</code>），桌卡尺寸不變，也跟超時的 3px 紅框分得開</li>
-<li>它跟延伸功能 2.E5 的手動保留（<code>--table-held</code>，實心 <code>accent-500</code>）<strong>不是同一個東西</strong>：
-  淺底＋黃框＝線上訂位自動算出來的；實心黃＝櫃檯手動留桌（基礎不做）。兩個不要混用同一種樣式</li>
+<li><strong>只有訂位會鎖桌</strong>：桌位沒有其他「保留」狀態、也沒有另外的保留色票，候位也不鎖桌。
+  所以「還空著但開不了」的桌只有預約保留這一種樣式；櫃檯代客取消那筆訂位後，桌格就地變回空桌</li>
 <li>淺黃底上的文字用 <code>text-900</code>，對比度夠；不要用 <code>accent-600</code> 當字色（在 <code>accent-100</code> 上不到 4.5:1）</li>
 </ul>
 <h3 id="24-唯一的深色例外">2.4 唯一的深色例外</h3>
@@ -875,7 +874,7 @@ grep -oE '(margin|padding|gap)[a-z-]*:[^;}]+' src/**/*.css | \
 <p>狀態膠囊（已使用、已過期、逾時未到…）一律要有文字，不能只換顏色。</p>
 </blockquote>
 <h3 id="56b-infobox提示框">5.6b InfoBox（提示框）</h3>
-<p>一行圖示＋一段說明，<code>padding: 12px 16px</code>、8px 圓角、14px 字。四種語氣，<strong>要跟內容對得上，不要什麼都用警告色</strong>：</p>
+<p>一行圖示＋一段說明，<code>padding: 12px 16px</code>、8px 圓角、14px 字。五種語氣，<strong>要跟內容對得上，不要什麼都用警告色</strong>：</p>
 <div class="tablewrap"><table>
 <thead>
 <tr>
@@ -893,7 +892,12 @@ grep -oE '(margin|padding|gap)[a-z-]*:[^;}]+' src/**/*.css | \
 <tr>
 <td>警告 <code>ib-warn</code></td>
 <td><code>warning-bg</code> 底、深橘字</td>
-<td>「這張桌 19:30 有預約」、「這張桌保留給 陳怡君 18:30（4 位）」、「剛剛有人加點，金額更新了」</td>
+<td>「這張桌保留給 陳怡君 18:30（4 位）。客人來電取消的話，請到預約管理取消訂位」、「剛剛有人加點，金額更新了」</td>
+</tr>
+<tr>
+<td>強烈提醒 <code>ib-danger</code></td>
+<td><code>danger-bg</code> 底、深紅字 <code>#7A1B15</code>、1.5px <code>danger</code> 內框、<code>danger</code> 警示圖示</td>
+<td><strong>只用在開桌衝突</strong>：「A06 在 19:30 有訂位（陳小姐 4 位）。現在開桌，客人可能還沒吃完訂位就到了。」</td>
 </tr>
 <tr>
 <td>資訊 <code>ib-info</code></td>
@@ -907,6 +911,11 @@ grep -oE '(margin|padding|gap)[a-z-]*:[^;}]+' src/**/*.css | \
 </tr>
 </tbody>
 </table></div>
+<ul>
+<li><strong><code>ib-danger</code> 的用法</strong>：開桌時這張桌 115 分鐘內有別筆訂位（S-02b／S-02c／S-02d 頂部）。它只提醒、不擋，
+  但比暖黃的一般提醒醒目；出現時開桌主按鈕改成「仍要開桌」，按下再跳一次確認框。不要拿它當錯誤訊息（錯誤用 Toast 或欄位下的紅字）</li>
+<li>同一件事在選桌清單（S-07b／S-10b）的卡片上是紅字＋警示圖示「19:30 有訂位」（<code>_shared.css</code> 的 <code>.t-clash</code>，13px 粗體 <code>danger</code>），卡片排在沒衝突的桌後面</li>
+</ul>
 <h3 id="57-toast">5.7 Toast</h3>
 <p>畫面上方滑入、3 秒後自動消失、最多同時 1 個。成功綠、錯誤紅、一般深色，8px 圓角。<strong>不要用瀏覽器的 <code>alert()</code>。</strong></p>
 <h3 id="58-emptystate-skeleton-errorstate">5.8 EmptyState / Skeleton / ErrorState</h3>

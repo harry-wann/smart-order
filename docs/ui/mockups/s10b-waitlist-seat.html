@@ -136,13 +136,7 @@
         <div class="r g8 mt8 t-cap"><svg class="ic ic-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5.2l3.2 1.8"/></svg><span>候位 A12・18:37 登記・已叫號</span></div>
 
         <div class="c g8 mt24">
-            <div class="opt" style="min-height:56px">
-              <span class="rd"></span>
-              <span class="h3 num" style="width:56px">A04</span>
-              <span class="t-sm fill" style="margin:0">A 區・窗邊</span>
-              <span class="r g4 t-cap" style="color:#8A5214;font-weight:700"><svg class="ic ic-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5.2l3.2 1.8"/></svg>19:30 有預約</span>
-              <span class="badge b-plain">4 人桌</span>
-            </div>
+            <!-- 沒有衝突的桌依座位數、桌號排；115 分鐘內有別筆訂位的桌排在它們後面，紅字標示 -->
             <div class="opt on" style="min-height:56px">
               <span class="rd on"></span>
               <span class="h3 num" style="width:56px">A05</span>
@@ -164,10 +158,17 @@
               
               <span class="badge b-plain">6 人桌</span>
             </div>
+            <div class="opt" style="min-height:56px">
+              <span class="rd"></span>
+              <span class="h3 num" style="width:56px">A04</span>
+              <span class="t-sm fill" style="margin:0">A 區・窗邊</span>
+              <span class="t-clash"><svg class="ic" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0"/><path d="M12 9v4.5M12 17h.01"/></svg>19:30 有訂位</span>
+              <span class="badge b-plain">4 人桌</span>
+            </div>
             <!-- C02 這時候保留給 19:00 的訂位（18:30～19:10），預約保留中的桌不列 -->
         </div>
 
-        <p class="hint" style="margin-top:12px">座位數小的排前面。「有預約」只是提醒，一樣能開；預約保留中的桌不會列出來。</p>
+        <p class="hint" style="margin-top:12px">座位數小的排前面；稍後有訂位的桌排最後，一樣能開，但會再確認一次。預約保留中的桌不會列出來。</p>
 
         <div class="r g12 mt24">
           <button class="btn btn-ghost btn-lg">取消</button>
@@ -196,18 +197,25 @@
   <dl style="margin:0">
     <dt>只列坐得下的空桌</dt>
     <dd>status = AVAILABLE 且 seats ≥ 人數。<br>
-        依座位數由小到大、再依桌號排</dd>
+        依座位數由小到大、再依桌號排，<br>
+        有衝突的桌整批排在最後</dd>
     <dt>預約保留中的桌不列</dt>
     <dd>現在 18:55，C02 保留給 19:00 的訂位<br>
         （開始前 30 分～後 10 分），所以不在清單上。<br>
         剛好在這時被保留 → 409 TABLE_RESERVED，<br>
         清單重新載入</dd>
-    <dt>稍後有預約</dt>
-    <dd>還沒進保留窗的桌，卡片上用暖黃小字<br>
-        「19:30 有預約」，只提醒不擋</dd>
+    <dt>稍後有訂位（強烈提醒）</dt>
+    <dd>A04 在 115 分鐘內（19:30）有別筆訂位，<br>
+        紅字「19:30 有訂位」，<br>
+        排在沒衝突的桌後面。<br>
+        只提醒不擋：選它的話，<br>
+        主按鈕變「仍要開 A04」，<br>
+        按下再確認「確定要開 A04？」<br>
+        「確定開桌」／「換一張桌」（回到清單）</dd>
     <dt>API</dt>
     <dd>GET /api/admin/tables/available?partySize=N<br>
-        回桌號、區域、座位數、upcomingReservationAt</dd>
+        回桌號、區域、座位數、<br>
+        upcomingReservationAt（115 分鐘窗）</dd>
   </dl>
   <b class="mt16" style="display:block">沒有坐得下的空桌</b>
   <dl style="margin:0">

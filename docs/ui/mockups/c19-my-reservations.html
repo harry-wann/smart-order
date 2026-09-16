@@ -31,14 +31,14 @@
 
         <div class="infobox ib-quiet">
           <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5.2l3.2 1.8"/></svg>
-          <div>訂位保留 10 分鐘，逾時視同未到，需現場候位；逾時的訂位會移到「已取消」。</div>
+          <div>訂位時間前 30 分鐘都可以在這裡取消；之後請來電。訂位保留 10 分鐘，逾時視同未到，需現場候位，並移到「已取消」。</div>
         </div>
 
-        <!-- 狀態三：已鎖定（過了前一天 20:00） -->
+        <!-- 狀態三：餐點已鎖定（過了預點截止＝用餐日前一天 20:00），訂位還能取消（到訂位前 30 分鐘） -->
         <div class="card" style="padding:16px 20px">
           <div class="r g8">
             <span class="badge b-done">已確認</span>
-            <span class="badge b-plain">已鎖定</span>
+            <span class="badge b-plain">餐點已鎖定</span>
             <span class="fill"></span>
             <span class="t-cap">明天</span>
           </div>
@@ -56,9 +56,9 @@
 
           <div class="r g12 mt16">
             <button class="btn btn-secondary btn-md fill" disabled>調整餐點</button>
-            <button class="btn btn-ghost btn-md" disabled>取消訂位</button>
+            <button class="btn btn-ghost btn-md" style="color:var(--danger)">取消訂位</button>
           </div>
-          <p class="hint">已超過修改時間，要改請來電 02-2591-xxxx</p>
+          <p class="hint">餐點已超過修改時間；取消訂位到 9/16 18:00，之後請來電 02-2591-xxxx</p>
         </div>
 
         <!-- 狀態二：已預點，還可以改 -->
@@ -85,7 +85,7 @@
             <button class="btn btn-primary btn-md fill">調整餐點</button>
             <button class="btn btn-ghost btn-md" style="color:var(--danger)">取消訂位</button>
           </div>
-          <p class="hint">9/20（日）20:00 前都可以改或取消，沒有費用</p>
+          <p class="hint">餐點可以改到 9/20（日）20:00，沒有費用</p>
         </div>
 
         <!-- 狀態一：還沒預點 -->
@@ -110,7 +110,7 @@
             <button class="btn btn-primary btn-md fill">預先點餐</button>
             <button class="btn btn-ghost btn-md" style="color:var(--danger)">取消訂位</button>
           </div>
-          <p class="hint">9/27（日）20:00 前都可以點或取消，現在不用付款</p>
+          <p class="hint">餐點可以先點到 9/27（日）20:00，現在不用付款</p>
         </div>
 
         <!-- 已完成、已取消（含逾時未到）的卡片在各自的頁籤，這張畫框停在「即將到來」 -->
@@ -133,21 +133,37 @@
     <dt>已預點</dt>
     <dd>品項摘要 ＋ 主按鈕「調整餐點」，<br>
         卡片加品牌色邊框</dd>
-    <dt>已鎖定</dt>
-    <dd>過了前一天 20:00。<br>
-        兩顆按鈕都 disabled ＋ 請來電</dd>
+    <dt>餐點已鎖定（最上面那張）</dt>
+    <dd>過了預點截止（用餐日前一天 20:00）：<br>
+        「調整餐點」disabled，「取消訂位」照常</dd>
+    <dt>取消也過期（沒畫）</dt>
+    <dd>訂位時間前 30 分鐘內：<br>
+        兩顆都 disabled，膠囊「已超過取消時間」<br>
+        ＋「請來電 02-2591-xxxx」。<br>
+        硬送回 409 CANCEL_DEADLINE_PASSED<br>
+        「訂位前 30 分鐘內請來電取消」</dd>
+    <dt>兩條線分開</dt>
+    <dd>取消：訂位時間前 30 分鐘<br>
+        （最上面那行提示）。<br>
+        改餐點：用餐日前一天 20:00（進階 A2）。<br>
+        預點截止要不要也改成前 30 分，<br>
+        待使用者決定</dd>
   </dl>
   <b class="mt16" style="display:block">「已取消」頁籤（這張沒另外畫）</b>
   <dl style="margin:0">
     <dt>放兩種</dt>
-    <dd>客人自己取消的（CANCELLED），<br>
+    <dd>取消的（CANCELLED：客人自己取消，<br>
+        或客人來電、店家代為取消），<br>
         和逾時沒來的（NO_SHOW）</dd>
     <dt>逾時未到的卡片</dt>
     <dd>狀態膠囊「逾時未到」（danger）<br>
         ＋一句「需要的話請重新訂位」。<br>
         沒有任何按鈕，底部「再訂一次」照常</dd>
     <dt>已取消的卡片</dt>
-    <dd>膠囊「已取消」＋「前一天取消，未產生任何費用」</dd>
+    <dd>客人自己取消：膠囊「已取消」<br>
+        ＋「未產生任何費用」。<br>
+        店家代取消（cancelSource = STAFF）：<br>
+        膠囊改成「店家已代為取消」，其餘相同</dd>
     <dt>頁籤數字</dt>
     <dd>「已取消 2」＝ 1 筆取消＋ 1 筆逾時未到</dd>
   </dl>
@@ -156,7 +172,7 @@
     <dt>保留 10 分鐘</dt>
     <dd>最上面那行提示：逾時視同未到（NO_SHOW），<br>只能現場候位</dd>
     <dt>預先點餐／調整餐點</dt>
-    <dd>進階 A2。沒做就只剩「取消訂位」，<br>卡片上的預點摘要也拿掉</dd>
+    <dd>進階 A2。沒做就只剩「取消訂位」，<br>卡片上的預點摘要、「餐點已鎖定」<br>與「餐點可以改到…」都拿掉</dd>
   </dl>
   <b class="mt16" style="display:block">金額一律寫「預估」</b>
   <dl style="margin:0">

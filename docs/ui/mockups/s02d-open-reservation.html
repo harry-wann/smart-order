@@ -45,10 +45,10 @@
 
         <div class="content">
           <div style="max-width:760px;margin:0 auto">
-            <!-- 保留中的桌：三個頁籤頂部都是這一條；現場、候位頁的開桌按鈕停用 -->
+            <!-- 保留中的桌：三個頁籤頂部都是這一條（現場、候位頁的文案是「請到預約管理取消訂位」，開桌按鈕停用） -->
             <div class="infobox ib-warn" style="margin-bottom:16px">
               <svg class="ic" viewBox="0 0 24 24"><rect x="4" y="10.5" width="16" height="11" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>
-              <div>這張桌<b>保留給 陳怡君 18:30</b>（4 位），要先取消保留才能開給別人。<br>
+              <div>這張桌<b>保留給 陳怡君 18:30</b>（4 位）。客人來電取消的話，直接按下面的「取消訂位」。<br>
                 <span class="t-cap">陳怡君到了，直接在下面按「報到開桌」。</span></div>
             </div>
 
@@ -80,7 +80,7 @@
                       <span class="t-hold"><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="10.5" width="16" height="11" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>保留中</span>
                     </div>
                   </div>
-                  <button class="btn btn-secondary btn-md">取消保留</button>
+                  <button class="btn btn-secondary btn-md">取消訂位</button>
                   <button class="btn btn-primary btn-md">報到開桌</button>
                 </div>
               </div>
@@ -105,7 +105,7 @@
 
               <div class="infobox ib-quiet mt24" style="margin-bottom:0">
                 <svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 16v-4.5M12 8h.01"/></svg>
-                <div><b>保留中的桌只開給保留的那一筆。</b>林家豪要坐這張，得先按上面的「取消保留」。
+                <div><b>保留中的桌只開給保留的那一筆。</b>林家豪請從預約管理報到，另選一張桌。
                   <br>其他情況照舊<b>不限定原本配到哪一張桌</b>，開桌也不會去改那筆訂位的桌號。
                   <br><span class="t-cap">報到後狀態轉成已報到；有預點的單這時候才進 KDS、這時候才扣庫存。</span></div>
               </div>
@@ -138,26 +138,38 @@
   <dl style="margin:0">
     <dt>保留的那筆置頂</dt>
     <dd>暖黃底、「保留中」小字，<br>
-        頂部暖黃條寫保留給誰、幾點、幾位</dd>
+        頂部暖黃條寫保留給誰、幾點、幾位，<br>
+        以及「客人來電取消的話，<br>
+        直接按下面的取消訂位」</dd>
     <dt>報到開桌（primary）</dt>
     <dd>自己的保留桌，照常開桌</dd>
-    <dt>取消保留（secondary）</dt>
-    <dd>先跳二次確認：「取消後，這筆訂位到時候<br>
-        不會鎖住 A08，<b>而且無法恢復</b>。<br>
-        客人到店時再幫他選別張桌。」<br>
-        POST /api/admin/reservations/{id}/release-hold<br>
-        單向的，沒有恢復 API；重複按回<br>
-        409 HOLD_ALREADY_RELEASED。<br>
-        訂位仍是 CONFIRMED，<br>
-        到了照樣能報到（從 S-07b 選桌）</dd>
-    <dt>不限保留窗</dt>
-    <dd>只要還是 CONFIRMED、沒取消過就能按。<br>
-        從桌況點進來一定在窗內；還沒到的訂位<br>
-        要先取消，到 S-07 那一列按</dd>
+    <dt>取消訂位（secondary）</dt>
+    <dd>＝櫃檯代客取消，通常是客人來電。<br>
+        先跳二次確認：<br>
+        「確定要取消 陳怡君 18:30 的訂位嗎？<br>
+        通常是客人來電取消。<br>
+        取消後 A08 會變回空桌，<br>
+        <b>這筆訂位無法恢復</b>。」<br>
+        POST /api/admin/reservations/{id}/cancel<br>
+        body 可帶 reason（選填）。<br>
+        訂位轉 CANCELLED、記下是店家取消<br>
+        與操作的員工，桌子與名額一起釋出，<br>
+        桌格就地變回空桌</dd>
+    <dt>隨時可以取消</dt>
+    <dd>櫃檯代客取消不受任何期限。<br>
+        客人自己線上取消只到訂位前 30 分鐘，<br>
+        剛好是保留開始的時間，<br>
+        所以保留中只剩櫃檯能取消。<br>
+        只有 CONFIRMED 能取消，其他狀態回<br>
+        409 RESERVATION_NOT_CANCELLABLE</dd>
     <dt>其他列的開桌停用</dt>
     <dd>硬送會回 409 TABLE_RESERVED<br>
-        「這張桌保留給 陳怡君 18:30，要先取消保留」<br>
         現場、候位頁籤的開桌按鈕也一樣停用</dd>
+    <dt>115 分鐘內還有別筆訂位的話</dt>
+    <dd>頂部改成跟 S-02b 同一條紅色警示，<br>
+        開桌鈕改「仍要開桌」，按下再確認<br>
+        「確定要開 A08？」<br>
+        「確定開桌」／「換一張桌」</dd>
   </dl>
   <b class="mt16" style="display:block">不做換桌</b>
   <dl style="margin:0">
@@ -171,12 +183,11 @@
         reservation.status → SEATED、<br>
         有預點就轉成 is_preorder 的單並扣庫存</dd>
   </dl>
-  <b class="mt16" style="display:block">手動保留仍是延伸功能</b>
+  <b class="mt16" style="display:block">只有訂位會鎖桌</b>
   <dl style="margin:0">
-    <dt>M2 的 2.E5</dt>
-    <dd>給「沒有訂位、櫃檯自己想留桌」用，<br>
-        要存 HELD 狀態。這一頁的預約保留<br>
-        是 M7 7.10，查詢時算出來，基礎就有</dd>
+    <dt>M7 7.10 預約保留</dt>
+    <dd>查詢時從訂位算出來，不存桌態。<br>
+        候位不鎖桌，客人到櫃檯才選桌開桌</dd>
   </dl>
 </div>
 
