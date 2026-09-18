@@ -1,0 +1,32 @@
+name: Auto Assign Reviewers (Exclude Author)
+
+on:
+  pull_request:
+    types: [opened, ready_for_review]
+
+jobs:
+  assign-reviewers:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Assign All Except Author
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // 1. 在這裡填入你團隊「所有成員」的 GitHub 帳號
+            const allTeamMembers = ['Clara0110', 'kk-vincent', 'libbyhu', 'YiTing505', 'harry-wann'];
+            
+            // 2. 獲取當前發起 PR 的作者
+            const prAuthor = context.payload.pull_request.user.login;
+            
+            // 3. 過濾掉作者本人
+            const reviewersToAssign = allTeamMembers.filter(user => user !== prAuthor);
+            
+            // 4. 如果過濾後還有其他人，就自動指派為 Reviewer
+            if (reviewersToAssign.length > 0) {
+              await github.rest.pulls.requestReviewers({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.payload.pull_request.number,
+                reviewers: reviewersToAssign
+              });
+            }
