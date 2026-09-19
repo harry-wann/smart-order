@@ -1,16 +1,5 @@
-// 加圖 父元件要 import { icon } from "lucide-react";
-// 用法: <RedButton color="danger" redButton={[tag1, tag2]} />
-// 是否為 danger 決定要不要使用 color
-// ex. <RedButton redButton={[
-//     <div className="flex items-center gap-1">
-//       <span className="font-bold">NT$ 1,420</span>
-//       <ChevronRight className="w-5 h-5" />
-//     </div>,
-//   ]}
-//  />
 function RedButton({ redButton, color = "default", ...props }) {
-  const childCount = React.Children.count(redButton);
-  const justifyClass = childCount > 1 ? "justify-between" : "justify-center";
+  const justifyClass = redButton.length > 1 ? "justify-between" : "justify-center";
   const themeClass =
     color == "danger"
       ? "bg-danger hover:bg-[color-mix(in_srgb,var(--color-danger),black_8%)]"
