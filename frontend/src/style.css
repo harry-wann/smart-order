@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
 @theme {
-  --color-red-btn: rgb(200, 68, 46);
+  --color-red-btn: #c8442e;
+  --color-dark-red-btn: #b3261e;
 }
