@@ -1,1 +1,19 @@
 @import "tailwindcss";
+
+:root {
+  --redButton: rgb(200, 68, 46);
+}
+button {
+  background-color: var(--redButton);
+}
+button:hover {
+  background-color: color-mix(in srgb, var(--redButton), black 8%);
+  transition: all 0.3s ease;
+}
+button:active {
+  transform: scale(0.98);
+}
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
