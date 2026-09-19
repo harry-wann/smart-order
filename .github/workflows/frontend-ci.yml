@@ -1,0 +1,40 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "frontend/**"
+      - ".tool-versions"
+      - ".nvmrc"
+      - ".github/workflows/frontend-ci.yml"
+  pull_request:
+    paths:
+      - "frontend/**"
+      - ".tool-versions"
+      - ".nvmrc"
+      - ".github/workflows/frontend-ci.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # 直接讀 .tool-versions，CI 與本機共用同一個版本來源，避免版本漂移
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .tool-versions
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # npm ci 嚴格照 package-lock.json 安裝，lockfile 與 package.json 不同步時會直接失敗
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run build
