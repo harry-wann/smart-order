@@ -875,6 +875,11 @@ token 檔一律小寫完整六碼。</p>
 </tbody>
 </table></div>
 <p>進階畫面的標示不是顏色而是樣式：<code>accent-100</code> 底 + <code>accent-500</code> 2px 虛線框。</p>
+<h3 id="81b-文件圖表的顏色">8.1b 文件圖表的顏色</h3>
+<p><code>docs/</code> 裡的 Mermaid 圖（流程圖、時序圖、架構圖）有自己一組 <code>classDef</code> 配色，
+其中 <code>#EFE9E1</code>（灰米色，用在「停止／安靜／模擬」的節點）<strong>不在 App 色票裡</strong>。</p>
+<p>那是給<strong>看文件的人</strong>用的，不是給畫面用的，所以不進 <code>tokens.colors.css</code>，
+也不要拿去當 UI 的顏色。圖表配色維持跟品牌色系一致即可，不需要納管。</p>
 <h3 id="82-設計稿施工架的顏色">8.2 設計稿施工架的顏色</h3>
 <p><code>_shared.css</code> 裡 <code>.stage</code>、<code>.meta</code>、<code>.sidenote</code>、<code>.frame</code>、<code>.thumb</code>、<code>.idx</code>、<code>.flink</code>、<code>.pkg</code> 這些類別是<strong>給 Figma 看的施工架</strong>，不是產品畫面。它們用到的 <code>#EDE4D6</code>（舞台底）、<code>rgba(255,255,255,.65/.74)</code>（說明卡底）都不進 React token。</p>
 <p>例外：<code>#EDE4D6</code> 同時也是店家端側欄項目的 hover 色（<code>.nav-item:hover</code>），所以它以 <code>--color-surface-3</code> 的身分留下來了。</p>

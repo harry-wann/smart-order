@@ -1,7 +1,8 @@
-# tools — 設計稿的檢查、打包與 Figma 匯入
+# tools — 設計系統對帳、設計稿檢查與 Figma 匯入
 
 ```
 tools/
+├─ check_tokens.py        ★ 對帳：文件講的設計系統有沒有跟前端的 token 對上
 ├─ figma_prep.py          Lint 設計稿 + 打包 + 產 frames.json 與匯入文件 + 自我驗證
 ├─ extract_layout.py      把畫框在 Chromium 裡量成 layout.json（需要 Playwright）
 ├─ fetch_fonts.py         量測前把 Noto Sans TC／Noto Serif TC 裝到這台機器
@@ -16,6 +17,36 @@ tools/
    ├─ node-ids.json       匯入後從外掛面板複製出來的「畫框名 → 節點 id」（要進版控）
    └─ ui.html
 ```
+
+## check_tokens.py — 改完 token 或改完文件就跑
+
+```bash
+python3 docs/ui/mockups/tools/check_tokens.py
+```
+
+以 `frontend/src/styles/tokens.*.css` 為**唯一的真實來源**，檢查六件事：
+
+| # | 檢查什麼 |
+|---|---|
+| ① | 色票：11-設計系統 §2.1 的 `@theme` 區塊，名稱與值要跟 `tokens.colors.css` 一字不差 |
+| ② | 色票：設計稿 `_shared.css` 的舊變數，交集內的值要一致 |
+| ③ | 字級：`tokens.type.css` 的十個 `type-*` vs §3.2 的字體／大小／行高／字重 |
+| ④ | 圓角：`tokens.space.css` 的七個 `--radius-*` vs §2.2 |
+| ⑤ | 間距：`tokens.space.css` 的 `--spacing-*` vs §4.1 的表 |
+| ⑥ | 雜色：`docs/**/*.md` 裡有沒有色票以外的 hex |
+
+有任何不一致會列出來並回傳 **exit code 1**，所以可以直接接進 CI。
+`--quiet` 只印不一致的項目。
+
+**兩個要跟著改的地方**（都在腳本上方，有註解）：
+
+- `SPACING_LABELS` — §4.1 表格的「用途」欄文字改了，這裡要跟著改，否則檢查會說「找不到這一列」
+- `KNOWN_HEX` — 刻意不進色票的顏色（工作包識別色、Mermaid 圖的配色、歷史紀錄…）。
+  加新的要寫清楚為什麼，不要為了讓檢查過關就往裡面塞
+
+> 這支腳本跟 `figma_prep.py` 管的是不同的東西：
+> `figma_prep.py` 檢查**設計稿本身**（畫框、間距例外、圖片佔位說明），
+> `check_tokens.py` 檢查**文件與前端程式碼之間**有沒有對上。
 
 ## 目前有哪些畫框
 

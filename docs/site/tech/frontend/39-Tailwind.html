@@ -343,41 +343,44 @@ pre.mermaid svg{max-width:100%;height:auto}
 | <code>--color-ink-900</code> | <code>text-ink-900</code>　<code>bg-ink-900</code>　<code>bg-ink-900/50</code>（半透明） |
 | <code>--shadow-card</code> | <code>shadow-card</code> |</p>
 <p>所以你寫 <code>bg-brand-600</code>、<code>text-ink-900</code>、<code>shadow-card</code> 就好——<strong>全隊用同一組顏色，不會有人手打 <code>#C8442D</code></strong>。</p>
-<p>圓角不用自訂，Tailwind 內建的剛好對得上我們的規範：<strong>按鈕 8px = <code>rounded-lg</code>、卡片 12px = <code>rounded-xl</code></strong>。</p>
 <blockquote>
 <p><strong>要加新顏色前先看 <a href="../../ui/14-色彩Token.html">14-色彩Token</a> §3 的三條規則</strong>，尤其是「只有一個畫面用得到的顏色不要加進共用檔」。</p>
 </blockquote>
-<h2 id="響應式手機優先">響應式：手機優先</h2>
-<pre><code class="language-html">&lt;div class=&quot;p-4 md:p-6 lg:p-8&quot;&gt;
+<h2 id="響應式-這個專案不用">響應式：★ 這個專案不用</h2>
+<p>Tailwind 可以用 <code>sm:</code> <code>md:</code> <code>lg:</code> 這種前綴，讓同一個元素在不同螢幕寬度用不同樣式：</p>
+<pre><code class="language-html">&lt;div class=&quot;p-4 md:p-6 lg:p-8&quot;&gt;   &lt;!-- 預設 16px，≥768px 時 24px，≥1024px 時 32px --&gt;
 </code></pre>
-<p>意思是：<strong>預設 16px，螢幕 ≥768px 時 24px，≥1024px 時 32px</strong>。</p>
-<p><strong>沒有前綴的是手機版</strong>，這叫「手機優先」。我們顧客端主要就寫沒前綴的。</p>
+<p><strong>但我們的開發規範是固定尺寸，不做 RWD</strong>（<a href="../../ui/11-設計系統.html">11-設計系統</a>）：</p>
 <div class="tablewrap"><table>
 <thead>
 <tr>
-<th>前綴</th>
-<th>從幾 px 開始</th>
+<th>哪一端</th>
+<th>畫框</th>
+<th>斷點</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>（無）</td>
-<td>0</td>
+<td>顧客端</td>
+<td>375 × 812（手機直式）</td>
+<td>不用</td>
 </tr>
 <tr>
-<td><code>sm:</code></td>
-<td>640</td>
+<td>店家端</td>
+<td>1280 × 800（平板／桌機橫式）</td>
+<td>不用</td>
 </tr>
 <tr>
-<td><code>md:</code></td>
-<td>768</td>
-</tr>
-<tr>
-<td><code>lg:</code></td>
-<td>1024</td>
+<td>S-04 出菜看板</td>
+<td>1920 × 1080</td>
+<td>不用</td>
 </tr>
 </tbody>
 </table></div>
+<p>因為設計稿就是照這三個尺寸畫的，加斷點等於自己發明一套設計稿上沒有的版面。</p>
+<p><strong>所以 <code>sm:</code> <code>md:</code> <code>lg:</code> 原則上不該出現在你的 class 裡。</strong> 網路上的 Tailwind 教學幾乎每個例子都會加，
+那是給「同一個網站要同時支援手機和桌機」的情境用的，照抄會讓你的畫面跟 Figma 對不起來。</p>
+<p>（認得它們仍然有用——讀別人的程式碼時會遇到。斷點是 <code>sm:</code> 640、<code>md:</code> 768、<code>lg:</code> 1024。）</p>
 <h2 id="狀態變化">狀態變化</h2>
 <pre><code class="language-html">&lt;button class=&quot;bg-brand-600 hover:bg-brand-500 active:scale-95
                disabled:opacity-40 disabled:cursor-not-allowed
@@ -405,8 +408,8 @@ export default function Button({ variant='primary', size='lg', className='', ...
 <pre><code class="language-jsx">export default function App() {
   return (
     &lt;div className=&quot;min-h-screen bg-paper p-4&quot;&gt;
-      &lt;div className=&quot;flex items-center gap-3 bg-surface rounded-xl border border-line p-4 shadow-card&quot;&gt;
-        &lt;div className=&quot;w-20 h-20 rounded-xl bg-surface-2 shrink-0&quot; /&gt;
+      &lt;div className=&quot;flex items-center gap-3 bg-surface rounded-card border border-line p-row shadow-card&quot;&gt;
+        &lt;div className=&quot;w-20 h-20 rounded-card bg-surface-2 shrink-0&quot; /&gt;
         &lt;div className=&quot;flex-1&quot;&gt;
           &lt;h3 className=&quot;text-lg font-bold text-ink-900&quot;&gt;美國牛五花&lt;/h3&gt;
           &lt;p className=&quot;text-sm text-ink-600 mt-0.5&quot;&gt;厚切 3mm，涮 8 秒最好吃&lt;/p&gt;
@@ -611,7 +614,7 @@ MUI、Ant Design 有自己的樣式系統，會跟 Tailwind 打架。<strong>我
 <h2 id="相關頁面">相關頁面</h2>
 <p><a href="../../tech/frontend/34-React與JSX.html">React 與 JSX</a>　<a href="../../ui/11-設計系統.html">設計系統</a>　<a href="../../ui/14-色彩Token.html">色彩 Token</a>　<a href="../../tech/frontend/33-Vite.html">Vite</a></p><div class="pager"><a href="../../tech/frontend/38-ReactRouter.html"><div class="k">← 上一篇</div><div class="n">38 React Router</div></a><a class="next" href="../../tech/frontend/40-fetch串接API.html"><div class="k">下一篇 →</div><div class="n">40 fetch 串接後端 API</div></a></div>
 </article>
-<aside class="toc"><div class="tt">本頁目錄</div><a href="#一句話">一句話</a><a href="#想像一下">想像一下</a><a href="#常用-class-對照表">常用 class 對照表</a><a href="#用我們自己的設計系統">用我們自己的設計系統</a><a href="#響應式手機優先">響應式：手機優先</a><a href="#狀態變化">狀態變化</a><a href="#class-太長怎麼辦">class 太長怎麼辦</a><a href="#15-分鐘動手小練習">15 分鐘動手小練習</a><a href="#你會遇到的坑">你會遇到的坑</a><a href="#常見錯誤訊息對照">常見錯誤訊息對照</a><a href="#術語對照表">術語對照表</a><a href="#自我檢核">自我檢核</a><a href="#學習資源">學習資源</a><a href="#相關頁面">相關頁面</a></aside>
+<aside class="toc"><div class="tt">本頁目錄</div><a href="#一句話">一句話</a><a href="#想像一下">想像一下</a><a href="#常用-class-對照表">常用 class 對照表</a><a href="#用我們自己的設計系統">用我們自己的設計系統</a><a href="#響應式-這個專案不用">響應式：★ 這個專案不用</a><a href="#狀態變化">狀態變化</a><a href="#class-太長怎麼辦">class 太長怎麼辦</a><a href="#15-分鐘動手小練習">15 分鐘動手小練習</a><a href="#你會遇到的坑">你會遇到的坑</a><a href="#常見錯誤訊息對照">常見錯誤訊息對照</a><a href="#術語對照表">術語對照表</a><a href="#自我檢核">自我檢核</a><a href="#學習資源">學習資源</a><a href="#相關頁面">相關頁面</a></aside>
 </div></div>
 </div>
 <script src="../../vendor/mermaid.min.js"></script>

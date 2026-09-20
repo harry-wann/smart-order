@@ -209,12 +209,12 @@ setCart([...cart, { name: '牛五花', quantity: 2, price: 280 }]);
 <pre><code class="language-jsx">function MenuItemRow({ name, price, soldOut }) {
   return (
     &lt;div className=&quot;flex items-center gap-3 py-3&quot;&gt;
-      &lt;img src=&quot;/beef.jpg&quot; alt={name} className=&quot;w-20 h-20 rounded-xl&quot; /&gt;
+      &lt;img src=&quot;/beef.jpg&quot; alt={name} className=&quot;w-20 h-20 rounded-card&quot; /&gt;
       &lt;div&gt;
-        &lt;h3 className=&quot;text-lg font-bold&quot;&gt;{name}&lt;/h3&gt;
-        &lt;p className=&quot;text-brand-600 text-xl font-bold&quot;&gt;${price}&lt;/p&gt;
+        &lt;h3 className=&quot;type-h3&quot;&gt;{name}&lt;/h3&gt;
+        &lt;p className=&quot;type-price text-brand-600&quot;&gt;${price}&lt;/p&gt;
       &lt;/div&gt;
-      {soldOut &amp;&amp; &lt;span className=&quot;badge-soldout&quot;&gt;售完&lt;/span&gt;}
+      {soldOut &amp;&amp; &lt;span className=&quot;rounded-pill bg-danger px-2.5 py-0.5 type-caption text-white&quot;&gt;售完&lt;/span&gt;}
     &lt;/div&gt;
   );
 }
@@ -222,6 +222,12 @@ setCart([...cart, { name: '牛五花', quantity: 2, price: 280 }]);
 <p>用起來像 HTML 標籤：</p>
 <pre><code class="language-jsx">&lt;MenuItemRow name=&quot;美國牛五花&quot; price={280} soldOut={false} /&gt;
 </code></pre>
+<blockquote>
+<p><strong>注意 class 用的是我們自己的 token</strong>，不是 <a class="gloss" href="../../tech/frontend/39-Tailwind.html" title="看這個技術的白話說明">Tailwind</a> 內建的：
+<code>type-h3</code>／<code>type-price</code> 是字級（字體、大小、行高、字重一次套好）、<code>rounded-card</code> 是 12px 圓角。
+不要寫成 <code>text-lg font-bold</code>——那樣會漏掉字體，標題悄悄從明體變成黑體。
+完整清單見 <a href="../../tech/frontend/39-Tailwind.html">Tailwind</a> 與 <a href="../../ui/11-設計系統.html">11-設計系統</a>。</p>
+</blockquote>
 <p><strong>規則：元件名稱一定要大寫開頭。</strong> 小寫的 React 會當成一般 HTML 標籤。</p>
 <h2 id="jsx-的七條規則">JSX 的七條規則</h2>
 <p>JSX 就是「寫在 JS 裡面的 HTML」。它很像 HTML 但有幾個不同：</p>
