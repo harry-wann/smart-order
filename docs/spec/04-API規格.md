@@ -262,7 +262,7 @@
 
 | type | 推到哪些頻道 | payload | 前端該做什麼 |
 |---|---|---|---|
-| `CART_UPDATED` | session | `{ action: ADDED\|UPDATED\|REMOVED, byGuest: "陳小美", byGuestId: 2, itemName, quantity, optionSummary }` | 重抓 `GET /me/cart`、更新購物車角標；`ADDED` 而且 `byGuestId` 不是自己時，跳 C-04b 通知條（標題「陳小美 加了一樣東西」，說明「安格斯霜降牛五花 ×1・全份」） |
+| `CART_UPDATED` | session | `{ version, cart: {…同 `GET /me/cart` 的回傳…}, change: { action: ADDED\|UPDATED\|REMOVED, byGuest: "陳小美", byGuestId: 2, itemName, quantity, optionSummary } }` | **`version` 比本地大才套用 `cart`**（小於等於就整包丟掉，見 3.4.1），不用再打 API；`change.action` 是 `ADDED` 而且 `change.byGuestId` 不是自己時，跳 C-04b 通知條（標題「陳小美 加了一樣東西」，說明「安格斯霜降牛五花 ×1・全份」） |
 | `NEW_TICKET` | session、kitchen | `OrderTicketDto`（含 `quantity`＝這張單的份數加總；推給同桌的那份多帶 `byGuest`、`byGuestId`，櫃檯代客加點是 `"櫃檯"`／`null`，預點轉單兩個都是 `null`） | 加進清單，高亮 2 秒；同桌手機重抓購物車（已被清空）；`byGuest` 不是 `null`、`byGuestId` 也不是自己時，跳 C-04c「王大明 送出 6 項」（N＝payload 的 `quantity`，份數加總） |
 | `ITEM_SERVED` | session、kitchen | `{ticketId, itemId, servedAt}` | 該品項狀態改「已出餐」 |
 | `TICKET_SERVED` | session、kitchen | `{ticketId}` | KDS 卡片淡出移除 |
@@ -282,9 +282,16 @@
 
 ```json
 { "type": "CART_UPDATED",
-  "payload": { "action": "ADDED", "byGuest": "陳小美", "byGuestId": 2,
-               "itemName": "安格斯霜降牛五花", "quantity": 1, "optionSummary": "全份" } }
+  "payload": {
+    "version": 7,
+    "cart": { "items": [ ... ], "totalQuantity": 3, "subtotal": 1210.00 },
+    "change": { "action": "ADDED", "byGuest": "陳小美", "byGuestId": 2,
+                "itemName": "安格斯霜降牛五花", "quantity": 1, "optionSummary": "全份" }
+  } }
 ```
+
+`cart` 的內容跟 `GET /me/cart` 的回傳**完全一樣**（見 4.5），前端可以共用同一個套用函式。
+`change` 只描述「這次變的是什麼」，給 C-04b 通知條用——整份購物車裡看不出剛剛動的是哪一項。
 
 ```json
 { "type": "NEW_TICKET",
@@ -296,6 +303,43 @@
   C-04b 說明那行＝`itemName ×quantity`，`optionSummary` 不是 `null` 就用「・」接在後面（「安格斯霜降牛五花 ×1・全份」），太長由前端截斷加「…」
 - `quantity`（`NEW_TICKET`）：這張單所有品項的**份數加總**，不是列數——白飯 ×2 算 2 項。上面這張單 6 份，C-04c 就是「王大明 送出 6 項」。
   全站的「N 項」都是這樣算（見 [01 名詞定義](01-專案總覽.md)）
+
+#### 3.4.1 `CART_UPDATED` 帶整份購物車，前端用 `version` 擋舊的
+
+購物車小（一桌幾十列）、而且同桌每支手機看到的內容一樣，所以推播直接把**整份**帶過去，
+前端收到就能畫，不用再打一次 `GET /me/cart`。代價是每次推播的 payload 大一點，可以接受。
+
+`version` 就是 `dining_session.cart_version`（見 [03](03-資料庫設計.md)），購物車每次異動 +1。
+前端記住最後套用過的版本，**只有比它大才套用**：
+
+```js
+let localVersion = 0;
+
+function applyCart(version, cart) {
+  if (version <= localVersion) return;   // 亂序或過期，整包丟掉
+  localVersion = version;
+  setCart(cart);
+}
+```
+
+這一個關卡同時解掉三件事：
+
+| 問題 | 怎麼被解掉 |
+|---|---|
+| 推播亂序（兩支手機同時操作） | 舊的 `version` 比較小，直接丟掉 |
+| 漏收一則（網路閃一下） | 下一則推播帶的是**整份**，自己就補回來了 |
+| 重抓的回應比推播晚到，把新的蓋成舊的 | 重抓回來的資料走同一個 `applyCart`，version 小就不套用 |
+
+最後一點是關鍵：`GET /me/cart` 的回傳也帶 `version`，所以**重抓與推播共用同一個關卡**，
+不會互相覆蓋，不用另外處理。
+
+**什麼時候還是要重抓？** 推播只能補「之後」發生的事，補不了「沒連上的那段」：
+
+- WebSocket（重新）連上時 —— 見 3.5 鐵律 2
+- 手機從背景回到前景時 —— 手機切背景時連線常常被系統斷掉，iOS Safari 尤其
+- 頁面從 bfcache 還原時（按「上一頁」回來）
+
+這三個時機的前端寫法見 [前端接 WebSocket](../tech/realtime/42-前端接WebSocket.md)。
 
 ### 3.5 兩條鐵律
 
@@ -660,18 +704,20 @@ GET /api/dining-sessions/me/cart
       "addedBy": { "guestId": 2, "displayName": "陳小美" } }
   ],
   "totalQuantity": 3,
-  "subtotal": 1210.00
+  "subtotal": 1210.00,
+  "version": 7
 }
 ```
 
 - **整桌一份**：同桌每支手機拿到的內容一樣；任何人都能改（`PATCH`，body `{ "quantity": 2, "note": "..." }`）或刪（`DELETE`）任何一列
 - 每次加入都是新的一列（誰加的才分得清楚），不跟既有的列合併
-- 回傳固定是 `{ items, totalQuantity, subtotal }`：`totalQuantity` 是份數加總（購物車角標用），`addedBy` 是 `{ guestId, displayName }`（畫面上的「陳小美 加的」）
+- 回傳固定是 `{ items, totalQuantity, subtotal, version }`：`totalQuantity` 是份數加總（購物車角標用），`addedBy` 是 `{ guestId, displayName }`（畫面上的「陳小美 加的」）
+- `version` 是 `dining_session.cart_version`，跟 `CART_UPDATED` 推的是同一個值；前端拿它擋掉過期資料（見 3.4.1）
 - `unitPrice`／`lineTotal`／`subtotal` 只是畫面上的參考（不含服務費），送單時以菜單現價重算
 - 加入時就先驗必選群組（`400 OPTION_REQUIRED`）與售完標記（`409 ITEM_SOLD_OUT`）；真正的庫存檢查仍在送出時
 - session 不是 `OPEN` → `409 SESSION_CLOSED`；要改的那一列已經不在（例如同桌剛送出）→ `404 NOT_FOUND`，前端重抓購物車
 - `totalQuantity` 範例是 3：鴛鴦鍋底 ×1 ＋ 美國牛五花 ×2，**算份數不算列數**（2 列、3 項）
-- 每次寫入，**交易提交後**推 `CART_UPDATED` 到 `/topic/session/{id}`（帶 `optionSummary`，見 3.4）；其他手機收到就重抓 `GET /me/cart`，`ADDED` 時跳通知條「陳小美 加了一樣東西／安格斯霜降牛五花 ×1・全份」（`byGuestId` 是自己就不跳）
+- 每次寫入，`cart_version` +1，**交易提交後**推 `CART_UPDATED` 到 `/topic/session/{id}`，payload 帶 `version`＋整份 `cart`＋`change`（見 3.4.1）；其他手機用 `version` 比對後直接套用，**不用再打 `GET /me/cart`**；`change.action` 是 `ADDED` 時跳通知條「陳小美 加了一樣東西／安格斯霜降牛五花 ×1・全份」（`change.byGuestId` 是自己就不跳）
 
 ### 4.6 本桌訂單
 

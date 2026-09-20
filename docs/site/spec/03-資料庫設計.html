@@ -703,6 +703,11 @@ SELECT * FROM reservation
 <td>合計</td>
 </tr>
 <tr>
+<td>cart_version</td>
+<td>BIGINT NOT NULL DEFAULT 0</td>
+<td><strong>購物車版本號</strong>。購物車每次異動（加／改／刪／送出後清空）就 +1，跟著 <code>CART_UPDATED</code> 推給同桌，前端用它擋掉亂序或過期的推播（見 <a href="../spec/04-API規格.html">04 §3.4</a>）</td>
+</tr>
+<tr>
 <td>opened_at / closed_at</td>
 <td>DATETIME(3)</td>
 <td></td>
@@ -711,6 +716,12 @@ SELECT * FROM reservation
 </table></div>
 <p>索引：<code>INDEX(table_id, status)</code>、<code>INDEX(member_id, opened_at)</code>、<code>UNIQUE(session_token)</code>、<code>INDEX(reservation_id)</code>（外鍵本來就會自動建；訂位的<a class="gloss" href="../tech/advanced/46-區間重疊與訂位排程.html" title="看這個技術的白話說明">區間重疊</a>要靠它找「這筆報到的用餐紀錄結帳了沒」）</p>
 <blockquote>
+<p><strong><code>cart_version</code> 為什麼不用時間戳？</strong>
+購物車是 <code>cart_item</code> 的<strong>多列集合</strong>，不是單一列，所以沒有一個現成的「整份購物車的時間」可用。
+拿 <code>MAX(updated_at)</code> 會在<strong>刪除</strong>時出錯——被刪的那列消失了，<code>MAX</code> 可能反而變小，
+於是「刪除」這個事件看起來比它前一個事件還舊，會被前端當成過期丟掉。
+<code>DATETIME(3)</code> 只到毫秒也會碰撞：同桌兩支手機同一毫秒各加一樣東西，兩個事件的時間戳相同，分不出先後。
+單調遞增的版本號兩個問題都沒有，而且就是 <a class="gloss" href="../tech/database/25-ORM與JPA.html" title="看這個技術的白話說明">JPA</a> <a class="gloss" href="../tech/database/28-鎖與併發.html" title="看這個技術的白話說明">樂觀鎖</a>的 <code>@Version</code>（見 <a href="../tech/database/28-鎖與併發.html">鎖與併發</a>），<a class="gloss" href="../tech/database/25-ORM與JPA.html" title="看這個技術的白話說明">Hibernate</a> 可以自動維護。</p>
 <p><strong>人數為什麼不參與金額計算？</strong>
 我們的計價是「一鍋一價 + 單點」、無低消。人數的用途是：座位安排、分帳均分的參考值、兒童友善推薦、客單價統計。
 <strong>這點一定要寫清楚</strong>，不然會有人自己加一個人頭費進去。</p>

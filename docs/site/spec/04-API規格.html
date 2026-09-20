@@ -1048,8 +1048,8 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td><code>CART_UPDATED</code></td>
 <td>session</td>
-<td><code>{ action: ADDED\|UPDATED\|REMOVED, byGuest: "陳小美", byGuestId: 2, itemName, quantity, optionSummary }</code></td>
-<td>重抓 <code>GET /me/cart</code>、更新購物車角標；<code>ADDED</code> 而且 <code>byGuestId</code> 不是自己時，跳 C-04b 通知條（標題「陳小美 加了一樣東西」，說明「安格斯霜降牛五花 ×1・全份」）</td>
+<td><code>{ version, cart: {…同</code>GET /me/cart<code>的回傳…}, change: { action: ADDED\|UPDATED\|REMOVED, byGuest: "陳小美", byGuestId: 2, itemName, quantity, optionSummary } }</code></td>
+<td><strong><code>version</code> 比本地大才套用 <code>cart</code></strong>（小於等於就整包丟掉，見 3.4.1），不用再打 API；<code>change.action</code> 是 <code>ADDED</code> 而且 <code>change.byGuestId</code> 不是自己時，跳 C-04b 通知條（標題「陳小美 加了一樣東西」，說明「安格斯霜降牛五花 ×1・全份」）</td>
 </tr>
 <tr>
 <td><code>NEW_TICKET</code></td>
@@ -1139,9 +1139,15 @@ pre.mermaid svg{max-width:100%;height:auto}
 </table></div>
 <p><strong>同桌兩個事件的 payload 範例</strong>（推到 <code>/topic/session/1052</code>）：</p>
 <pre><code class="language-json">{ &quot;type&quot;: &quot;CART_UPDATED&quot;,
-  &quot;payload&quot;: { &quot;action&quot;: &quot;ADDED&quot;, &quot;byGuest&quot;: &quot;陳小美&quot;, &quot;byGuestId&quot;: 2,
-               &quot;itemName&quot;: &quot;安格斯霜降牛五花&quot;, &quot;quantity&quot;: 1, &quot;optionSummary&quot;: &quot;全份&quot; } }
+  &quot;payload&quot;: {
+    &quot;version&quot;: 7,
+    &quot;cart&quot;: { &quot;items&quot;: [ ... ], &quot;totalQuantity&quot;: 3, &quot;subtotal&quot;: 1210.00 },
+    &quot;change&quot;: { &quot;action&quot;: &quot;ADDED&quot;, &quot;byGuest&quot;: &quot;陳小美&quot;, &quot;byGuestId&quot;: 2,
+                &quot;itemName&quot;: &quot;安格斯霜降牛五花&quot;, &quot;quantity&quot;: 1, &quot;optionSummary&quot;: &quot;全份&quot; }
+  } }
 </code></pre>
+<p><code>cart</code> 的內容跟 <code>GET /me/cart</code> 的回傳<strong>完全一樣</strong>（見 4.5），前端可以共用同一個套用函式。
+<code>change</code> 只描述「這次變的是什麼」，給 C-04b 通知條用——整份購物車裡看不出剛剛動的是哪一項。</p>
 <pre><code class="language-json">{ &quot;type&quot;: &quot;NEW_TICKET&quot;,
   &quot;payload&quot;: { &quot;ticketId&quot;: 3301, &quot;sequenceNo&quot;: 1, &quot;status&quot;: &quot;PENDING&quot;, &quot;quantity&quot;: 6,
                &quot;byGuest&quot;: &quot;王大明&quot;, &quot;byGuestId&quot;: 1, &quot;items&quot;: [ ... ] } }
@@ -1152,6 +1158,51 @@ pre.mermaid svg{max-width:100%;height:auto}
 <li><code>quantity</code>（<code>NEW_TICKET</code>）：這張單所有品項的<strong>份數加總</strong>，不是列數——白飯 ×2 算 2 項。上面這張單 6 份，C-04c 就是「王大明 送出 6 項」。
   全站的「N 項」都是這樣算（見 <a href="../spec/01-專案總覽.html">01 名詞定義</a>）</li>
 </ul>
+<h4 id="341-cart_updated-帶整份購物車前端用-version-擋舊的">3.4.1 <code>CART_UPDATED</code> 帶整份購物車，前端用 <code>version</code> 擋舊的</h4>
+<p>購物車小（一桌幾十列）、而且同桌每支手機看到的內容一樣，所以推播直接把<strong>整份</strong>帶過去，
+前端收到就能畫，不用再打一次 <code>GET /me/cart</code>。代價是每次推播的 payload 大一點，可以接受。</p>
+<p><code>version</code> 就是 <code>dining_session.cart_version</code>（見 <a href="../spec/03-資料庫設計.html">03</a>），購物車每次異動 +1。
+前端記住最後套用過的版本，<strong>只有比它大才套用</strong>：</p>
+<pre><code class="language-js">let localVersion = 0;
+
+function applyCart(version, cart) {
+  if (version &lt;= localVersion) return;   // 亂序或過期，整包丟掉
+  localVersion = version;
+  setCart(cart);
+}
+</code></pre>
+<p>這一個關卡同時解掉三件事：</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>問題</th>
+<th>怎麼被解掉</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>推播亂序（兩支手機同時操作）</td>
+<td>舊的 <code>version</code> 比較小，直接丟掉</td>
+</tr>
+<tr>
+<td>漏收一則（網路閃一下）</td>
+<td>下一則推播帶的是<strong>整份</strong>，自己就補回來了</td>
+</tr>
+<tr>
+<td>重抓的回應比推播晚到，把新的蓋成舊的</td>
+<td>重抓回來的資料走同一個 <code>applyCart</code>，version 小就不套用</td>
+</tr>
+</tbody>
+</table></div>
+<p>最後一點是關鍵：<code>GET /me/cart</code> 的回傳也帶 <code>version</code>，所以<strong>重抓與推播共用同一個關卡</strong>，
+不會互相覆蓋，不用另外處理。</p>
+<p><strong>什麼時候還是要重抓？</strong> 推播只能補「之後」發生的事，補不了「沒連上的那段」：</p>
+<ul>
+<li>WebSocket（重新）連上時 —— 見 3.5 鐵律 2</li>
+<li>手機從背景回到前景時 —— 手機切背景時連線常常被系統斷掉，iOS Safari 尤其</li>
+<li>頁面從 bfcache 還原時（按「上一頁」回來）</li>
+</ul>
+<p>這三個時機的前端寫法見 <a href="../tech/realtime/42-前端接WebSocket.html">前端接 WebSocket</a>。</p>
 <h3 id="35-兩條鐵律">3.5 兩條鐵律</h3>
 <ol>
 <li><strong>推播要在資料庫交易「提交之後」才發</strong>，否則前端收到通知去查卻查不到資料。</li>
@@ -1493,18 +1544,20 @@ X-Device-Id: 7f1c2a9e-4b6d-4e2a-9c1f-2d8e5a0b3c71
       &quot;addedBy&quot;: { &quot;guestId&quot;: 2, &quot;displayName&quot;: &quot;陳小美&quot; } }
   ],
   &quot;totalQuantity&quot;: 3,
-  &quot;subtotal&quot;: 1210.00
+  &quot;subtotal&quot;: 1210.00,
+  &quot;version&quot;: 7
 }
 </code></pre>
 <ul>
 <li><strong>整桌一份</strong>：同桌每支手機拿到的內容一樣；任何人都能改（<code>PATCH</code>，body <code>{ "quantity": 2, "note": "..." }</code>）或刪（<code>DELETE</code>）任何一列</li>
 <li>每次加入都是新的一列（誰加的才分得清楚），不跟既有的列合併</li>
-<li>回傳固定是 <code>{ items, totalQuantity, subtotal }</code>：<code>totalQuantity</code> 是份數加總（購物車角標用），<code>addedBy</code> 是 <code>{ guestId, displayName }</code>（畫面上的「陳小美 加的」）</li>
+<li>回傳固定是 <code>{ items, totalQuantity, subtotal, version }</code>：<code>totalQuantity</code> 是份數加總（購物車角標用），<code>addedBy</code> 是 <code>{ guestId, displayName }</code>（畫面上的「陳小美 加的」）</li>
+<li><code>version</code> 是 <code>dining_session.cart_version</code>，跟 <code>CART_UPDATED</code> 推的是同一個值；前端拿它擋掉過期資料（見 3.4.1）</li>
 <li><code>unitPrice</code>／<code>lineTotal</code>／<code>subtotal</code> 只是畫面上的參考（不含服務費），送單時以菜單現價重算</li>
 <li>加入時就先驗必選群組（<code>400 OPTION_REQUIRED</code>）與售完標記（<code>409 ITEM_SOLD_OUT</code>）；真正的庫存檢查仍在送出時</li>
 <li>session 不是 <code>OPEN</code> → <code>409 SESSION_CLOSED</code>；要改的那一列已經不在（例如同桌剛送出）→ <code>404 NOT_FOUND</code>，前端重抓購物車</li>
 <li><code>totalQuantity</code> 範例是 3：鴛鴦鍋底 ×1 ＋ 美國牛五花 ×2，<strong>算份數不算列數</strong>（2 列、3 項）</li>
-<li>每次寫入，<strong>交易提交後</strong>推 <code>CART_UPDATED</code> 到 <code>/topic/session/{id}</code>（帶 <code>optionSummary</code>，見 3.4）；其他手機收到就重抓 <code>GET /me/cart</code>，<code>ADDED</code> 時跳通知條「陳小美 加了一樣東西／安格斯霜降牛五花 ×1・全份」（<code>byGuestId</code> 是自己就不跳）</li>
+<li>每次寫入，<code>cart_version</code> +1，<strong>交易提交後</strong>推 <code>CART_UPDATED</code> 到 <code>/topic/session/{id}</code>，payload 帶 <code>version</code>＋整份 <code>cart</code>＋<code>change</code>（見 3.4.1）；其他手機用 <code>version</code> 比對後直接套用，<strong>不用再打 <code>GET /me/cart</code></strong>；<code>change.action</code> 是 <code>ADDED</code> 時跳通知條「陳小美 加了一樣東西／安格斯霜降牛五花 ×1・全份」（<code>change.byGuestId</code> 是自己就不跳）</li>
 </ul>
 <h3 id="46-本桌訂單">4.6 本桌訂單</h3>
 <pre><code class="language-json">GET /api/dining-sessions/me/orders

@@ -122,7 +122,7 @@ OrderPage                    ← cart 狀態放這裡
 
 `MenuItemRow` 和 `CartBar` 都需要 cart，所以放在 `OrderPage`。
 
-（這個 `cart` 是從後端抓回來的畫面副本。同桌別人改了購物車，也是 `OrderPage` 收到通知後重抓，兩個子元件跟著一起更新。）
+（這個 `cart` 是從後端抓回來的畫面副本。同桌別人改了購物車，`OrderPage` 收到推播後整份換掉，兩個子元件跟著一起更新。）
 
 **這叫「狀態提升」（lifting state up）。**
 

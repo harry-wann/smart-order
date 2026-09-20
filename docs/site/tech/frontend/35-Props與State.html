@@ -294,7 +294,7 @@ function MenuItemRow({ item, onAdd }) {
 └── CartBar                  （要顯示數量和金額）
 </code></pre>
 <p><code>MenuItemRow</code> 和 <code>CartBar</code> 都需要 cart，所以放在 <code>OrderPage</code>。</p>
-<p>（這個 <code>cart</code> 是從後端抓回來的畫面副本。同桌別人改了購物車，也是 <code>OrderPage</code> 收到通知後重抓，兩個子元件跟著一起更新。）</p>
+<p>（這個 <code>cart</code> 是從後端抓回來的畫面副本。同桌別人改了購物車，<code>OrderPage</code> 收到推播後整份換掉，兩個子元件跟著一起更新。）</p>
 <p><strong>這叫「狀態提升」（lifting state up）。</strong></p>
 <h2 id="如果傳太多層怎麼辦">如果傳太多層怎麼辦</h2>
 <p>當狀態要傳五六層下去，中間的元件根本用不到卻要幫忙傳，這叫 <strong>prop drilling（逐層鑽透）</strong>，很煩。</p>

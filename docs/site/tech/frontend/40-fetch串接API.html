@@ -340,7 +340,7 @@ export const submitCart     = () =&gt; request('/dining-sessions/me/orders', { m
 <pre><code class="language-js">// C-05 品項詳情按「加入購物車」
 await addToCart({ menuItemId: 12, quantity: 2, optionValueIds: [31, 41], note: '不要太熟' });
 </code></pre>
-<p>加入、修改、刪除成功後，同桌其他手機會收到 <code>CART_UPDATED</code>，各自重抓（見 <a href="../../tech/realtime/42-前端接WebSocket.html">前端接 WebSocket</a>）。</p>
+<p>加入、修改、刪除成功後，同桌其他手機會收到 <code>CART_UPDATED</code>，payload 直接帶整份購物車（見 <a href="../../tech/realtime/42-前端接WebSocket.html">前端接 WebSocket</a>）。</p>
 <h2 id="在元件裡的標準寫法">在元件裡的標準寫法</h2>
 <pre><code class="language-jsx">function MenuPage() {
   const [items, setItems] = useState([]);
@@ -450,7 +450,7 @@ console.log(await post.json());
 <p><strong>⑦ 在 <code>useEffect</code> 裡沒做清理</strong>
 元件消失了資料才回來，setState 會警告。</p>
 <p><strong>⑧ 購物車只改本機陣列</strong>
-同桌另一支手機看到的是另一個版本。→ 購物車以後端為準，改完或收到 <code>CART_UPDATED</code> 就重抓。</p>
+同桌另一支手機看到的是另一個版本。→ 購物車以後端為準：自己改完就重抓，同桌別人改的由 <code>CART_UPDATED</code> 帶整份過來。</p>
 <h2 id="常見錯誤訊息對照">常見錯誤訊息對照</h2>
 <div class="tablewrap"><table>
 <thead>

@@ -373,7 +373,7 @@ public class OrderService {
 <tr>
 <td><code>CART_UPDATED</code></td>
 <td>session</td>
-<td>整桌購物車有人加、改、刪（帶 <code>action</code>、<code>byGuest</code>、<code>byGuestId</code>、<code>itemName</code>、<code>quantity</code>、<code>optionSummary</code>；<code>optionSummary</code> 例如「全份・加蔥花」，沒有選項是 <code>null</code>），同桌手機重抓購物車；<code>byGuestId</code> 是自己的就不跳通知</td>
+<td>整桌購物車有人加、改、刪。payload 帶 <code>version</code>＋整份 <code>cart</code>＋<code>change</code>（<code>action</code>、<code>byGuest</code>、<code>byGuestId</code>、<code>itemName</code>、<code>quantity</code>、<code>optionSummary</code>），同桌手機比對 <code>version</code> 後直接套用，不用再打 API；<code>change.byGuestId</code> 是自己的就不跳通知</td>
 </tr>
 <tr>
 <td><code>NEW_TICKET</code></td>

@@ -22,10 +22,8 @@ src/services/realtime/
 前端問一次、後端答一次的放 `src/services/api/`，
 見 [fetch 串接後端 API](../frontend/40-fetch串接API.md)。
 
-> **兩邊常常配成一對。** 收到 `CART_UPDATED` 之後，**不要**直接把推播的 payload
-> 塞進畫面，而是回頭呼叫 `api/cart.js` 重抓一次。推播只當「該更新了」的信號，
-> 資料一律以 API 為準——這樣同桌兩支手機看到的內容一定一致。
-> 本頁「同桌共用購物車」那一節就是這個做法。
+> **兩邊常常配成一對。** 每個事件怎麼接不一樣，看 [04 §3.4](../../spec/04-API規格.md) 那張表。
+> 購物車的 `CART_UPDATED` 直接帶整份購物車，本頁「同桌共用購物車」那一節就是它的做法。
 
 ## 要裝什麼
 
@@ -168,34 +166,82 @@ function TicketsPage() {
 ```json
 {
   "type": "CART_UPDATED",
-  "payload": { "action": "ADDED", "byGuest": "陳小美", "byGuestId": 7,
-               "itemName": "安格斯霜降牛五花", "quantity": 1, "optionSummary": "全份" }
+  "payload": {
+    "version": 7,
+    "cart": { "items": [ ... ], "totalQuantity": 3, "subtotal": 1210.00 },
+    "change": { "action": "ADDED", "byGuest": "陳小美", "byGuestId": 7,
+                "itemName": "安格斯霜降牛五花", "quantity": 1, "optionSummary": "全份" }
+  }
 }
 ```
 
-`action` 有 `ADDED`／`UPDATED`／`REMOVED` 三種。`byGuest` 是顯示名稱（給通知條用），`byGuestId` 是做這件事的那支手機在這桌的 guest id。
+payload 分三塊：
+
+| 欄位 | 是什麼 | 拿來幹嘛 |
+|---|---|---|
+| `version` | 購物車的版本號，每次異動 +1 | 擋掉亂序或過期的推播 |
+| `cart` | **整份購物車**，內容跟 `GET /api/dining-sessions/me/cart` 一模一樣 | 直接畫，不用再打 API |
+| `change` | 這次變的是哪一項、誰做的 | 給 C-04b 通知條用 |
+
+### 為什麼要有 `version`
+
+收到推播就直接套用的話，有兩個情況會出錯：
+
+1. **亂序**——同桌兩支手機幾乎同時操作，兩則推播到你手機的順序，不一定等於後端實際處理的順序。後到的如果是舊的，畫面就停在錯的狀態。
+2. **重抓的回應晚到**——你重抓了一次，HTTP 回應還在路上，這時一則更新的推播先到了；然後那個舊的 HTTP 回應才回來，把新的蓋掉。
+
+解法是記住「最後套用過的版本」，**只有比它大才套用**：
+
+```js
+let localVersion = 0;
+
+function applyCart(version, cart) {
+  if (version <= localVersion) return;   // 舊的，整包丟掉
+  localVersion = version;
+  setCart(cart);
+}
+```
+
+**推播和重抓都走這個函式**，所以它們不會互相覆蓋——`GET /me/cart` 的回傳也帶 `version`。
+
+還有第三個好處：**漏收一則也會自己好**。因為每則推播帶的是整份，不是「變化量」，
+所以漏掉一則之後，下一則就把你補回正確狀態了。
+
+---
+
+`change.action` 有 `ADDED`／`UPDATED`／`REMOVED` 三種。`change.byGuest` 是顯示名稱（給通知條用），`change.byGuestId` 是做這件事的那支手機在這桌的 guest id。
 `optionSummary` 是選到的選項用「・」串起來（例：「全份・加蔥花」），沒有選項就是 `null`；通知條寫成「安格斯霜降牛五花 ×1・全份」。
 送單事件 `NEW_TICKET` 推給同桌的那份也帶這兩個欄位；櫃檯在 S-03 代客加點不經過購物車，`byGuest` 是「櫃檯」、`byGuestId` 是 `null`；
 預點轉單（開桌當下，還沒有手機加入）兩個都是 `null`，不跳通知。
 
-**自己的動作不通知自己**：前端拿 `byGuestId` 跟這支手機掃碼加入時拿到的 `guest.id`（`POST /join` 的回應）比，相同就只更新畫面、不跳通知條。
+**自己的動作不通知自己**：前端拿 `change.byGuestId` 跟這支手機掃碼加入時拿到的 `guest.id`（`POST /join` 的回應）比，相同就只更新畫面、不跳通知條。
 不要比 `byGuest`——會員暱稱可能重複，兩個「小美」同桌就會互相吃掉通知。
 
 菜單頁（C-04）這樣接：
 
 ```jsx
+import { useState, useRef, useEffect, useCallback, useContext } from 'react';
 import { fetchCart } from '../services/api/cart';
 
 function MenuPage() {
-  const [cart, setCart] = useState([]);           // 畫面狀態：拿來畫底部購物車角標
+  const [cart, setCart] = useState({ items: [], totalQuantity: 0 });   // 整份購物車，跟 GET /me/cart 的回傳同形狀
   const [notice, setNotice] = useState(null);     // 同桌通知條（C-04b／C-04c）
   const [closed, setClosed] = useState(false);
   const { sessionId, guest } = useContext(SessionContext);   // guest：join 時拿到的 { id, displayName }
   const navigate = useNavigate();
 
-  const reloadCart = useCallback(async () => {
-    setCart(await fetchCart());                   // 購物車內容以後端為準
+  const versionRef = useRef(0);                   // 最後套用過的購物車版本
+
+  const applyCart = useCallback((version, next) => {
+    if (version <= versionRef.current) return;    // 舊的，整包丟掉
+    versionRef.current = version;
+    setCart(next);
   }, []);
+
+  const reloadCart = useCallback(async () => {    // 只在連上／回前景／送出後用
+    const c = await fetchCart();                  // 回傳含 version
+    applyCart(c.version, c);
+  }, [applyCart]);
 
   const flash = useCallback((text) => {           // 通知條顯示 3 秒
     setNotice(text);
@@ -205,15 +251,17 @@ function MenuPage() {
   const handleEvent = useCallback((event) => {
     const p = event.payload;
     switch (event.type) {
-      case 'CART_UPDATED':
-        reloadCart();                             // 不管誰改的、改了什麼，整份重抓
-        if (p.action === 'ADDED' && p.byGuestId !== guest.id) {         // 自己加的不用通知自己
-          const opt = p.optionSummary ? `・${p.optionSummary}` : '';     // 沒有選項就不接
-          flash(`${p.byGuest} 加了 ${p.itemName} ×${p.quantity}${opt}`);  // C-04b：太長由 CSS 截斷加「…」
+      case 'CART_UPDATED': {
+        applyCart(p.version, p.cart);             // 推播直接帶整份，不用再打 API
+        const c = p.change;
+        if (c.action === 'ADDED' && c.byGuestId !== guest.id) {         // 自己加的不用通知自己
+          const opt = c.optionSummary ? `・${c.optionSummary}` : '';     // 沒有選項就不接
+          flash(`${c.byGuest} 加了 ${c.itemName} ×${c.quantity}${opt}`);  // C-04b：太長由 CSS 截斷加「…」
         }
         break;
+      }
       case 'NEW_TICKET':                          // 有人把整桌購物車送出了
-        reloadCart();                             // 購物車被清空，角標歸零
+        reloadCart();                             // 送單不另推 CART_UPDATED，這裡要自己重抓（購物車被清空）
         if (p.byGuest && p.byGuestId !== guest.id) {   // 櫃檯代客加點：「櫃檯」／null → 會跳；預點轉單：null／null → 不跳
           flash(`${p.byGuest} 送出 ${p.quantity} 項`);                     // C-04c：N＝份數加總（白飯 ×2 算 2），不是 items.length
         }
@@ -224,7 +272,7 @@ function MenuPage() {
       default:
         reloadCart();                             // 售完、補貨等菜單事件這裡省略，至少把購物車對齊
     }
-  }, [reloadCart, flash, guest, navigate]);
+  }, [applyCart, reloadCart, flash, guest, navigate]);
 
   useStomp({
     topics: [`/topic/session/${sessionId}`, '/topic/menu'],
@@ -233,8 +281,9 @@ function MenuPage() {
   });
 
   useEffect(() => { reloadCart(); }, [reloadCart]);
+  useResyncOnForeground(reloadCart);              // ★ 回到前景要重抓，見下一節
 
-  const cartCount = cart.reduce((sum, i) => sum + i.quantity, 0);   // 角標算份數（跟後端的 totalQuantity 一樣）；算得出來的就不要存 state
+  const cartCount = cart.totalQuantity;           // 角標＝份數加總，後端已經算好了（白飯 ×2 算 2）
 
   if (closed) return <SessionClosed />;          // 已結帳面板：底部購物車列跟著消失
   return (
@@ -249,15 +298,63 @@ function MenuPage() {
 
 五個重點：
 
-1. **收到 `CART_UPDATED` 就重抓，不要自己合併。** payload 只有「誰、做了什麼」，是給通知條用的，不是完整的購物車；拿它去改本機陣列，很快就會跟後端對不上。
+1. **`CART_UPDATED` 帶整份購物車，直接套用，但要比 `version`。** 不要拿 `change` 去改本機陣列——那塊只描述「這次變了什麼」，是給通知條用的，拿它算購物車很快就會跟後端對不上。
 2. **送出點餐推的是 `NEW_TICKET`，不是 `CART_UPDATED`。** 但送出會把整桌購物車清空，所以收到 `NEW_TICKET` 也要重抓購物車，不然別人手機上的角標會停在舊數字。
 3. **兩個人同時按「送出整桌點餐」**：後端用列鎖讓兩筆排隊，先到的送出整份，後到的拿到 `409 CART_EMPTY`（「購物車是空的，可能同桌已經送出了」），前端提示後重抓就好（見 [fetch 串接後端 API](../frontend/40-fetch串接API.md)、[鎖與併發](../database/28-鎖與併發.md)）。
 4. **數量一律算份數。** 角標、「送出 N 項」都是 `quantity` 加總；用 `items.length` 會把「白飯 ×2」算成 1 項，跟畫面上的份數對不上。
-5. **自己做的不跳通知，比 `byGuestId` 不比名字。** 自己加的、自己送出的，只重抓購物車；櫃檯代客加點的 `byGuestId` 是 `null`，同桌每支手機都會跳「櫃檯 送出 3 項」。
+5. **自己做的不跳通知，比 `change.byGuestId` 不比名字。** 自己加的、自己送出的，照樣套用購物車、只是不跳通知條；櫃檯代客加點的 `byGuestId` 是 `null`，同桌每支手機都會跳「櫃檯 送出 3 項」。
 
 `SESSION_CLOSED` 兩頁都用同一個 `handleSessionClosed`：`PAID` 顯示「已結帳」面板，`CANCELLED` 什麼都不顯示、清掉權杖直接回 `/`。
 
-## 兩件一定要做的事
+## 回到前景要重抓
+
+推播只能補「連著的時候」發生的事。**沒連上的那段補不回來**，所以還有三個時機要主動重抓一次。
+
+手機上這件事比你想的常發生：使用者切去看 LINE、鎖螢幕、回訊息再切回來——
+背景時作業系統常常把 WebSocket 連線收掉，iOS Safari 特別積極。
+
+```jsx
+import { useEffect } from 'react';
+
+export function useResyncOnForeground(resync) {
+  useEffect(() => {
+    let timer = null;
+    const fire = () => {                     // 下面幾個事件常常同時觸發，合併成一次
+      clearTimeout(timer);
+      timer = setTimeout(resync, 200);
+    };
+
+    // ① 從背景回到前景
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') fire();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
+    // ② 從 bfcache 還原（按「上一頁」回來）。
+    //    這種情況不會觸發 visibilitychange，要另外聽。iOS Safari 很常走這條。
+    const onPageShow = (e) => { if (e.persisted) fire(); };
+    window.addEventListener('pageshow', onPageShow);
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('pageshow', onPageShow);
+    };
+  }, [resync]);
+}
+```
+
+第三個時機是 **WebSocket 重連**，已經在 `useStomp` 的 `onReconnect` 裡了（見上面的 `MenuPage`）。
+
+> **為什麼要 `setTimeout` 合併？**
+> 回到前景的瞬間，`visibilitychange` 會觸發、WebSocket 也會重連，
+> 兩邊各打一次 API 就重複了。延遲 200 毫秒合併成一次就好。
+>
+> **為什麼重抓不會蓋掉新資料？**
+> 因為 `reloadCart` 走的是 `applyCart`，會比對 `version`。
+> 晚到的舊回應自動被丟掉，不用另外處理。
+
+## 三件一定要做的事
 
 **① `onConnect` 裡一定要 `refetch()`**
 
@@ -266,6 +363,10 @@ function MenuPage() {
 **② `useEffect` 的 return 一定要 `deactivate()`**
 
 不斷線的話，使用者換十次頁就有十條連線在跑。
+
+**③ 回到前景要重抓**
+
+見上一節。手機切背景的頻率比你想的高，漏了這個，使用者切回來看到的是舊畫面。
 
 ## 讓「即時」看得見
 
@@ -369,7 +470,7 @@ HTTPS 網站只能用 `wss://`。
 2. 不寫 `deactivate()` 會發生什麼？
 3. 有了 WebSocket，進頁面時還需要用 API 抓一次資料嗎？
 4. HTTPS 的網站要用 `ws://` 還是 `wss://`？
-5. 收到 `CART_UPDATED` 為什麼要重抓整份購物車，而不是用 payload 自己改陣列？
+5. `CART_UPDATED` 帶了整份購物車，為什麼還要比 `version` 才能套用？
 6. `SESSION_CLOSED` 的 `reason` 是 `PAID` 和 `CANCELLED` 時，畫面各該怎麼做？
 7. 判斷「這是不是我自己加的」，為什麼要比 `byGuestId`，不比 `byGuest`？
 

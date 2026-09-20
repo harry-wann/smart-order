@@ -172,7 +172,7 @@ function CartPage() {
     await reloadCart();
   };
 
-  // 同桌別人加、改、刪 → 後端推 CART_UPDATED → 一樣呼叫 reloadCart()
+  // 同桌別人加、改、刪 → 後端推 CART_UPDATED（帶整份購物車）→ 比對 version 後 setCart
   // （接法見「前端接 WebSocket」那頁）
 
   if (loading) return <Skeleton />;
@@ -182,8 +182,9 @@ function CartPage() {
 
 **為什麼不直接 `setCart(prev => prev.map(...))` 就好？** 因為同桌另一支手機可能同時在改。只改自己畫面上的陣列，兩支手機就會各看到一個版本，按送出時後端送的又是資料庫裡那一份。
 
-規則很簡單：**自己改完、或收到 `CART_UPDATED`，就重抓一次整份。**
-（自己改的也會收到 `CART_UPDATED`，一樣重抓，只是 `byGuestId` 是自己，不跳通知條。）
+規則很簡單：**購物車那份陣列一律整份換掉，不要一列一列改。**
+自己改完就重抓一次整份；同桌別人改的會由 `CART_UPDATED` 把整份推過來，比對版本後直接換掉。
+（自己改的也會收到推播，一樣套用，只是 `change.byGuestId` 是自己，不跳通知條。）
 上面那些 `filter`／`map` 的寫法還是天天會用（列表、篩選、把某一列標成「更新中」），只是不要拿本機陣列當真正的購物車。
 相關：[fetch 串接後端 API](40-fetch串接API.md)、[前端接 WebSocket](../realtime/42-前端接WebSocket.md)。
 

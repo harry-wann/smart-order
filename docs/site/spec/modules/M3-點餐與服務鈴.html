@@ -205,7 +205,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td><strong>多裝置同步</strong></td>
-<td>購物車存後端、整桌共用；<a class="gloss" href="../../tech/realtime/41-WebSocket與STOMP.html" title="看這個技術的白話說明">WebSocket</a> + 斷線重連，收到事件就重抓</td>
+<td>購物車存後端、整桌共用；<a class="gloss" href="../../tech/realtime/41-WebSocket與STOMP.html" title="看這個技術的白話說明">WebSocket</a> 推整份購物車＋版本號，斷線重連與回前景補抓</td>
 </tr>
 <tr>
 <td><strong>選項驗證</strong></td>
@@ -227,7 +227,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <tr>
 <td>3.1</td>
 <td>購物車（整桌共用）</td>
-<td><strong>存後端</strong>（<code>cart_item</code>），同桌每支手機看到同一份，任何人都能增減數量、刪除、加備註；每列品名下方小字「陳小美 加的」（原 3.E4 併入）；加入／修改／刪除後推 <code>CART_UPDATED</code>，同桌 1 秒內更新角標（角標＝份數加總 <code>totalQuantity</code>，白飯 ×2 算 2），加入時<strong>其他手機</strong>跳通知條「陳小美 加了一樣東西／安格斯霜降牛五花 ×1・全份」（<code>CART_UPDATED</code> 帶 <code>optionSummary</code>，沒有選項就只到「×1」；比對 <code>byGuestId</code>，自己加的不跳）；已結帳 → <code>409 SESSION_CLOSED</code></td>
+<td><strong>存後端</strong>（<code>cart_item</code>），同桌每支手機看到同一份，任何人都能增減數量、刪除、加備註；每列品名下方小字「陳小美 加的」（原 3.E4 併入）；加入／修改／刪除後 <code>cart_version</code> +1 並推 <code>CART_UPDATED</code>（帶整份購物車，見 <a href="../../spec/04-API規格.html">04 §3.4.1</a>），同桌 1 秒內更新角標（角標＝份數加總 <code>totalQuantity</code>，白飯 ×2 算 2），加入時<strong>其他手機</strong>跳通知條「陳小美 加了一樣東西／安格斯霜降牛五花 ×1・全份」（<code>change.optionSummary</code>，沒有選項就只到「×1」；比對 <code>change.byGuestId</code>，自己加的不跳）；已結帳 → <code>409 SESSION_CLOSED</code></td>
 <td>☐</td>
 </tr>
 <tr>
@@ -384,7 +384,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 </tr>
 <tr>
 <td><a href="../../tech/frontend/36-useState.html">useState</a></td>
-<td>畫面狀態；購物車內容以後端為準，收到 <code>CART_UPDATED</code> 就重抓</td>
+<td>畫面狀態；購物車內容以後端為準，<code>CART_UPDATED</code> 帶整份過來，比對版本後整份換掉</td>
 <td>★★☆☆☆</td>
 </tr>
 <tr>
@@ -498,7 +498,7 @@ public OrderTicketDto submitOrder(String token, String deviceId) {   // 不收�
 }
 </code></pre>
 <p><strong>這一行讓你同時拿到「即時」和「不會錯」。</strong> 就算 WebSocket 完全掛掉，只要使用者重新整理，資料還是對的。</p>
-<p><strong>購物車也走同一條路</strong>：誰加了東西，後端推 <code>CART_UPDATED</code>，其他手機收到就重抓 <code>GET /api/dining-sessions/me/cart</code>。
+<p><strong>購物車也走同一條路</strong>：誰加了東西，後端推 <code>CART_UPDATED</code>，payload 直接帶整份購物車與版本號，其他手機比對版本後套用（見 <a href="../../spec/04-API規格.html">04 §3.4.1</a>）。
 不要拿事件內容自己去拼購物車——事件只拿來跳通知條「陳小美 加了 安格斯霜降牛五花 ×1・全份」（<code>itemName</code>、<code>quantity</code>、<code>optionSummary</code>），內容一律以後端為準。</p>
 <hr />
 <h3 id="問題-4客人連按三下送出">問題 4：客人連按三下送出</h3>
@@ -559,9 +559,9 @@ public OrderTicketDto submitOrder(String token, String deviceId) {   // 不收�
 <blockquote>
 <p><strong><code>device_id</code> 不是身分驗證</strong>，驗證仍然靠 <code>session_token</code>。有人偽造 <code>X-Device-Id</code>，頂多讓購物車上顯示錯的名字，拿不到別桌的東西。</p>
 </blockquote>
-<p><strong>前端怎麼配合</strong>：購物車內容以後端為準，<code>useState</code> 只放畫面狀態（例如哪一列展開了）；收到 <code>CART_UPDATED</code> 或 <code>NEW_TICKET</code> 就重抓。
+<p><strong>前端怎麼配合</strong>：購物車內容以後端為準，<code>useState</code> 只放畫面狀態（例如哪一列展開了）；<code>CART_UPDATED</code> 帶整份過來直接套用，<code>NEW_TICKET</code>（購物車被清空）要自己重抓。
 <code>cart_item.unit_price</code> 只給畫面顯示，送單時一律用菜單現價重算——加進購物車之後老闆改價，以送出那一刻為準。</p>
-<p><strong>自己的動作不通知自己</strong>：<code>CART_UPDATED</code> 與 <code>NEW_TICKET</code> 都帶 <code>byGuestId</code>，前端跟 join 時拿到的 <code>guest.id</code> 比對，相同就只重抓、不跳通知條。
+<p><strong>自己的動作不通知自己</strong>：<code>CART_UPDATED</code>（在 <code>change</code> 裡）與 <code>NEW_TICKET</code> 都帶 <code>byGuestId</code>，前端跟 join 時拿到的 <code>guest.id</code> 比對，相同就只更新畫面、不跳通知條。
 不要拿 <code>byGuest</code> 名稱比——兩個會員暱稱一樣就會互相吃掉通知。</p>
 <p><strong>不經過整桌購物車的兩種單</strong></p>
 <div class="tablewrap"><table>
@@ -679,7 +679,7 @@ public OrderTicketDto submitOrder(String token, String deviceId) {   // 不收�
 </tr>
 <tr>
 <td><strong>同桌兩支手機的購物車不一樣</strong></td>
-<td>購物車還放在前端 state；改成以 <code>GET /me/cart</code> 為準，收到 <code>CART_UPDATED</code> 就重抓</td>
+<td>購物車還放在前端 state，或是拿 <code>change</code> 去改本機陣列；改成整份換掉——自己改完重抓，別人改的由 <code>CART_UPDATED</code> 帶整份過來</td>
 </tr>
 <tr>
 <td><strong>同時按送出變成兩張單</strong></td>

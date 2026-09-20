@@ -177,7 +177,7 @@ export const submitCart     = () => request('/dining-sessions/me/orders', { meth
 await addToCart({ menuItemId: 12, quantity: 2, optionValueIds: [31, 41], note: '不要太熟' });
 ```
 
-加入、修改、刪除成功後，同桌其他手機會收到 `CART_UPDATED`，各自重抓（見 [前端接 WebSocket](../realtime/42-前端接WebSocket.md)）。
+加入、修改、刪除成功後，同桌其他手機會收到 `CART_UPDATED`，payload 直接帶整份購物車（見 [前端接 WebSocket](../realtime/42-前端接WebSocket.md)）。
 
 ## 在元件裡的標準寫法
 
@@ -312,7 +312,7 @@ console.log(await post.json());
 元件消失了資料才回來，setState 會警告。
 
 **⑧ 購物車只改本機陣列**
-同桌另一支手機看到的是另一個版本。→ 購物車以後端為準，改完或收到 `CART_UPDATED` 就重抓。
+同桌另一支手機看到的是另一個版本。→ 購物車以後端為準：自己改完就重抓，同桌別人改的由 `CART_UPDATED` 帶整份過來。
 
 ## 常見錯誤訊息對照
 

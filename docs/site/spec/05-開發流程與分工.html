@@ -962,9 +962,9 @@ public List&lt;MenuItemDto&gt; getMenu() {
 </tr>
 </tbody>
 </table></div>
-<p>兩邊常常配成一對：收到 <code>CART_UPDATED</code> 推播後，<strong>不要</strong>直接把推播的 payload 塞進畫面，
-而是回頭呼叫 <code>api/cart.js</code> 重抓一次。推播只當「該更新了」的信號，資料以 API 為準，
-這樣兩支手機看到的內容一定一致。</p>
+<p>兩邊常常配成一對。<strong>每個事件怎麼接，看它自己的定義</strong>（<a href="../spec/04-API規格.html">04 §3.4</a>）——
+例如購物車的 <code>CART_UPDATED</code> 直接帶整份購物車和一個版本號，前端比對版本後套用，不用再打 API；
+但「沒連上的那段」補不回來，所以連上時、回到前景時仍然要重抓一次。</p>
 <blockquote>
 <p><strong>為什麼多包一層 <code>services/</code></strong>：<code>frontend/src/</code> 的資料夾結構（commit <code>9bd1a58</code>）建的是
 <code>services/</code>，這份文件原本寫的是 <code>src/api/</code> 與 <code>src/realtime/</code>。2026-09-20 決定兩者合併——

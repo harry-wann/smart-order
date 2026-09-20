@@ -303,7 +303,7 @@ function CartPage() {
     await reloadCart();
   };
 
-  // 同桌別人加、改、刪 → 後端推 CART_UPDATED → 一樣呼叫 reloadCart()
+  // 同桌別人加、改、刪 → 後端推 CART_UPDATED（帶整份購物車）→ 比對 version 後 setCart
   // （接法見「前端接 WebSocket」那頁）
 
   if (loading) return &lt;Skeleton /&gt;;
@@ -311,8 +311,9 @@ function CartPage() {
 }
 </code></pre>
 <p><strong>為什麼不直接 <code>setCart(prev =&gt; prev.map(...))</code> 就好？</strong> 因為同桌另一支手機可能同時在改。只改自己畫面上的陣列，兩支手機就會各看到一個版本，按送出時後端送的又是資料庫裡那一份。</p>
-<p>規則很簡單：<strong>自己改完、或收到 <code>CART_UPDATED</code>，就重抓一次整份。</strong>
-（自己改的也會收到 <code>CART_UPDATED</code>，一樣重抓，只是 <code>byGuestId</code> 是自己，不跳通知條。）
+<p>規則很簡單：<strong>購物車那份陣列一律整份換掉，不要一列一列改。</strong>
+自己改完就重抓一次整份；同桌別人改的會由 <code>CART_UPDATED</code> 把整份推過來，比對版本後直接換掉。
+（自己改的也會收到推播，一樣套用，只是 <code>change.byGuestId</code> 是自己，不跳通知條。）
 上面那些 <code>filter</code>／<code>map</code> 的寫法還是天天會用（列表、篩選、把某一列標成「更新中」），只是不要拿本機陣列當真正的購物車。
 相關：<a href="../../tech/frontend/40-fetch串接API.html">fetch 串接後端 API</a>、<a href="../../tech/realtime/42-前端接WebSocket.html">前端接 WebSocket</a>。</p>
 <blockquote>
