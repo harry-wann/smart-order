@@ -1,121 +1,160 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
 import './App.css'
+//S-02 正中間 桌況總覽
+const tables = [
+  {
+    id: 'A01',
+    status: 'available',
+  },
+  {
+    id: 'A02',
+    status: 'occupied',
+    people: '2大0小',
+    time: '38分',
+    amount: 'NT$1860',
+  },
+  {
+    id: 'A03',
+    status: 'occupied',
+    people: '2大1小',
+    time: '3分',
+    amount: 'NT$960',
+  },
+  {
+    id: 'A04',
+    status: 'available',
+  },
+  {
+    id: 'A05',
+    status: 'cleaning',
+    time: '18:21結清',
+  },
+  {
+    id: 'A06',
+    status: 'available',
+  },
+  {
+    id: 'A07',
+    status: 'cleaning',
+    time: '18:28結清',
+
+  },
+  {
+    id: 'A08',
+    status: 'reserved',
+    who: '18:30 陳o君 4位',
+
+  },
+  {
+    id: 'B01',
+    status: 'occupied',
+    people: '4大0小',
+    time: '112分',
+    amount: 'NT$3240',
+  },
+  {
+    id: 'B02',
+    status: 'reserved',
+    who: '18:45 林o毫 2位',
+  },
+  {
+    id: 'B03',
+    status: 'occupied',
+    people: '2大2小',
+    time: '21分',
+    amount: 'NT$980',
+  },
+  {
+    id: 'C01',
+    status: 'occupied',
+    people: '6大2小',
+    time: '64分',
+    amount: 'NT$5120',
+  }
+
+
+]
+
+
+
+//底部候位中的顯示
+const waitinglist = [
+  {
+    id: 'A13',
+    name: '李小姐',
+    people: '4位',
+    status: '已叫號',
+    waitingtime: '已叫號',
+  },
+  {
+    id: 'A12',
+    name: '王小姐',
+    people: '3位',
+    waitingtime: '18分',
+
+  },
+  {
+    id: 'A14',
+    name: '張先生',
+    people: '6位',
+    waitingtime: '4分',
+  }
+]
+
+
+
+
+//把後臺狀態的英文轉成中文顯示
+function getStatusText(status) {
+  switch (status) {
+    case 'available':
+      return '空桌'
+    case 'occupied':
+      return '用餐中'
+    case 'cleaning':
+      return '待清理'
+    case 'reserved':
+      return '預約保留'
+    default:
+      return ''
+  }
+}
+
+function TableCard({ table }) {
+  return (
+    <div>
+      <h3>{table.id}</h3>
+      <p>{getStatusText(table.status)}</p>
+      <p>{table.people}</p>
+    </div>
+  )
+}
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
+
+    <div>
+      <h1>桌況總覽</h1>
+
+      {tables.map(table => (
+        <TableCard table={table} />
+      ))}
+
+
+      <h2>候位中</h2>
+      {waitinglist.map(waiting => (
+
         <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+          <h3>{waiting.id}</h3>
+          <p>{waiting.name}</p>
+          <p>{waiting.people}</p>
+          <p>{waiting.waitingtime}</p>
 
-      <div className="ticks"></div>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      ))}
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+
+    </div>
   )
 }
 
