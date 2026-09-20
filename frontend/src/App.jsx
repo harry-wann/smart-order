@@ -118,13 +118,38 @@ function getStatusText(status) {
       return ''
   }
 }
+ 
+function getStatusClass(status){
+  switch (status){
+    case 'available':
+      return 'bg-[#E6DED2]'
+    case 'occupied':
+      return 'bg-[#C8442E]'
+    case 'cleaning':
+      return 'bg-[#9C8E84]'  
+    case 'reserved':
+      return 'bg-[#FCF0DC] border-#E8A33D]'  
+    default:
+      return ''
+  }
+}
+
 
 function TableCard({ table }) {
   return (
-    <div>
+    <div className={`border p-4 ${getStatusClass(table.status)}`}>
       <h3>{table.id}</h3>
       <p>{getStatusText(table.status)}</p>
-      <p>{table.people}</p>
+      {table.people &&(
+        <p>{table.people}</p>
+      )}
+      {table.time &&(
+        <p>{table.time}</p>
+      )}
+      {table.amount &&(
+        <p>{table.amount}</p>
+      )}
+
     </div>
   )
 }
@@ -135,10 +160,11 @@ function App() {
     <div>
       <h1>桌況總覽</h1>
 
-      {tables.map(table => (
+      <div className="grid grid-cols-4 gap-4">
+        {tables.map(table => (
         <TableCard table={table} />
       ))}
-
+      </div>
 
       <h2>候位中</h2>
       {waitinglist.map(waiting => (
