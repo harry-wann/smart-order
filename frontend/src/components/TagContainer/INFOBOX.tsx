@@ -1,7 +1,7 @@
 import React from "react";
-import CheckIcon from "./icons/CheckIcon.tsx";
-import ExclamationCircleIcon from "./icons/ExclamationCircleIcon.tsx";
-import ExclamationTriangleIcon from "./icons/ExclamationTriangleIcon.tsx";
+import CheckIcon from "./icons/CheckIcon";
+import ExclamationCircleIcon from "./icons/ExclamationCircleIcon";
+import ExclamationTriangleIcon from "./icons/ExclamationTriangleIcon";
 
 
 type IconType =
