@@ -1,0 +1,44 @@
+/* ==========================================================================
+   全站基底樣式
+   火鍋點餐系統 smart_order
+
+   這裡只放「整份文件的預設值」。任何跟特定畫面或元件有關的樣式都不要寫在這裡，
+   寫進該元件的 className 或它旁邊的 *.colors.css。
+   ========================================================================== */
+
+@layer base {
+  :root {
+    /* ★ font-synthesis: none 是防線，不是美化選項，不要刪。
+       關掉瀏覽器的「假粗體／假斜體」合成。沒有這行的話，
+       某個字重沒載到時瀏覽器會自己把 400 拉粗冒充 700，
+       畫面看起來「有字」但字寬與行高都跟設計稿對不上，而且不會報錯。
+       原本這行在 Vite 樣板的 index.css 裡，清樣板時一起被刪掉了，搬來這裡。 */
+    font-synthesis: none;
+
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    /* 顧客端 375×812、店家端 1280×800，都是亮色畫面。
+       宣告 only light 讓系統深色模式不要去反轉我們的色票。
+       全站唯一的深色畫面是 S-04 KDS，它自己帶 .kds（見 kds.colors.css）。 */
+    color-scheme: only light;
+  }
+
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink-900);
+
+    /* 預設文字＝ type-body（16 / 1.75 / 400）。
+       個別元素要別的字級就套 type-* class 蓋掉。 */
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.75;
+    font-weight: 400;
+  }
+
+  /* 數字一律等寬，金額與時間在列表裡才不會左右跳動（§3.1）。 */
+  :where(input, table, time, output) {
+    font-variant-numeric: tabular-nums;
+  }
+}

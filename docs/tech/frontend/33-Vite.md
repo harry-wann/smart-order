@@ -49,21 +49,38 @@ npm run dev
 
 ## 專案結構
 
+我們的專案已經建好了，在 repo 的 `frontend/`。顧客端與店家端**同一個 React 專案**，
+用 `features/` 分開（不是兩個專案）：
+
 ```
-frontend-customer/
-├── index.html           ← 入口，只有一個空的 <div id="root">
+frontend/
+├── index.html               ← 入口，只有一個空的 <div id="root">
 ├── package.json
-├── vite.config.js       ← Vite 設定
-├── tailwind.config.js
+├── vite.config.js           ← Vite 設定（react + @tailwindcss/vite 兩個外掛）
 └── src/
-    ├── main.jsx         ← 程式進入點
-    ├── App.jsx          ← 根元件
-    ├── index.css        ← Tailwind 的引入處
-    ├── components/      ← 共用元件
-    ├── pages/           ← 各個頁面
-    ├── api/             ← fetch 封裝
-    └── contexts/        ← 全域狀態
+    ├── main.jsx             ← 程式進入點
+    ├── App.jsx              ← 根元件
+    ├── style.css             ← 樣式進入點，只有 @import
+    ├── styles/
+    │   ├── tokens.colors.css     ← 色彩 token（見 14-色彩Token）
+    │   ├── tokens.type.css       ← 字體與十個 type-* 字級
+    │   ├── tokens.space.css      ← 間距例外與七個圓角
+    │   └── base.css              ← 全站基底樣式
+    ├── routes/              ← 路由設定
+    ├── layouts/             ← 顧客端手機殼、店家端側欄＋主區
+    ├── components/          ← 共用元件（Button、Card、Badge…共 10 個）
+    ├── features/
+    │   ├── customer/        ← 顧客端各功能
+    │   └── admin/           ← 店家端各功能
+    │       └── kds/         ← 單頁專用的 kds.colors.css 就放在這種地方
+    ├── hooks/               ← 自訂 hook
+    ├── services/            ← fetch 封裝、API 呼叫
+    ├── utils/               ← 小工具函式
+    └── assets/              ← 圖片
 ```
+
+**沒有 `tailwind.config.js`。** 我們用的是 Tailwind v4，設定寫在 CSS 裡，
+細節看 [39-Tailwind](39-Tailwind.md)。網路上教學叫你建 config 檔的那些都是 v3。
 
 ## 環境變數
 

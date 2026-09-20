@@ -1,11 +1,29 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-Hant-TW">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link href="/src/style.css" rel="stylesheet" />
-    <title>frontend</title>
+
+    <!-- viewport-fit=cover：全寬按鈕要用 env(safe-area-inset-bottom) 躲 iPhone 底部
+         的 home indicator（11-設計系統.md §5.1），沒有這個參數那個變數會是 0。 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#C8442E" />
+
+    <!-- 字型（11-設計系統.md §3.1）
+         Noto Sans TC 400/500/700/900 — 內文、按鈕、表單、KDS 桌號
+         Noto Serif TC 700/900       — 標題、店名、價格
+         ★ 字重清單要跟 tokens.type.css 的 type-* 對得上，改字級表時記得一起改。
+         ★ 走 Google Fonts CDN，跟 docs/ui/mockups/_shared.css 同一套來源，
+           設計稿與實作才不會有兩種度量。CDN 會依 unicode-range 切片，
+           中文不會整包 7MB 下載。 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@700;900&display=swap"
+      rel="stylesheet"
+    />
+
+    <title>火鍋點餐系統</title>
   </head>
   <body>
     <div id="root"></div>

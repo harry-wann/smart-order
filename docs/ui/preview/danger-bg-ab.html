@@ -1,0 +1,83 @@
+<!doctype html><html lang="zh-Hant-TW"><head><meta charset="utf-8">
+<title>A/B｜danger-bg 要不要跟 brand-100 分開</title>
+<link rel="stylesheet" href="../mockups/_shared.css">
+<style>
+  body{padding:32px;background:#EDE4D6}
+  .ab{display:flex;gap:32px;align-items:flex-start;flex-wrap:wrap}
+  .col{width:420px;background:var(--bg);border-radius:16px;padding:24px;
+       box-shadow:0 6px 28px rgba(43,33,28,.16)}
+  .col.b{--danger-bg:#FADBD5}
+  .col h2{font-family:"Noto Serif TC",serif;font-size:20px;margin:0 0 4px}
+  .col .lead{font-size:13px;color:var(--text-600);margin:0 0 20px;line-height:1.7}
+  .grp{margin-bottom:24px}
+  .grp > .cap{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--text-400);margin-bottom:8px}
+  .pair{display:flex;flex-direction:column;gap:10px}
+  .chip{display:inline-block;width:64px;height:28px;border-radius:6px;border:1px solid rgba(43,33,28,.1);vertical-align:-9px}
+  .hexrow{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-600);margin-top:4px}
+  h1{font-family:"Noto Serif TC",serif;font-size:26px;margin:0 0 6px}
+  .intro{max-width:880px;font-size:14px;line-height:1.85;color:var(--text-600);margin:0 0 24px}
+</style></head><body>
+
+<h1>選中 vs 錯誤：底色要不要分開</h1>
+<p class="intro">
+  現在 <code>brand-100</code>（選中）和 <code>danger-bg</code>（錯誤）都是 <b>#FBE8E3</b>，
+  兩者並排時只剩邊框在區分。左邊是現況，右邊是把 <code>danger-bg</code> 改成 <b>#FADBD5</b>。
+  兩欄用的是同一份 <code>_shared.css</code>，右欄只覆寫了 <code>--danger-bg</code> 一個變數。
+</p>
+
+<div class="ab">
+
+<div class="col a">
+  <h2>方案 A — 現況（同色）</h2>
+  <p class="lead">brand-100 與 danger-bg 都是 #FBE8E3</p>
+
+  <div class="grp"><div class="cap">並排比較</div>
+    <div class="pair">
+      <div class="opt on"><div class="fill"><div style="font-weight:500">麻辣鍋底</div></div><span class="df">+$60</span>
+        <svg class="ic ck" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+      <div class="infobox ib-danger">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M12 8v5"/><circle cx="12" cy="16.5" r="1"/><path d="M12 3l9 16H3z"/></svg>
+        <div><b>這張桌 19:30 有預約</b><div class="t-cap">開下去可能來不及清桌</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grp"><div class="cap">其他用到的地方</div>
+    <div class="pair">
+      <div class="r g8"><span class="req">必選</span><span class="t-cap">選項群組標題（brand-100）</span></div>
+      <table class="dt"><tr class="out"><td>牛五花</td><td class="n">0</td><td><span class="badge b-sold">售完</span></td></tr></table>
+      <div class="r g8"><span class="chip" style="background:var(--brand-100)"></span><span class="t-cap">brand-100</span>
+        <span class="chip" style="background:var(--danger-bg)"></span><span class="t-cap">danger-bg</span></div>
+    </div>
+  </div>
+  <div class="hexrow">danger-ink 對比 8.90:1　·　與頁面底色分界 1.11:1</div>
+</div>
+
+<div class="col b">
+  <h2>方案 B — danger-bg 改 #FADBD5</h2>
+  <p class="lead">選中維持 #FBE8E3，錯誤偏紅一階</p>
+
+  <div class="grp"><div class="cap">並排比較</div>
+    <div class="pair">
+      <div class="opt on"><div class="fill"><div style="font-weight:500">麻辣鍋底</div></div><span class="df">+$60</span>
+        <svg class="ic ck" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+      <div class="infobox ib-danger">
+        <svg class="ic" viewBox="0 0 24 24"><path d="M12 8v5"/><circle cx="12" cy="16.5" r="1"/><path d="M12 3l9 16H3z"/></svg>
+        <div><b>這張桌 19:30 有預約</b><div class="t-cap">開下去可能來不及清桌</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grp"><div class="cap">其他用到的地方</div>
+    <div class="pair">
+      <div class="r g8"><span class="req">必選</span><span class="t-cap">選項群組標題（brand-100）</span></div>
+      <table class="dt"><tr class="out"><td>牛五花</td><td class="n">0</td><td><span class="badge b-sold">售完</span></td></tr></table>
+      <div class="r g8"><span class="chip" style="background:var(--brand-100)"></span><span class="t-cap">brand-100</span>
+        <span class="chip" style="background:var(--danger-bg)"></span><span class="t-cap">danger-bg</span></div>
+    </div>
+  </div>
+  <div class="hexrow">danger-ink 對比 8.10:1　·　與頁面底色分界 1.22:1</div>
+</div>
+
+</div>
+</body></html>

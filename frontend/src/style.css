@@ -1,1 +1,23 @@
+/* ==========================================================================
+   全站 CSS 入口
+   火鍋點餐系統 smart_order
+
+   ★ 這是唯一的 CSS 入口，由 src/main.jsx import。
+     不要在 index.html 另外 <link> 任何 CSS，也不要在元件裡 import 其他全域 CSS。
+
+   載入順序有意義，不要調換：
+     1. tailwindcss   — preflight 與所有 utility
+     2. tokens.*      — @theme，設計系統的值（色彩／字型／間距圓角）
+     3. base          — @layer base，文件預設值（要用到上面的 token）
+
+   只有一個畫面用得到的顏色不放這裡，放那個畫面旁邊的 *.colors.css，
+   由該畫面自己 import（例如 features/admin/kds/kds.colors.css）。
+   ========================================================================== */
+
 @import "tailwindcss";
+
+@import "./styles/tokens.colors.css";
+@import "./styles/tokens.type.css";
+@import "./styles/tokens.space.css";
+
+@import "./styles/base.css";

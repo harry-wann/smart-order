@@ -1,0 +1,23 @@
+/* ==========================================================================
+   C-10 付款方式 專用色 — 外部支付品牌色
+   這些不是我們的設計系統，是各家品牌規定的樣式，所以不進共用 token、
+   也不要拿去用在別的地方（例如不要用 LINE 綠當「成功」色，成功色是 --color-success）。
+
+   付款一律為模擬，只做外觀。來源：docs/ui/mockups/c10-payment.html
+   ========================================================================== */
+
+.pay-brands {
+  --pay-apple-bg: #000000;
+  --pay-apple-ink: #ffffff;
+
+  --pay-google-bg: #ffffff;
+  --pay-google-ink: #3c4043;
+  --pay-google-line: #dadce0;
+
+  --pay-line-bg: #06c755;
+  --pay-line-ink: #ffffff;
+}
+
+/* 第四顆「到櫃檯付現」不是外部品牌，用全站 token：
+     bg-surface text-ink-900 + inset 0 0 0 1px var(--color-line) 的外框
+*/

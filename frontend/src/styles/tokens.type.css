@@ -1,0 +1,125 @@
+/* ==========================================================================
+   字型與字級 Token
+   火鍋點餐系統 smart_order — 全站唯一的文字樣式來源
+
+   來源：docs/ui/11-設計系統.md §3 字體　＋　docs/ui/mockups/_shared.css
+
+   三條規則：
+   1. 元件裡不准再出現 font-size / line-height / font-weight 的數字。
+      要文字樣式就用下面的 type-* class。
+   2. 字級只有這十個。不夠用要先問「現有的哪一個不能用」，答不出來就不要加。
+   3. 中文行高一律 ≥ 1.6（§3.2）。唯一的例外是 type-button（1）與
+      type-kds-table（1.2），兩者都是單行、不換行的場合。
+
+   ★ 為什麼字級用 @utility 而不是 @theme 的 --text-*
+     這套字級是「字體＋大小＋行高＋字重」綁在一起的一包（§3.2 那張表就是這樣列的），
+     不是四個可以各自調的軸。Tailwind 的 --text-* 帶不了 font-family，
+     用 @theme 會變成每次都要記得補 font-serif，漏寫就悄悄掉回黑體。
+     寫成 @utility 才不會只套一半。
+   ========================================================================== */
+
+@theme {
+  /* ------------------------------------------------------------------------
+     字體家族
+
+     ★ 備援字型一定要點名中文字型。
+       只寫 sans-serif 的話，Google Fonts 沒載到時中文會掉到系統中文字型、
+       數字與英文掉到拉丁字型，兩套度量混在同一張畫面上，行高從 1.75 變 1.15
+       而且不會報任何錯。2026-09-14 那版 layout.json 就是這樣壞掉的
+       （見 docs/ui/mockups/tools/extract_layout.py 開頭的守門檢查）。
+     ------------------------------------------------------------------------ */
+  --font-sans: "Noto Sans TC", "Noto Sans CJK TC", "PingFang TC",
+               "Microsoft JhengHei", system-ui, sans-serif;
+  --font-serif: "Noto Serif TC", "Noto Serif CJK TC", "Songti TC",
+                "PMingLiU", serif;
+}
+
+/* ==========================================================================
+   字級階層（§3.2）
+
+   用法：<h1 className="type-h1">…</h1>
+   要單獨改顏色照常加 text-* class，type-* 不管顏色。
+   ========================================================================== */
+
+/* 結帳合計（S-03 櫃檯、C-09）、付款完成金額 */
+@utility type-display {
+  font-family: var(--font-serif);
+  font-size: 32px;
+  line-height: 1.3;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 頁面主標題 */
+@utility type-h1 {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  line-height: 1.4;
+  font-weight: 700;
+}
+
+/* 區塊標題、分類名 */
+@utility type-h2 {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  line-height: 1.5;
+  font-weight: 700;
+}
+
+/* 品項名稱 */
+@utility type-h3 {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  line-height: 1.6;
+  font-weight: 700;
+}
+
+/* 內文。★ 這是內文最小值，不得更小（§3.2） */
+@utility type-body {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.75;
+  font-weight: 400;
+}
+
+/* 已選選項、備註等次要資訊 */
+@utility type-body-sm {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.7;
+  font-weight: 400;
+}
+
+/* 時間戳、註腳。★ 僅用於非關鍵資訊，且顏色最低只能到 ink-600（見 tokens.colors.css） */
+@utility type-caption {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+/* 品項價格。等寬數字，金額對齊才不會跳動 */
+@utility type-price {
+  font-family: var(--font-sans);
+  font-size: 20px;
+  line-height: 1.4;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 按鈕文字。行高 1 是因為按鈕高度由 h-* 決定，行高再撐會破壞垂直置中 */
+@utility type-button {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 500;
+}
+
+/* KDS 桌號（S-04，1920×1080 遠距離觀看） */
+@utility type-kds-table {
+  font-family: var(--font-sans);
+  font-size: 32px;
+  line-height: 1.2;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}

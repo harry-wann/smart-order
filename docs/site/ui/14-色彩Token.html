@@ -1,0 +1,1162 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>14 色彩 Token · 火鍋店點餐系統文件</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand-700:#A63522; --brand-600:#C8442E; --brand-500:#DB5B42; --brand-100:#FBE8E3;
+  --accent-500:#E8A33D; --accent-100:#FCF0DC;
+  --bg:#FBF7F0; --surface:#FFFFFF; --surface-2:#F5EFE5; --line:#E6DED2;
+  --t900:#2B211C; --t600:#6B5D54; --t400:#9C8E84;
+  --ok:#3F7A4E; --ok-bg:#E4EFE7; --warn:#D98324; --bad:#B3261E;
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --serif:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --shadow:0 1px 2px rgba(43,33,28,.06),0 4px 12px rgba(43,33,28,.05);
+  --sidebar:280px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:var(--bg);color:var(--t900);font-family:var(--sans);
+  font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased}
+
+.layout{display:flex;min-height:100vh;align-items:flex-start}
+.sidebar{width:var(--sidebar);flex:0 0 var(--sidebar);position:sticky;top:0;height:100vh;
+  overflow-y:auto;background:var(--surface);border-right:1px solid var(--line);padding:22px 0 48px}
+.brand{padding:0 20px 16px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.brand a{text-decoration:none;color:inherit;display:block}
+.brand .logo{font-family:var(--serif);font-weight:900;font-size:18px;line-height:1.35;color:var(--brand-600)}
+.brand .sub{font-size:11.5px;color:var(--t400);margin-top:4px;letter-spacing:.02em}
+.navgroup{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--t400);
+  padding:15px 20px 5px}
+.sidebar a.nav{display:block;padding:6px 20px;color:var(--t600);text-decoration:none;
+  font-size:14px;border-left:3px solid transparent;line-height:1.5}
+.sidebar a.nav:hover{background:var(--brand-100);color:var(--brand-700)}
+.sidebar a.nav.active{background:var(--brand-100);color:var(--brand-700);
+  border-left-color:var(--brand-600);font-weight:700}
+.sidebar details{border-top:1px solid transparent}
+.sidebar details>summary{list-style:none;cursor:pointer;font-size:11px;font-weight:700;
+  letter-spacing:.1em;color:var(--t400);padding:12px 20px 5px;user-select:none}
+.sidebar details>summary::-webkit-details-marker{display:none}
+.sidebar details>summary::before{content:"▸ ";font-size:10px}
+.sidebar details[open]>summary::before{content:"▾ "}
+.sidebar details>summary:hover{color:var(--brand-600)}
+.sidebar .foot{padding:18px 20px;margin-top:14px;border-top:1px solid var(--line);
+  font-size:11.5px;color:var(--t400);line-height:1.7}
+
+.main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 32px 96px}
+.wrap{width:100%;max-width:1140px;display:flex;gap:36px;align-items:flex-start}
+article{flex:1;min-width:0;max-width:880px;padding-top:40px}
+.toc{width:196px;flex:0 0 196px;position:sticky;top:24px;padding-top:52px;font-size:12.5px;
+  max-height:calc(100vh - 60px);overflow-y:auto}
+.toc .tt{font-size:10.5px;letter-spacing:.1em;color:var(--t400);font-weight:700;margin-bottom:9px}
+.toc a{display:block;color:var(--t600);text-decoration:none;padding:3px 0 3px 10px;
+  border-left:2px solid var(--line);line-height:1.5}
+.toc a:hover{color:var(--brand-600);border-left-color:var(--brand-500)}
+
+.topbar{display:none;position:sticky;top:0;z-index:40;background:var(--surface);
+  border-bottom:1px solid var(--line);padding:10px 16px;align-items:center;gap:12px}
+.topbar .logo{font-family:var(--serif);font-weight:900;color:var(--brand-600);font-size:16px}
+.menubtn{background:var(--brand-600);color:#fff;border:0;border-radius:8px;height:40px;
+  padding:0 14px;font-size:15px;font-family:inherit;cursor:pointer}
+
+article h1{font-family:var(--serif);font-weight:900;font-size:32px;line-height:1.35;margin:0 0 10px}
+article h1+p{color:var(--t600)}
+article h2{font-family:var(--serif);font-weight:700;font-size:24px;line-height:1.45;
+  margin:50px 0 14px;padding-bottom:9px;border-bottom:2px solid var(--line)}
+article h3{font-weight:700;font-size:18.5px;margin:30px 0 10px}
+article h4{font-weight:700;font-size:16px;margin:22px 0 8px;color:var(--t600)}
+article p{margin:0 0 16px}
+article ul,article ol{margin:0 0 16px;padding-left:24px}
+article li{margin:5px 0}
+article a{color:var(--brand-600);text-decoration:none;border-bottom:1px solid rgba(200,68,46,.3)}
+article a:hover{border-bottom-color:var(--brand-600)}
+article a.gloss{color:var(--t900);border-bottom:1px dashed var(--accent-500);
+  background:linear-gradient(transparent 72%,var(--accent-100) 72%)}
+article a.gloss:hover{color:var(--brand-700);border-bottom-color:var(--brand-500)}
+article strong{font-weight:700;color:var(--t900)}
+article hr{border:0;border-top:1px solid var(--line);margin:42px 0}
+article img{max-width:100%;border-radius:12px}
+article details{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:12px 16px;margin:0 0 18px}
+article details>summary{cursor:pointer;font-weight:700;color:var(--brand-600)}
+
+article code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.87em;
+  background:var(--surface-2);padding:2px 6px;border-radius:5px;color:var(--brand-700);
+  word-break:break-word}
+article pre{background:#2B211C;color:#F5EFE5;padding:18px 20px;border-radius:12px;
+  overflow-x:auto;margin:0 0 18px;line-height:1.65;font-size:13.5px}
+article pre code{background:none;color:inherit;padding:0;font-size:inherit}
+
+blockquote{margin:0 0 20px;padding:14px 18px;background:var(--accent-100);
+  border-left:4px solid var(--accent-500);border-radius:0 10px 10px 0;color:var(--t600)}
+blockquote p:last-child{margin-bottom:0}
+blockquote strong{color:var(--t900)}
+
+.tablewrap{overflow-x:auto;margin:0 0 20px;border:1px solid var(--line);
+  border-radius:12px;background:var(--surface);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:420px}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--surface-2);font-weight:700;white-space:nowrap;color:var(--t900)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--brand-100)}
+td code,th code{white-space:nowrap}
+article li input[type=checkbox]{width:16px;height:16px;margin-right:6px;accent-color:var(--brand-600)}
+
+pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:22px;text-align:center;overflow-x:auto;box-shadow:var(--shadow);margin:0 0 22px;color:inherit}
+pre.mermaid svg{max-width:100%;height:auto}
+
+.hero{padding:52px 0 32px;border-bottom:1px solid var(--line);margin-bottom:32px}
+.hero .eyebrow{display:inline-block;background:var(--brand-100);color:var(--brand-700);
+  font-size:12.5px;font-weight:700;padding:5px 13px;border-radius:999px;letter-spacing:.04em}
+.hero h1{font-family:var(--serif);font-weight:900;font-size:40px;line-height:1.25;margin:18px 0 12px}
+.hero p{font-size:17px;color:var(--t600);max-width:680px;margin:0}
+.facts{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:10px 16px;font-size:13px;box-shadow:var(--shadow)}
+.fact b{display:block;font-family:var(--serif);font-size:19px;color:var(--brand-600);font-weight:900}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:13px;margin:18px 0 8px}
+.card{display:block;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:16px;text-decoration:none;color:inherit;box-shadow:var(--shadow);transition:.15s}
+.card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(43,33,28,.12);border-color:var(--brand-500)}
+.card .k{font-size:10.5px;letter-spacing:.09em;color:var(--t400);font-weight:700}
+.card .n{font-family:var(--serif);font-weight:700;font-size:17px;margin:5px 0 6px;color:var(--t900)}
+.card .d{font-size:13px;color:var(--t600);line-height:1.6}
+.callout{background:var(--brand-100);border:1px solid var(--brand-500);border-radius:12px;
+  padding:18px 20px;margin:24px 0}
+.callout .h{font-family:var(--serif);font-weight:700;font-size:17px;margin-bottom:6px;color:var(--brand-700)}
+.callout p{margin:0;color:var(--t600);font-size:14.5px}
+.pending{background:var(--accent-100);border-color:var(--accent-500)}
+.pending .h{color:#8A5B12}
+
+.pager{display:flex;gap:12px;margin-top:52px;padding-top:22px;border-top:1px solid var(--line)}
+.pager a{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:13px 16px;text-decoration:none;color:inherit;box-shadow:var(--shadow)}
+.pager a:hover{border-color:var(--brand-500)}
+.pager .k{font-size:11px;color:var(--t400);letter-spacing:.06em}
+.pager .n{font-weight:700;color:var(--brand-600);margin-top:3px;font-size:14.5px}
+.pager .next{text-align:right}
+
+@media(max-width:1200px){ .toc{display:none} }
+@media(max-width:940px){
+  .topbar{display:flex}
+  .layout{display:block}
+  .sidebar{position:fixed;left:0;top:0;height:100vh;z-index:50;transform:translateX(-100%);
+    transition:transform .2s;box-shadow:0 0 40px rgba(43,33,28,.2);width:286px}
+  .sidebar.open{transform:translateX(0)}
+  .main{padding:0 16px 72px}
+  article{padding-top:24px}
+  .hero{padding:30px 0 24px}
+  .hero h1{font-size:30px}
+  article h1{font-size:26px}
+  article h2{font-size:21px;margin-top:38px}
+  .pager{flex-direction:column}
+}
+@media print{
+  .sidebar,.toc,.topbar,.pager{display:none!important}
+  body{background:#fff}
+  .main{padding:0}
+  article{max-width:none}
+  article h2{page-break-after:avoid}
+  .tablewrap,pre.mermaid{box-shadow:none;page-break-inside:avoid}
+  a.gloss{background:none!important;border:0!important}
+}
+</style>
+</head>
+<body>
+<div class="topbar"><button class="menubtn" onclick="document.getElementById('sb').classList.toggle('open')">☰ 目錄</button><span class="logo">火鍋店點餐系統</span></div>
+<div class="layout">
+<nav class="sidebar" id="sb"><div class="brand"><a href="../index.html"><div class="logo">火鍋店點餐系統</div><div class="sub">專案文件 · 71 頁</div></a></div><a class="nav" href="../index.html">首頁</a><div class="navgroup">規格文件</div><a class="nav" href="../spec/00-架構分層與技術選型.html">00 架構分層與技術選型</a><a class="nav" href="../spec/01-專案總覽.html">01 專案總覽</a><a class="nav" href="../spec/02-需求規格.html">02 需求規格：基礎與進階功能總表</a><a class="nav" href="../spec/03-資料庫設計.html">03 資料庫設計</a><a class="nav" href="../spec/04-API規格.html">04 API 規格</a><a class="nav" href="../spec/05-開發流程與分工.html">05 開發流程與時程</a><a class="nav" href="../spec/06-圖表總覽.html">06 圖表總覽</a><div class="navgroup">模組規格</div><a class="nav" href="../spec/modules/M1-菜單與品項.html">M1 菜單與品項</a><a class="nav" href="../spec/modules/M2-桌位開桌與候位.html">M2 桌位、開桌與候位</a><a class="nav" href="../spec/modules/M3-點餐與服務鈴.html">M3 點餐與服務鈴</a><a class="nav" href="../spec/modules/M4-出菜看板.html">M4 出菜看板（KDS）</a><a class="nav" href="../spec/modules/M5-庫存.html">M5 庫存</a><a class="nav" href="../spec/modules/M6-結帳.html">M6 結帳</a><a class="nav" href="../spec/modules/M7-訂位.html">M7 訂位</a><a class="nav" href="../spec/modules/M8-會員.html">M8 會員</a><div class="navgroup">UI 文件</div><a class="nav" href="../ui/10-UI-UX規格.html">10 UI / UX 規格</a><a class="nav" href="../ui/11-設計系統.html">11 設計系統</a><a class="nav" href="../ui/12-AI-UI工具與提示詞.html">12 AI UI 工具與提示詞</a><a class="nav" href="../ui/13-畫框註解.html">13 畫框註解</a><a class="nav active" href="../ui/14-色彩Token.html">14 色彩 Token</a><div class="navgroup">技術總表</div><a class="nav" href="../tech/00-技術總表.html">00 技術總表</a><details><summary>技術 · 團隊與工具（5）</summary><a class="nav" href="../tech/team/01-命令列.html">01 命令列基本操作</a><a class="nav" href="../tech/team/02-Git是什麼.html">02 Git 是什麼</a><a class="nav" href="../tech/team/03-分支與合併.html">03 分支、合併與衝突</a><a class="nav" href="../tech/team/04-GitHub與PR.html">04 GitHub 與 Pull Request</a><a class="nav" href="../tech/team/05-Docker與Compose.html">05 Docker 與 Docker Compose</a></details><details><summary>技術 · 網頁運作原理（6）</summary><a class="nav" href="../tech/web/06-前端後端在做什麼.html">06 前端與後端各在做什麼</a><a class="nav" href="../tech/web/07-HTTP請求與回應.html">07 HTTP 請求與回應</a><a class="nav" href="../tech/web/08-HTTP狀態碼.html">08 HTTP 狀態碼</a><a class="nav" href="../tech/web/09-JSON.html">09 JSON</a><a class="nav" href="../tech/web/10-REST-API設計.html">10 REST API 設計</a><a class="nav" href="../tech/web/11-CORS跨來源.html">11 CORS 跨來源問題</a></details><details><summary>技術 · 後端（10）</summary><a class="nav" href="../tech/backend/12-Java與JDK.html">12 Java 與 JDK</a><a class="nav" href="../tech/backend/13-Maven.html">13 Maven 與相依套件</a><a class="nav" href="../tech/backend/14-SpringBoot是什麼.html">14 Spring Boot 是什麼</a><a class="nav" href="../tech/backend/15-依賴注入.html">15 依賴注入</a><a class="nav" href="../tech/backend/16-三層架構.html">16 Controller / Service / Repository</a><a class="nav" href="../tech/backend/17-Entity與DTO.html">17 Entity 與 DTO</a><a class="nav" href="../tech/backend/18-全域例外處理.html">18 全域例外處理</a><a class="nav" href="../tech/backend/19-Swagger.html">19 Swagger 自動產生 API 文件</a><a class="nav" href="../tech/backend/20-SpringSecurity.html">20 Spring Security 基礎</a><a class="nav" href="../tech/backend/21-JWT.html">21 JWT 與登入狀態</a></details><details><summary>技術 · 資料庫（8）</summary><a class="nav" href="../tech/database/22-關聯式資料庫與SQL.html">22 關聯式資料庫與 SQL</a><a class="nav" href="../tech/database/23-資料表設計.html">23 資料表設計</a><a class="nav" href="../tech/database/24-索引.html">24 索引是什麼</a><a class="nav" href="../tech/database/25-ORM與JPA.html">25 ORM 與 JPA</a><a class="nav" href="../tech/database/26-JPA關聯對應.html">26 JPA 關聯對應</a><a class="nav" href="../tech/database/27-交易Transaction.html">27 交易 Transaction</a><a class="nav" href="../tech/database/28-鎖與併發.html">28 鎖與併發（防超賣）</a><a class="nav" href="../tech/database/29-Flyway.html">29 Flyway 資料庫版本控管</a></details><details><summary>技術 · 前端（11）</summary><a class="nav" href="../tech/frontend/30-現代JavaScript.html">30 現代 JavaScript 速成</a><a class="nav" href="../tech/frontend/31-非同步與async.html">31 非同步與 async/await</a><a class="nav" href="../tech/frontend/32-npm與套件.html">32 npm 與 node_modules</a><a class="nav" href="../tech/frontend/33-Vite.html">33 Vite</a><a class="nav" href="../tech/frontend/34-React與JSX.html">34 React 與 JSX</a><a class="nav" href="../tech/frontend/35-Props與State.html">35 Props 與 State</a><a class="nav" href="../tech/frontend/36-useState.html">36 useState</a><a class="nav" href="../tech/frontend/37-useEffect.html">37 useEffect</a><a class="nav" href="../tech/frontend/38-ReactRouter.html">38 React Router</a><a class="nav" href="../tech/frontend/39-Tailwind.html">39 Tailwind CSS</a><a class="nav" href="../tech/frontend/40-fetch串接API.html">40 fetch 串接後端 API</a></details><details><summary>技術 · 即時與排程（4）</summary><a class="nav" href="../tech/realtime/41-WebSocket與STOMP.html">41 WebSocket 與 STOMP</a><a class="nav" href="../tech/realtime/42-前端接WebSocket.html">42 前端接 WebSocket</a><a class="nav" href="../tech/realtime/43-排程與Cron.html">43 排程任務與 Cron</a><a class="nav" href="../tech/realtime/44-Redis.html">44 Redis</a></details><details><summary>技術 · 進階（2）</summary><a class="nav" href="../tech/advanced/45-訊息佇列RabbitMQ.html">45 訊息佇列 RabbitMQ</a><a class="nav" href="../tech/advanced/46-區間重疊與訂位排程.html">46 訂位排程的演算法</a></details><details><summary>技術 · 品質與部署（4）</summary><a class="nav" href="../tech/quality/47-單元測試.html">47 單元測試 JUnit + Mockito</a><a class="nav" href="../tech/quality/48-Testcontainers.html">48 Testcontainers</a><a class="nav" href="../tech/quality/49-GitHubActions.html">49 GitHub Actions CI</a><a class="nav" href="../tech/quality/50-部署上線.html">50 部署上線</a></details><div class="foot">由 Markdown 自動產生<br>改文件請編輯 <code>docs/</code> 下的 .md<br>再執行 <code>python3 docs/build_site.py</code></div></nav>
+<div class="main"><div class="wrap">
+<article>
+<h1 id="14-色彩-token">14 色彩 Token</h1>
+<blockquote>
+<p>這份文件講的是<strong>顏色在 <a class="gloss" href="../tech/frontend/34-React與JSX.html" title="看這個技術的白話說明">React</a> 專案裡放在哪、叫什麼名字、什麼時候用哪一個</strong>。
+色票本身的設計理由（為什麼是紅湯紅、為什麼底色不用純白）在 <a href="../ui/11-設計系統.html">11-設計系統.md</a> §2，這裡不重複。</p>
+<p><strong>寫任何一個元件之前先看 §3 的三條規則和 §4 的全表。</strong></p>
+</blockquote>
+<hr />
+<h2 id="1-為什麼要先做這件事">1. 為什麼要先做這件事</h2>
+<p>設計稿是 52 張獨立 HTML，顏色目前的狀況：</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>現況</th>
+<th>數字</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>_shared.css</code> 的 <code>:root</code> 有名字的色值</td>
+<td>24 個</td>
+</tr>
+<tr>
+<td><code>_shared.css</code> 整份實際出現的色值</td>
+<td>46 個</td>
+</tr>
+<tr>
+<td><strong>沒有名字、直接寫死在規則裡的</strong></td>
+<td><strong>22 個</strong></td>
+</tr>
+<tr>
+<td>HTML 裡硬寫顏色的地方</td>
+<td>57 處，分布在 10 個檔</td>
+</tr>
+</tbody>
+</table></div>
+<p>那 22 個沒名字的色值不是多餘的，它們有真實用途——例如淺底提示框的深色字（<code>#1F4E66</code>、<code>#2A5637</code>、<code>#7D4A12</code>、<code>#7A1B15</code>）四個都在用，卻四個都沒有名字，於是在 <code>c06</code>、<code>c08</code>、<code>c09</code> 又被人手動抄了一次到 <code>style=""</code> 裡。</p>
+<p>前端是 5 個人分頭做、每人前後端都碰（<a href="../spec/05-開發流程與分工.html">05-開發流程與分工.md</a> §1.4.2）。<strong>沒有 token 的顏色一定會長歪</strong>：同一個「淺黃底上的警告字」五個人會寫出五個相近但不同的褐色，而且沒人會發現。</p>
+<p>所以這次把顏色分成兩類落地：<strong>共用的</strong>進全站 token 檔，<strong>只有一個畫面用的</strong>放那個畫面旁邊。</p>
+<hr />
+<h2 id="2-檔案配置">2. 檔案配置</h2>
+<pre class="mermaid">flowchart TD
+  subgraph L1["第 1 層　原色 primitive"]
+    P["brand / accent / 中性暖色<br/>唯一憑空定義顏色的地方"]
+  end
+  subgraph L2["第 2 層　語意色 semantic"]
+    S["success / warning / danger / info<br/>每組四個：主色・淺底・淺底文字・淺底邊框"]
+  end
+  subgraph L3["第 3 層　情境色 contextual"]
+    C["桌況三色・木牌<br/>綁在業務概念上，多畫面共用"]
+  end
+  subgraph L4["第 4 層　單頁專用"]
+    K["kds.colors.css<br/>S-04 出菜看板"]
+    Y["payment.colors.css<br/>C-10 付款品牌色"]
+  end
+
+  P --> S --> C
+  P -.參考.-> K
+  C --> U["元件用 Tailwind class<br/>bg-brand-600 / text-ink-600"]
+  K --> KU["元件用任意值語法<br/>bg-[var(--kds-card)]"]
+  Y --> KU
+
+  D["docs 專用：工作包 A～E 識別色<br/>不進 App，見 §7"]
+
+  classDef core fill:#FBE8E3,stroke:#C8442E,stroke-width:2px,color:#2B211C
+  classDef sem fill:#FCF0DC,stroke:#E8A33D,stroke-width:2px,color:#2B211C
+  classDef page fill:#E5EFF4,stroke:#2F6F8F,stroke-width:2px,color:#2B211C
+  classDef use fill:#FFFFFF,stroke:#6B5D54,stroke-width:1px,color:#2B211C
+  classDef out fill:#F5EFE5,stroke:#9C8E84,stroke-width:1px,stroke-dasharray:4 3,color:#6B5D54
+  class P core
+  class S,C sem
+  class K,Y page
+  class U,KU use
+  class D out
+</pre>
+<p><strong>圖例</strong>：紅框 = 原色，全站顏色的源頭；金框 = 從原色衍生的語意與情境色；藍框 = 只有單一畫面用的色；白框 = 元件實際怎麼寫；灰虛線框 = 不進 App 的文件用色。實線箭頭 = 依賴關係，虛線 = 只是配色時參考。</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>檔案</th>
+<th>放什麼</th>
+<th>誰動它</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>frontend/src/styles/tokens.colors.css</code></td>
+<td>全站共用的 token（<code>@theme</code>）</td>
+<td>要改請先在群組講，這一個檔影響 33 張畫面</td>
+</tr>
+<tr>
+<td><code>frontend/src/features/admin/kds/kds.colors.css</code></td>
+<td>S-04 出菜看板的深色</td>
+<td>做工作包 B 的人</td>
+</tr>
+<tr>
+<td><code>frontend/src/features/customer/payment/payment.colors.css</code></td>
+<td>C-10 的外部支付品牌色</td>
+<td>做工作包 C 的人</td>
+</tr>
+<tr>
+<td><code>frontend/src/style.css</code></td>
+<td>只有兩行 <code>@import</code>，不要在這裡寫顏色</td>
+<td>—</td>
+</tr>
+</tbody>
+</table></div>
+<p>共用檔是 <a class="gloss" href="../tech/frontend/39-Tailwind.html" title="看這個技術的白話說明">Tailwind</a> v4 的 <code>@theme</code>，每個 <code>--color-*</code> 會自動長出 utility：</p>
+<pre><code>--color-brand-600   →   bg-brand-600 / text-brand-600 / border-brand-600
+--shadow-card       →   shadow-card
+</code></pre>
+<p>寫在 <code>style</code> 或 SVG 屬性裡時用 <code>var(--color-brand-600)</code>，SVG 的 <code>fill</code> / <code>stroke</code> 也吃 CSS 變數，所以 <strong>S-03b 的倒數環、S-12 的長條圖都不需要另外寫 hex</strong>。</p>
+<hr />
+<h2 id="3-三條規則">3. 三條規則</h2>
+<ol>
+<li><strong>元件裡不准再出現 <code>#hex</code>。</strong> 要顏色就用 token。Code review 看到 hex 就退。</li>
+<li><strong>只有一個畫面用得到的顏色不進共用檔</strong>，放那個畫面旁邊的 <code>*.colors.css</code>，並在檔頭寫清楚「只有這個畫面用」。</li>
+<li><strong>要加新顏色，先回答「現有的哪一個不能用」。</strong> 答不出來就不要加。</li>
+</ol>
+<hr />
+<h2 id="4-共用-token-全表">4. 共用 token 全表</h2>
+<div style="display:flex;flex-wrap:wrap;gap:6px;margin:16px 0">
+<span style="display:inline-block;padding:6px 10px;border-radius:6px;font-size:12px;background:#A63522;color:#fff">brand-700</span>
+<span style="display:inline-block;padding:6px 10px;border-radius:6px;font-size:12px;background:#C8442E;color:#fff">brand-600</span>
+<span style="display:inline-block;padding:6px 10px;border-radius:6px;font-size:12px;background:#DB5B42;color:#fff">brand-500</span>
+<span style="display:inline-block;padding:6px 10px;border-radius:6px;font-size:12px;background:#FBE8E3;color:#A63522">brand-100</span>
+<span style="display:inline-block;padding:6px 10px;border-radius:6px;font-size:12px;background:#C9862A;color:#fff">accent-600</span>
+<span style="display:inline-block;padding:6px 10px;border-radius:6px;font-size:12px;background:#E8A33D;color:#2B211C">accent-500</span>
+<span style="display:inline-block;padding:6px 10px;border-radius:6px;font-size:12px;background:#EBD3A6;color:#2B211C">accent-200</span>
+<span style="display:inline-block;padding:6px 10px;border-radius:6px;font-size:12px;background:#FCF0DC;color:#7D4A12">accent-100</span>
+<span style="display:inline-block;padding:6px 10px;border-radius:6px;font-size:12px;background:#FBF7F0;color:#2B211C;border:1px solid #E6DED2">paper</span>
+<span style="display:inline-block;padding:6px 10px;border-radius:6px;font-size:12px;background:#FFFFFF;color:#2B211C;border:1px solid #E6DED2">surface</span>
+<span style="display:inline-block;padding:6px 10px;border-radius:6px;font-size:12px;background:#F5EFE5;color:#2B211C">surface-2</span>
+<span style="display:inline-block;padding:6px 10px;border-radius:6px;font-size:12px;background:#EDE4D6;color:#2B211C">surface-3</span>
+<span style="display:inline-block;padding:6px 10px;border-radius:6px;font-size:12px;background:#E6DED2;color:#2B211C">line</span>
+<span style="display:inline-block;padding:6px 10px;border-radius:6px;font-size:12px;background:#DED2C0;color:#2B211C">line-strong</span>
+<span style="display:inline-block;padding:6px 10px;border-radius:6px;font-size:12px;background:#2B211C;color:#fff">ink-900</span>
+<span style="display:inline-block;padding:6px 10px;border-radius:6px;font-size:12px;background:#6B5D54;color:#fff">ink-600</span>
+<span style="display:inline-block;padding:6px 10px;border-radius:6px;font-size:12px;background:#9C8E84;color:#fff">ink-400</span>
+<span style="display:inline-block;padding:6px 10px;border-radius:6px;font-size:12px;background:#3F7A4E;color:#fff">success</span>
+<span style="display:inline-block;padding:6px 10px;border-radius:6px;font-size:12px;background:#D98324;color:#fff">warning</span>
+<span style="display:inline-block;padding:6px 10px;border-radius:6px;font-size:12px;background:#B3261E;color:#fff">danger</span>
+<span style="display:inline-block;padding:6px 10px;border-radius:6px;font-size:12px;background:#2F6F8F;color:#fff">info</span>
+<span style="display:inline-block;padding:6px 10px;border-radius:6px;font-size:12px;background:#8A5A3B;color:#FFF3E2">wood</span>
+</div>
+
+<h3 id="41-原色-primitive">4.1 原色 primitive</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Token</th>
+<th>色值</th>
+<th>用在哪</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--color-brand-700</code></td>
+<td><code>#A63522</code></td>
+<td>按下 active、<code>brand-100</code> 底上的文字（例如側欄選中項）</td>
+</tr>
+<tr>
+<td><code>--color-brand-600</code></td>
+<td><code>#C8442E</code></td>
+<td>主按鈕、價格、選中、購物車列、用餐中的桌</td>
+</tr>
+<tr>
+<td><code>--color-brand-500</code></td>
+<td><code>#DB5B42</code></td>
+<td>hover。<strong>白字放上去只有 3.76:1，只能配 18px 以上的字</strong></td>
+</tr>
+<tr>
+<td><code>--color-brand-100</code></td>
+<td><code>#FBE8E3</code></td>
+<td>淺紅底、選中背景、通知條頭像底</td>
+</tr>
+<tr>
+<td><code>--color-accent-600</code></td>
+<td><code>#C9862A</code></td>
+<td>深一階的金，只當邊框，不要當字色</td>
+</tr>
+<tr>
+<td><code>--color-accent-500</code></td>
+<td><code>#E8A33D</code></td>
+<td>推薦徽章、預約保留框、報表的第二種長條</td>
+</tr>
+<tr>
+<td><code>--color-accent-200</code></td>
+<td><code>#EBD3A6</code></td>
+<td><code>accent-100</code> 底上的邊框與分隔線</td>
+</tr>
+<tr>
+<td><code>--color-accent-100</code></td>
+<td><code>#FCF0DC</code></td>
+<td>淺黃底、預約保留桌</td>
+</tr>
+<tr>
+<td><code>--color-paper</code></td>
+<td><code>#FBF7F0</code></td>
+<td>頁面底色。<strong>絕對不要用純白當頁面底</strong></td>
+</tr>
+<tr>
+<td><code>--color-surface</code></td>
+<td><code>#FFFFFF</code></td>
+<td>卡片、appbar、輸入框</td>
+</tr>
+<tr>
+<td><code>--color-surface-2</code></td>
+<td><code>#F5EFE5</code></td>
+<td>次級區塊、表頭、店家端側欄、骨架屏</td>
+</tr>
+<tr>
+<td><code>--color-surface-3</code></td>
+<td><code>#EDE4D6</code></td>
+<td>側欄項目 hover（比 <code>surface-2</code> 再深一階）</td>
+</tr>
+<tr>
+<td><code>--color-line</code></td>
+<td><code>#E6DED2</code></td>
+<td>標準分隔線與邊框</td>
+</tr>
+<tr>
+<td><code>--color-line-strong</code></td>
+<td><code>#DED2C0</code></td>
+<td>需要更清楚的邊框、圖片佔位的虛線框</td>
+</tr>
+<tr>
+<td><code>--color-ink-900</code></td>
+<td><code>#2B211C</code></td>
+<td>主文字，暖黑不是純黑</td>
+</tr>
+<tr>
+<td><code>--color-ink-600</code></td>
+<td><code>#6B5D54</code></td>
+<td>次要文字</td>
+</tr>
+<tr>
+<td><code>--color-ink-400</code></td>
+<td><code>#9C8E84</code></td>
+<td>停用、佔位、裝飾。<strong>不可讀性限制見 §6</strong></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="42-語意色-semantic-每組四件套">4.2 語意色 semantic — 每組四件套</h3>
+<p>一組四個，職責固定：<strong>主色</strong>配白字或當圖示、<strong>淺底</strong>當背景、<strong>淺底文字</strong>寫在淺底上、<strong>淺底邊框</strong>框住淺底。</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>組</th>
+<th>主色</th>
+<th>淺底 <code>-bg</code></th>
+<th>淺底文字 <code>-ink</code></th>
+<th>淺底邊框 <code>-line</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>success</td>
+<td><code>#3F7A4E</code></td>
+<td><code>#E4EFE7</code></td>
+<td><code>#2A5637</code></td>
+<td><code>#B7D3BE</code></td>
+</tr>
+<tr>
+<td>warning</td>
+<td><code>#D98324</code></td>
+<td><code>#FCF0DC</code></td>
+<td><code>#7D4A12</code></td>
+<td><code>#E4C68C</code></td>
+</tr>
+<tr>
+<td>danger</td>
+<td><code>#B3261E</code></td>
+<td><code>#FBE8E3</code></td>
+<td><code>#7A1B15</code></td>
+<td><code>#B3261E</code>（用主色畫框）</td>
+</tr>
+<tr>
+<td>info</td>
+<td><code>#2F6F8F</code></td>
+<td><code>#E5EFF4</code></td>
+<td><code>#1F4E66</code></td>
+<td><code>#BFD8E4</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>再加一個 <code>--color-hold-ink</code> <code>#8A5214</code>：<strong>等待／保留的標記文字</strong>，用在候位中徽章（<code>.b-wait</code>）與保留桌小字（<code>.t-hold</code>）。
+它比 <code>warning-ink</code> 淺一階、偏黃褐——標記本來就該比整段提示文字輕。<code>warning-bg</code> 上 5.65:1、白底 6.37:1，兩邊都過 AA。
+<strong>提示框內文用 <code>warning-ink</code>，標記用 <code>hold-ink</code></strong>，不要混。</p>
+<p><strong>淺底上一定要用 <code>-ink</code>，不要把主色當字色。</strong> 這是這次抽取最主要的修正：原本 <code>_shared.css</code> 的 <code>.ib-info</code>、<code>.ib-ok</code>、<code>.ib-warn</code>、<code>.ib-danger</code> 已經是這樣寫了，但那四個深色沒有名字，於是 <code>c06</code>、<code>c08</code>、<code>c09</code> 又在 <code>style=""</code> 抄了一次。對比度差多少見 §6。</p>
+<p>用途對照：</p>
+<ul>
+<li><code>success</code>：已出餐、成功、開關開啟、預約步驟已完成</li>
+<li><code>warning</code>：庫存偏低、等太久、保留桌小字（<code>.t-hold</code>）、候位中徽章</li>
+<li><code>danger</code>：售完、錯誤、取消、超時、刪除 hover、開桌時的強烈提醒</li>
+<li><code>info</code>：一般提示條</li>
+</ul>
+<h3 id="43-情境色-contextual">4.3 情境色 contextual</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Token</th>
+<th>等於</th>
+<th>用在哪</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--color-table-available</code></td>
+<td><code>var(--color-line)</code></td>
+<td>空桌</td>
+</tr>
+<tr>
+<td><code>--color-table-occupied</code></td>
+<td><code>var(--color-brand-600)</code></td>
+<td>用餐中，白字</td>
+</tr>
+<tr>
+<td><code>--color-table-cleaning</code></td>
+<td><code>var(--color-ink-400)</code></td>
+<td>待清理，白字</td>
+</tr>
+<tr>
+<td><code>--color-wood</code></td>
+<td><code>#8A5A3B</code></td>
+<td>手寫感木牌底（C-04／C-04b／C-04c／C-21）</td>
+</tr>
+<tr>
+<td><code>--color-wood-ink</code></td>
+<td><code>#FFF3E2</code></td>
+<td>木牌上的字</td>
+</tr>
+</tbody>
+</table></div>
+<p>桌況的第四種「<strong>預約保留</strong>」不另開色票：<code>accent-100</code> 底 + <code>accent-500</code> 1.5px inset 邊框，理由見 <a href="../ui/11-設計系統.html">11-設計系統.md</a> §2.5。</p>
+<p>桌況三色刻意寫成 <code>var()</code> 指向原色，不是各自抄一份 hex——這樣「空桌色就是邊框色」這件事寫在程式碼裡，而不是只寫在註解裡。Tailwind v4 完整支援這種轉指，<code>bg-table-occupied/50</code> 也算得出來。</p>
+<h3 id="44-陰影">4.4 陰影</h3>
+<p>只有兩級，用暖黑不用純黑：</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>Token</th>
+<th>值</th>
+<th>用在哪</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--shadow-card</code></td>
+<td><code>0 1px 2px rgb(43 33 28/.06), 0 4px 12px rgb(43 33 28/.05)</code></td>
+<td>卡片</td>
+</tr>
+<tr>
+<td><code>--shadow-pop</code></td>
+<td><code>0 8px 24px rgb(43 33 28/.12)</code></td>
+<td>彈出面板、Toast、hover 浮起</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="45-半透明不開-token">4.5 半透明不開 token</h3>
+<p>用 Tailwind 的 opacity modifier，不要為半透明另外命名：</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>設計稿寫法</th>
+<th>React 寫法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>rgba(43,33,28,.48)</code> 遮罩</td>
+<td><code>bg-ink-900/50</code></td>
+</tr>
+<tr>
+<td><code>rgba(255,255,255,.72)</code> 桌況標籤</td>
+<td><code>bg-white/70</code></td>
+</tr>
+<tr>
+<td><code>rgba(255,255,255,.74)</code> 售完印章底</td>
+<td><code>bg-white/75</code></td>
+</tr>
+<tr>
+<td><code>rgba(255,255,255,.6)</code> 輪播圓點</td>
+<td><code>bg-white/60</code></td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="5-單頁專用色">5. 單頁專用色</h2>
+<h3 id="51-s-04-出菜看板kdscolorscss">5.1 S-04 出菜看板（<code>kds.colors.css</code>）</h3>
+<p>全站唯一的深色畫面，1920×1080、不做 RWD。<strong>其他畫面不要 import 這個檔。</strong></p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>變數</th>
+<th>色值</th>
+<th>用在哪</th>
+<th>對比度</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--kds-bg</code></td>
+<td><code>#241C18</code></td>
+<td>畫面底</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>--kds-topbar</code></td>
+<td><code>#1B1512</code></td>
+<td>頂列，比畫面底再深一階</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>--kds-card</code></td>
+<td><code>#33261F</code></td>
+<td>訂單卡</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>--kds-line</code></td>
+<td><code>#4A3A31</code></td>
+<td>分隔線、按鈕底</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>--kds-box</code></td>
+<td><code>#6E594C</code></td>
+<td>未勾選的勾選框邊框</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>--kds-ink</code></td>
+<td><code>#F3EAE0</code></td>
+<td>主文字、桌號</td>
+<td>14.08:1</td>
+</tr>
+<tr>
+<td><code>--kds-ink-2</code></td>
+<td><code>#C4B3A6</code></td>
+<td>等待時間、次要資訊</td>
+<td>7.20:1</td>
+</tr>
+<tr>
+<td><code>--kds-ink-3</code></td>
+<td><code>#A8968A</code></td>
+<td>品項選項</td>
+<td>5.14:1</td>
+</tr>
+<tr>
+<td><code>--kds-late</code></td>
+<td><code>#F08A80</code></td>
+<td>久候紅字</td>
+<td>6.02:1</td>
+</tr>
+<tr>
+<td><code>--kds-done</code></td>
+<td><code>#8CC79B</code></td>
+<td>完成綠字</td>
+<td>7.48:1</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>為什麼深底要另外準備紅綠</strong>：全站的 <code>danger</code> <code>#B3261E</code> 放在 <code>kds-card</code> <code>#33261F</code> 上只有 <strong>2.23:1</strong>，<code>success</code> <code>#3F7A4E</code> 只有 <strong>2.86:1</strong>，兩個都不可讀。深底上要寫紅字綠字就用 <code>--kds-late</code> / <code>--kds-done</code>。<strong>當邊框或色塊底色時照樣用全站語意色</strong>（預約優先卡片 <code>border-accent-500</code>、久候卡片 <code>border-danger</code>、勾完的框 <code>bg-success</code>），因為那時候比的是跟深底的對比，不是當字。</p>
+<p>已淘汰：<code>s04-kds.html</code> 裡的 <code>#8A7668</code>（「最近完成 23」的字色），在 <code>kds-bg</code> 上只有 3.88:1，改用 <code>--kds-ink-3</code>。</p>
+<h3 id="52-c-10-付款方式paymentcolorscss">5.2 C-10 付款方式（<code>payment.colors.css</code>）</h3>
+<p>外部支付品牌色，不是我們的設計系統。<strong>不要拿去用在別的地方</strong>——尤其不要用 LINE 綠當「成功」色，成功色是 <code>--color-success</code>。</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>變數</th>
+<th>色值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--pay-apple-bg</code> / <code>--pay-apple-ink</code></td>
+<td><code>#000000</code> / <code>#FFFFFF</code></td>
+</tr>
+<tr>
+<td><code>--pay-google-bg</code> / <code>--pay-google-ink</code> / <code>--pay-google-line</code></td>
+<td><code>#FFFFFF</code> / <code>#3C4043</code> / <code>#DADCE0</code></td>
+</tr>
+<tr>
+<td><code>--pay-line-bg</code> / <code>--pay-line-ink</code></td>
+<td><code>#06C755</code> / <code>#FFFFFF</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>第四顆「到櫃檯付現」不是外部品牌，用全站 token：<code>bg-surface</code> + <code>text-ink-900</code> + <code>--color-line</code> 的 1px 外框。</p>
+<hr />
+<h2 id="6-對比度實測">6. 對比度實測</h2>
+<p>WCAG AA 的門檻是<strong>一般文字 4.5:1、18px 以上粗體大字 3:1</strong>。以下是實測值，不是估計：</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>組合</th>
+<th>比值</th>
+<th>判定</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ink-900</code> on <code>paper</code></td>
+<td>14.71</td>
+<td>AAA</td>
+</tr>
+<tr>
+<td><code>ink-600</code> on <code>surface</code></td>
+<td>6.33</td>
+<td>AA</td>
+</tr>
+<tr>
+<td><code>ink-600</code> on <code>paper</code></td>
+<td>5.92</td>
+<td>AA</td>
+</tr>
+<tr>
+<td><strong><code>ink-400</code> on <code>surface</code></strong></td>
+<td><strong>3.17</strong></td>
+<td><strong>只能大字</strong></td>
+</tr>
+<tr>
+<td><strong><code>ink-400</code> on <code>paper</code></strong></td>
+<td><strong>2.97</strong></td>
+<td><strong>不合格</strong></td>
+</tr>
+<tr>
+<td><strong><code>ink-400</code> on <code>surface-2</code></strong></td>
+<td><strong>2.78</strong></td>
+<td><strong>不合格</strong></td>
+</tr>
+<tr>
+<td>白字 on <code>brand-600</code></td>
+<td>4.86</td>
+<td>AA</td>
+</tr>
+<tr>
+<td><strong>白字 on <code>brand-500</code></strong></td>
+<td><strong>3.76</strong></td>
+<td><strong>只能大字（hover 才用到，可接受）</strong></td>
+</tr>
+<tr>
+<td><code>ink-900</code> on <code>accent-500</code></td>
+<td>7.28</td>
+<td>AAA</td>
+</tr>
+<tr>
+<td>白字 on <code>danger</code></td>
+<td>6.54</td>
+<td>AA</td>
+</tr>
+<tr>
+<td>白字 on <code>success</code></td>
+<td>5.12</td>
+<td>AA</td>
+</tr>
+<tr>
+<td>白字 on <code>table-cleaning</code></td>
+<td>3.17</td>
+<td>只能大字（桌號 24px，通過）</td>
+</tr>
+<tr>
+<td><code>success-ink</code> on <code>success-bg</code></td>
+<td>7.16</td>
+<td>AAA</td>
+</tr>
+<tr>
+<td><strong><code>success</code> on <code>success-bg</code></strong></td>
+<td><strong>4.34</strong></td>
+<td><strong>差一點不合格，見 §7 問題 2</strong></td>
+</tr>
+<tr>
+<td><code>warning-ink</code> on <code>warning-bg</code></td>
+<td>6.52</td>
+<td>AA</td>
+</tr>
+<tr>
+<td><code>warning-ink</code> on <code>surface</code></td>
+<td>7.34</td>
+<td>AAA</td>
+</tr>
+<tr>
+<td><code>hold-ink</code> on <code>warning-bg</code></td>
+<td>5.65</td>
+<td>AA</td>
+</tr>
+<tr>
+<td><code>hold-ink</code> on <code>surface</code></td>
+<td>6.37</td>
+<td>AA</td>
+</tr>
+<tr>
+<td><code>danger-ink</code> on <code>danger-bg</code></td>
+<td>8.90</td>
+<td>AAA</td>
+</tr>
+<tr>
+<td><code>info-ink</code> on <code>info-bg</code></td>
+<td>7.69</td>
+<td>AAA</td>
+</tr>
+<tr>
+<td><code>wood-ink</code> on <code>wood</code></td>
+<td>5.32</td>
+<td>AA</td>
+</tr>
+<tr>
+<td><code>brand-600</code> on <code>paper</code></td>
+<td>4.55</td>
+<td>AA（價格文字，剛好過）</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="ink-400-的硬規則">★ <code>ink-400</code> 的硬規則</h3>
+<p><code>ink-400</code> 在任何一種底色上都過不了 4.5:1。所以它<strong>只能</strong>用在：停用狀態、圖片佔位框線、純裝飾。<strong>任何使用者真的要讀的字（包含 13px 小字）最低用 <code>ink-600</code>。</strong></p>
+<p>設計稿目前有兩處違反這條，見 §7 問題 1。</p>
+<hr />
+<h2 id="7-這次抽取發現的問題">7. 這次抽取發現的問題</h2>
+<p>以下 10 項是抽 token 時對出來的，<strong>有些要你決定，我沒有自己改設計稿</strong>。</p>
+<p><strong>1. <code>ink-400</code> 當可讀文字用了兩處（要改）</strong>
+<code>.slot.full</code>（C-16c 已滿的時段）是 16px <code>ink-400</code> 寫在 <code>surface-2</code> 上 = 2.78:1；<code>.img-ph</code> 的說明文字同樣是 <code>ink-400</code> on <code>surface-2</code>。前者是使用者要讀的資訊。建議 <code>.slot.full</code> 改 <code>ink-600</code>，佔位框文字維持現狀（那是設計稿的施工標註，不會進 App）。</p>
+<p><strong>2. <code>.b-veg</code>（素食徽章）4.34:1，差一點不合格（要改）</strong>
+<code>.b-veg</code> 是 <code>success</code> 當字色寫在 <code>success-bg</code> 上，12px。改成 <code>success-ink</code>（<code>#2A5637</code>）就變 7.16:1，而且邊框還是 <code>success-line</code>，外觀幾乎不變。</p>
+<p><strong>3. 兩個暖褐字色（已定案：兩個都留）</strong>
+<code>.ib-warn</code> 用 <code>#7D4A12</code>，<code>.b-wait</code> 和 <code>.t-hold</code> 用 <code>#8A5214</code>。原本以為是同一件事該收斂成一個，
+2026-09-19 決定<strong>兩個都留、各給名字</strong>：<code>--color-warning-ink</code>（提示框內文）與 <code>--color-hold-ink</code>（等待／保留的標記）。
+分界是「整段說明文字」對「一顆標記」，不是深淺隨意。</p>
+<p><strong>4. <code>brand-100</code> 和 <code>danger-bg</code> 是同一個色值（已定案：維持同色）</strong>
+兩個都是 <code>#FBE8E3</code>。「選中的選項卡」和「錯誤提示框」底色一樣，靠邊框區分
+（選中是 <code>brand-600</code> inset、錯誤是 <code>danger</code> inset）。2026-09-19 做了 A/B 對照後決定<strong>維持現況、不拆開</strong>。</p>
+<p>對照頁留著當紀錄：<code>docs/ui/preview/danger-bg-ab.html</code>（直接用瀏覽器打開，不在產生的文件網站裡）。
+右欄是被否決的方案（<code>danger-bg</code> 改 <code>#FADBD5</code>）。</p>
+<p><strong>要注意的一個地方</strong>：A/B 看下來，有邊框的提示框本來就分得出來，真正只靠底色的是<strong>庫存表的售完列</strong>
+（<code>.dt tr.out td</code>，沒有邊框）。這一列同時有「售完」文字徽章，所以<strong>沒有「只用顏色傳達資訊」的無障礙問題</strong>；
+但如果之後實際做出來覺得那一列不夠醒目，改 <code>--color-danger-bg</code> 一行就能拆開，不用動元件。</p>
+<p><strong>5. <code>table-available</code> = <code>line</code>、<code>table-cleaning</code> = <code>ink-400</code>（已處理，僅告知）</strong>
+桌況三色其實都是既有色的別名。我寫成 <code>var()</code> 轉指而不是抄 hex，所以改原色時桌況會跟著改。如果你希望桌況色以後能獨立調整，就把它們改回寫死的 hex。</p>
+<p><strong>6. KDS 深底缺調亮的語意色（已補）</strong>
+見 §5.1。<code>#F08A80</code> 原本只出現在 <code>preview/design-system.html</code>，<code>s04-kds.html</code> 沒有；<code>--kds-done</code> 是這次新加的，之前深底上沒有可讀的綠字可用。</p>
+<p><strong>7. 四個相近的暖色邊框（已收斂）</strong>
+<code>#DED2C0</code>（<code>.meta code</code>／<code>.sidenote</code>／<code>.idx .sec</code>）、<code>#D9C7AE</code>（C-14 會員卡）、<code>#D6C9B6</code>（<code>.img-ph</code> 虛線）、<code>#EBD3A6</code>（C-20 優惠券卡）四個幾乎看不出差別。收成兩個：<code>line-strong</code> <code>#DED2C0</code>（中性）與 <code>accent-200</code> <code>#EBD3A6</code>（金黃底上用）。C-14 的 <code>#D9C7AE</code> 是會員卡在 <code>accent</code> 系底色上的邊框，歸到 <code>accent-200</code>。</p>
+<p><strong>8. <code>11-設計系統.md</code> §2.2 給的 Tailwind 設定是 v3 的，專案裝的是 v4（已更新）</strong>
+那一段寫的是 <code>tailwind.config.js</code> 加 <code>theme.extend.colors</code>，命名是 <code>brand / accent / ink / paper / ok / warn / bad</code>。但 <code>frontend/package.json</code> 裝的是 <code>tailwindcss@4.3.3</code> + <code>@tailwindcss/vite</code>，<strong>v4 沒有 config 檔，token 寫在 CSS 的 <code>@theme</code> 裡</strong>。而且 §2.2 的命名（<code>ok</code>／<code>warn</code>／<code>bad</code>）跟 <code>_shared.css</code> 的命名（<code>success</code>／<code>warning</code>／<code>danger</code>）不一致。我這次採用 <code>_shared.css</code> 的命名，因為那套散落在 7 份 spec、設計稿和 Figma 裡，改動成本高；只把會撞名的兩個改掉：<code>--text-*</code> → <code>ink-*</code>（否則 utility 會變成 <code>text-text-900</code>）、<code>--border</code> → <code>line</code>（否則是 <code>border-border</code>）。2026-09-19 處理：§2.2 整段改寫成指向這份文件，並補上圓角與字級 token 的落地位置；
+同時把 §5 元件規範裡殘留的舊名一併改掉——<code>bad</code>→<code>danger</code>、<code>ok</code>→<code>success</code>、
+<code>text-900/600/400</code>→<code>ink-900/600/400</code>（共 10 處）。這些舊名在 <code>@theme</code> 裡都不存在，
+照 §5 抄會得到透明底的按鈕與不生效的文字色。</p>
+<p><strong>8b. <code>11-設計系統.md</code> §3.1 的 Google Fonts 字重清單少一個（已補）</strong>
+§3.1 列的是 Noto Sans TC <code>400;500;700</code>，但 §3.2 的 <code>kds-table</code> 要 Sans 900，
+<code>docs/ui/mockups/_shared.css</code> 實際載的也是 <code>400;500;700;900</code>。照 §3.1 抄的話 KDS 桌號會被
+瀏覽器用 700 合成假粗體頂替（而且 <code>font-synthesis:none</code> 之後會直接掉回 700，不報錯）。
+已把 §3.1 補成 <code>400;500;700;900</code>，與 <code>frontend/index.html</code> 一致。</p>
+<p><strong>9. <a class="gloss" href="../tech/frontend/33-Vite.html" title="看這個技術的白話說明">Vite</a> 樣板殘留（已清掉）</strong>
+原本 <code>index.html</code> 用 <code>&lt;link&gt;</code> 載 <code>src/style.css</code>、<code>main.jsx</code> 又 <code>import './index.css'</code>，兩個進入點；
+而 <code>index.css</code> + <code>App.css</code> 是 Vite 樣板主題（<code>--accent:#AA3BFF</code> 紫、深色模式底 <code>#16171D</code>），跟暖色亮色系統打對台。
+2026-09-19 處理：刪掉 <code>index.css</code>、<code>App.css</code> 與樣板的 <code>react.svg</code>／<code>vite.svg</code>／<code>hero.png</code>／<code>public/icons.svg</code>，
+<code>main.jsx</code> 改 <code>import './style.css'</code>，<code>index.html</code> 拿掉 <code>&lt;link&gt;</code>、<code>lang</code> 改 <code>zh-Hant-TW</code>、標題改成專案名，
+<code>App.jsx</code> 換成最小骨架（附一排色票自檢色塊，開始做畫面時可整個刪掉）。
+<code>public/favicon.svg</code> 還是 Vite 的圖示，之後要換成自己的。</p>
+<p><strong>10. <code>#fff</code> / <code>#FFF</code> / <code>#FFFFFF</code> 三種寫法混用（已統一）</strong>
+token 檔一律小寫完整六碼。</p>
+<hr />
+<h2 id="8-不進-app-的顏色">8. 不進 App 的顏色</h2>
+<h3 id="81-工作包-ae-識別色">8.1 工作包 A～E 識別色</h3>
+<p>來自 <a href="../spec/05-開發流程與分工.html">05-開發流程與分工.md</a> §1.4.2，用在設計稿總覽頁的色條、Figma 上的工作包標籤。<strong>這是專案管理用的顏色，不是產品 UI，不要進 React token。</strong></p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>工作包</th>
+<th>識別色</th>
+<th>主題</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>藍 <code>#2F6FB0</code></td>
+<td>顧客入口＋會員＋服務鈴</td>
+</tr>
+<tr>
+<td>B</td>
+<td>綠 <code>#3C8A4E</code></td>
+<td>菜單＋出菜看板</td>
+</tr>
+<tr>
+<td>C</td>
+<td>紫 <code>#7B4FA6</code></td>
+<td>點餐交易＋櫃檯結帳</td>
+</tr>
+<tr>
+<td>D</td>
+<td>青 <code>#1F8A8A</code></td>
+<td>桌位開桌＋候位</td>
+</tr>
+<tr>
+<td>E</td>
+<td>洋紅 <code>#B5487A</code></td>
+<td>訂位</td>
+</tr>
+</tbody>
+</table></div>
+<p>進階畫面的標示不是顏色而是樣式：<code>accent-100</code> 底 + <code>accent-500</code> 2px 虛線框。</p>
+<h3 id="82-設計稿施工架的顏色">8.2 設計稿施工架的顏色</h3>
+<p><code>_shared.css</code> 裡 <code>.stage</code>、<code>.meta</code>、<code>.sidenote</code>、<code>.frame</code>、<code>.thumb</code>、<code>.idx</code>、<code>.flink</code>、<code>.pkg</code> 這些類別是<strong>給 Figma 看的施工架</strong>，不是產品畫面。它們用到的 <code>#EDE4D6</code>（舞台底）、<code>rgba(255,255,255,.65/.74)</code>（說明卡底）都不進 React token。</p>
+<p>例外：<code>#EDE4D6</code> 同時也是店家端側欄項目的 hover 色（<code>.nav-item:hover</code>），所以它以 <code>--color-surface-3</code> 的身分留下來了。</p>
+<hr />
+<h2 id="9-舊變數-新-token-對照表">9. 舊變數 → 新 token 對照表</h2>
+<p>做前端時照這張表翻譯設計稿。<strong>左欄是設計稿 <code>_shared.css</code> 的寫法，右欄是 React 要寫的。</strong></p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th><code>_shared.css</code></th>
+<th>React token</th>
+<th>Tailwind class</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>var(--brand-700)</code></td>
+<td><code>--color-brand-700</code></td>
+<td><code>bg-brand-700</code> <code>text-brand-700</code></td>
+</tr>
+<tr>
+<td><code>var(--brand-600)</code></td>
+<td><code>--color-brand-600</code></td>
+<td><code>bg-brand-600</code> …</td>
+</tr>
+<tr>
+<td><code>var(--brand-500)</code></td>
+<td><code>--color-brand-500</code></td>
+<td><code>hover:bg-brand-500</code></td>
+</tr>
+<tr>
+<td><code>var(--brand-100)</code></td>
+<td><code>--color-brand-100</code></td>
+<td><code>bg-brand-100</code></td>
+</tr>
+<tr>
+<td><code>var(--accent-600)</code></td>
+<td><code>--color-accent-600</code></td>
+<td><code>border-accent-600</code></td>
+</tr>
+<tr>
+<td><code>var(--accent-500)</code></td>
+<td><code>--color-accent-500</code></td>
+<td><code>bg-accent-500</code></td>
+</tr>
+<tr>
+<td><code>var(--accent-100)</code></td>
+<td><code>--color-accent-100</code></td>
+<td><code>bg-accent-100</code></td>
+</tr>
+<tr>
+<td><code>var(--bg)</code></td>
+<td><code>--color-paper</code></td>
+<td><code>bg-paper</code></td>
+</tr>
+<tr>
+<td><code>var(--surface)</code></td>
+<td><code>--color-surface</code></td>
+<td><code>bg-surface</code></td>
+</tr>
+<tr>
+<td><code>var(--surface-2)</code></td>
+<td><code>--color-surface-2</code></td>
+<td><code>bg-surface-2</code></td>
+</tr>
+<tr>
+<td><code>var(--border)</code></td>
+<td><code>--color-line</code></td>
+<td><code>border-line</code></td>
+</tr>
+<tr>
+<td><code>var(--text-900)</code></td>
+<td><code>--color-ink-900</code></td>
+<td><code>text-ink-900</code></td>
+</tr>
+<tr>
+<td><code>var(--text-600)</code></td>
+<td><code>--color-ink-600</code></td>
+<td><code>text-ink-600</code></td>
+</tr>
+<tr>
+<td><code>var(--text-400)</code></td>
+<td><code>--color-ink-400</code></td>
+<td><code>text-ink-400</code></td>
+</tr>
+<tr>
+<td><code>var(--success)</code> <code>-bg</code></td>
+<td><code>--color-success</code> <code>-bg</code></td>
+<td><code>bg-success</code> <code>bg-success-bg</code></td>
+</tr>
+<tr>
+<td><code>var(--warning)</code> <code>-bg</code></td>
+<td><code>--color-warning</code> <code>-bg</code></td>
+<td><code>bg-warning</code> <code>bg-warning-bg</code></td>
+</tr>
+<tr>
+<td><code>var(--danger)</code> <code>-bg</code></td>
+<td><code>--color-danger</code> <code>-bg</code></td>
+<td><code>bg-danger</code> <code>bg-danger-bg</code></td>
+</tr>
+<tr>
+<td><code>var(--info)</code> <code>-bg</code></td>
+<td><code>--color-info</code> <code>-bg</code></td>
+<td><code>bg-info</code> <code>bg-info-bg</code></td>
+</tr>
+<tr>
+<td><code>var(--table-available/occupied/cleaning)</code></td>
+<td>同名 <code>--color-table-*</code></td>
+<td><code>bg-table-occupied</code></td>
+</tr>
+<tr>
+<td><code>var(--shadow-card)</code> / <code>var(--shadow-pop)</code></td>
+<td><code>--shadow-card</code> / <code>--shadow-pop</code></td>
+<td><code>shadow-card</code> <code>shadow-pop</code></td>
+</tr>
+<tr>
+<td><code>var(--kds-bg/card/line/text)</code></td>
+<td><code>--kds-bg/card/line/ink</code></td>
+<td><code>bg-[var(--kds-card)]</code></td>
+</tr>
+<tr>
+<td>寫死的 <code>#1F4E66</code></td>
+<td><code>--color-info-ink</code></td>
+<td><code>text-info-ink</code></td>
+</tr>
+<tr>
+<td>寫死的 <code>#2A5637</code></td>
+<td><code>--color-success-ink</code></td>
+<td><code>text-success-ink</code></td>
+</tr>
+<tr>
+<td>寫死的 <code>#7D4A12</code></td>
+<td><code>--color-warning-ink</code></td>
+<td><code>text-warning-ink</code></td>
+</tr>
+<tr>
+<td>寫死的 <code>#8A5214</code></td>
+<td><code>--color-hold-ink</code></td>
+<td><code>text-hold-ink</code></td>
+</tr>
+<tr>
+<td>寫死的 <code>#7A1B15</code></td>
+<td><code>--color-danger-ink</code></td>
+<td><code>text-danger-ink</code></td>
+</tr>
+<tr>
+<td>寫死的 <code>#B7D3BE</code> <code>#E4C68C</code> <code>#BFD8E4</code></td>
+<td><code>--color-*-line</code></td>
+<td><code>border-success-line</code> …</td>
+</tr>
+<tr>
+<td>寫死的 <code>#EBD3A6</code> <code>#D9C7AE</code></td>
+<td><code>--color-accent-200</code></td>
+<td><code>border-accent-200</code></td>
+</tr>
+<tr>
+<td>寫死的 <code>#DED2C0</code> <code>#D6C9B6</code></td>
+<td><code>--color-line-strong</code></td>
+<td><code>border-line-strong</code></td>
+</tr>
+<tr>
+<td>寫死的 <code>#8A5A3B</code> <code>#FFF3E2</code></td>
+<td><code>--color-wood</code> <code>--color-wood-ink</code></td>
+<td><code>bg-wood text-wood-ink</code></td>
+</tr>
+<tr>
+<td>寫死的 <code>#EDE4D6</code></td>
+<td><code>--color-surface-3</code></td>
+<td><code>hover:bg-surface-3</code></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>設計稿本身沒有改。</strong> 上面那些「寫死的」在 <code>_shared.css</code> 和 9 張 HTML 裡還是 hex。</p>
+<h3 id="91-那-22-個沒名字的-hex是不是有可以刪的">9.1 那 22 個沒名字的 hex，是不是有可以刪的？</h3>
+<p>2026-09-19 逐一盤點過：<strong>22 個全部都有人在用，沒有可以刪的。</strong> 對應關係如下。</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>色值</th>
+<th>定義在哪個規則</th>
+<th>幾張畫面在用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>#1F4E66</code> <code>#2A5637</code> <code>#7D4A12</code> <code>#7A1B15</code></td>
+<td><code>.ib-info</code> <code>.ib-ok</code> <code>.ib-warn</code> <code>.ib-danger</code></td>
+<td>3／3／8／3</td>
+</tr>
+<tr>
+<td><code>#8A5214</code></td>
+<td><code>.b-wait</code>、<code>.t-hold</code></td>
+<td>23</td>
+</tr>
+<tr>
+<td><code>#E4C68C</code> <code>#B7D3BE</code> <code>#BFD8E4</code></td>
+<td><code>.b-wait</code> <code>.b-veg</code> <code>.b-info</code> 的邊框</td>
+<td>21／1／6</td>
+</tr>
+<tr>
+<td><code>#8A5A3B</code> <code>#FFF3E2</code></td>
+<td><code>.woodsign</code></td>
+<td>4</td>
+</tr>
+<tr>
+<td><code>#DED2C0</code></td>
+<td><code>.meta code</code>、<code>.sidenote</code>、<code>.idx .sec</code></td>
+<td>51／46／9（都是施工架）</td>
+</tr>
+<tr>
+<td><code>#D6C9B6</code></td>
+<td><code>.img-ph</code>、<code>.reccard .img-ph</code></td>
+<td>12</td>
+</tr>
+<tr>
+<td><code>#EDE4D6</code></td>
+<td><code>body</code>（設計稿舞台底）、<code>.nav-item:hover</code></td>
+<td>52／17</td>
+</tr>
+<tr>
+<td><code>#FFF</code></td>
+<td>17 個規則（<code>.btn-primary</code>、<code>.tt-oc</code>、<code>.hero .cap</code>…）</td>
+<td>最多的 45</td>
+</tr>
+<tr>
+<td><code>#241C18</code> 系列（<code>#1B1512</code> <code>#6E594C</code> <code>#A8968A</code> <code>#C4B3A6</code>）</td>
+<td><code>.ktop</code> <code>.kbox</code> <code>.kopt</code> <code>.kmeta</code></td>
+<td>都只有 S-04</td>
+</tr>
+<tr>
+<td><code>#000</code> <code>#3C4043</code> <code>#DADCE0</code> <code>#06C755</code></td>
+<td><code>.pay-apple</code> <code>.pay-google</code> <code>.pay-line</code></td>
+<td>都只有 C-10</td>
+</tr>
+</tbody>
+</table></div>
+<p>兩個要注意的：</p>
+<ul>
+<li><strong><code>.b-veg</code>（素食徽章）和 <code>.btn-danger</code> 只出現在元件總表</strong>（<code>ds05</code>／<code>ds02</code>），沒有任何真實畫面在用。
+  它們不是死碼，是「元件備好了但畫面還沒用到」——做菜單時素食標記應該要用上，不然就該從元件清單拿掉。</li>
+<li><code>#DED2C0</code> 的 51 張、<code>#EDE4D6</code> 的 52 張幾乎是全部，但那是<strong>施工架</strong>（畫框說明卡、舞台底色），不是產品畫面。
+  React 端只有 <code>.nav-item:hover</code> 需要 <code>#EDE4D6</code>，所以它以 <code>--color-surface-3</code> 留下來，其餘不進 token。</li>
+</ul><div class="pager"><a href="../ui/13-畫框註解.html"><div class="k">← 上一篇</div><div class="n">13 畫框註解</div></a><a class="next" href="../tech/00-技術總表.html"><div class="k">下一篇 →</div><div class="n">00 技術總表</div></a></div>
+</article>
+<aside class="toc"><div class="tt">本頁目錄</div><a href="#1-為什麼要先做這件事">1. 為什麼要先做這件事</a><a href="#2-檔案配置">2. 檔案配置</a><a href="#3-三條規則">3. 三條規則</a><a href="#4-共用-token-全表">4. 共用 token 全表</a><a href="#5-單頁專用色">5. 單頁專用色</a><a href="#6-對比度實測">6. 對比度實測</a><a href="#7-這次抽取發現的問題">7. 這次抽取發現的問題</a><a href="#8-不進-app-的顏色">8. 不進 App 的顏色</a><a href="#9-舊變數-新-token-對照表">9. 舊變數 → 新 token 對照表</a></aside>
+</div></div>
+</div>
+<script src="../vendor/mermaid.min.js"></script>
+<script>
+mermaid.initialize({
+  startOnLoad: true, securityLevel: 'loose', theme: 'base',
+  fontFamily: '"Noto Sans TC","PingFang TC",system-ui,sans-serif',
+  themeVariables: {
+    background:'#FFFFFF',
+    primaryColor:'#FBE8E3', primaryTextColor:'#2B211C', primaryBorderColor:'#C8442E',
+    secondaryColor:'#FCF0DC', secondaryBorderColor:'#E8A33D',
+    tertiaryColor:'#F5EFE5', tertiaryBorderColor:'#E6DED2',
+    lineColor:'#9C8E84', textColor:'#2B211C',
+    mainBkg:'#FBE8E3', nodeBorder:'#C8442E', clusterBkg:'#FBF7F0', clusterBorder:'#E6DED2',
+    titleColor:'#2B211C', edgeLabelBackground:'#FBF7F0',
+    actorBkg:'#FBE8E3', actorBorder:'#C8442E', actorTextColor:'#2B211C',
+    signalColor:'#6B5D54', signalTextColor:'#2B211C',
+    labelBoxBkgColor:'#FCF0DC', labelBoxBorderColor:'#E8A33D', labelTextColor:'#2B211C',
+    loopTextColor:'#2B211C', noteBkgColor:'#FCF0DC', noteBorderColor:'#E8A33D', noteTextColor:'#2B211C',
+    activationBkgColor:'#E6DED2', activationBorderColor:'#9C8E84', sequenceNumberColor:'#FFFFFF',
+    altBackground:'#F5EFE5',
+    taskBkgColor:'#FBE8E3', taskBorderColor:'#C8442E', taskTextColor:'#2B211C',
+    taskTextOutsideColor:'#2B211C', taskTextDarkColor:'#2B211C',
+    activeTaskBkgColor:'#E8A33D', activeTaskBorderColor:'#C9862A',
+    doneTaskBkgColor:'#E4EFE7', doneTaskBorderColor:'#3F7A4E',
+    critBkgColor:'#C8442E', critBorderColor:'#A63522',
+    gridColor:'#E6DED2', todayLineColor:'#B3261E',
+    sectionBkgColor:'#FBF7F0', sectionBkgColor2:'#F5EFE5', altSectionBkgColor:'#FFFFFF',
+    classText:'#2B211C',
+    attributeBackgroundColorOdd:'#FFFFFF', attributeBackgroundColorEven:'#F5EFE5'
+  },
+  gantt:{barHeight:18,barGap:5,topPadding:52,leftPadding:180,fontSize:12},
+  mindmap:{padding:12},
+  sequence:{actorMargin:42,boxTextMargin:6,noteMargin:10,messageMargin:32,width:150},
+  er:{entityPadding:12,minEntityWidth:110}
+});
+</script>
+<script>document.addEventListener('click',function(e){var sb=document.getElementById('sb');if(window.innerWidth<=940&&sb.classList.contains('open')&&!sb.contains(e.target)&&!e.target.closest('.menubtn')){sb.classList.remove('open');}});</script>
+</body>
+</html>
