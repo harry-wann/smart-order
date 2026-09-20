@@ -91,7 +91,7 @@ Promise 是一張**「我等一下會給你結果」的承諾書**。它有三�
 ## 在我們的專案裡
 
 ```js
-// src/api/client.js
+// src/services/api/client.js
 export async function request(path, options = {}) {
   const res = await fetch(BASE + path, options);      // 等網路回來
   const data = await res.json();                       // 等 JSON 解析完

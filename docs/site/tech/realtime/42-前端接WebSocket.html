@@ -178,11 +178,26 @@ pre.mermaid svg{max-width:100%;height:auto}
 <p><strong>難度</strong> ★★★☆☆　<strong>用在哪些模組</strong> M2、M3、M4、M5、M6　<strong>哪幾週</strong> 第 2 週（假事件）、第 4 週</p>
 <h2 id="一句話">一句話</h2>
 <p>用 <code>@stomp/stompjs</code> 接上後端的喇叭，收到訊息就更新畫面。</p>
+<h2 id="檔案放哪裡">檔案放哪裡</h2>
+<p><strong>所有 <a class="gloss" href="../../tech/realtime/41-WebSocket與STOMP.html" title="看這個技術的白話說明">WebSocket</a> 相關的程式碼都放在 <code>src/services/realtime/</code></strong>，元件裡不准直接 <code>new WebSocket</code>。</p>
+<pre><code>src/services/realtime/
+├── socket.js       ← 連線、重連、訂閱頻道
+└── mockSocket.js   ← 假的 WebSocket，沒有後端時也能演出即時效果
+</code></pre>
+<p>判斷方法是<strong>「誰先開口」</strong>：後端主動推給前端的放這裡；
+前端問一次、後端答一次的放 <code>src/services/api/</code>，
+見 <a href="../../tech/frontend/40-fetch串接API.html">fetch 串接後端 API</a>。</p>
+<blockquote>
+<p><strong>兩邊常常配成一對。</strong> 收到 <code>CART_UPDATED</code> 之後，<strong>不要</strong>直接把推播的 payload
+塞進畫面，而是回頭呼叫 <code>api/cart.js</code> 重抓一次。推播只當「該更新了」的信號，
+資料一律以 API 為準——這樣同桌兩支手機看到的內容一定一致。
+本頁「同桌共用購物車」那一節就是這個做法。</p>
+</blockquote>
 <h2 id="要裝什麼">要裝什麼</h2>
 <pre><code class="language-bash">npm install @stomp/stompjs
 </code></pre>
 <blockquote>
-<p>不需要 <code>sockjs-client</code>：後端開的是原生 <a class="gloss" href="../../tech/realtime/41-WebSocket與STOMP.html" title="看這個技術的白話說明">WebSocket</a> 端點 <code>/ws</code>（見 <a href="../../tech/realtime/41-WebSocket與STOMP.html">WebSocket 與 STOMP</a>），
+<p>不需要 <code>sockjs-client</code>：後端開的是原生 WebSocket 端點 <code>/ws</code>（見 <a href="../../tech/realtime/41-WebSocket與STOMP.html">WebSocket 與 STOMP</a>），
 <code>brokerURL</code> 直接寫 <code>ws://…/ws</code>，正式環境是 <code>wss://…/ws</code>。</p>
 </blockquote>
 <h2 id="最小的例子">最小的例子</h2>
@@ -315,7 +330,7 @@ function TicketsPage() {
 <p><strong>自己的動作不通知自己</strong>：前端拿 <code>byGuestId</code> 跟這支手機掃碼加入時拿到的 <code>guest.id</code>（<code>POST /join</code> 的回應）比，相同就只更新畫面、不跳通知條。
 不要比 <code>byGuest</code>——會員暱稱可能重複，兩個「小美」同桌就會互相吃掉通知。</p>
 <p>菜單頁（C-04）這樣接：</p>
-<pre><code class="language-jsx">import { fetchCart } from '../api/cart';
+<pre><code class="language-jsx">import { fetchCart } from '../services/api/cart';
 
 function MenuPage() {
   const [cart, setCart] = useState([]);           // 畫面狀態：拿來畫底部購物車角標
@@ -551,7 +566,7 @@ HTTPS 網站只能用 <code>wss://</code>。
 <h2 id="相關頁面">相關頁面</h2>
 <p><a href="../../tech/realtime/41-WebSocket與STOMP.html">WebSocket 與 STOMP</a>　<a href="../../tech/frontend/37-useEffect.html">useEffect</a>　<a href="../../tech/frontend/40-fetch串接API.html">fetch 串接後端 API</a></p><div class="pager"><a href="../../tech/realtime/41-WebSocket與STOMP.html"><div class="k">← 上一篇</div><div class="n">41 WebSocket 與 STOMP</div></a><a class="next" href="../../tech/realtime/43-排程與Cron.html"><div class="k">下一篇 →</div><div class="n">43 排程任務與 Cron</div></a></div>
 </article>
-<aside class="toc"><div class="tt">本頁目錄</div><a href="#一句話">一句話</a><a href="#要裝什麼">要裝什麼</a><a href="#最小的例子">最小的例子</a><a href="#包成一個-hook我們的做法">包成一個 Hook（我們的做法）</a><a href="#同桌共用購物車cart_updated">同桌共用購物車：CART_UPDATED</a><a href="#兩件一定要做的事">兩件一定要做的事</a><a href="#讓即時看得見">讓「即時」看得見</a><a href="#連線狀態指示">連線狀態指示</a><a href="#15-分鐘動手小練習">15 分鐘動手小練習</a><a href="#你會遇到的坑">你會遇到的坑</a><a href="#常見錯誤訊息對照">常見錯誤訊息對照</a><a href="#術語對照表">術語對照表</a><a href="#自我檢核">自我檢核</a><a href="#學習資源">學習資源</a><a href="#相關頁面">相關頁面</a></aside>
+<aside class="toc"><div class="tt">本頁目錄</div><a href="#一句話">一句話</a><a href="#檔案放哪裡">檔案放哪裡</a><a href="#要裝什麼">要裝什麼</a><a href="#最小的例子">最小的例子</a><a href="#包成一個-hook我們的做法">包成一個 Hook（我們的做法）</a><a href="#同桌共用購物車cart_updated">同桌共用購物車：CART_UPDATED</a><a href="#兩件一定要做的事">兩件一定要做的事</a><a href="#讓即時看得見">讓「即時」看得見</a><a href="#連線狀態指示">連線狀態指示</a><a href="#15-分鐘動手小練習">15 分鐘動手小練習</a><a href="#你會遇到的坑">你會遇到的坑</a><a href="#常見錯誤訊息對照">常見錯誤訊息對照</a><a href="#術語對照表">術語對照表</a><a href="#自我檢核">自我檢核</a><a href="#學習資源">學習資源</a><a href="#相關頁面">相關頁面</a></aside>
 </div></div>
 </div>
 <script src="../../vendor/mermaid.min.js"></script>

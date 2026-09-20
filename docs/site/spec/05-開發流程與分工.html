@@ -454,7 +454,7 @@ S-01 的畫面是 A 的，員工登入 API 是 L0 的。</p>
 </tr>
 <tr>
 <td>用到的技術</td>
-<td>前端：<a href="../tech/realtime/42-前端接WebSocket.html">前端接 WebSocket</a>（KDS、C-08 即時）；<strong>顧客端專案初始化與共用元件</strong>（<a href="../tech/frontend/33-Vite.html">Vite</a>、<a href="../tech/frontend/39-Tailwind.html">Tailwind</a>）<br>後端：<a href="../tech/database/23-資料表設計.html">資料表設計</a>、<a href="../tech/database/26-JPA關聯對應.html">JPA 關聯對應</a>（品項↔選項群組）、<a href="../tech/database/24-索引.html">索引</a>、<a href="../tech/realtime/41-WebSocket與STOMP.html">WebSocket 與 STOMP</a></td>
+<td>前端：<a href="../tech/realtime/42-前端接WebSocket.html">前端接 WebSocket</a>（KDS、C-08 即時）；<strong>顧客端版型與共用元件</strong>（<a href="../tech/frontend/33-Vite.html">Vite</a>、<a href="../tech/frontend/39-Tailwind.html">Tailwind</a>）<br>後端：<a href="../tech/database/23-資料表設計.html">資料表設計</a>、<a href="../tech/database/26-JPA關聯對應.html">JPA 關聯對應</a>（品項↔選項群組）、<a href="../tech/database/24-索引.html">索引</a>、<a href="../tech/realtime/41-WebSocket與STOMP.html">WebSocket 與 STOMP</a></td>
 </tr>
 </tbody>
 </table></div>
@@ -521,7 +521,7 @@ C-08 放 B：它顯示的是出菜進度（M4 4.12），跟 KDS 是同一組事�
 </tr>
 <tr>
 <td>用到的技術</td>
-<td>前端：<a href="../tech/realtime/42-前端接WebSocket.html">前端接 WebSocket</a>（<code>TABLE_STATUS</code>）；<strong>店家端專案初始化與後台版型</strong>（<a href="../tech/frontend/33-Vite.html">Vite</a>、<a href="../tech/frontend/39-Tailwind.html">Tailwind</a>）<br>後端：<a href="../tech/database/28-鎖與併發.html">鎖與併發</a>（開桌悲觀鎖）、<a href="../tech/database/27-交易Transaction.html">交易 Transaction</a>、<a href="../tech/realtime/43-排程與Cron.html">排程與 Cron</a>、<a href="../tech/realtime/41-WebSocket與STOMP.html">WebSocket 與 STOMP</a></td>
+<td>前端：<a href="../tech/realtime/42-前端接WebSocket.html">前端接 WebSocket</a>（<code>TABLE_STATUS</code>）；<strong>店家端後台版型</strong>（<a href="../tech/frontend/33-Vite.html">Vite</a>、<a href="../tech/frontend/39-Tailwind.html">Tailwind</a>）<br>後端：<a href="../tech/database/28-鎖與併發.html">鎖與併發</a>（開桌悲觀鎖）、<a href="../tech/database/27-交易Transaction.html">交易 Transaction</a>、<a href="../tech/realtime/43-排程與Cron.html">排程與 Cron</a>、<a href="../tech/realtime/41-WebSocket與STOMP.html">WebSocket 與 STOMP</a></td>
 </tr>
 </tbody>
 </table></div>
@@ -864,11 +864,11 @@ S-02d 的畫面是 D 的開桌頁頁籤，但清單內容、取消訂位與報�
 </tr>
 <tr>
 <td>放哪裡</td>
-<td><code>src/api/mock/&lt;模組&gt;.js</code>，一個模組一個檔；別包要用的資料（例如 C 要用菜單）直接 import 提供方那一個檔</td>
+<td><code>src/services/api/mock/&lt;模組&gt;.js</code>，一個模組一個檔；別包要用的資料（例如 C 要用菜單）直接 import 提供方那一個檔</td>
 </tr>
 <tr>
 <td>怎麼切換</td>
-<td><code>src/api/&lt;模組&gt;.js</code> 是畫面唯一會呼叫的地方，裡面看 <code>import.meta.env.VITE_USE_MOCK</code> 決定回 mock 還是打真的 API；畫面元件不知道自己拿到的是假資料</td>
+<td><code>src/services/api/&lt;模組&gt;.js</code> 是畫面唯一會呼叫的地方，裡面看 <code>import.meta.env.VITE_USE_MOCK</code> 決定回 mock 還是打真的 API；畫面元件不知道自己拿到的是假資料</td>
 </tr>
 <tr>
 <td>模擬延遲與錯誤</td>
@@ -876,11 +876,11 @@ S-02d 的畫面是 D 的開桌頁頁籤，但清單內容、取消訂位與報�
 </tr>
 <tr>
 <td>即時事件</td>
-<td><code>src/realtime/mockSocket.js</code> 當假的 WebSocket，定時或按開發用按鈕丟出 <code>CART_UPDATED</code>、<code>NEW_TICKET</code>、<code>TABLE_STATUS</code>、<code>SERVICE_CALL</code>、<code>SESSION_CLOSED</code>，payload 照 04 §3.4</td>
+<td><code>src/services/realtime/mockSocket.js</code> 當假的 WebSocket，定時或按開發用按鈕丟出 <code>CART_UPDATED</code>、<code>NEW_TICKET</code>、<code>TABLE_STATUS</code>、<code>SERVICE_CALL</code>、<code>SESSION_CLOSED</code>，payload 照 04 §3.4</td>
 </tr>
 <tr>
 <td>換成真的</td>
-<td>只改 <code>.env</code> 或 <code>src/api/&lt;模組&gt;.js</code> 那一支，<strong>畫面不改</strong>；要改畫面才接得上，代表 mock 跟 04 不一致，先修 mock 或 04</td>
+<td>只改 <code>.env</code> 或 <code>src/services/api/&lt;模組&gt;.js</code> 那一支，<strong>畫面不改</strong>；要改畫面才接得上，代表 mock 跟 04 不一致，先修 mock 或 04</td>
 </tr>
 <tr>
 <td>上線</td>
@@ -888,6 +888,51 @@ S-02d 的畫面是 D 的開桌頁頁籤，但清單內容、取消訂位與報�
 </tr>
 </tbody>
 </table></div>
+<p><strong>資料夾長這樣</strong>（2026-09-20 定案，資料夾已經建好在 <code>frontend/src/services/</code>）：</p>
+<pre><code>src/services/          ← 跟外面講話的東西全部放這裡，元件不直接 fetch 也不直接 new WebSocket
+│
+├── api/               ← HTTP：一問一答
+│   ├── client.js          fetch 封裝。權杖、錯誤碼、base URL 只寫在這一個地方
+│   ├── &lt;模組&gt;.js          menu.js / cart.js / tables.js …畫面唯一會呼叫的層
+│   └── mock/
+│       └── &lt;模組&gt;.js      假資料，欄位逐字照 04
+│
+└── realtime/          ← WebSocket：後端主動推
+    ├── socket.js          連線、重連、訂閱頻道
+    └── mockSocket.js      假的 WebSocket，丟 CART_UPDATED 等事件
+</code></pre>
+<p><strong>哪個東西放哪裡，判斷方法是「誰先開口」：</strong></p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>情況</th>
+<th>放哪</th>
+<th>例子</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>前端問一次、後端答一次</td>
+<td><code>services/api/</code></td>
+<td>拿菜單、加入購物車、送出點餐、結帳</td>
+</tr>
+<tr>
+<td>後端主動推給前端</td>
+<td><code>services/realtime/</code></td>
+<td>同桌有人加了什麼、KDS 來新單、桌況變了、服務鈴</td>
+</tr>
+</tbody>
+</table></div>
+<p>兩邊常常配成一對：收到 <code>CART_UPDATED</code> 推播後，<strong>不要</strong>直接把推播的 payload 塞進畫面，
+而是回頭呼叫 <code>api/cart.js</code> 重抓一次。推播只當「該更新了」的信號，資料以 API 為準，
+這樣兩支手機看到的內容一定一致。</p>
+<blockquote>
+<p><strong>為什麼多包一層 <code>services/</code></strong>：<code>frontend/src/</code> 的資料夾結構（commit <code>9bd1a58</code>）建的是
+<code>services/</code>，這份文件原本寫的是 <code>src/api/</code> 與 <code>src/realtime/</code>。2026-09-20 決定兩者合併——
+<code>services/</code> 保留當資料層的總稱，底下再用 <code>api/</code> 與 <code>realtime/</code> 把兩個概念分開。
+好處是 <code>src/</code> 頂層少一個資料夾，而且「所有對外通訊都在 services/ 底下」這句話講得完整。
+<strong>不要再把 <code>api/</code> 或 <code>realtime/</code> 搬回 <code>src/</code> 頂層。</strong></p>
+</blockquote>
 <h4 id="145-包與包之間的接點">1.4.5 包與包之間的接點</h4>
 <p>跨包的地方先把<strong>介面</strong>講好，各自寫自己那側；mock 階段就照這張表互相 import：</p>
 <div class="tablewrap"><table>
@@ -1021,9 +1066,9 @@ S-02d 的畫面是 D 的開桌頁頁籤，但清單內容、取消訂位與報�
 <td>1 前端</td>
 <td>骨架、<a class="gloss" href="../tech/team/05-Docker與Compose.html" title="看這個技術的白話說明">Docker</a> Compose、Flyway＋種子、統一回應、例外、CORS、Swagger</td>
 <td>React 練習；C-00、C-01、C-12、C-12b、C-13（mock）</td>
-<td>React 練習；<strong>顧客端初始化與共用元件</strong>；C-04、C-05（mock）</td>
+<td>React 練習；<strong>顧客端版型與共用元件</strong>；C-04、C-05（mock）</td>
 <td>React 練習；購物車 mock；C-06、C-07（mock）</td>
-<td>React 練習；<strong>店家端初始化與後台版型</strong>；S-02、S-02b（mock）</td>
+<td>React 練習；<strong>店家端後台版型</strong>；S-02、S-02b（mock）</td>
 <td>React 練習；C-16c、C-18（mock）</td>
 </tr>
 <tr>
@@ -1176,19 +1221,19 @@ chore: 升級 Spring Boot 版本
 <td>同上</td>
 </tr>
 <tr>
-<td><code>frontend-customer/package.json</code></td>
+<td><code>frontend/package.json</code></td>
+<td>L0（Harry）</td>
+<td>前端只有一份，五個人都會受影響；要加套件先在群組說</td>
+</tr>
+<tr>
+<td><code>frontend/src/styles/tokens.*.css</code></td>
+<td>L0（Harry）</td>
+<td>設計系統 token，改了全站樣式都會變</td>
+</tr>
+<tr>
+<td><code>frontend/src/components/</code> 共用元件</td>
 <td>B</td>
-<td></td>
-</tr>
-<tr>
-<td><code>frontend-admin/package.json</code></td>
-<td>D</td>
-<td></td>
-</tr>
-<tr>
-<td><a class="gloss" href="../tech/frontend/39-Tailwind.html" title="看這個技術的白話說明">Tailwind</a> 設定與共用元件</td>
-<td>顧客端 B、店家端 D</td>
-<td>改了全站樣式都會變</td>
+<td>顧客端與店家端共用</td>
 </tr>
 <tr>
 <td>Figma 檔</td>
@@ -1228,8 +1273,13 @@ application-local.yml
 <p><strong>要交出什麼</strong></p>
 <ul>
 <li>全員做完 <a href="../tech/frontend/34-React與JSX.html">React 基礎練習</a>（官方繁中「快速入門」+「描述 UI」），約 2 天</li>
-<li><a href="../tech/frontend/33-Vite.html">Vite</a> + <a href="../tech/frontend/39-Tailwind.html">Tailwind</a> 兩個前端專案初始化（顧客端 B、店家端 D）、共用元件雛形、後台版型</li>
-<li><code>src/api/mock/</code> 與 <code>mockSocket.js</code> 的寫法定案（§1.4.4），<strong>mock 格式照 04 範例</strong></li>
+<li>顧客端手機殼版型與共用元件雛形（B）、店家端側欄＋主區版型（D）<blockquote>
+<p>前端專案本身已經建好了（<code>frontend/</code>，<a href="../tech/frontend/33-Vite.html">Vite</a> + <a href="../tech/frontend/39-Tailwind.html">Tailwind</a> + 設計系統 token + <code>.env</code> + <code>services/</code> 骨架都在裡面），
+顧客端與店家端是<strong>同一個專案</strong>，用 <code>src/features/customer/</code> 與 <code>src/features/admin/</code> 分開，不是兩個專案。
+所以第 1 週 B 與 D 做的是各自那一側的<strong>版型</strong>，不是初始化。</p>
+</blockquote>
+</li>
+<li><code>src/services/api/mock/</code> 的寫法定案（§1.4.4），<strong>mock 格式照 04 範例</strong></li>
 <li>各包第一批畫面接 mock：C-00、C-01、C-04、C-05、C-06、C-07、C-12、C-12b、C-13、C-16c、C-18、S-02、S-02b</li>
 <li>L0（Harry）：Spring Boot 骨架、<a href="../tech/team/05-Docker與Compose.html">Docker Compose</a>、<strong><a href="../tech/database/29-Flyway.html">Flyway</a> V1～V7 建表 + 種子資料</strong>、統一回應、<a href="../tech/backend/18-全域例外處理.html">全域例外處理</a>、<a href="../tech/web/11-CORS跨來源.html">CORS</a>、<a href="../tech/backend/19-Swagger.html">Swagger</a></li>
 <li>Figma 對照確認：每個人打開自己工作包顏色的畫面，確認看得懂說明卡</li>
@@ -1241,7 +1291,7 @@ application-local.yml
 <ul>
 <li>其餘基礎畫面接 mock：C-04b、C-04c、C-08、C-14、C-16、C-16b、C-19、C-21、S-01、S-02c、S-02d、S-03、S-03b、S-04、S-05、S-06、S-07、S-07b、S-08、S-10、S-10b、S-11</li>
 <li>每張資料頁面的三態（載入中／空資料／錯誤）用 mock 做出來；錯誤態至少做 <code>CART_EMPTY</code>、<code>BILL_CHANGED</code>、<code>TABLE_RESERVED</code>、<code>CANCEL_DEADLINE_PASSED</code></li>
-<li>即時事件用 <code>mockSocket.js</code> 演一遍：加入購物車 → 另一個分頁跳 C-04b；送出 → KDS 出現新單；結清 → 手機變已結帳</li>
+<li>即時事件用 <code>services/realtime/mockSocket.js</code> 演一遍：加入購物車 → 另一個分頁跳 C-04b；送出 → KDS 出現新單；結清 → 手機變已結帳</li>
 <li>L0（Harry）：<a href="../tech/backend/20-SpringSecurity.html">Spring Security</a>、員工登入、JWT 工具、用餐權杖 filter、<a href="../tech/quality/49-GitHubActions.html">CI</a>、<strong>部署技術驗證</strong>（先跑一次 Hello World 上線，確認平台支援 WebSocket）</li>
 </ul>
 <blockquote>

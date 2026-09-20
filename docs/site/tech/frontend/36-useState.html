@@ -284,7 +284,7 @@ console.log(count);      // 還是舊的值！
 <h2 id="購物車state-只是畫面上的那一份">購物車：state 只是「畫面上的那一份」</h2>
 <p>我們的購物車<strong>存在後端、整桌共用</strong>：同桌每支手機看到同一份，誰都能加、改、刪（資料表是 <a href="../../spec/03-資料庫設計.html">03-資料庫設計</a> 的 <code>cart_item</code>）。
 所以 <code>cart</code> 這個 state 是<strong>畫面狀態</strong>——從後端抓回來、拿來畫畫面的那一份，<strong>內容以後端為準</strong>。</p>
-<pre><code class="language-jsx">import { fetchCart, updateCartItem } from '../api/cart';   // 見 fetch 那頁的 src/api/cart.js
+<pre><code class="language-jsx">import { fetchCart, updateCartItem } from '../services/api/cart';   // 見 fetch 那頁的 src/services/api/cart.js
 
 function CartPage() {
   const [cart, setCart] = useState([]);           // 畫面狀態：整桌購物車的最新一份

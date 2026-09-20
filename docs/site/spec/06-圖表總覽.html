@@ -391,8 +391,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 
     subgraph L2["② 靜態主機 Vercel"]
         direction TB
-        FC["frontend-customer"]
-        FA["frontend-admin"]
+        FE["frontend<br/>顧客端 + 店家端同一包"]
     end
 
     subgraph L3["③ 應用伺服器 Render / Railway"]
@@ -427,8 +426,8 @@ pre.mermaid svg{max-width:100%;height:auto}
         SEED["種子資料<br/>90 天約 5000 筆"]
     end
 
-    M -->|"HTTPS 載入頁面"| FC
-    T -->|"HTTPS 載入頁面"| FA
+    M -->|"HTTPS 載入頁面"| FE
+    T -->|"HTTPS 載入頁面"| FE
     M -.->|"REST JSON"| SEC
     T -.->|"REST JSON"| SEC
     M <-.->|"WebSocket wss"| WS
@@ -443,7 +442,7 @@ pre.mermaid svg{max-width:100%;height:auto}
     classDef back fill:#FCF0DC,stroke:#E8A33D,color:#2B211C
     classDef data fill:#E4EFE7,stroke:#3F7A4E,color:#2B211C
     classDef mock fill:#EFE9E1,stroke:#9C8E84,color:#2B211C,stroke-dasharray: 4 3
-    class M,T,FC,FA front
+    class M,T,FE front
     class SEC,CTRL,SVC,REPO,WS,SCHED,ADV,DOC back
     class DB,RDS,SEED data
     class PAY,SMS mock
@@ -509,7 +508,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 
     section 第1週 前端骨架與畫面 mock
     全員 React 基礎練習      :crit, b1, 2026-09-21, 2d
-    兩個前端專案與共用元件    :crit, b2, 2026-09-21, 3d
+    顧客端與店家端版型       :crit, b2, 2026-09-21, 3d
     mock 寫法定案           :b3, 2026-09-22, 1d
     第一批畫面接 mock        :b4, 2026-09-23, 3d
     L0 骨架 Flyway 種子資料  :crit, b5, 2026-09-21, 5d
@@ -600,7 +599,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 </blockquote>
 <ol>
 <li><strong>9/20 前</strong>：全員讀完必修八頁、認領工作包</li>
-<li><strong>9/25</strong>：兩個前端專案跑得起來，mock 看得到菜單與桌況</li>
+<li><strong>9/25</strong>：前端跑得起來，mock 看得到菜單與桌況</li>
 <li><strong>10/02</strong>：35 張基礎畫面完成，可點原型走完主流程</li>
 <li><strong>10/16</strong>：主流程全綠燈（真的 API＋WebSocket 同步）← <strong>最重要</strong></li>
 <li><strong>10/23</strong>：線上 demo 可訪問</li>

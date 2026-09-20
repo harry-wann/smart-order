@@ -211,23 +211,25 @@ pre.mermaid svg{max-width:100%;height:auto}
 <p><code>node_modules</code> 要加進 <code>.gitignore</code>。它動輒幾百 MB，而且隨時可以用 <code>npm install</code> 重建。</p>
 <h2 id="packagejson-長什麼樣">package.json 長什麼樣</h2>
 <pre><code class="language-json">{
-  &quot;name&quot;: &quot;frontend-customer&quot;,
+  &quot;name&quot;: &quot;frontend&quot;,
   &quot;scripts&quot;: {
     &quot;dev&quot;: &quot;vite&quot;,
     &quot;build&quot;: &quot;vite build&quot;,
     &quot;preview&quot;: &quot;vite preview&quot;
   },
   &quot;dependencies&quot;: {
-    &quot;react&quot;: &quot;^18.3.1&quot;,
-    &quot;react-dom&quot;: &quot;^18.3.1&quot;,
-    &quot;react-router-dom&quot;: &quot;^6.26.0&quot;,
+    &quot;react&quot;: &quot;^19.2.8&quot;,
+    &quot;react-dom&quot;: &quot;^19.2.8&quot;,
+    &quot;react-router&quot;: &quot;^8.4.0&quot;,
+    &quot;tailwindcss&quot;: &quot;^4.3.3&quot;,
+    &quot;@tailwindcss/vite&quot;: &quot;^4.3.3&quot;,
     &quot;@stomp/stompjs&quot;: &quot;^7.0.0&quot;,
     &quot;lucide-react&quot;: &quot;^0.400.0&quot;
   },
   &quot;devDependencies&quot;: {
-    &quot;vite&quot;: &quot;^5.4.0&quot;,
-    &quot;tailwindcss&quot;: &quot;^3.4.0&quot;,
-    &quot;@vitejs/plugin-react&quot;: &quot;^4.3.0&quot;
+    &quot;vite&quot;: &quot;^8.3.0&quot;,
+    &quot;@vitejs/plugin-react&quot;: &quot;^6.1.1&quot;,
+    &quot;oxlint&quot;: &quot;^1.81.0&quot;
   }
 }
 </code></pre>
@@ -293,11 +295,19 @@ npm uninstall 套件名        # 移除
 </code></pre>
 <p><strong>日常只會用到 <code>npm install</code> 和 <code>npm run dev</code>。</strong></p>
 <h2 id="在我們的專案裡">在我們的專案裡</h2>
-<p>兩個前端專案各有自己的 <code>package.json</code>：</p>
-<pre><code>frontend-customer/package.json    ← 各有一位唯一負責人
-frontend-admin/package.json       ← 要加套件先在群組說一聲
+<p>前端只有<strong>一個</strong> <code>package.json</code>：</p>
+<pre><code>frontend/package.json     ← 顧客端與店家端同一個專案
 </code></pre>
-<p><strong>各自的唯一負責人才能改。</strong> 要加套件先在群組講一聲，因為每個套件都是一個新的學習成本和風險。</p>
+<p>顧客端與店家端不是兩個專案，是同一個專案裡的 <code>src/features/customer/</code> 與
+<code>src/features/admin/</code>（見 <a href="../../tech/frontend/33-Vite.html">Vite</a> 的專案結構）。</p>
+<p><strong>要加套件先在群組講一聲</strong>，因為每個套件都是一個新的學習成本和風險，
+而且這個檔只有一份，五個人都會受影響。</p>
+<blockquote>
+<p><strong>一律用 <code>npm ci</code>，不要用 <code>npm install</code>。</strong>
+<code>npm ci</code> 嚴格照 <code>package-lock.json</code> 安裝；<code>npm install</code> 會依 <code>^</code> 範圍抓新版並改寫
+lockfile，造成「我這邊正常、你那邊壞掉」。要升級才用 <code>npm install &lt;pkg&gt;@&lt;version&gt;</code>，
+並把改動後的 <code>package-lock.json</code> 一起 commit。詳見 <code>frontend/README.md</code>。</p>
+</blockquote>
 <p>我們會用到的套件很少：</p>
 <div class="tablewrap"><table>
 <thead>
@@ -312,8 +322,8 @@ frontend-admin/package.json       ← 要加套件先在群組說一聲
 <td>本體</td>
 </tr>
 <tr>
-<td><code>react-router-dom</code></td>
-<td><a href="../../tech/frontend/38-ReactRouter.html">換頁</a></td>
+<td><code>react-router</code></td>
+<td><a href="../../tech/frontend/38-ReactRouter.html">換頁</a>。★ 不是 <code>react-router-dom</code>，那個在 v8 已移除</td>
 </tr>
 <tr>
 <td><code>@stomp/stompjs</code></td>

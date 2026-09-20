@@ -46,7 +46,30 @@ const res = await fetch('/api/dining-sessions/me/cart/items', {
 
 ## 我們專案的統一封裝
 
-**不要讓每個頁面各自寫 fetch。** 統一封裝在 `src/api/client.js`：
+### 檔案放哪裡
+
+**所有跟後端 HTTP 溝通的程式碼都放在 `src/services/api/`**，元件裡不准出現 `fetch`。
+
+```
+src/services/api/
+├── client.js       ← fetch 封裝。權杖、錯誤碼、base URL 只寫在這一個地方
+├── menu.js         ← 各模組一個檔，畫面唯一會呼叫的層
+├── cart.js
+├── tables.js …
+└── mock/
+    └── menu.js     ← 假資料，欄位逐字照 04-API規格
+```
+
+判斷方法是**「誰先開口」**：前端問一次、後端答一次的，放 `api/`；
+後端主動推給前端的（同桌通知、KDS 新單、桌況變化），放 `services/realtime/`，
+見 [前端接 WebSocket](../realtime/42-前端接WebSocket.md)。
+
+完整規矩（mock 怎麼寫、怎麼切換、什麼時候換成真的）在
+[05-開發流程與分工 §1.4.4](../../spec/05-開發流程與分工.md)。
+
+### client.js
+
+**不要讓每個頁面各自寫 fetch。** 統一封裝在 `src/services/api/client.js`：
 
 ```js
 const BASE = import.meta.env.VITE_API_BASE || '/api';
@@ -123,7 +146,7 @@ export async function request(path, { method = 'GET', body, auth = 'session' } =
 用起來：
 
 ```js
-import { request } from '../api/client';
+import { request } from '../services/api/client';
 
 const items = await request('/menu/items?categoryId=2', { auth: null });   // 菜單公開讀取
 // 匿名客人取消自己的訂位（C-19）
@@ -132,10 +155,10 @@ await request(`/reservations/${id}`, { method: 'DELETE', auth: 'reservation' });
 
 ### 購物車的 API 也包一層
 
-購物車**存在後端、整桌共用**（同桌每支手機看到同一份）。頁面不要自己拼網址，統一放在 `src/api/cart.js`：
+購物車**存在後端、整桌共用**（同桌每支手機看到同一份）。頁面不要自己拼網址，統一放在 `src/services/api/cart.js`：
 
 ```js
-// src/api/cart.js
+// src/services/api/cart.js
 import { request } from './client';
 
 // GET /me/cart 回 { items, totalQuantity, subtotal }，每個 item 有 addedBy: { guestId, displayName }（誰加的）
@@ -191,7 +214,7 @@ function MenuPage() {
 ## 錯誤怎麼分別處理
 
 ```js
-import { submitCart, fetchCart } from '../api/cart';
+import { submitCart, fetchCart } from '../services/api/cart';
 
 async function handleSubmit() {
   setSubmitting(true);

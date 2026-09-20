@@ -26,23 +26,25 @@ npm 就是那個超市。你寫一張清單（`package.json`），打一個指�
 
 ```json
 {
-  "name": "frontend-customer",
+  "name": "frontend",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-router-dom": "^6.26.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-router": "^8.4.0",
+    "tailwindcss": "^4.3.3",
+    "@tailwindcss/vite": "^4.3.3",
     "@stomp/stompjs": "^7.0.0",
     "lucide-react": "^0.400.0"
   },
   "devDependencies": {
-    "vite": "^5.4.0",
-    "tailwindcss": "^3.4.0",
-    "@vitejs/plugin-react": "^4.3.0"
+    "vite": "^8.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "oxlint": "^1.81.0"
   }
 }
 ```
@@ -86,21 +88,29 @@ npm uninstall 套件名        # 移除
 
 ## 在我們的專案裡
 
-兩個前端專案各有自己的 `package.json`：
+前端只有**一個** `package.json`：
 
 ```
-frontend-customer/package.json    ← 各有一位唯一負責人
-frontend-admin/package.json       ← 要加套件先在群組說一聲
+frontend/package.json     ← 顧客端與店家端同一個專案
 ```
 
-**各自的唯一負責人才能改。** 要加套件先在群組講一聲，因為每個套件都是一個新的學習成本和風險。
+顧客端與店家端不是兩個專案，是同一個專案裡的 `src/features/customer/` 與
+`src/features/admin/`（見 [Vite](33-Vite.md) 的專案結構）。
+
+**要加套件先在群組講一聲**，因為每個套件都是一個新的學習成本和風險，
+而且這個檔只有一份，五個人都會受影響。
+
+> **一律用 `npm ci`，不要用 `npm install`。**
+> `npm ci` 嚴格照 `package-lock.json` 安裝；`npm install` 會依 `^` 範圍抓新版並改寫
+> lockfile，造成「我這邊正常、你那邊壞掉」。要升級才用 `npm install <pkg>@<version>`，
+> 並把改動後的 `package-lock.json` 一起 commit。詳見 `frontend/README.md`。
 
 我們會用到的套件很少：
 
 | 套件 | 用途 |
 |---|---|
 | `react` / `react-dom` | 本體 |
-| `react-router-dom` | [換頁](38-ReactRouter.md) |
+| `react-router` | [換頁](38-ReactRouter.md)。★ 不是 `react-router-dom`，那個在 v8 已移除 |
 | `@stomp/stompjs` | [接 WebSocket](../realtime/42-前端接WebSocket.md)（原生 WebSocket，不用 `sockjs-client`） |
 | `tailwindcss` | [樣式](39-Tailwind.md) |
 | `lucide-react` | 圖示 |

@@ -182,9 +182,24 @@ pre.mermaid svg{max-width:100%;height:auto}
 <p>傳統網站：點一個連結 → 瀏覽器整頁重新載入 → 白畫面閃一下 → 新頁面出現。</p>
 <p>React 做的是「單頁應用」（SPA）：<strong>整個網站其實只有一個 HTML 檔</strong>。換頁時只是把畫面上的元件換掉，網址也跟著變，但<strong>不會真的重新載入</strong>。所以很快、不會閃。</p>
 <p>React Router 就是負責「<strong>看網址決定顯示哪個元件</strong>」的工具。</p>
+<blockquote>
+<h3 id="注意版本套件叫-react-router不是-react-router-dom">★ 注意版本：套件叫 <code>react-router</code>，不是 <code>react-router-dom</code></h3>
+<p>我們用的是 <strong>React Router v8</strong>（2026 年 6 月推出）。
+v8 把 <code>react-router-dom</code> 這個套件<strong>整個移除了</strong>，全部合併回 <code>react-router</code>：</p>
+<p><code>bash
+npm install react-router          # ✓ 我們用這個
+npm install react-router-dom      # ★ 裝得到，但那是已經 EOL 的 v6</code></p>
+<p>網路上絕大多數教學還停在 v6，第一行就會叫你裝 <code>react-router-dom</code>。
+<strong>照做的話你會裝到 2026 年 6 月就停止安全更新的版本</strong>，而且 import 路徑全錯。</p>
+<p>判斷方法：看 import 那一行。寫 <code>from 'react-router-dom'</code> 的是舊教學，
+寫 <code>from 'react-router'</code> 的才是 v7 以後。</p>
+<p>本頁用到的 <code>BrowserRouter</code>、<code>Routes</code>、<code>Route</code>、<code>Link</code>、<code>useNavigate</code>、<code>useParams</code>
+<strong>全部從 <code>react-router</code> 匯出</strong>，沒有例外。
+（只有 <code>RouterProvider</code> 要從 <code>react-router/dom</code> 拿，但那是資料路由的進階寫法，我們用不到。）</p>
+</blockquote>
 <h2 id="基本設定">基本設定</h2>
 <pre><code class="language-jsx">// main.jsx
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter } from 'react-router';
 
 createRoot(document.getElementById('root')).render(
   &lt;BrowserRouter&gt;
@@ -193,7 +208,7 @@ createRoot(document.getElementById('root')).render(
 );
 </code></pre>
 <pre><code class="language-jsx">// App.jsx
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router';
 
 function App() {
   return (
@@ -214,14 +229,14 @@ function App() {
 </code></pre>
 <h2 id="三個你會用到的東西">三個你會用到的東西</h2>
 <p><strong>① <code>&lt;Link&gt;</code> 取代 <code>&lt;a&gt;</code></strong></p>
-<pre><code class="language-jsx">import { Link } from 'react-router-dom';
+<pre><code class="language-jsx">import { Link } from 'react-router';
 
 &lt;Link to=&quot;/order/cart&quot;&gt;購物車&lt;/Link&gt;       ✅
 &lt;a href=&quot;/order/cart&quot;&gt;購物車&lt;/a&gt;           ❌ 會整頁重新載入
 </code></pre>
 <p><strong>② <code>useNavigate</code> —— 用程式換頁</strong></p>
-<pre><code class="language-jsx">import { useNavigate } from 'react-router-dom';
-import { submitCart } from '../api/cart';
+<pre><code class="language-jsx">import { useNavigate } from 'react-router';
+import { submitCart } from '../services/api/cart';
 
 function CartPage() {
   const navigate = useNavigate();
@@ -428,11 +443,11 @@ function ItemDetailPage() {
 <li><strong>沒有「選鍋底」這一頁</strong>：原本的 C-03 已經併進 C-04 的分類頁籤，「每桌至少一份鍋底」改成送出訂單時由後端擋（<code>400 SOUP_BASE_REQUIRED</code>）。C-02、C-03 是空號。</li>
 <li>基礎版客人到櫃檯結帳，<code>/checkout</code> 開頭的三條只有做進階 A5 才要加。</li>
 </ul>
-<p>店家端另一個專案：<code>/admin/login</code>、<code>/admin/tables</code>、<code>/admin/tables/:tableNo/open</code>（開桌，現場／候位／預約三個頁籤）、<code>/admin/tables/:tableNo</code>（桌位詳情）、<code>/admin/kitchen</code>、<code>/admin/menu</code>、<code>/admin/menu/options</code>、<code>/admin/reservations</code>、<code>/admin/tables-config</code>、<code>/admin/waitlist</code>；做進階才有 <code>/admin/inventory</code>（S-09）和 <code>/admin/reports</code>（S-12）。</p>
+<p>店家端（同一個專案，<code>src/features/admin/</code>）：<code>/admin/login</code>、<code>/admin/tables</code>、<code>/admin/tables/:tableNo/open</code>（開桌，現場／候位／預約三個頁籤）、<code>/admin/tables/:tableNo</code>（桌位詳情）、<code>/admin/kitchen</code>、<code>/admin/menu</code>、<code>/admin/menu/options</code>、<code>/admin/reservations</code>、<code>/admin/tables-config</code>、<code>/admin/waitlist</code>；做進階才有 <code>/admin/inventory</code>（S-09）和 <code>/admin/reports</code>（S-12）。</p>
 <h2 id="15-分鐘動手小練習">15 分鐘動手小練習</h2>
-<pre><code class="language-bash">npm install react-router-dom
+<pre><code class="language-bash">npm install react-router
 </code></pre>
-<pre><code class="language-jsx">import { BrowserRouter, Routes, Route, Link, useParams, useNavigate } from 'react-router-dom';
+<pre><code class="language-jsx">import { BrowserRouter, Routes, Route, Link, useParams, useNavigate } from 'react-router';
 
 function Home() {
   return (

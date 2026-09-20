@@ -14,11 +14,31 @@ React 做的是「單頁應用」（SPA）：**整個網站其實只有一個 HT
 
 React Router 就是負責「**看網址決定顯示哪個元件**」的工具。
 
+> ### ★ 注意版本：套件叫 `react-router`，不是 `react-router-dom`
+>
+> 我們用的是 **React Router v8**（2026 年 6 月推出）。
+> v8 把 `react-router-dom` 這個套件**整個移除了**，全部合併回 `react-router`：
+>
+> ```bash
+> npm install react-router          # ✓ 我們用這個
+> npm install react-router-dom      # ★ 裝得到，但那是已經 EOL 的 v6
+> ```
+>
+> 網路上絕大多數教學還停在 v6，第一行就會叫你裝 `react-router-dom`。
+> **照做的話你會裝到 2026 年 6 月就停止安全更新的版本**，而且 import 路徑全錯。
+>
+> 判斷方法：看 import 那一行。寫 `from 'react-router-dom'` 的是舊教學，
+> 寫 `from 'react-router'` 的才是 v7 以後。
+>
+> 本頁用到的 `BrowserRouter`、`Routes`、`Route`、`Link`、`useNavigate`、`useParams`
+> **全部從 `react-router` 匯出**，沒有例外。
+> （只有 `RouterProvider` 要從 `react-router/dom` 拿，但那是資料路由的進階寫法，我們用不到。）
+
 ## 基本設定
 
 ```jsx
 // main.jsx
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter } from 'react-router';
 
 createRoot(document.getElementById('root')).render(
   <BrowserRouter>
@@ -29,7 +49,7 @@ createRoot(document.getElementById('root')).render(
 
 ```jsx
 // App.jsx
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route } from 'react-router';
 
 function App() {
   return (
@@ -54,7 +74,7 @@ function App() {
 **① `<Link>` 取代 `<a>`**
 
 ```jsx
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 
 <Link to="/order/cart">購物車</Link>       ✅
 <a href="/order/cart">購物車</a>           ❌ 會整頁重新載入
@@ -63,8 +83,8 @@ import { Link } from 'react-router-dom';
 **② `useNavigate` —— 用程式換頁**
 
 ```jsx
-import { useNavigate } from 'react-router-dom';
-import { submitCart } from '../api/cart';
+import { useNavigate } from 'react-router';
+import { submitCart } from '../services/api/cart';
 
 function CartPage() {
   const navigate = useNavigate();
@@ -169,16 +189,16 @@ function RequireStaff({ children }) {
 - **沒有「選鍋底」這一頁**：原本的 C-03 已經併進 C-04 的分類頁籤，「每桌至少一份鍋底」改成送出訂單時由後端擋（`400 SOUP_BASE_REQUIRED`）。C-02、C-03 是空號。
 - 基礎版客人到櫃檯結帳，`/checkout` 開頭的三條只有做進階 A5 才要加。
 
-店家端另一個專案：`/admin/login`、`/admin/tables`、`/admin/tables/:tableNo/open`（開桌，現場／候位／預約三個頁籤）、`/admin/tables/:tableNo`（桌位詳情）、`/admin/kitchen`、`/admin/menu`、`/admin/menu/options`、`/admin/reservations`、`/admin/tables-config`、`/admin/waitlist`；做進階才有 `/admin/inventory`（S-09）和 `/admin/reports`（S-12）。
+店家端（同一個專案，`src/features/admin/`）：`/admin/login`、`/admin/tables`、`/admin/tables/:tableNo/open`（開桌，現場／候位／預約三個頁籤）、`/admin/tables/:tableNo`（桌位詳情）、`/admin/kitchen`、`/admin/menu`、`/admin/menu/options`、`/admin/reservations`、`/admin/tables-config`、`/admin/waitlist`；做進階才有 `/admin/inventory`（S-09）和 `/admin/reports`（S-12）。
 
 ## 15 分鐘動手小練習
 
 ```bash
-npm install react-router-dom
+npm install react-router
 ```
 
 ```jsx
-import { BrowserRouter, Routes, Route, Link, useParams, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, useParams, useNavigate } from 'react-router';
 
 function Home() {
   return (

@@ -51,24 +51,25 @@ jobs:
 
   frontend:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        app: [frontend-customer, frontend-admin]
+    defaults:
+      run:
+        working-directory: frontend
     steps:
       - uses: actions/checkout@v4
 
-      - name: 設定 Node 20
-        uses: actions/setup-node@v4
+      # 直接讀 .tool-versions，CI 與本機共用同一個版本來源，避免版本漂移
+      - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version-file: .tool-versions
           cache: npm
-          cache-dependency-path: ${{ matrix.app }}/package-lock.json
+          cache-dependency-path: frontend/package-lock.json
 
-      - name: 安裝與建置
-        working-directory: ${{ matrix.app }}
-        run: |
-          npm ci
-          npm run build
+      # npm ci 嚴格照 package-lock.json 安裝，跟 package.json 不同步時會直接失敗
+      - run: npm ci
+
+      - run: npm run lint
+
+      - run: npm run build
 ```
 
 **commit 這個檔案，push 上去，CI 就開始運作了。** 不用註冊、不用設定伺服器、公開 repo 免費。

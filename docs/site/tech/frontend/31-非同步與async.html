@@ -265,7 +265,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 </table></div>
 <p><code>await</code> 的作用就是「<strong>把承諾書換成真正的結果</strong>」。</p>
 <h2 id="在我們的專案裡">在我們的專案裡</h2>
-<pre><code class="language-js">// src/api/client.js
+<pre><code class="language-js">// src/services/api/client.js
 export async function request(path, options = {}) {
   const res = await fetch(BASE + path, options);      // 等網路回來
   const data = await res.json();                       // 等 JSON 解析完

@@ -37,8 +37,8 @@ npm run build
 ## 怎麼開一個專案
 
 ```bash
-npm create vite@latest frontend-customer -- --template react
-cd frontend-customer
+npm create vite@latest frontend -- --template react
+cd frontend
 npm install
 npm run dev
 ```
@@ -57,10 +57,12 @@ frontend/
 ├── index.html               ← 入口，只有一個空的 <div id="root">
 ├── package.json
 ├── vite.config.js           ← Vite 設定（react + @tailwindcss/vite 兩個外掛）
+├── .env.development         ← npm run dev 讀這個（見下面「環境變數」）
+├── .env.production          ← npm run build 讀這個
 └── src/
     ├── main.jsx             ← 程式進入點
     ├── App.jsx              ← 根元件
-    ├── style.css             ← 樣式進入點，只有 @import
+    ├── style.css            ← 樣式進入點，只有 @import
     ├── styles/
     │   ├── tokens.colors.css     ← 色彩 token（見 14-色彩Token）
     │   ├── tokens.type.css       ← 字體與十個 type-* 字級
@@ -74,8 +76,11 @@ frontend/
     │   └── admin/           ← 店家端各功能
     │       └── kds/         ← 單頁專用的 kds.colors.css 就放在這種地方
     ├── hooks/               ← 自訂 hook
-    ├── services/            ← fetch 封裝、API 呼叫
+    ├── services/             ← 跟外面講話的東西全部放這裡
+    │   ├── api/                  ← HTTP：client.js、各模組、mock/
+    │   └── realtime/             ← WebSocket：socket.js、mockSocket.js
     ├── utils/               ← 小工具函式
+    ├── types/               ← 共用的型別／常數
     └── assets/              ← 圖片
 ```
 
@@ -84,11 +89,23 @@ frontend/
 
 ## 環境變數
 
-不同環境要打不同的後端網址：
+同一份程式碼，在不同地方跑要用不同設定——開發時打 `localhost:8080`，上線時打真的網址。
+把這種會變的值抽出來放進 `.env` 檔，程式碼就不用改。
 
+**專案裡已經有兩個檔，都已經進版控**（沒有機密，見下面第 2 點）：
+
+```bash
+# frontend/.env.development —— npm run dev 讀這個
+VITE_USE_MOCK=true
+VITE_API_BASE=http://localhost:8080/api
+VITE_WS_URL=ws://localhost:8080/ws
 ```
-.env.development     VITE_API_BASE=http://localhost:8080/api
-.env.production      VITE_API_BASE=https://your-api.onrender.com/api
+
+```bash
+# frontend/.env.production —— npm run build 讀這個
+VITE_USE_MOCK=false
+VITE_API_BASE=/api
+VITE_WS_URL=
 ```
 
 在程式裡用：
@@ -97,10 +114,44 @@ frontend/
 const BASE = import.meta.env.VITE_API_BASE;
 ```
 
-**兩個重點：**
+### 四個重點，違反任何一個都不會報錯
 
-1. **變數名一定要 `VITE_` 開頭**，否則 Vite 不會把它給你
-2. **環境變數會被打包進去，使用者看得到。** 絕對不要放密鑰。
+**1. 變數名一定要 `VITE_` 開頭**，否則讀出來是 `undefined`。
+Vite 預設把所有環境變數擋在前端外面，只有 `VITE_` 開頭的才放行。
+
+**2. 反過來說，`VITE_` 開頭的東西等於公開。**
+打包後就寫在 JS 檔裡，按 F12 就看得到。所以絕對不要放密碼、API 金鑰。
+（也因為這樣，這兩個檔進版控是安全的，而且**必須**進版控——
+否則組員 clone 下來沒有設定，`VITE_API_BASE` 會是 `undefined`。）
+
+**3. 讀出來永遠是字串，沒有布林值。** 這是最常踩的坑：
+
+```js
+if (import.meta.env.VITE_USE_MOCK)           // ★ 錯！"false" 也是真值
+if (import.meta.env.VITE_USE_MOCK === 'true') // ✓ 對
+```
+
+寫成第一種的話，`VITE_USE_MOCK=false` 照樣會走 mock，而且完全不報錯。
+
+**4. 改完要重開 dev server。**
+這些值是 build 時被「替換」進程式碼的，不是執行時去查表。
+所以 `VITE_USE_MOCK=false` 打包時，`USE_MOCK` 直接變成常數 `false`，
+整條 mock 分支成為死碼被搖掉——**假資料不會進 production bundle**，
+這是免費的，不用自己記得刪。
+
+### 要改成自己機器的設定
+
+**不要改那兩個檔**（會影響到所有人）。另外開 `.env.development.local`：
+
+```bash
+# frontend/.env.development.local —— 只有你自己的機器有
+VITE_API_BASE=http://localhost:9090/api
+```
+
+`.local` 結尾的檔優先權比較高，而且 `.gitignore` 已經蓋掉它，不會被 commit 出去。
+
+> `VITE_USE_MOCK` 是做什麼的、第幾週要從 `true` 改成 `false`，
+> 見 [05-開發流程與分工 §1.4.4](../../spec/05-開發流程與分工.md)。
 
 ## 開發代理（解決 CORS 的另一招）
 

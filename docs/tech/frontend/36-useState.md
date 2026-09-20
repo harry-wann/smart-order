@@ -153,7 +153,7 @@ function ItemDetailPage() {
 所以 `cart` 這個 state 是**畫面狀態**——從後端抓回來、拿來畫畫面的那一份，**內容以後端為準**。
 
 ```jsx
-import { fetchCart, updateCartItem } from '../api/cart';   // 見 fetch 那頁的 src/api/cart.js
+import { fetchCart, updateCartItem } from '../services/api/cart';   // 見 fetch 那頁的 src/services/api/cart.js
 
 function CartPage() {
   const [cart, setCart] = useState([]);           // 畫面狀態：整桌購物車的最新一份

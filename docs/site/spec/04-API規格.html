@@ -1870,7 +1870,7 @@ C-19 的「已取消」頁籤裡，<code>STAFF</code> 顯示「店家已代為�
 <code>cookOrder</code> 是出餐順序建議：鍋底 1、菜盤 2、火鍋料 3、肉品 4、主食 5、飲料甜點 6。</p>
 <hr />
 <h2 id="5-前端呼叫封裝">5. 前端呼叫封裝</h2>
-<p><strong>不要讓每個頁面各自寫 <code>fetch</code>。</strong> 統一封裝在 <code>src/api/client.js</code>，見 <a href="../tech/frontend/40-fetch串接API.html">fetch 串接後端 API</a>。</p>
+<p><strong>不要讓每個頁面各自寫 <code>fetch</code>。</strong> 統一封裝在 <code>src/services/api/client.js</code>，見 <a href="../tech/frontend/40-fetch串接API.html">fetch 串接後端 API</a>。</p>
 <p>錯誤處理靠 <code>err.code</code> 分流：</p>
 <pre><code class="language-js">catch (err) {
   switch (err.code) {

@@ -6,6 +6,25 @@
 
 用 `@stomp/stompjs` 接上後端的喇叭，收到訊息就更新畫面。
 
+## 檔案放哪裡
+
+**所有 WebSocket 相關的程式碼都放在 `src/services/realtime/`**，元件裡不准直接 `new WebSocket`。
+
+```
+src/services/realtime/
+├── socket.js       ← 連線、重連、訂閱頻道
+└── mockSocket.js   ← 假的 WebSocket，沒有後端時也能演出即時效果
+```
+
+判斷方法是**「誰先開口」**：後端主動推給前端的放這裡；
+前端問一次、後端答一次的放 `src/services/api/`，
+見 [fetch 串接後端 API](../frontend/40-fetch串接API.md)。
+
+> **兩邊常常配成一對。** 收到 `CART_UPDATED` 之後，**不要**直接把推播的 payload
+> 塞進畫面，而是回頭呼叫 `api/cart.js` 重抓一次。推播只當「該更新了」的信號，
+> 資料一律以 API 為準——這樣同桌兩支手機看到的內容一定一致。
+> 本頁「同桌共用購物車」那一節就是這個做法。
+
 ## 要裝什麼
 
 ```bash
@@ -163,7 +182,7 @@ function TicketsPage() {
 菜單頁（C-04）這樣接：
 
 ```jsx
-import { fetchCart } from '../api/cart';
+import { fetchCart } from '../services/api/cart';
 
 function MenuPage() {
   const [cart, setCart] = useState([]);           // 畫面狀態：拿來畫底部購物車角標

@@ -196,8 +196,8 @@ pre.mermaid svg{max-width:100%;height:auto}
 </code></pre>
 <p>把幾百個檔案壓成 <code>dist/</code> 資料夾裡的幾個檔案，程式碼壓縮、沒用到的砍掉。這個資料夾就是要丟到 Vercel 的東西。</p>
 <h2 id="怎麼開一個專案">怎麼開一個專案</h2>
-<pre><code class="language-bash">npm create vite@latest frontend-customer -- --template react
-cd frontend-customer
+<pre><code class="language-bash">npm create vite@latest frontend -- --template react
+cd frontend
 npm install
 npm run dev
 </code></pre>
@@ -210,10 +210,12 @@ npm run dev
 ├── index.html               ← 入口，只有一個空的 &lt;div id=&quot;root&quot;&gt;
 ├── package.json
 ├── vite.config.js           ← Vite 設定（react + @tailwindcss/vite 兩個外掛）
+├── .env.development         ← npm run dev 讀這個（見下面「環境變數」）
+├── .env.production          ← npm run build 讀這個
 └── src/
     ├── main.jsx             ← 程式進入點
     ├── App.jsx              ← 根元件
-    ├── style.css             ← 樣式進入點，只有 @import
+    ├── style.css            ← 樣式進入點，只有 @import
     ├── styles/
     │   ├── tokens.colors.css     ← 色彩 token（見 14-色彩Token）
     │   ├── tokens.type.css       ← 字體與十個 type-* 字級
@@ -227,25 +229,59 @@ npm run dev
     │   └── admin/           ← 店家端各功能
     │       └── kds/         ← 單頁專用的 kds.colors.css 就放在這種地方
     ├── hooks/               ← 自訂 hook
-    ├── services/            ← fetch 封裝、API 呼叫
+    ├── services/             ← 跟外面講話的東西全部放這裡
+    │   ├── api/                  ← HTTP：client.js、各模組、mock/
+    │   └── realtime/             ← WebSocket：socket.js、mockSocket.js
     ├── utils/               ← 小工具函式
+    ├── types/               ← 共用的型別／常數
     └── assets/              ← 圖片
 </code></pre>
 <p><strong>沒有 <code>tailwind.config.js</code>。</strong> 我們用的是 <a class="gloss" href="../../tech/frontend/39-Tailwind.html" title="看這個技術的白話說明">Tailwind</a> v4，設定寫在 CSS 裡，
 細節看 <a href="../../tech/frontend/39-Tailwind.html">39-Tailwind</a>。網路上教學叫你建 config 檔的那些都是 v3。</p>
 <h2 id="環境變數">環境變數</h2>
-<p>不同環境要打不同的後端網址：</p>
-<pre><code>.env.development     VITE_API_BASE=http://localhost:8080/api
-.env.production      VITE_API_BASE=https://your-api.onrender.com/api
+<p>同一份程式碼，在不同地方跑要用不同設定——開發時打 <code>localhost:8080</code>，上線時打真的網址。
+把這種會變的值抽出來放進 <code>.env</code> 檔，程式碼就不用改。</p>
+<p><strong>專案裡已經有兩個檔，都已經進版控</strong>（沒有機密，見下面第 2 點）：</p>
+<pre><code class="language-bash"># frontend/.env.development —— npm run dev 讀這個
+VITE_USE_MOCK=true
+VITE_API_BASE=http://localhost:8080/api
+VITE_WS_URL=ws://localhost:8080/ws
+</code></pre>
+<pre><code class="language-bash"># frontend/.env.production —— npm run build 讀這個
+VITE_USE_MOCK=false
+VITE_API_BASE=/api
+VITE_WS_URL=
 </code></pre>
 <p>在程式裡用：</p>
 <pre><code class="language-js">const BASE = import.meta.env.VITE_API_BASE;
 </code></pre>
-<p><strong>兩個重點：</strong></p>
-<ol>
-<li><strong>變數名一定要 <code>VITE_</code> 開頭</strong>，否則 Vite 不會把它給你</li>
-<li><strong>環境變數會被打包進去，使用者看得到。</strong> 絕對不要放密鑰。</li>
-</ol>
+<h3 id="四個重點違反任何一個都不會報錯">四個重點，違反任何一個都不會報錯</h3>
+<p><strong>1. 變數名一定要 <code>VITE_</code> 開頭</strong>，否則讀出來是 <code>undefined</code>。
+Vite 預設把所有環境變數擋在前端外面，只有 <code>VITE_</code> 開頭的才放行。</p>
+<p><strong>2. 反過來說，<code>VITE_</code> 開頭的東西等於公開。</strong>
+打包後就寫在 JS 檔裡，按 F12 就看得到。所以絕對不要放密碼、API 金鑰。
+（也因為這樣，這兩個檔進版控是安全的，而且<strong>必須</strong>進版控——
+否則組員 clone 下來沒有設定，<code>VITE_API_BASE</code> 會是 <code>undefined</code>。）</p>
+<p><strong>3. 讀出來永遠是字串，沒有布林值。</strong> 這是最常踩的坑：</p>
+<pre><code class="language-js">if (import.meta.env.VITE_USE_MOCK)           // ★ 錯！&quot;false&quot; 也是真值
+if (import.meta.env.VITE_USE_MOCK === 'true') // ✓ 對
+</code></pre>
+<p>寫成第一種的話，<code>VITE_USE_MOCK=false</code> 照樣會走 mock，而且完全不報錯。</p>
+<p><strong>4. 改完要重開 dev server。</strong>
+這些值是 build 時被「替換」進程式碼的，不是執行時去查表。
+所以 <code>VITE_USE_MOCK=false</code> 打包時，<code>USE_MOCK</code> 直接變成常數 <code>false</code>，
+整條 mock 分支成為死碼被搖掉——<strong>假資料不會進 production bundle</strong>，
+這是免費的，不用自己記得刪。</p>
+<h3 id="要改成自己機器的設定">要改成自己機器的設定</h3>
+<p><strong>不要改那兩個檔</strong>（會影響到所有人）。另外開 <code>.env.development.local</code>：</p>
+<pre><code class="language-bash"># frontend/.env.development.local —— 只有你自己的機器有
+VITE_API_BASE=http://localhost:9090/api
+</code></pre>
+<p><code>.local</code> 結尾的檔優先權比較高，而且 <code>.gitignore</code> 已經蓋掉它，不會被 commit 出去。</p>
+<blockquote>
+<p><code>VITE_USE_MOCK</code> 是做什麼的、第幾週要從 <code>true</code> 改成 <code>false</code>，
+見 <a href="../../spec/05-開發流程與分工.html">05-開發流程與分工 §1.4.4</a>。</p>
+</blockquote>
 <h2 id="開發代理解決-cors-的另一招">開發代理（解決 CORS 的另一招）</h2>
 <p><code>vite.config.js</code>：</p>
 <pre><code class="language-js">export default defineConfig({

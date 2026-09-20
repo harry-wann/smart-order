@@ -205,7 +205,23 @@ const res = await fetch('/api/dining-sessions/me/cart/items', {
 </code></pre>
 <p>忘記 <code>Content-Type</code> → 後端回 415。忘記 <code>JSON.stringify</code> → 後端收到 <code>[object Object]</code>。</p>
 <h2 id="我們專案的統一封裝">我們專案的統一封裝</h2>
-<p><strong>不要讓每個頁面各自寫 fetch。</strong> 統一封裝在 <code>src/api/client.js</code>：</p>
+<h3 id="檔案放哪裡">檔案放哪裡</h3>
+<p><strong>所有跟後端 HTTP 溝通的程式碼都放在 <code>src/services/api/</code></strong>，元件裡不准出現 <code>fetch</code>。</p>
+<pre><code>src/services/api/
+├── client.js       ← fetch 封裝。權杖、錯誤碼、base URL 只寫在這一個地方
+├── menu.js         ← 各模組一個檔，畫面唯一會呼叫的層
+├── cart.js
+├── tables.js …
+└── mock/
+    └── menu.js     ← 假資料，欄位逐字照 04-API規格
+</code></pre>
+<p>判斷方法是<strong>「誰先開口」</strong>：前端問一次、後端答一次的，放 <code>api/</code>；
+後端主動推給前端的（同桌通知、KDS 新單、桌況變化），放 <code>services/realtime/</code>，
+見 <a href="../../tech/realtime/42-前端接WebSocket.html">前端接 WebSocket</a>。</p>
+<p>完整規矩（mock 怎麼寫、怎麼切換、什麼時候換成真的）在
+<a href="../../spec/05-開發流程與分工.html">05-開發流程與分工 §1.4.4</a>。</p>
+<h3 id="clientjs">client.js</h3>
+<p><strong>不要讓每個頁面各自寫 fetch。</strong> 統一封裝在 <code>src/services/api/client.js</code>：</p>
 <pre><code class="language-js">const BASE = import.meta.env.VITE_API_BASE || '/api';
 
 // 三種憑證，各對應一個標頭
@@ -301,15 +317,15 @@ export async function request(path, { method = 'GET', body, auth = 'session' } =
 <p>另外<strong>每個請求都帶 <code>X-Device-Id</code></strong>（上面的 <code>deviceId()</code>）。後端在掃碼加入（<code>join</code>）時用它建立一筆「同桌客人」，給一個顯示名稱（有登入會員用暱稱，否則依加入順序「客人 1」「客人 2」…），購物車每一列的「陳小美 加的」就是這樣來的。
 它<strong>不是</strong>權限，被偽造頂多顯示錯名字；能不能動這桌的購物車，看的還是 <code>X-Session-Token</code>。</p>
 <p>用起來：</p>
-<pre><code class="language-js">import { request } from '../api/client';
+<pre><code class="language-js">import { request } from '../services/api/client';
 
 const items = await request('/menu/items?categoryId=2', { auth: null });   // 菜單公開讀取
 // 匿名客人取消自己的訂位（C-19）
 await request(`/reservations/${id}`, { method: 'DELETE', auth: 'reservation' });
 </code></pre>
 <h3 id="購物車的-api-也包一層">購物車的 API 也包一層</h3>
-<p>購物車<strong>存在後端、整桌共用</strong>（同桌每支手機看到同一份）。頁面不要自己拼網址，統一放在 <code>src/api/cart.js</code>：</p>
-<pre><code class="language-js">// src/api/cart.js
+<p>購物車<strong>存在後端、整桌共用</strong>（同桌每支手機看到同一份）。頁面不要自己拼網址，統一放在 <code>src/services/api/cart.js</code>：</p>
+<pre><code class="language-js">// src/services/api/cart.js
 import { request } from './client';
 
 // GET /me/cart 回 { items, totalQuantity, subtotal }，每個 item 有 addedBy: { guestId, displayName }（誰加的）
@@ -355,7 +371,7 @@ await addToCart({ menuItemId: 12, quantity: 2, optionValueIds: [31, 41], note: '
 </code></pre>
 <p><strong>三態（載入中／錯誤／空資料）是每個頁面都必須處理的</strong>，這是我們的完成定義之一。</p>
 <h2 id="錯誤怎麼分別處理">錯誤怎麼分別處理</h2>
-<pre><code class="language-js">import { submitCart, fetchCart } from '../api/cart';
+<pre><code class="language-js">import { submitCart, fetchCart } from '../services/api/cart';
 
 async function handleSubmit() {
   setSubmitting(true);

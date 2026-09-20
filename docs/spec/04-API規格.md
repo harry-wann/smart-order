@@ -1078,7 +1078,7 @@ GET /api/admin/kitchen/tickets
 
 ## 5. 前端呼叫封裝
 
-**不要讓每個頁面各自寫 `fetch`。** 統一封裝在 `src/api/client.js`，見 [fetch 串接後端 API](../tech/frontend/40-fetch串接API.md)。
+**不要讓每個頁面各自寫 `fetch`。** 統一封裝在 `src/services/api/client.js`，見 [fetch 串接後端 API](../tech/frontend/40-fetch串接API.md)。
 
 錯誤處理靠 `err.code` 分流：
 
