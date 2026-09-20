@@ -34,7 +34,6 @@ jobs:
 
       # npm ci 嚴格照 package-lock.json 安裝，lockfile 與 package.json 不同步時會直接失敗
       - run: npm ci
-
+      - run: npm run typecheck
       - run: npm run lint
-
       - run: npm run build
