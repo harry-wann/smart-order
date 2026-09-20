@@ -175,7 +175,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <div class="main"><div class="wrap">
 <article>
 <h1 id="fetch-串接後端-api">fetch 串接後端 API</h1>
-<p><strong>難度</strong> ★★★☆☆　<strong>用在哪些模組</strong> 所有前端工作　<strong>哪幾週</strong> 第 1 週（接 mock）、第 3 週（換成真的）</p>
+<p><strong>難度</strong> ★★★☆☆　<strong>用在哪些模組</strong> 所有前端工作　<strong>哪幾週</strong> 第 1 週起</p>
 <h2 id="一句話">一句話</h2>
 <p><code>fetch</code> 是瀏覽器內建的「<strong>去跟後端要資料</strong>」的功能。</p>
 <h2 id="最小的例子">最小的例子</h2>
@@ -211,15 +211,14 @@ const res = await fetch('/api/dining-sessions/me/cart/items', {
 ├── client.js       ← fetch 封裝。權杖、錯誤碼、base URL 只寫在這一個地方
 ├── menu.js         ← 各模組一個檔，畫面唯一會呼叫的層
 ├── cart.js
-├── tables.js …
-└── mock/
-    └── menu.js     ← 假資料，欄位逐字照 04-API規格
+└── tables.js …
 </code></pre>
+<p><strong>前端沒有 mock 資料夾。</strong> 假資料放在後端——API 先回寫死的 JSON、不真的查 DB，
+對前端來說那就是一支正常的 API。所以這一層永遠只有一種寫法，不用分真假。</p>
 <p>判斷方法是<strong>「誰先開口」</strong>：前端問一次、後端答一次的，放 <code>api/</code>；
 後端主動推給前端的（同桌通知、KDS 新單、桌況變化），放 <code>services/realtime/</code>，
 見 <a href="../../tech/realtime/42-前端接WebSocket.html">前端接 WebSocket</a>。</p>
-<p>完整規矩（mock 怎麼寫、怎麼切換、什麼時候換成真的）在
-<a href="../../spec/05-開發流程與分工.html">05-開發流程與分工 §1.4.4</a>。</p>
+<p>完整規矩在 <a href="../../spec/05-開發流程與分工.html">05-開發流程與分工 §1.4.4</a>。</p>
 <h3 id="clientjs">client.js</h3>
 <p><strong>不要讓每個頁面各自寫 fetch。</strong> 統一封裝在 <code>src/services/api/client.js</code>：</p>
 <pre><code class="language-js">const BASE = import.meta.env.VITE_API_BASE || '/api';

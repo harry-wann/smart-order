@@ -181,9 +181,10 @@ pre.mermaid svg{max-width:100%;height:auto}
 <h2 id="檔案放哪裡">檔案放哪裡</h2>
 <p><strong>所有 <a class="gloss" href="../../tech/realtime/41-WebSocket與STOMP.html" title="看這個技術的白話說明">WebSocket</a> 相關的程式碼都放在 <code>src/services/realtime/</code></strong>，元件裡不准直接 <code>new WebSocket</code>。</p>
 <pre><code>src/services/realtime/
-├── socket.js       ← 連線、重連、訂閱頻道
-└── mockSocket.js   ← 假的 WebSocket，沒有後端時也能演出即時效果
+└── socket.js       ← 連線、重連、訂閱頻道
 </code></pre>
+<p><strong>沒有假的 WebSocket。</strong> 連的一律是真的後端；要演即時效果，
+請後端開一支開發用端點手動觸發推播（<a href="../../spec/05-開發流程與分工.html">05 §1.4.4</a>）。</p>
 <p>判斷方法是<strong>「誰先開口」</strong>：後端主動推給前端的放這裡；
 前端問一次、後端答一次的放 <code>src/services/api/</code>，
 見 <a href="../../tech/frontend/40-fetch串接API.html">fetch 串接後端 API</a>。</p>

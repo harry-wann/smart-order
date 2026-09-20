@@ -230,8 +230,8 @@ npm run dev
     │       └── kds/         ← 單頁專用的 kds.colors.css 就放在這種地方
     ├── hooks/               ← 自訂 hook
     ├── services/             ← 跟外面講話的東西全部放這裡
-    │   ├── api/                  ← HTTP：client.js、各模組、mock/
-    │   └── realtime/             ← WebSocket：socket.js、mockSocket.js
+    │   ├── api/                  ← HTTP：client.js、各模組
+    │   └── realtime/             ← WebSocket：socket.js
     ├── utils/               ← 小工具函式
     ├── types/               ← 共用的型別／常數
     └── assets/              ← 圖片
@@ -243,12 +243,10 @@ npm run dev
 把這種會變的值抽出來放進 <code>.env</code> 檔，程式碼就不用改。</p>
 <p><strong>專案裡已經有兩個檔，都已經進版控</strong>（沒有機密，見下面第 2 點）：</p>
 <pre><code class="language-bash"># frontend/.env.development —— npm run dev 讀這個
-VITE_USE_MOCK=true
 VITE_API_BASE=http://localhost:8080/api
 VITE_WS_URL=ws://localhost:8080/ws
 </code></pre>
 <pre><code class="language-bash"># frontend/.env.production —— npm run build 讀這個
-VITE_USE_MOCK=false
 VITE_API_BASE=/api
 VITE_WS_URL=
 </code></pre>
@@ -262,16 +260,17 @@ Vite 預設把所有環境變數擋在前端外面，只有 <code>VITE_</code> �
 打包後就寫在 JS 檔裡，按 F12 就看得到。所以絕對不要放密碼、API 金鑰。
 （也因為這樣，這兩個檔進版控是安全的，而且<strong>必須</strong>進版控——
 否則組員 clone 下來沒有設定，<code>VITE_API_BASE</code> 會是 <code>undefined</code>。）</p>
-<p><strong>3. 讀出來永遠是字串，沒有布林值。</strong> 這是最常踩的坑：</p>
-<pre><code class="language-js">if (import.meta.env.VITE_USE_MOCK)           // ★ 錯！&quot;false&quot; 也是真值
-if (import.meta.env.VITE_USE_MOCK === 'true') // ✓ 對
+<p><strong>3. 讀出來永遠是字串，沒有布林值。</strong>
+<code>.env</code> 沒有型別，<code>VITE_FOO=false</code> 讀出來是字串 <code>"false"</code>，而空字串以外的字串都是真值：</p>
+<pre><code class="language-js">if (import.meta.env.VITE_FOO)            // ★ 錯！&quot;false&quot; 也會進這個分支
+if (import.meta.env.VITE_FOO === 'true') // ✓ 要當布林用一定要自己比對
 </code></pre>
-<p>寫成第一種的話，<code>VITE_USE_MOCK=false</code> 照樣會走 mock，而且完全不報錯。</p>
+<p>第一種寫法不會報錯，只會安靜地做錯事。<strong>目前專案的兩個變數都是網址，沒有布林值</strong>，
+但之後要加開關型的變數時記得這條。</p>
 <p><strong>4. 改完要重開 dev server。</strong>
-這些值是 build 時被「替換」進程式碼的，不是執行時去查表。
-所以 <code>VITE_USE_MOCK=false</code> 打包時，<code>USE_MOCK</code> 直接變成常數 <code>false</code>，
-整條 mock 分支成為死碼被搖掉——<strong>假資料不會進 production bundle</strong>，
-這是免費的，不用自己記得刪。</p>
+這些值是 build 時被「替換」進程式碼的，不是執行時去查表——
+打包後 JS 裡直接就是 <code>"http://localhost:8080/api"</code> 這串字面值，
+沒有任何查表的動作。所以改了 <code>.env</code> 而不重開，跑的還是舊值。</p>
 <h3 id="要改成自己機器的設定">要改成自己機器的設定</h3>
 <p><strong>不要改那兩個檔</strong>（會影響到所有人）。另外開 <code>.env.development.local</code>：</p>
 <pre><code class="language-bash"># frontend/.env.development.local —— 只有你自己的機器有
@@ -279,8 +278,8 @@ VITE_API_BASE=http://localhost:9090/api
 </code></pre>
 <p><code>.local</code> 結尾的檔優先權比較高，而且 <code>.gitignore</code> 已經蓋掉它，不會被 commit 出去。</p>
 <blockquote>
-<p><code>VITE_USE_MOCK</code> 是做什麼的、第幾週要從 <code>true</code> 改成 <code>false</code>，
-見 <a href="../../spec/05-開發流程與分工.html">05-開發流程與分工 §1.4.4</a>。</p>
+<p><strong>前端沒有 mock 開關。</strong> 假資料放在後端（API 先回寫死的 <a class="gloss" href="../../tech/web/09-JSON.html" title="看這個技術的白話說明">JSON</a>、不真的查 DB），
+前端一律打真的位址。理由見 <a href="../../spec/05-開發流程與分工.html">05-開發流程與分工 §1.4.4</a>。</p>
 </blockquote>
 <h2 id="開發代理解決-cors-的另一招">開發代理（解決 CORS 的另一招）</h2>
 <p><code>vite.config.js</code>：</p>

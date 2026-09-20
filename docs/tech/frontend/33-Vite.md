@@ -77,8 +77,8 @@ frontend/
     │       └── kds/         ← 單頁專用的 kds.colors.css 就放在這種地方
     ├── hooks/               ← 自訂 hook
     ├── services/             ← 跟外面講話的東西全部放這裡
-    │   ├── api/                  ← HTTP：client.js、各模組、mock/
-    │   └── realtime/             ← WebSocket：socket.js、mockSocket.js
+    │   ├── api/                  ← HTTP：client.js、各模組
+    │   └── realtime/             ← WebSocket：socket.js
     ├── utils/               ← 小工具函式
     ├── types/               ← 共用的型別／常數
     └── assets/              ← 圖片
@@ -96,14 +96,12 @@ frontend/
 
 ```bash
 # frontend/.env.development —— npm run dev 讀這個
-VITE_USE_MOCK=true
 VITE_API_BASE=http://localhost:8080/api
 VITE_WS_URL=ws://localhost:8080/ws
 ```
 
 ```bash
 # frontend/.env.production —— npm run build 讀這個
-VITE_USE_MOCK=false
 VITE_API_BASE=/api
 VITE_WS_URL=
 ```
@@ -124,20 +122,21 @@ Vite 預設把所有環境變數擋在前端外面，只有 `VITE_` 開頭的才
 （也因為這樣，這兩個檔進版控是安全的，而且**必須**進版控——
 否則組員 clone 下來沒有設定，`VITE_API_BASE` 會是 `undefined`。）
 
-**3. 讀出來永遠是字串，沒有布林值。** 這是最常踩的坑：
+**3. 讀出來永遠是字串，沒有布林值。**
+`.env` 沒有型別，`VITE_FOO=false` 讀出來是字串 `"false"`，而空字串以外的字串都是真值：
 
 ```js
-if (import.meta.env.VITE_USE_MOCK)           // ★ 錯！"false" 也是真值
-if (import.meta.env.VITE_USE_MOCK === 'true') // ✓ 對
+if (import.meta.env.VITE_FOO)            // ★ 錯！"false" 也會進這個分支
+if (import.meta.env.VITE_FOO === 'true') // ✓ 要當布林用一定要自己比對
 ```
 
-寫成第一種的話，`VITE_USE_MOCK=false` 照樣會走 mock，而且完全不報錯。
+第一種寫法不會報錯，只會安靜地做錯事。**目前專案的兩個變數都是網址，沒有布林值**，
+但之後要加開關型的變數時記得這條。
 
 **4. 改完要重開 dev server。**
-這些值是 build 時被「替換」進程式碼的，不是執行時去查表。
-所以 `VITE_USE_MOCK=false` 打包時，`USE_MOCK` 直接變成常數 `false`，
-整條 mock 分支成為死碼被搖掉——**假資料不會進 production bundle**，
-這是免費的，不用自己記得刪。
+這些值是 build 時被「替換」進程式碼的，不是執行時去查表——
+打包後 JS 裡直接就是 `"http://localhost:8080/api"` 這串字面值，
+沒有任何查表的動作。所以改了 `.env` 而不重開，跑的還是舊值。
 
 ### 要改成自己機器的設定
 
@@ -150,8 +149,8 @@ VITE_API_BASE=http://localhost:9090/api
 
 `.local` 結尾的檔優先權比較高，而且 `.gitignore` 已經蓋掉它，不會被 commit 出去。
 
-> `VITE_USE_MOCK` 是做什麼的、第幾週要從 `true` 改成 `false`，
-> 見 [05-開發流程與分工 §1.4.4](../../spec/05-開發流程與分工.md)。
+> **前端沒有 mock 開關。** 假資料放在後端（API 先回寫死的 JSON、不真的查 DB），
+> 前端一律打真的位址。理由見 [05-開發流程與分工 §1.4.4](../../spec/05-開發流程與分工.md)。
 
 ## 開發代理（解決 CORS 的另一招）
 
