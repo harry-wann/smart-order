@@ -5,7 +5,7 @@
 環境安裝（Node 版本、mise / nvm、macOS 與 Windows 做法、團隊規則）統一寫在
 **[專案根目錄 README](../README.md#環境建置)**，請以那份為準，避免兩份文件漂移。
 
-快速版（已裝好 Node 24.21.0 的話）：
+快速版（已裝好 Node 24.x 的話）：
 
 ```bash
 npm ci        # 不要用 npm install

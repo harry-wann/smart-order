@@ -13,6 +13,25 @@
 
 ## 環境建置
 
+### 需要安裝的工具與版本
+
+| 分類 | 工具 | 版本 | 必要性 | 備註 |
+| --- | --- | --- | --- | --- |
+| 共用 | Git | 2.x | 必要 | macOS 內建（Xcode Command Line Tools）；Windows 用 `winget install Git.Git` |
+| 共用 | 版本管理工具：`mise`（建議）／ `asdf` ／ `nvm` ／ `nvm-windows` | 最新版，擇一 | 必要 | 讀 `.tool-versions` 或 `.nvmrc` 自動安裝正確的 Node |
+| 前端 | Node.js | **24.x**（任一 24 版） | 必要 | `engine-strict` 強制檢查，非 24 版 `npm ci` 直接失敗 |
+| 前端 | npm | **11.19.0**（Node 24 內建） | 必要 | `package.json` 的 `packageManager` 鎖定；不要用 yarn / pnpm |
+| 後端 | JDK | **17 LTS** | 後端開工後必要 | 建議 Eclipse Temurin |
+| 後端 | Maven | Wrapper（`mvnw`，隨 repo 附上） | 不用另外裝 | Spring Boot 3.x 由 `pom.xml` 決定 |
+| 後端 | Docker Desktop（含 Docker Compose v2） | 最新版 | 後端開工後必要 | `docker compose up` 起本機 **MySQL 8.0** 與 **Redis 7**，不用手動裝資料庫 |
+| 後端 | IntelliJ IDEA | Community 或 Ultimate | 建議 | |
+| 後端 | DBeaver | 最新版 | 選用 | 看資料庫用 |
+| 文件工具 | Python 3 + `markdown` 套件 | 3.x | 選用 | 只有要重建 `docs/site/` 才需要：`pip3 install markdown` |
+| 文件工具 | Playwright（Python）+ Chromium | 最新版 | 選用 | 只有要跑 `docs/ui/mockups/tools/extract_layout.py` 量測畫框才需要 |
+
+> 目前 repo 只有前端可跑，**現階段只要裝「共用」與「前端」兩類**；後端骨架推上 `develop` 後再裝後端工具。
+> 各技術的選型理由與版本依據見 [`docs/spec/01-專案總覽.md`](docs/spec/01-專案總覽.md#4-技術棧)。
+
 ### 版本來源（單一真實來源）
 
 | 項目 | 由誰決定 | 檔案 |
@@ -21,7 +40,7 @@
 | 套件版本 | `npm ci` | `frontend/package-lock.json` |
 | 版本強制檢查 | `engine-strict` | `frontend/package.json` 的 `engines`、`frontend/.npmrc` |
 
-目前鎖定 **Node.js 24.21.0**、**npm 11.19.0**。Node 版本不符時 `npm ci` 會直接報錯，不會讓錯誤版本裝進來。
+目前要求 **Node.js 24.x**（任一 24 版皆可）、**npm 11.19.0**。Node 版本不符時 `npm ci` 會直接報錯，不會讓錯誤版本裝進來。
 
 ### macOS
 
@@ -83,8 +102,8 @@ nvm-windows **不會**自動讀 `.nvmrc`，版本要自己打：
 ```powershell
 winget install CoreyButler.NVMforWindows
 # 重開 PowerShell
-nvm install 24.21.0
-nvm use 24.21.0
+nvm install 24
+nvm use 24
 cd frontend
 npm ci
 npm run dev
