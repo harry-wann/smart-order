@@ -12,6 +12,8 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -26,6 +28,8 @@
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
     "oxlint": "^1.81.0",
+    "prettier": "^3.9.8",
+    "prettier-plugin-tailwindcss": "^0.8.1",
     "typescript": "^7.0.2",
     "vite": "^8.3.0"
   }

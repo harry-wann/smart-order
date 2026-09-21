@@ -1,0 +1,26 @@
+{
+  // ── Tailwind ──────────────────────────────────────────────
+  // class 寫在 className="..." 的字串裡，VS Code 預設不在字串內跳自動完成
+  // 沒有這行，Tailwind IntelliSense 看起來像壞掉
+  "editor.quickSuggestions": { "strings": "on" },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+
+  // @theme / @utility 是 Tailwind v4 的語法，不是標準 CSS，
+  // VS Code 內建的 CSS 檢查器不認得，會報 "Unknown at rule"。那不是錯誤，build 正常
+  "css.lint.unknownAtRules": "ignore",
+
+  // ── JSX ───────────────────────────────────────────────────
+  // 改開頭標籤，結尾標籤自動跟著改
+  "editor.linkedEditing": true,
+
+  // 在 .jsx 裡用 Emmet：打 div.flex.items-center 按 Tab
+  // → <div className="flex items-center"></div>（知道要用 className 不是 class）
+  "emmet.includeLanguages": { "javascript": "javascriptreact" },
+
+  // ── 縮排 ──────────────────────────────────────────────────
+  // JS / React 慣例是 2 格（Java 是 4）。JSX 巢狀深，4 格很快撞到行寬
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": false
+}

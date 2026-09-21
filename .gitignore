@@ -56,6 +56,8 @@ pnpm-debug.log*
 .settings/
 .project
 .classpath
+!.vscode/settings.json
+!.vscode/extensions.json
 
 # ─────────────────────────────────────────────────────────────
 # 環境變數與機密（絕對不要進版控）
