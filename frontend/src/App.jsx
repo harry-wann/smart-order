@@ -124,11 +124,11 @@ function getStatusClass(status){
     case 'available':
       return 'bg-[#E6DED2]'
     case 'occupied':
-      return 'bg-[#C8442E]'
+      return 'bg-[#C8442E] text-white'
     case 'cleaning':
-      return 'bg-[#9C8E84]'  
+      return 'bg-[#9C8E84] text-white'  
     case 'reserved':
-      return 'bg-[#FCF0DC] border-#E8A33D]'  
+      return 'bg-[#FCF0DC] border-[#E8A33D]'  
     default:
       return ''
   }
@@ -138,7 +138,7 @@ function getStatusClass(status){
 function TableCard({ table }) {
   return (
     <div className={`border p-4 ${getStatusClass(table.status)}`}>
-      <h3>{table.id}</h3>
+      <h3 className="text-lg font-bold">{table.id}</h3>
       <p>{getStatusText(table.status)}</p>
       {table.people &&(
         <p>{table.people}</p>
