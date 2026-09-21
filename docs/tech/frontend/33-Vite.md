@@ -45,7 +45,7 @@ npm run dev
 
 **四行，一個 React 專案就跑起來了。**
 
-（注意是 `--template react` 不是 `react-ts`，我們不用 TypeScript。）
+（練習用 `--template react` 即可；正式專案已改用 TypeScript，設定見 `frontend/tsconfig.json`，並開了 `allowJs` 讓 `.jsx` 與 `.tsx` 共存。）
 
 ## 專案結構
 
