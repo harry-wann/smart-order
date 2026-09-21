@@ -21,6 +21,11 @@
 | 共用 | 版本管理工具：`mise`（建議）／ `asdf` ／ `nvm` ／ `nvm-windows` | 最新版，擇一 | 必要 | 讀 `.tool-versions` 或 `.nvmrc` 自動安裝正確的 Node |
 | 前端 | Node.js | **24.x**（任一 24 版） | 必要 | `engine-strict` 強制檢查，非 24 版 `npm ci` 直接失敗 |
 | 前端 | npm | **11.19.0**（Node 24 內建） | 必要 | `package.json` 的 `packageManager` 鎖定；不要用 yarn / pnpm |
+| 前端 | React / react-dom | **19.2** | `npm ci` 自動安裝 | 版本由 `frontend/package-lock.json` 鎖定，不用手動裝 |
+| 前端 | Tailwind CSS（`@tailwindcss/vite`） | **4.3** | `npm ci` 自動安裝 | 同上 |
+| 前端 | Vite | **8.3** | `npm ci` 自動安裝 | 同上 |
+| 前端 | react-router | **8.4** | `npm ci` 自動安裝 | 同上 |
+| 前端 | TypeScript | **7.0** | `npm ci` 自動安裝 | 同上；`npm run typecheck` 用 |
 | 後端 | JDK | **17 LTS** | 後端開工後必要 | 建議 Eclipse Temurin |
 | 後端 | Maven | Wrapper（`mvnw`，隨 repo 附上） | 不用另外裝 | Spring Boot 3.x 由 `pom.xml` 決定 |
 | 後端 | Docker Desktop（含 Docker Compose v2） | 最新版 | 後端開工後必要 | `docker compose up` 起本機 **MySQL 8.0** 與 **Redis 7**，不用手動裝資料庫 |
