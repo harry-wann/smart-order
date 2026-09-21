@@ -1,0 +1,136 @@
+import React from "react";
+
+export type CardStyleProps =
+    | "primary"
+    | "CardTigth"
+    | "CardFlat";
+
+export type CardRowProps =
+    | "1"
+    | "2"
+    | "3"
+    | "4"
+    | "5"
+    | "6"
+    | "7";
+
+export type TagTypeProps =
+    | "h2"
+    | "p"
+    | "img"
+    | "orther";
+
+export type TagItemProps = [
+    TagTypeProps,
+    React.ReactNode
+];
+
+
+export type CardProps = {
+    TAG?: TagItemProps[];
+    STYLE?: CardStyleProps;
+    ROW?: CardRowProps;
+};
+
+
+
+const Card = ({
+    TAG = [],
+    STYLE="primary",
+    ROW="1",
+
+}:CardProps) => {
+
+
+    const STYLES: Record<CardStyleProps, string> = {
+        primary: 'shadow-card p-card',
+        CardTigth: 'shadow-card p-row',
+        CardFlat: 'p-card',
+    }
+
+    const tag: Record<TagTypeProps, (val: React.ReactNode) => React.ReactNode> = {
+        h2: (val) => <h2 className="type-h2">{val}</h2>,
+        p: (val) => <p className="type-body">{val}</p>,
+        img: (val) => <img src={String(val)} />,
+        orther: (val) => val
+    }
+
+    const a = TAG.map(([K,V],idx) => {
+            if(tag[K]){
+                return <div key={idx}>{tag[K](V)}</div >;
+            }else{
+               return null
+            }
+    });
+
+
+        const ROWS: Record<CardRowProps, string> = {
+        1: "grid-cols-1",
+        2: "grid-cols-2",
+        3: "grid-cols-3",
+        4: "grid-cols-4",
+        5: "grid-cols-5",
+        6: "grid-cols-6",
+        7: "grid-cols-7",
+    };
+
+    return (
+        <div className={`
+            border 
+            border-line 
+            bg-surface 
+            rounded-card 
+            w-full 
+            flex 
+            items-center 
+            justify-start 
+            ${STYLES[STYLE]}`}>
+
+            <div className={`grid ${ROWS[ROW]} gap-row`}>
+                {a}
+            </div>
+        </div>
+    )
+}
+
+export default Card;
+
+
+/*
+CARD使用規則
+
+陰影內距選擇
+STYLES:primary,CardTigth,CardFlat
+
+
+標籤每行幾個最多7個
+ROW:1,2,3,4,5,6,7
+
+建立標籤 (可重複使用)
+預設有h1,p,img
+[標籤,值]
+h1,p=>值填入標籤內容
+img=>值填入src位置
+
+自訂標籤 orther
+[標籤,值(填入完整標籤 或倒入的元件)]
+    ["orther", <CheckIcon/>]
+
+TAG={[
+        ["h2","card 一塊獨立資訊"],
+        ["orther", <a href="#">test</a>],
+        ["orther", <CheckIcon/>]
+    ]}
+
+
+
+<CARD
+    STYLE="primary"
+    ROW="1"
+        TAG={[
+        ["h2","card 一塊獨立資訊"],
+        ["orther", <CheckIcon/>]
+        ]}
+    />
+
+*/
