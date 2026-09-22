@@ -1,4 +1,4 @@
-import DemoPage from '../../components/RedButtonExample';
+import DemoPage from '../../components/ButtonExample'
 
 export default function DS02() {
   return (
@@ -7,5 +7,5 @@ export default function DS02() {
       title="按鈕"
       description="放置主要操作、次要操作與不同互動狀態的按鈕。"
     />
-  );
+  )
 }

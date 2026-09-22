@@ -1,15 +1,19 @@
-function RedButton({ text = null, content = null, type = 'default', ...props }) {
+function Button({ text = null, content = null, type = 'default', ...props }) {
   const justifyClass = text?.length > 1 ? 'justify-between' : 'justify-center'
   const contentClass = content?.length > 1 ? 'justify-between' : 'justify-center'
 
   const themeClass =
     type === 'danger'
-      ? 'bg-danger hover:bg-[color-mix(in_srgb,var(--color-danger),black_8%)]'
-      : 'bg-brand-600 hover:bg-[color-mix(in_srgb,var(--color-brand-600),black_8%)]'
+      ? 'bg-danger text-surface hover:bg-[color-mix(in_srgb,var(--color-danger),black_8%)]'
+      : type === 'ghost'
+        ? 'bg-transparent border border-transparent text-ink-600'
+        : type === 'secondary'
+          ? 'bg-surface border border-brand-600 text-brand-600'
+          : 'bg-brand-600 text-surface hover:bg-[color-mix(in_srgb,var(--color-brand-600),black_8%)]'
 
   return (
     <button
-      className={`flex h-[36px] w-full items-center rounded px-4 py-2 text-white md:h-[44px] lg:h-[52px] ${themeClass} transition-all duration-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40`}
+      className={`flex h-[36px] w-full items-center rounded px-4 py-2 md:h-[44px] lg:h-[52px] ${themeClass} transition-all duration-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40`}
       {...props}
     >
       {text !== null ? (
@@ -41,4 +45,4 @@ function RedButton({ text = null, content = null, type = 'default', ...props }) 
   )
 }
 
-export default RedButton
+export default Button
