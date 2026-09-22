@@ -1,4 +1,5 @@
 
+
 //S-02 正中間 桌況總覽
 const tables = [
   {
@@ -37,11 +38,13 @@ const tables = [
     status: 'cleaning',
     time: '18:28結清',
 
+
   },
   {
     id: 'A08',
     status: 'reserved',
     who: '18:30 陳o君 4位',
+
 
   },
   {
@@ -72,7 +75,12 @@ const tables = [
   }
 
 
+
+
 ]
+
+
+
 
 
 
@@ -91,6 +99,7 @@ const waitinglist = [
     people: '3位',
     waitingtime: '18分',
 
+
   },
   {
     id: 'A14',
@@ -99,6 +108,10 @@ const waitinglist = [
     waitingtime: '4分',
   }
 ]
+
+
+
+
 
 
 
@@ -119,6 +132,7 @@ function getStatusText(status) {
   }
 }
 
+
 function getStatusClass(status) {
   switch (status) {
     case 'available':
@@ -133,6 +147,8 @@ function getStatusClass(status) {
       return ''
   }
 }
+
+
 
 
 function TableCard({ table }) {
@@ -150,17 +166,22 @@ function TableCard({ table }) {
         <p>{table.amount}</p>
       )}
 
+
     </div>
   )
 }
 
+
 function App() {
   return (
+
 
     <div>
       <h1>桌況總覽</h1>
 
+
       <div className="border rounded-lg p-4 bg-white"></div>
+
 
       <div className="grid grid-cols-4 gap-4">
         {tables.map(table => (
@@ -170,7 +191,11 @@ function App() {
 
 
 
+
+
+
       {/* 下面那排桌子狀態顯示 */}
+        測試
 
       <div className="mt-8">
         <div className="border rounded-lg p-4 bg-white">
@@ -178,18 +203,24 @@ function App() {
             <span className="border rounded text-sm ml-2">3組</span>
             <span className="text-sm font-normal ml-2">平均等候22分</span>
 
+
           </h2>
+
 
           <div className="flex gap-4">
             {waitinglist.map(waiting => (
 
+
               <div className="border p-4 rounded-full px-4 py-2 bg-[#F5EFE5]" key={waiting.id}>
+
 
                 <div className="flex items-center gap-4">
                   <h3 className="text-lg font-bold">{waiting.id}</h3>
 
+
                   <p>{waiting.name}</p>
                   <p className="text-sm">{waiting.people}</p>
+
 
                   {waiting.waitingtime === '已叫號' ? (
                     <p className="text-sm border rounded-full px-2 py-1 bg-[#FCF0DC]">
@@ -202,6 +233,7 @@ function App() {
                       </p>
                     )}
 
+
                 </div>
               </div>
             ))}
@@ -212,3 +244,4 @@ function App() {
   )
 }
 export default App
+
