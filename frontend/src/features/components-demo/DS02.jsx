@@ -1,4 +1,4 @@
-import DemoPage from './DemoPage';
+import DemoPage from '../../components/RedButtonExample';
 
 export default function DS02() {
   return (
