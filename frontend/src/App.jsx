@@ -195,7 +195,7 @@ function App() {
 
 
       {/* 下面那排桌子狀態顯示 */}
-
+        測試
 
       <div className="mt-8">
         <div className="border rounded-lg p-4 bg-white">
