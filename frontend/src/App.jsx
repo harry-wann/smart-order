@@ -1,4 +1,4 @@
-import './App.css'
+
 //S-02 正中間 桌況總覽
 const tables = [
   {
@@ -103,7 +103,7 @@ const waitinglist = [
 
 
 
-//把後臺狀態的英文轉成中文顯示
+// 把後臺狀態的英文轉成中文顯示
 function getStatusText(status) {
   switch (status) {
     case 'available':
@@ -118,17 +118,17 @@ function getStatusText(status) {
       return ''
   }
 }
- 
-function getStatusClass(status){
-  switch (status){
+
+function getStatusClass(status) {
+  switch (status) {
     case 'available':
       return 'bg-[#E6DED2]'
     case 'occupied':
       return 'bg-[#C8442E] text-white'
     case 'cleaning':
-      return 'bg-[#9C8E84] text-white'  
+      return 'bg-[#9C8E84] text-white'
     case 'reserved':
-      return 'bg-[#FCF0DC] border-[#E8A33D]'  
+      return 'bg-[#FCF0DC] border-[#E8A33D]'
     default:
       return ''
   }
@@ -140,13 +140,13 @@ function TableCard({ table }) {
     <div className={`border p-4 ${getStatusClass(table.status)}`}>
       <h3 className="text-lg font-bold">{table.id}</h3>
       <p>{getStatusText(table.status)}</p>
-      {table.people &&(
+      {table.people && (
         <p>{table.people}</p>
       )}
-      {table.time &&(
+      {table.time && (
         <p>{table.time}</p>
       )}
-      {table.amount &&(
+      {table.amount && (
         <p>{table.amount}</p>
       )}
 
@@ -160,26 +160,55 @@ function App() {
     <div>
       <h1>桌況總覽</h1>
 
+      <div className="border rounded-lg p-4 bg-white"></div>
+
       <div className="grid grid-cols-4 gap-4">
         {tables.map(table => (
-        <TableCard table={table} />
-      ))}
+          <TableCard key={table.id} table={table} />
+        ))}
       </div>
 
-      <h2>候位中</h2>
-      {waitinglist.map(waiting => (
-
-        <div>
-          <h3>{waiting.id}</h3>
-          <p>{waiting.name}</p>
-          <p>{waiting.people}</p>
-          <p>{waiting.waitingtime}</p>
 
 
+      {/* 下面那排桌子狀態顯示 */}
+
+      <div className="mt-8">
+        <div className="border rounded-lg p-4 bg-white">
+          <h2 className="text-x1 font-bold">候位中
+            <span className="border rounded text-sm ml-2">3組</span>
+            <span className="text-sm font-normal ml-2">平均等候22分</span>
+
+          </h2>
+
+          <div className="flex gap-4">
+            {waitinglist.map(waiting => (
+
+              <div className="border p-4 rounded-full px-4 py-2 bg-[#F5EFE5]" key={waiting.id}>
+
+                <div className="flex items-center gap-4">
+                  <h3 className="text-lg font-bold">{waiting.id}</h3>
+
+                  <p>{waiting.name}</p>
+                  <p className="text-sm">{waiting.people}</p>
+
+                  {waiting.waitingtime === '已叫號' ? (
+                    <p className="text-sm border rounded-full px-2 py-1 bg-[#FCF0DC]">
+                      {waiting.waitingtime}</p>
+                  )
+                    :
+                    (
+                      <p className="text-sm">
+                        {waiting.waitingtime}
+                      </p>
+                    )}
+
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-      ))}
-
-
+      </div>
     </div>
   )
 }
+export default App
