@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="以 Northwind 練習 Spring Boot 4，從 Servlet 基礎走向 Java 後端工作。">
+  <title>Maven：從專案設定到可執行檔｜Northwind Spring Boot 教室</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要內容</a>
+<main id="main" class="site-shell">
+<a class="breadcrumb" href="index.html">← 回到學習地圖</a>
+<header class="lesson-header">
+<p class="eyebrow">單元 02 · NORTHWIND LAB</p>
+<h1>Maven：從專案設定到可執行檔</h1>
+<p class="hero-text">你熟悉把 Web 專案放進 Tomcat。這一單元先看懂 Spring Boot 如何取得套件，再把專案打包起來。</p>
+<div class="meta"><span>Spring Boot 4 主線</span><span>有差異再看 Boot 3</span><span>4 個閱讀步驟</span></div>
+</header>
+<nav class="lesson-toc" aria-label="本頁目錄">
+<strong>本頁閱讀路線</strong>
+<ol><li><a href="#step-1">01 · 先知道你正在管理什麼</a></li>
+<li><a href="#step-2">02 · 用一個依賴帶進 Web 能力</a></li>
+<li><a href="#step-3">03 · 對照你熟悉的 Web 專案</a></li>
+<li><a href="#step-4">04 · 你親手執行時的順序</a></li>
+<li><a href="#step-5">延伸閱讀</a></li></ol>
+</nav>
+<article class="lesson">
+<section id="step-1"><h2>01 · 先知道你正在管理什麼</h2><p>Maven 是建置工具：下載依賴（Dependency，程式需要的外部套件）、編譯、測試與打包。POM 是 Project Object Model（專案物件模型），設定檔叫 pom.xml；XML 是 Extensible Markup Language（可延伸標記語言）。</p><p>編譯會把 Java 原始碼轉成位元組碼（Bytecode），再由 JVM（Java Virtual Machine，Java 虛擬機器）執行。JAR 是 Java Archive（Java 封裝檔）；WAR 是 Web Application Archive（Web 應用程式封裝檔）。</p></section>
+<section id="step-2"><h2>02 · 用一個依賴帶進 Web 能力</h2><p>使用 Spring Boot parent（父設定）管理相容依賴。本課主線採 Boot 4.1.1 與 Java 21。</p><figure class="code-block"><figcaption>pom.xml 的 dependencies 內 · Boot 4</figcaption><pre tabindex="0"><code class="language-xml"><span class="nt">&lt;dependency&gt;</span>
+<span class="w">    </span><span class="nt">&lt;groupId&gt;</span>org.springframework.boot<span class="nt">&lt;/groupId&gt;</span>
+<span class="w">    </span><span class="nt">&lt;artifactId&gt;</span>spring-boot-starter-webmvc<span class="nt">&lt;/artifactId&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span></code></pre></figure><p>groupId 是組織；artifactId 是套件名稱。Starter 是預先組好的依賴組合，帶入 Spring MVC 與 Tomcat。受 Boot 管理的依賴不另填版本，完整 POM 在單元 10。</p><aside class="version-note"><strong>Boot 3 對照</strong><p>Boot 3 使用 spring-boot-starter-web。Boot 4 改用 spring-boot-starter-webmvc；不要把舊版本依賴清單直接搬過來。</p></aside></section>
+<section id="step-3"><h2>03 · 對照你熟悉的 Web 專案</h2><div class="table-wrap" tabindex="0"><table><thead><tr><th scope="col">位置</th><th scope="col">放什麼</th></tr></thead><tbody><tr><td>src/main/java</td><td>Controller、Service 與資料存取類別</td></tr><tr><td>src/main/resources</td><td>設定檔與靜態資源</td></tr><tr><td>src/test/java</td><td>自動化測試</td></tr><tr><td>target</td><td>建置產物，不手動修改、不提交 Git</td></tr></tbody></table></div><p>Spring Boot 的可執行 JAR 通常已帶入 Tomcat，不需要先把檔案搬到另一台 Tomcat 的 webapps。需要傳統 WAR 部署時仍然可以設定。</p></section>
+<section id="step-4"><h2>04 · 你親手執行時的順序</h2><figure class="code-block"><figcaption>終端機 · 在含 pom.xml 與 mvnw 的專案目錄</figcaption><pre tabindex="0"><code class="language-bash">./mvnw<span class="w"> </span><span class="nb">test</span>
+./mvnw<span class="w"> </span>package
+./mvnw<span class="w"> </span>spring-boot:run</code></pre></figure><p>test 執行測試；package 會先經過編譯與測試，再打包；spring-boot:run 用於開發時啟動。這三行分別操作，不必一次全部執行。</p><aside class="note">mvnw 是 Maven Wrapper（Maven 包裝啟動器）：依專案指定版本取得 Maven，因此<strong>不必先全域安裝 Maven</strong>。第一次需要網路。若專案沒有 wrapper，但已安裝 Maven，可使用 mvn。這也修正先前把 Maven 全域安裝列為必須的說法。</aside><div class="checkpoint"><strong>停一下，自己想想</strong><p>為什麼同事只拿到 pom.xml 與原始碼，也能建置？</p><details><summary>看解釋</summary><p>Maven 會依 POM 取得依賴；提交 wrapper 設定還能統一 Maven 版本。Java 版本與外部資料庫仍需另行準備。</p></details></div></section>
+<section id="step-5"><h2>延伸閱讀</h2><p><a href="https://docs.spring.io/spring-boot/reference/using/build-systems.html">Spring Boot 4：建置與 starters</a></p></section>
+</article>
+<nav class="page-nav" aria-label="單元導覽">
+<a href="index.html">← 學習地圖</a>
+<a href="unit-03-spring-core.html">下一頁 · 03 IoC 與 DI：到底是誰在 new 物件？ →</a>
+</nav>
+</main>
+<footer class="site-footer">Northwind Spring Boot 教室 · Boot 4.1.1 / Java 21<br>程式碼為教學範例，由你逐步操作。版本查核：2026-09-22。</footer>
+</body>
+</html>

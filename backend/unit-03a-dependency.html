@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="沿用上一頁的商品標籤。這次讓相同的 ProductLabel 分別印出 Chai 與測試茶，不修改組字邏輯。">
+  <title>換一個資料來源：親眼看見依賴注入的用途｜Northwind Spring Boot 教室</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要內容</a>
+<main id="main" class="site-shell">
+<a class="breadcrumb" href="index.html">← 回到學習地圖</a>
+<header class="lesson-header">
+<p class="eyebrow">單元 03A · NORTHWIND LAB</p>
+<h1>換一個資料來源：親眼看見依賴注入的用途</h1>
+<p class="hero-text">沿用上一頁的商品標籤。這次讓相同的 ProductLabel 分別印出 Chai 與測試茶，不修改組字邏輯。</p>
+<div class="meta"><span>Spring Boot 4 主線</span><span>有差異再看 Boot 3</span><span>6 個閱讀步驟</span></div>
+</header>
+<aside class="learning-goal" aria-label="閱讀準備">
+<p><strong>先備觀念：</strong>已讀完單元 03，知道 ProductLabel 透過建構子接收資料來源。</p>
+<p><strong>讀完能做到：</strong>換資料來源時，只改組裝處的一行，能說明為什麼 ProductLabel 不用跟著改。</p>
+</aside>
+<nav class="lesson-toc" aria-label="本頁目錄">
+<strong>本頁閱讀路線</strong>
+<ol><li><a href="#step-1">01 · 先約定能力，才有辦法換人做</a></li>
+<li><a href="#step-2">02 · 兩個來源，遵守同一份約定</a></li>
+<li><a href="#step-3">03 · 標籤只依賴共同約定</a></li>
+<li><a href="#step-4">04 · 現在真的換一次</a></li>
+<li><a href="#step-5">05 · 想親手感受，可跑這個完整例子</a></li>
+<li><a href="#step-6">06 · 下一個問題：誰來組裝整個系統？</a></li></ol>
+</nav>
+<article class="lesson">
+<section id="step-1"><h2>01 · 先約定能力，才有辦法換人做</h2><p>Java 的 interface（介面）描述「需要提供哪些方法」，不必指定由哪個類別完成。我們把需求縮到一件事：給商品編號，能回傳名稱。</p><figure class="code-block"><figcaption>共同約定：ProductCatalog</figcaption><pre tabindex="0"><code class="language-java"><span class="kd">interface</span> <span class="nc">ProductCatalog</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="nf">findName</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure><p>ProductCatalog 是我們自己定義的型別。它沒有查資料的內容，只要求 findName(int id) 必須回傳 String。只要遵守這個約定，就可以當成資料來源。</p></section>
+<section id="step-2"><h2>02 · 兩個來源，遵守同一份約定</h2><p>implements 表示類別實作這個介面；@Override 是 Java 的註解，讓編譯器檢查方法是否確實覆寫介面要求的方法。它不是 Spring 的功能。</p><figure class="code-block"><figcaption>來源一 · Northwind 商品名稱</figcaption><pre tabindex="0"><code class="language-java"><span class="kd">class</span> <span class="nc">NorthwindCatalog</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">ProductCatalog</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nd">@Override</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="nf">findName</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">id</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">IllegalArgumentException</span><span class="p">(</span><span class="s">"這次只示範商品 1"</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="s">"Chai"</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure><figure class="code-block"><figcaption>來源二 · 測試用的固定名稱</figcaption><pre tabindex="0"><code class="language-java"><span class="kd">class</span> <span class="nc">TrainingCatalog</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">ProductCatalog</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nd">@Override</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="nf">findName</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">id</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">IllegalArgumentException</span><span class="p">(</span><span class="s">"這次只示範商品 1"</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="s">"測試茶"</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure><p>兩者接受相同的輸入 1，但分別回傳 Chai 與測試茶。現在還沒有碰標籤格式，只有資料來源不同。</p></section>
+<section id="step-3"><h2>03 · 標籤只依賴共同約定</h2><figure class="code-block"><figcaption>把上一頁的 NorthwindCatalog 型別換成 ProductCatalog</figcaption><pre tabindex="0"><code class="language-java"><span class="kd">class</span> <span class="nc">ProductLabel</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">ProductCatalog</span><span class="w"> </span><span class="n">catalog</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">ProductLabel</span><span class="p">(</span><span class="n">ProductCatalog</span><span class="w"> </span><span class="n">catalog</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="na">catalog</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">catalog</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="nf">text</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="s">"商品："</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">catalog</span><span class="p">.</span><span class="na">findName</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure><p>只改了欄位與建構子參數的型別。text() 裡仍然呼叫 catalog.findName(1)，因為介面保證每個實作都有這個方法。</p><p>這就是<strong>依賴介面</strong>的具體意思：ProductLabel 只需要查名字的能力，不必知道是誰實作。不是每個類別都需要介面；這裡因為確實要替換來源，所以值得抽出共同約定。</p></section>
+<section id="step-4"><h2>04 · 現在真的換一次</h2><figure class="code-block"><figcaption>使用 Northwind 的來源</figcaption><pre tabindex="0"><code class="language-java"><span class="n">ProductCatalog</span><span class="w"> </span><span class="n">catalog</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">NorthwindCatalog</span><span class="p">();</span>
+<span class="n">ProductLabel</span><span class="w"> </span><span class="n">label</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ProductLabel</span><span class="p">(</span><span class="n">catalog</span><span class="p">);</span>
+<span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">label</span><span class="p">.</span><span class="na">text</span><span class="p">());</span><span class="w"> </span><span class="o">//</span><span class="w"> </span><span class="n">商品</span><span class="err">：</span><span class="n">Chai</span></code></pre></figure><figure class="code-block"><figcaption>只換組裝處第一行，其餘相同</figcaption><pre tabindex="0"><code class="language-java"><span class="n">ProductCatalog</span><span class="w"> </span><span class="n">catalog</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">TrainingCatalog</span><span class="p">();</span>
+<span class="n">ProductLabel</span><span class="w"> </span><span class="n">label</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ProductLabel</span><span class="p">(</span><span class="n">catalog</span><span class="p">);</span>
+<span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">label</span><span class="p">.</span><span class="na">text</span><span class="p">());</span><span class="w"> </span><span class="o">//</span><span class="w"> </span><span class="n">商品</span><span class="err">：</span><span class="n">測試茶</span></code></pre></figure><div class="table-wrap" tabindex="0"><table><thead><tr><th scope="col">觀察</th><th scope="col">結果</th></tr></thead><tbody><tr><td>改哪裡？</td><td>呼叫端建立來源的那一行</td></tr><tr><td>ProductLabel.text() 有改嗎？</td><td>沒有</td></tr><tr><td>為什麼輸出不同？</td><td>同一段標籤邏輯，收到不同的資料來源</td></tr><tr><td>正式工作有什麼用？</td><td>測試可提供固定資料；日後可改接資料庫或外部服務，而不改標籤邏輯</td></tr></tbody></table></div><p>兩段分別示範不同情境，不要在同一區塊重複宣告同名區域變數。下面完整範例已使用不同變數名。</p></section>
+<section id="step-5"><h2>05 · 想親手感受，可跑這個完整例子</h2><p>這份範例只有普通 Java，不需要 Spring 或資料庫。在你的練習資料夾自己新增 Demo.java，貼入展開內容，再執行下方命令。第一個類別 Demo 放在檔案最前面，讓來源檔執行模式找到 main；public 類別名稱也與檔名一致。</p><details class="code-details"><summary>展開完整範例 · Demo.java · 完整、獨立範例</summary><figure class="code-block"><figcaption>Demo.java · 完整、獨立範例</figcaption><pre tabindex="0"><code class="language-java"><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">Demo</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="o">[]</span><span class="w"> </span><span class="n">args</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">ProductCatalog</span><span class="w"> </span><span class="n">northwind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">NorthwindCatalog</span><span class="p">();</span>
+<span class="w">        </span><span class="n">ProductLabel</span><span class="w"> </span><span class="n">normalLabel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ProductLabel</span><span class="p">(</span><span class="n">northwind</span><span class="p">);</span>
+<span class="w">        </span><span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">normalLabel</span><span class="p">.</span><span class="na">text</span><span class="p">());</span>
+
+<span class="w">        </span><span class="n">ProductCatalog</span><span class="w"> </span><span class="n">training</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">TrainingCatalog</span><span class="p">();</span>
+<span class="w">        </span><span class="n">ProductLabel</span><span class="w"> </span><span class="n">testLabel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ProductLabel</span><span class="p">(</span><span class="n">training</span><span class="p">);</span>
+<span class="w">        </span><span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">testLabel</span><span class="p">.</span><span class="na">text</span><span class="p">());</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">interface</span> <span class="nc">ProductCatalog</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="nf">findName</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kd">class</span> <span class="nc">NorthwindCatalog</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">ProductCatalog</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nd">@Override</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="nf">findName</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">id</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">IllegalArgumentException</span><span class="p">(</span><span class="s">"這次只示範商品 1"</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="s">"Chai"</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">class</span> <span class="nc">TrainingCatalog</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">ProductCatalog</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nd">@Override</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="nf">findName</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">id</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">IllegalArgumentException</span><span class="p">(</span><span class="s">"這次只示範商品 1"</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="s">"測試茶"</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">class</span> <span class="nc">ProductLabel</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">ProductCatalog</span><span class="w"> </span><span class="n">catalog</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">ProductLabel</span><span class="p">(</span><span class="n">ProductCatalog</span><span class="w"> </span><span class="n">catalog</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="na">catalog</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">catalog</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="nf">text</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="s">"商品："</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">catalog</span><span class="p">.</span><span class="na">findName</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure></details><figure class="code-block"><figcaption>終端機 · Java 21 可直接執行這個來源檔</figcaption><pre tabindex="0"><code class="language-bash">java<span class="w"> </span>Demo.java</code></pre></figure><figure class="code-block"><figcaption>預期輸出</figcaption><pre tabindex="0"><code class="language-text">商品：Chai
+商品：測試茶</code></pre></figure><p>兩次都是呼叫 ProductLabel.text()。測試來源只是我們手寫的替身：替身就是用可控制的簡單物件，代替需要網路或資料庫的正式依賴。此處不需要 Lambda 或測試框架。</p></section>
+<section id="step-6"><h2>06 · 下一個問題：誰來組裝整個系統？</h2><p>現在只有兩個物件，手動 new 很清楚。若網站有商品、訂單、付款、庫存等服務，每個服務又需要其他物件，就會有更多「先建立誰，再交給誰」的程式。</p><p>下一頁讓 Spring 接手這個<strong>組裝工作</strong>。ProductLabel 的建構子與 text() 都可以保留；先不要把「交給 Spring」理解成所有 Java 語法都要重寫。</p><div class="checkpoint"><strong>停一下，自己想想</strong><p>新增第三個 ProductCatalog 實作，ProductLabel 要增加 if/else 判斷來源嗎？</p><details><summary>看解釋</summary><p>不需要。呼叫端選擇實作，ProductLabel 只按介面的約定呼叫方法。若每新增一個來源都得修改 ProductLabel，代表替換責任還沒有分乾淨。</p></details></div></section>
+</article>
+<nav class="page-nav" aria-label="單元導覽">
+<a href="unit-03-spring-core.html">← 單元 03 · 從 new 開始：一個物件為什麼需要另一個？</a>
+<a href="unit-03b-container.html">單元 03B · 交給 Spring 組裝：現在才認識容器與 Bean →</a>
+</nav>
+</main>
+<footer class="site-footer">Northwind Spring Boot 教室 · Boot 4.1.1 / Java 21<br>程式碼為教學範例，由你逐步操作。版本查核：2026-09-22；閱讀順序修訂：2026-09-23。</footer>
+</body>
+</html>

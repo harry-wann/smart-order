@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="把真的省下工作量的新能力與單純的套件改名分開。下面的進階範例是延伸，不要一次加入第 10 單元。">
+  <title>結語：Boot 4 多了什麼，Boot 3 怎麼做？｜Northwind Spring Boot 教室</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要內容</a>
+<main id="main" class="site-shell">
+<a class="breadcrumb" href="index.html">← 回到學習地圖</a>
+<header class="lesson-header">
+<p class="eyebrow">單元 11 · NORTHWIND LAB</p>
+<h1>結語：Boot 4 多了什麼，Boot 3 怎麼做？</h1>
+<p class="hero-text">把真的省下工作量的新能力與單純的套件改名分開。下面的進階範例是延伸，不要一次加入第 10 單元。</p>
+<div class="meta"><span>Spring Boot 4 主線</span><span>有差異再看 Boot 3</span><span>6 個閱讀步驟</span></div>
+</header>
+<aside class="learning-goal" aria-label="閱讀準備">
+<p><strong>先備觀念：</strong>已走完商品 API；這頁是版本差異的延伸閱讀，不是完成實作的必備步驟。</p>
+<p><strong>讀完能做到：</strong>區分 Boot 4 的新增能力、套件調整，以及 Boot 3 專案可採取的做法。</p>
+</aside>
+<nav class="lesson-toc" aria-label="本頁目錄">
+<strong>本頁閱讀路線</strong>
+<ol><li><a href="#step-1">01 · 教材版本與三種產品名稱</a></li>
+<li><a href="#step-2">02 · 實用新增：內建 API 版本處理</a></li>
+<li><a href="#step-3">03 · 實用新增：外部 HTTP 服務分組管理</a></li>
+<li><a href="#step-4">04 · 實用新增：核心重試與併發限制</a></li>
+<li><a href="#step-5">05 · 每天可能遇到的遷移差異</a></li>
+<li><a href="#step-6">06 · 哪些能力其實 Boot 3 就有？</a></li>
+<li><a href="#step-7">官方查核來源</a></li></ol>
+</nav>
+<article class="lesson">
+<section id="step-1"><h2>01 · 教材版本與三種產品名稱</h2><p>本教材主線：Java 21、Spring Boot 4.1.1、Spring Framework 7、Hibernate 7。查核日期：2026-09-22。Boot 的相依管理負責協調各套件；不自行把不同主版本湊在一起。</p><div class="table-wrap" tabindex="0"><table><thead><tr><th scope="col">產品</th><th scope="col">做什麼</th><th scope="col">版本不能互換</th></tr></thead><tbody><tr><td>Spring Boot</td><td>整合相依套件、自動設定與啟動</td><td>本課用 4，補充 3</td></tr><tr><td>Spring Framework</td><td>提供 IoC、MVC、交易等核心能力</td><td>Boot 4 對應 Framework 7</td></tr><tr><td>Spring Tools</td><td>VS Code／Eclipse 等的開發工具</td><td>Tools 5 不等於 Boot 5</td></tr></tbody></table></div><p>官方索引尚未列出 Boot 5，所以沒有可據以撰寫的「Boot 5 比 4 多什麼」段落。Spring Tools 的版本不改變你 pom.xml 的 Boot 版本。</p></section>
+<section id="step-2"><h2>02 · 實用新增：內建 API 版本處理</h2><p>API 是 Application Programming Interface（應用程式介面）。當商品回應欄位要改版，可用同一條路徑、不同版本標頭分派到不同方法。Framework 7 提供統一的解析與匹配機制，Boot 4 加入對應自動設定。</p><figure class="code-block"><figcaption>Boot 4 · 設定片段，省略 imports</figcaption><pre tabindex="0"><code class="language-java"><span class="nd">@Configuration</span>
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">ApiVersionConfig</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">WebMvcConfigurer</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nd">@Override</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">configureApiVersioning</span><span class="p">(</span><span class="n">ApiVersionConfigurer</span><span class="w"> </span><span class="n">configurer</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">configurer</span><span class="p">.</span><span class="na">useRequestHeader</span><span class="p">(</span><span class="s">"API-Version"</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure><figure class="code-block"><figcaption>Boot 4 · Controller 內的示範方法</figcaption><pre tabindex="0"><code class="language-java"><span class="nd">@GetMapping</span><span class="p">(</span><span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"/api/version-demo"</span><span class="p">,</span><span class="w"> </span><span class="n">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"1.0"</span><span class="p">)</span>
+<span class="kd">public</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="nf">versionOne</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="s">"商品欄位版本 1"</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="nd">@GetMapping</span><span class="p">(</span><span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"/api/version-demo"</span><span class="p">,</span><span class="w"> </span><span class="n">version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"2.0"</span><span class="p">)</span>
+<span class="kd">public</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="nf">versionTwo</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="s">"商品欄位版本 2"</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure><figure class="code-block"><figcaption>呼叫示例</figcaption><pre tabindex="0"><code class="language-bash">curl<span class="w"> </span>-H<span class="w"> </span><span class="s1">'API-Version: 2.0'</span><span class="w"> </span>http://localhost:8080/api/version-demo</code></pre></figure><p>WebMvcConfigurer 與 ApiVersionConfigurer 來自 org.springframework.web.servlet.config.annotation。這個設定可能改變全站版本要求，請在獨立練習專案測試，不直接混入單元 10 的無版本端點。</p><aside class="version-note"><strong>Boot 3 對照</strong><p>沒有 version 屬性時，可用 /api/v1/products 與 /api/v2/products 的獨立路徑，或 @GetMapping(headers="API-Version=1.0") 自行匹配。Boot 4 新增的是集中管理能力，不是 Boot 3 完全做不到版本化。</p></aside><p><a href="https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-config/api-version.html">官方 API 版本設定</a></p></section>
+<section id="step-3"><h2>03 · 實用新增：外部 HTTP 服務分組管理</h2><p>HTTP 是 Hypertext Transfer Protocol（超文字傳輸協定）。Northwind 若串接物流，可以把「查物流狀態」寫成 Java 介面。Boot 4 配合 Framework 7，增加 HTTP Service Client 的分組、註冊與自動設定，減少逐個建立代理的設定。</p><figure class="code-block"><figcaption>介面形式 · 概念片段；此介面能力本身 Boot 3 已有</figcaption><pre tabindex="0"><code class="language-java"><span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">ShippingClient</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nd">@GetExchange</span><span class="p">(</span><span class="s">"/shipments/{id}"</span><span class="p">)</span>
+<span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="nf">status</span><span class="p">(</span><span class="nd">@PathVariable</span><span class="p">(</span><span class="s">"id"</span><span class="p">)</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">id</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure><p>Client 是呼叫外部服務的端點；Proxy（代理）將介面方法轉成實際網路請求。@GetExchange 來自 org.springframework.web.service.annotation。</p><aside class="version-note"><strong>Boot 3 對照</strong><p>Boot 3／Framework 6 已有 @HttpExchange 類型的介面客戶端；常需自行以 HttpServiceProxyFactory 組裝並宣告 Bean。Boot 4 的新價值是整組管理與自動設定，並非第一次能呼叫外部 API。</p></aside><p><a href="https://spring.io/blog/2025/09/23/http-service-client-enhancements/">官方 HTTP Service Client 增強說明</a></p></section>
+<section id="step-4"><h2>04 · 實用新增：核心重試與併發限制</h2><p>Resilience（韌性）指外部服務短暫失敗時仍能控制影響。Framework 7 提供核心 @Retryable 與 @ConcurrencyLimit：前者重試，後者限制同時執行數量。Boot 4 可以在這一代核心框架上使用。</p><p>Northwind 查物流狀態遇到暫時網路錯誤，可考慮有限次重試；新增訂單與扣款不能盲目重試，要先有冪等設計。註解也需要啟用相應處理機制，不是只貼上名稱就會生效。</p><aside class="version-note"><strong>Boot 3 對照</strong><p>Boot 3 常用獨立 Spring Retry 或其他工具處理。新核心註解在 org.springframework.resilience.annotation，和舊 Spring Retry 的 org.springframework.retry.annotation 不是同一個 import，設定與參數要依各自文件。</p></aside><p><a href="https://spring.io/blog/2025/09/09/core-spring-resilience-features/">核心韌性功能官方說明</a></p></section>
+<section id="step-5"><h2>05 · 每天可能遇到的遷移差異</h2><div class="table-wrap" tabindex="0"><table><thead><tr><th scope="col">項目</th><th scope="col">Boot 4</th><th scope="col">Boot 3 怎麼做</th></tr></thead><tbody><tr><td>Web 相依</td><td>spring-boot-starter-webmvc</td><td>spring-boot-starter-web</td></tr><tr><td>Web 測試相依</td><td>spring-boot-starter-webmvc-test</td><td>spring-boot-starter-test</td></tr><tr><td>@WebMvcTest import</td><td>org.springframework.boot.webmvc.test.autoconfigure</td><td>org.springframework.boot.test.autoconfigure.web.servlet</td></tr><tr><td>ObjectMapper import</td><td>tools.jackson.databind</td><td>com.fasterxml.jackson.databind</td></tr><tr><td>JPA／Servlet imports</td><td>jakarta.persistence／jakarta.servlet</td><td>Boot 3 一樣是 jakarta.*</td></tr><tr><td>@MockitoBean</td><td>可用</td><td>3.4／3.5 可用；更早版本檢查相應 @MockBean 支援</td></tr></tbody></table></div><p>Jackson 是 JSON（JavaScript Object Notation，JavaScript 物件表示法）的轉換工具。Boot 4 預設 Jackson 3，部分註解仍維持 com.fasterxml.jackson.annotation；不要只用全域取代遷移。</p><p>模組與測試 starter 拆得更細，能更明確帶入需要的測試支援，但不代表只改 parent 版本就完成升級。先確保測試通過，再改依賴、imports 與不相容設定。</p></section>
+<section id="step-6"><h2>06 · 哪些能力其實 Boot 3 就有？</h2><ul><li>IoC（Inversion of Control，控制反轉）與 DI（Dependency Injection，依賴注入）不是 Boot 4 新功能。</li><li>REST Controller、建構子注入、JPA、交易與 ProblemDetail 在 Boot 3 已可使用。</li><li>Java record 與 BigDecimal 是 Java 語言／標準函式庫能力，不是 Boot 4 發明。</li><li>不要把「新版預設不同」誤認為「舊版做不到」；先確認是框架新增、整合改善還是套件更名。</li></ul><div class="checkpoint"><strong>停一下，自己想想</strong><p>為什麼目前先學商品 API，再看這些新功能？</p><details><summary>看解釋</summary><p>基本的分層、查詢、交易與錯誤合約每天都會使用；版本化、外部服務分組與韌性機制，在功能擴大時才逐步加入。</p></details></div></section>
+<section id="step-7"><h2>官方查核來源</h2><p><a href="https://docs.spring.io/spring-boot/index.html">Spring Boot 版本索引</a> · <a href="https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-4.0-Release-Notes">Boot 4 發行說明</a> · <a href="https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-4.0-Migration-Guide">Boot 4 遷移指南</a> · <a href="https://spring.io/blog/2025/12/10/spring-tools-5-0-0-released/">Spring Tools 5 公告</a></p></section>
+</article>
+<nav class="page-nav" aria-label="單元導覽">
+<a href="unit-10d-verify.html">← 單元 10D · 實作四：從新增到刪除，逐步驗收</a>
+<a href="index.html">回到學習地圖 →</a>
+</nav>
+</main>
+<footer class="site-footer">Northwind Spring Boot 教室 · Boot 4.1.1 / Java 21<br>程式碼為教學範例，由你逐步操作。版本查核：2026-09-22；閱讀順序修訂：2026-09-23。</footer>
+</body>
+</html>

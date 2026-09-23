@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="沿用 Product 與 Category 的 Java 映射。先練與 JPQL 共通的部分，再看 Hibernate 的擴充。">
+  <title>HQL：從商品篩選到分組與批次修改｜Northwind Spring Boot 教室</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要內容</a>
+<main id="main" class="site-shell">
+<a class="breadcrumb" href="index.html">← 回到學習地圖</a>
+<header class="lesson-header">
+<p class="eyebrow">單元 07B · NORTHWIND LAB</p>
+<h1>HQL：從商品篩選到分組與批次修改</h1>
+<p class="hero-text">沿用 Product 與 Category 的 Java 映射。先練與 JPQL 共通的部分，再看 Hibernate 的擴充。</p>
+<div class="meta"><span>Spring Boot 4 主線</span><span>有差異再看 Boot 3</span><span>8 個閱讀步驟</span></div>
+</header>
+<aside class="learning-goal" aria-label="閱讀準備">
+<p><strong>先備觀念：</strong>完成 07 與 07A，已懂實體名稱、關聯、交易與 EntityManager。</p>
+<p><strong>讀完能做到：</strong>一次改一個查詢條件，能預測結果；把 HQL 擴充與標準 JPQL 分開。</p>
+</aside>
+<nav class="lesson-toc" aria-label="本頁目錄">
+<strong>本頁閱讀路線</strong>
+<ol><li><a href="#step-1">01 · 先分辨語言與執行方式</a></li>
+<li><a href="#step-2">02 · 第一個真的有綁參數的查詢</a></li>
+<li><a href="#step-3">03 · 常用篩選，一次練一種</a></li>
+<li><a href="#step-4">04 · JOIN 與分組實例</a></li>
+<li><a href="#step-5">05 · DTO 投影：直接查你要的欄位</a></li>
+<li><a href="#step-6">06 · HQL 擴充：同分類價格排名</a></li>
+<li><a href="#step-7">07 · 修改與刪除，也要交易</a></li>
+<li><a href="#step-8">08 · INSERT 為什麼不當成 JPQL 教？</a></li>
+<li><a href="#step-9">練習與來源</a></li></ol>
+</nav>
+<article class="lesson">
+<section id="step-1"><h2>01 · 先分辨語言與執行方式</h2><p>HQL 是 Hibernate Query Language（Hibernate 查詢語言）。它查 Java 實體與屬性，不直接查表格。Hibernate 支援 JPQL，HQL 還提供額外能力；相同查詢文字可能同時符合兩者。</p><div class="table-wrap" tabindex="0"><table><thead><tr><th scope="col">語言</th><th scope="col">查什麼</th><th scope="col">例子</th></tr></thead><tbody><tr><td>SQL（Structured Query Language）</td><td>表格／欄位</td><td>FROM dbo.Products</td></tr><tr><td>JPQL（Jakarta Persistence Query Language）</td><td>實體／屬性；標準可攜範圍</td><td>select p from Product p</td></tr><tr><td>HQL</td><td>實體／屬性；Hibernate 擴充</td><td>可省略 select；另有視窗函式等能力</td></tr></tbody></table></div><p>下面的基本 SELECT、WHERE、JOIN、GROUP BY 與 UPDATE 多半同時是 JPQL。選 HQL 擴充前，先確認團隊接受依賴 Hibernate。</p></section>
+<section id="step-2"><h2>02 · 第一個真的有綁參數的查詢</h2><p>Hibernate 的 Session 是它自己的實體與查詢管理介面；不是 Servlet 用來記錄登入的 HttpSession。unwrap 是從 JPA 的 EntityManager 取得底層介面。下面做的仍是「帶入最低價格，查未停產商品」。</p><figure class="code-block"><figcaption>Spring 管理的查詢類別中 · 省略 imports</figcaption><pre tabindex="0"><code class="language-java"><span class="nd">@PersistenceContext</span>
+<span class="kd">private</span><span class="w"> </span><span class="n">EntityManager</span><span class="w"> </span><span class="n">em</span><span class="p">;</span>
+
+<span class="nd">@Transactional</span><span class="p">(</span><span class="n">readOnly</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
+<span class="kd">public</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">expensive</span><span class="p">(</span><span class="n">BigDecimal</span><span class="w"> </span><span class="n">minimum</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">Session</span><span class="w"> </span><span class="n">session</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">em</span><span class="p">.</span><span class="na">unwrap</span><span class="p">(</span><span class="n">Session</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">session</span><span class="p">.</span><span class="na">createSelectionQuery</span><span class="p">(</span><span class="s">"""</span>
+<span class="s">            select p from Product p</span>
+<span class="s">            where p.unitPrice &gt;= :minimum</span>
+<span class="s">              and p.discontinued = false</span>
+<span class="s">            order by p.unitPrice desc, p.id asc</span>
+<span class="s">            """</span><span class="p">,</span><span class="w"> </span><span class="n">Product</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="na">setParameter</span><span class="p">(</span><span class="s">"minimum"</span><span class="p">,</span><span class="w"> </span><span class="n">minimum</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="na">setMaxResults</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="na">getResultList</span><span class="p">();</span>
+<span class="p">}</span></code></pre></figure><p>Session 是 Hibernate 管理實體與查詢的介面，import 為 org.hibernate.Session；unwrap 表示從標準 EntityManager 取出底層介面。使用的是 Spring 管理的環境，不要手動 close 它。createSelectionQuery 用於讀取。</p><p>讀這段的順序：先讀查詢字串 → setParameter 提供 minimum → setMaxResults 限制最多 10 筆 → getResultList 取得結果。以 Chai 18 元、Chang 19 元這兩筆為觀察對象，minimum=19 時 Chai 被排除、Chang 符合；資料庫還可能有其他符合商品。</p></section>
+<section id="step-3"><h2>03 · 常用篩選，一次練一種</h2><figure class="code-block"><figcaption>HQL 查詢文字 · 各行是一個獨立範例</figcaption><pre tabindex="0"><code class="language-sql"><span class="k">select</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">Product</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">unitPrice</span><span class="w"> </span><span class="k">between</span><span class="w"> </span><span class="p">:</span><span class="n">low</span><span class="w"> </span><span class="k">and</span><span class="w"> </span><span class="p">:</span><span class="n">high</span>
+
+<span class="k">select</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">Product</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">category</span><span class="p">.</span><span class="n">id</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="p">:</span><span class="n">ids</span>
+
+<span class="k">select</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">Product</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">category</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span>
+
+<span class="k">select</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">Product</span><span class="w"> </span><span class="n">p</span>
+<span class="k">where</span><span class="w"> </span><span class="k">lower</span><span class="p">(</span><span class="n">p</span><span class="p">.</span><span class="n">productName</span><span class="p">)</span><span class="w"> </span><span class="k">like</span><span class="w"> </span><span class="k">lower</span><span class="p">(:</span><span class="n">pattern</span><span class="p">)</span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">productName</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">id</span></code></pre></figure><p>between 包含兩端；in 接收集合，例如 List.of(1, 2)；is null 判斷空值；like 配合 % 表示任意長度文字。給 :pattern 的值可為 "%Tea%"。動態欄位名不可當值綁定，排序欄位要由伺服器允許清單決定。</p></section>
+<section id="step-4"><h2>04 · JOIN 與分組實例</h2><figure class="code-block"><figcaption>HQL · 商品與分類</figcaption><pre tabindex="0"><code class="language-sql"><span class="k">select</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">productName</span><span class="p">,</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">categoryName</span>
+<span class="k">from</span><span class="w"> </span><span class="n">Product</span><span class="w"> </span><span class="n">p</span>
+<span class="k">left</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">category</span><span class="w"> </span><span class="k">c</span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">id</span></code></pre></figure><p>這裡 join 的是 p.category 關聯。left join 保留沒有分類的商品，分類名稱會是 null；inner join 則會排除它。</p><figure class="code-block"><figcaption>HQL · 每個分類的商品數與平均價格</figcaption><pre tabindex="0"><code class="language-sql"><span class="k">select</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">categoryName</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="n">p</span><span class="p">),</span><span class="w"> </span><span class="k">avg</span><span class="p">(</span><span class="n">p</span><span class="p">.</span><span class="n">unitPrice</span><span class="p">)</span>
+<span class="k">from</span><span class="w"> </span><span class="n">Product</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">category</span><span class="w"> </span><span class="k">c</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">categoryName</span>
+<span class="k">having</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="p">:</span><span class="k">count</span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="w"> </span><span class="k">desc</span></code></pre></figure><p>count(p) 是 Long；avg 通常是 Double。多欄位結果可以用 createSelectionQuery(hql, Object[].class)，再讀取每列索引 0、1、2；有固定對外合約時，改用 DTO 投影更清楚。</p></section>
+<section id="step-5"><h2>05 · DTO 投影：直接查你要的欄位</h2><figure class="code-block"><figcaption>DTO · 獨立檔案 ProductSummary.java</figcaption><pre tabindex="0"><code class="language-java"><span class="kn">package</span><span class="w"> </span><span class="nn">com.example.northwind</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">java.math.BigDecimal</span><span class="p">;</span>
+
+<span class="kd">public</span><span class="w"> </span><span class="kd">record</span> <span class="nc">ProductSummary</span><span class="p">(</span>
+<span class="w">    </span><span class="n">Integer</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">productName</span><span class="p">,</span><span class="w"> </span><span class="n">BigDecimal</span><span class="w"> </span><span class="n">unitPrice</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span></code></pre></figure><figure class="code-block"><figcaption>HQL／JPQL 都能用 · 指定完整類別名稱</figcaption><pre tabindex="0"><code class="language-sql"><span class="k">select</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">com</span><span class="p">.</span><span class="n">example</span><span class="p">.</span><span class="n">northwind</span><span class="p">.</span><span class="n">ProductSummary</span><span class="p">(</span>
+<span class="w">    </span><span class="n">p</span><span class="p">.</span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">productName</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">unitPrice</span><span class="p">)</span>
+<span class="k">from</span><span class="w"> </span><span class="n">Product</span><span class="w"> </span><span class="n">p</span>
+<span class="k">where</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">discontinued</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">false</span>
+<span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">id</span></code></pre></figure><p>DTO 是 Data Transfer Object（資料傳輸物件）。建構子參數順序與型別需一致，這裡 id 是 Integer，價格是 BigDecimal。只要名稱與價格時，不必把整個商品及關聯全部載入。</p></section>
+<section id="step-6"><h2>06 · HQL 擴充：同分類價格排名</h2><details class="optional-reading"><summary>選讀：先完成前五節，再學分類內排名</summary><figure class="code-block"><figcaption>Hibernate 擴充 · 原生 JPQL 不可攜</figcaption><pre tabindex="0"><code class="language-sql"><span class="k">select</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">productName</span><span class="p">,</span>
+<span class="w">       </span><span class="n">p</span><span class="p">.</span><span class="n">category</span><span class="p">.</span><span class="n">id</span><span class="p">,</span>
+<span class="w">       </span><span class="n">rank</span><span class="p">()</span><span class="w"> </span><span class="n">over</span><span class="w"> </span><span class="p">(</span>
+<span class="w">           </span><span class="n">partition</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">category</span><span class="p">.</span><span class="n">id</span>
+<span class="w">           </span><span class="k">order</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">unitPrice</span><span class="w"> </span><span class="k">desc</span>
+<span class="w">       </span><span class="p">)</span>
+<span class="k">from</span><span class="w"> </span><span class="n">Product</span><span class="w"> </span><span class="n">p</span>
+<span class="k">where</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">unitPrice</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span></code></pre></figure><p>Window Function（視窗函式）保留每筆商品，同時在分類內計算排名；partition by 決定分組，order by 決定名次。同價並列時 rank 會跳號。主線 Hibernate 7 與對照 Hibernate 6.6 都有這類能力；本例以 SQL Server 為情境，不當作所有 JPA 實作都支援。</p></details></section>
+<section id="step-7"><h2>07 · 修改與刪除，也要交易</h2><figure class="code-block"><figcaption>Service 方法片段 · 各段獨立使用</figcaption><pre tabindex="0"><code class="language-java"><span class="c1">// 在 @Transactional 方法中</span>
+<span class="n">Session</span><span class="w"> </span><span class="n">session</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">em</span><span class="p">.</span><span class="na">unwrap</span><span class="p">(</span><span class="n">Session</span><span class="p">.</span><span class="na">class</span><span class="p">);</span>
+<span class="n">em</span><span class="p">.</span><span class="na">flush</span><span class="p">();</span>
+
+<span class="kt">int</span><span class="w"> </span><span class="n">changed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">session</span><span class="p">.</span><span class="na">createMutationQuery</span><span class="p">(</span><span class="s">"""</span>
+<span class="s">        update Product p set p.discontinued = true</span>
+<span class="s">        where p.id = :id</span>
+<span class="s">        """</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="na">setParameter</span><span class="p">(</span><span class="s">"id"</span><span class="p">,</span><span class="w"> </span><span class="n">id</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="na">executeUpdate</span><span class="p">();</span>
+
+<span class="n">em</span><span class="p">.</span><span class="na">clear</span><span class="p">();</span></code></pre></figure><figure class="code-block"><figcaption>HQL DELETE · 僅針對自己新增且沒訂單引用的商品</figcaption><pre tabindex="0"><code class="language-java"><span class="kt">int</span><span class="w"> </span><span class="n">deleted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">session</span><span class="p">.</span><span class="na">createMutationQuery</span><span class="p">(</span>
+<span class="w">        </span><span class="s">"delete from Product p where p.id = :id"</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="na">setParameter</span><span class="p">(</span><span class="s">"id"</span><span class="p">,</span><span class="w"> </span><span class="n">id</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="na">executeUpdate</span><span class="p">();</span></code></pre></figure><p>createMutationQuery 用於異動；executeUpdate 回傳筆數。批次更新／刪除會繞過已載入物件的狀態追蹤，也不等同逐一呼叫實體回呼。先 flush、後 clear 是處理舊狀態的一種方式；清除後原有物件就脫離管理。外鍵限制仍然有效，不能靠 HQL 刪掉被引用商品。</p></section>
+<section id="step-8"><h2>08 · INSERT 為什麼不當成 JPQL 教？</h2><details class="optional-reading"><summary>選讀：HQL 新增擴充，一般新增先用前頁的 persist</summary><figure class="code-block"><figcaption>Hibernate HQL 擴充 · @Transactional 方法內</figcaption><pre tabindex="0"><code class="language-java"><span class="kt">int</span><span class="w"> </span><span class="n">inserted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">session</span><span class="p">.</span><span class="na">createMutationQuery</span><span class="p">(</span><span class="s">"""</span>
+<span class="s">        insert into Product</span>
+<span class="s">            (productName, unitPrice, unitsInStock, discontinued)</span>
+<span class="s">        values (:name, :price, :stock, false)</span>
+<span class="s">        """</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="na">setParameter</span><span class="p">(</span><span class="s">"name"</span><span class="p">,</span><span class="w"> </span><span class="s">"Training HQL Tea"</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="na">setParameter</span><span class="p">(</span><span class="s">"price"</span><span class="p">,</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">BigDecimal</span><span class="p">(</span><span class="s">"20.0000"</span><span class="p">))</span>
+<span class="w">    </span><span class="p">.</span><span class="na">setParameter</span><span class="p">(</span><span class="s">"stock"</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">short</span><span class="p">)</span><span class="w"> </span><span class="mi">10</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="na">executeUpdate</span><span class="p">();</span></code></pre></figure><p>這是 Hibernate HQL 的 INSERT VALUES 擴充，ProductID 由資料庫 IDENTITY 產生，category 可為 null。標準 JPQL 沒有這種一般新增語句；日常業務新增優先使用 persist 或 Repository.save，比較容易處理關聯與實體行為。</p><aside class="version-note"><strong>Boot 3 對照</strong><p>Boot 3.5 的 Hibernate 6.6 也有不少 HQL 擴充，不能把所有擴充都標成 Boot 4 才有。舊專案要依實際 Hibernate 版本核對，不只看 Boot 主版號。</p></aside></details></section>
+<section id="step-9"><h2>練習與來源</h2><div class="checkpoint"><strong>停一下，自己想想</strong><p>為什麼 from Products p where p.UnitPrice &gt; 20 在 HQL 會失敗？</p><details><summary>看解釋</summary><p>Products 是表名；UnitPrice 是資料庫欄位名。HQL 需要 Product 與 unitPrice。</p></details></div><p><a href="https://docs.hibernate.org/orm/7.4/querylanguage/html_single/">Hibernate 7.4 HQL 參考</a></p><p><a href="https://docs.hibernate.org/orm/6.6/querylanguage/html_single/">Boot 3 對照：Hibernate 6.6 HQL 文件</a></p></section>
+</article>
+<nav class="page-nav" aria-label="單元導覽">
+<a href="unit-07a-hibernate.html">← 單元 07A · Hibernate：Java 物件如何真的寫進資料庫</a>
+<a href="unit-08-quality.html">單元 08 · 驗證、例外與測試：讓錯誤也有規格 →</a>
+</nav>
+</main>
+<footer class="site-footer">Northwind Spring Boot 教室 · Boot 4.1.1 / Java 21<br>程式碼為教學範例，由你逐步操作。版本查核：2026-09-22；閱讀順序修訂：2026-09-23。</footer>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="先用普通 Java 印出 Northwind 商品標籤。這一頁只觀察物件如何合作，以及把依賴傳進去的意思。">
+  <title>從 new 開始：一個物件為什麼需要另一個？｜Northwind Spring Boot 教室</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要內容</a>
+<main id="main" class="site-shell">
+<a class="breadcrumb" href="index.html">← 回到學習地圖</a>
+<header class="lesson-header">
+<p class="eyebrow">單元 03 · NORTHWIND LAB</p>
+<h1>從 new 開始：一個物件為什麼需要另一個？</h1>
+<p class="hero-text">先用普通 Java 印出 Northwind 商品標籤。這一頁只觀察物件如何合作，以及把依賴傳進去的意思。</p>
+<div class="meta"><span>Spring Boot 4 主線</span><span>有差異再看 Boot 3</span><span>5 個閱讀步驟</span></div>
+</header>
+<aside class="learning-goal" aria-label="閱讀準備">
+<p><strong>先備觀念：</strong>會讀 class、new、方法呼叫與建構子就足夠。這頁不需要資料庫或 Spring 設定。</p>
+<p><strong>讀完能做到：</strong>指出誰建立商品資料來源、誰使用它，並看懂建構子中的參數與欄位。</p>
+</aside>
+<nav class="lesson-toc" aria-label="本頁目錄">
+<strong>本頁閱讀路線</strong>
+<ol><li><a href="#step-1">01 · 固定任務：印出「商品：Chai」</a></li>
+<li><a href="#step-2">02 · 原本：標籤物件自己建立資料來源</a></li>
+<li><a href="#step-3">03 · 現在的限制，要用具體需求看</a></li>
+<li><a href="#step-4">04 · 第一個小改動：由建構子接收物件</a></li>
+<li><a href="#step-5">05 · 做過一次，再給它名字：DI</a></li>
+<li><a href="#step-6">閱讀檢查</a></li></ol>
+</nav>
+<article class="lesson">
+<section id="step-1"><h2>01 · 固定任務：印出「商品：Chai」</h2><p>假設 Northwind 的商品 1 名稱是 Chai。我們需要兩個分工：NorthwindCatalog 負責找商品名稱，ProductLabel 負責組成顯示文字。Catalog 是目錄，Label 是標籤；這兩個類別名稱是我們自己取的，不是框架內建功能。</p><figure class="code-block"><figcaption>先認識資料來源 · 普通 Java</figcaption><pre tabindex="0"><code class="language-java"><span class="kd">class</span> <span class="nc">NorthwindCatalog</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="nf">findName</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">id</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">IllegalArgumentException</span><span class="p">(</span><span class="s">"這次只示範商品 1"</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="s">"Chai"</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure><p>為了只觀察物件關係，這裡直接回傳已知的商品名稱，<strong>還沒有連資料庫</strong>。只示範編號 1；其他編號丟出 Java 的 IllegalArgumentException（不合法參數例外）。後面實作單元才會查真正的 Northwind。</p><figure class="code-block"><figcaption>只呼叫資料來源，會得到什麼？</figcaption><pre tabindex="0"><code class="language-java"><span class="n">NorthwindCatalog</span><span class="w"> </span><span class="n">catalog</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">NorthwindCatalog</span><span class="p">();</span>
+<span class="n">String</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">catalog</span><span class="p">.</span><span class="na">findName</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">name</span><span class="p">);</span><span class="w"> </span><span class="o">//</span><span class="w"> </span><span class="n">Chai</span></code></pre></figure><p>NorthwindCatalog 是類別，像規格；new NorthwindCatalog() 依規格建立一個物件。變數 catalog 保存這個物件的參考，之後可以透過它呼叫方法。</p></section>
+<section id="step-2"><h2>02 · 原本：標籤物件自己建立資料來源</h2><figure class="code-block"><figcaption>版本 A · ProductLabel 類別</figcaption><pre tabindex="0"><code class="language-java"><span class="kd">class</span> <span class="nc">ProductLabel</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">NorthwindCatalog</span><span class="w"> </span><span class="n">catalog</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">NorthwindCatalog</span><span class="p">();</span>
+
+<span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="nf">text</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="s">"商品："</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">catalog</span><span class="p">.</span><span class="na">findName</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure><figure class="code-block"><figcaption>呼叫端，例如 main 方法內</figcaption><pre tabindex="0"><code class="language-java"><span class="n">ProductLabel</span><span class="w"> </span><span class="n">label</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ProductLabel</span><span class="p">();</span>
+<span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">label</span><span class="p">.</span><span class="na">text</span><span class="p">());</span><span class="w"> </span><span class="o">//</span><span class="w"> </span><span class="n">商品</span><span class="err">：</span><span class="n">Chai</span></code></pre></figure><ul><li>執行 new ProductLabel()，建立標籤物件。</li><li>ProductLabel 的欄位初始化又執行 new NorthwindCatalog()，建立資料來源。</li><li>label.text() 使用資料來源查商品名稱，再加上「商品：」。</li></ul><p>這就叫<strong>物件依賴</strong>：ProductLabel 要完成工作，必須使用 NorthwindCatalog。與 Maven 下載外部套件的「套件依賴」相關，但不是同一件事。</p></section>
+<section id="step-3"><h2>03 · 現在的限制，要用具體需求看</h2><p>現在想做一個不依賴真實資料的測試，希望相同的標籤邏輯印出「商品：測試茶」。但 ProductLabel 已在自己內部固定選用 NorthwindCatalog。呼叫它的人只能 new ProductLabel()，沒有地方告訴它要換資料來源。</p><div class="table-wrap" tabindex="0"><table><thead><tr><th scope="col">問題</th><th scope="col">目前答案</th></tr></thead><tbody><tr><td>誰組合「商品：」這段文字？</td><td>ProductLabel</td></tr><tr><td>誰決定使用哪個資料來源？</td><td>也是 ProductLabel</td></tr><tr><td>測試時只換來源，能在呼叫端完成嗎？</td><td>目前不行，來源藏在 ProductLabel 的 new 裡面</td></tr></tbody></table></div><p>小程式這樣寫可以正常運作。當同一段邏輯要搭配不同來源時，把<strong>選來源</strong>與<strong>用來源</strong>分開，才會比較好改。</p></section>
+<section id="step-4"><h2>04 · 第一個小改動：由建構子接收物件</h2><figure class="code-block"><figcaption>版本 B · 用這版取代版本 A</figcaption><pre tabindex="0"><code class="language-java"><span class="kd">class</span> <span class="nc">ProductLabel</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">NorthwindCatalog</span><span class="w"> </span><span class="n">catalog</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">ProductLabel</span><span class="p">(</span><span class="n">NorthwindCatalog</span><span class="w"> </span><span class="n">catalog</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="na">catalog</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">catalog</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="nf">text</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="s">"商品："</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">catalog</span><span class="p">.</span><span class="na">findName</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure><figure class="code-block"><figcaption>把原本在類別內的 new，移到呼叫端</figcaption><pre tabindex="0"><code class="language-java"><span class="n">NorthwindCatalog</span><span class="w"> </span><span class="n">catalog</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">NorthwindCatalog</span><span class="p">();</span>
+<span class="n">ProductLabel</span><span class="w"> </span><span class="n">label</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ProductLabel</span><span class="p">(</span><span class="n">catalog</span><span class="p">);</span>
+<span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">label</span><span class="p">.</span><span class="na">text</span><span class="p">());</span><span class="w"> </span><span class="o">//</span><span class="w"> </span><span class="n">商品</span><span class="err">：</span><span class="n">Chai</span></code></pre></figure><p>先看改了什麼：欄位旁邊的 = new NorthwindCatalog() 不見了，改由 ProductLabel(...) 的參數取得物件。text() 完全沒有改，輸出也仍然是「商品：Chai」。</p><figure class="code-block"><figcaption>這一行要分清楚兩個 catalog</figcaption><pre tabindex="0"><code class="language-java"><span class="k">this</span><span class="p">.</span><span class="na">catalog</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">catalog</span><span class="p">;</span></code></pre></figure><p>左邊 this.catalog 是目前這個 ProductLabel 物件的欄位；右邊 catalog 是呼叫端傳進來的參數。這行把同一個物件的參考保存下來，<strong>不是複製物件，也不是再建立一個來源</strong>。final 表示欄位設定後不能改指向別的來源。</p></section>
+<section id="step-5"><h2>05 · 做過一次，再給它名字：DI</h2><p><strong>DI = Dependency Injection，依賴注入。</strong>Dependency 是需要使用的另一個物件；Injection 是由外部把這個物件交進來。剛才透過建構子傳入 catalog，就是「建構子注入」。</p><div class="table-wrap" tabindex="0"><table><thead><tr><th scope="col">比較</th><th scope="col">版本 A</th><th scope="col">版本 B</th></tr></thead><tbody><tr><td>資料來源的 new 寫在哪裡？</td><td>ProductLabel 內</td><td>呼叫端</td></tr><tr><td>ProductLabel 負責什麼？</td><td>選來源，再用它查名稱</td><td>使用傳入的來源查名稱</td></tr><tr><td>是否已使用 Spring？</td><td>沒有</td><td>也沒有</td></tr></tbody></table></div><p>目前參數仍限定 NorthwindCatalog，所以<strong>還不能傳入毫無關係的 TrainingCatalog</strong>。下一頁只處理這件事：用介面定義共同能力，再比較換來源後的輸出。</p><div class="checkpoint"><strong>停一下，自己想想</strong><p>版本 B 的建構子裡沒有 new NorthwindCatalog()，物件是從哪來的？</p><details><summary>看解釋</summary><p>呼叫端先 new NorthwindCatalog()，再用 new ProductLabel(catalog) 把同一個物件交進來。建構子只接收它。</p></details></div><div class="checkpoint"><strong>停一下，自己想想</strong><p>DI 是不是一定要加 Spring 註解？</p><details><summary>看解釋</summary><p>不是。版本 B 已經做了依賴注入，卻完全沒有 Spring。Spring 會在後面幫我們自動組裝。</p></details></div></section>
+<section id="step-6"><h2>閱讀檢查</h2><aside class="note">這頁的 A、B 是替代版本，不要同時宣告兩個 ProductLabel。現在只需看懂流程；下一頁提供整份普通 Java 範例，讓你看到換資料來源前後的結果。</aside></section>
+</article>
+<nav class="page-nav" aria-label="單元導覽">
+<a href="unit-02-maven.html">← 單元 02 · Maven：先認識專案怎麼取得套件與啟動</a>
+<a href="unit-03a-dependency.html">單元 03A · 換一個資料來源：親眼看見依賴注入的用途 →</a>
+</nav>
+</main>
+<footer class="site-footer">Northwind Spring Boot 教室 · Boot 4.1.1 / Java 21<br>程式碼為教學範例，由你逐步操作。版本查核：2026-09-22；閱讀順序修訂：2026-09-23。</footer>
+</body>
+</html>
