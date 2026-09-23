@@ -1,18 +1,13 @@
 import React from "react";
-import CheckIcon from "../../assets/icons/check.svg";
-import ReTriangleIcon from "../../assets/icons/ReTri.svg";
-import BwTriangleIcon from "../../assets/icons/BwTri.svg";
-import BwCircleIcon from "../../assets/icons/BwCircle.svg";
-import BlCircleIcon from "../../assets/icons/BlCir.svg";
+import Check from "../../assets/icons/Check.svg";
+import Cir from '../../assets/icons/Cir.svg';
+import Tri from "../../assets/icons/Tri.svg";
 
 
 type IconTypeProps =
     | "Check"
-    | "ReTri"
-    | "BwTri"
-    | "BwTri"
-    | "BwCir"
-    | "BlCir";
+    | "Cir"
+    | "Tri"
 
 type InfoColorProps =
     | "GREEN"
@@ -65,11 +60,9 @@ const InfoBox=({
 }: InfoBoxProps)=>{
 
     const ICONS: Record<IconTypeProps,string> = {
-    Check: CheckIcon,
-    BlCir: BlCircleIcon,
-    BwCir:BwCircleIcon,
-    ReTri: ReTriangleIcon,
-    BwTri:BwTriangleIcon
+    Check: Check,
+    Cir: Cir,
+    Tri:Tri
     };
 
     const cols: Record<InfoColorProps, string>={
@@ -116,7 +109,22 @@ const InfoBox=({
                 px-[16px] 
                 ${cols[col]} 
                 ${classname}`}>
-                    {Icon && <img src={Icon} alt="" />}
+                    {Icon && 
+                    <span
+                        className="
+                            inline-block
+                            w-5 h-5
+                            shrink-0
+                            bg-current
+                            mask-no-repeat
+                            mask-center
+                            mask-contain
+                        "
+                        style={{
+                            maskImage: `url("${Icon}")`,
+                            WebkitMaskImage: `url("${Icon}")`,
+                        }}
+                    />}
                     {a}
             </div> 
         <br />

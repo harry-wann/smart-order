@@ -67,8 +67,8 @@ const ProductImg = ({
             <div className={`
                     grid grid-rows-5
                     gap-card-gap
-                    border border-dashed border-ink-900
-                    bg-line
+                    border border-dashed border-line-strong
+                    bg-surface-2
                     rounded-card
                     p-page
                     m-card-gap
