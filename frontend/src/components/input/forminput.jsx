@@ -1,11 +1,10 @@
 import { useRef, useState } from "react";
 
 function Input() {
-    // =========================
+  
     // 一般輸入框資料
-    // =========================
     const [name, setName] = useState("陳小美");
-   const [phone, setPhone] = useState("");
+   const [phone, setPhone] = useState("0912-345-678");
 
 const handlePhone = (e) => {
     // 取得輸入的內容，並把 - 拿掉
@@ -43,27 +42,6 @@ const handlePhone = (e) => {
                 輸入框
             ===================== */}
             <div className="p-2">
-
-                <p className="mb-4 text-sm text-[#8c8177]">
-                    輸入框
-                </p>
-
-
-                {/* 手機號碼 placeholder */}
-                <input
-                    type="tel"
-                    placeholder="請輸入手機號碼"
-                    className="
-                        h-12 w-full
-                        rounded-lg
-                        border border-[#E6DED2]
-                        px-3
-                        text-sm
-                        outline-none
-                        placeholder:text-[#9C8E84]
-                        focus:border-[#D74432]
-                    "
-                />
 
                 <p className="mb-3 mt-1 text-xs text-[#9C8E84]">
                     空 placeholder 用 ph-text

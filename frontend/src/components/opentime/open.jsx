@@ -1,9 +1,8 @@
 import { useState } from "react";
 
 function Open() {
-    // true = 開
-    // false = 關
-    // 預設為「開」
+
+    // true = 開；false = 關；預設為「開」
     const [isOn, setIsOn] = useState(true);
 
     // 預設選擇 18:00
@@ -34,10 +33,9 @@ function Open() {
                     <button
                         type="button"
                         onClick={() => setIsOn(false)}
-                        className={`h-7 w-12 rounded-full ${!isOn
-                                ? "bg-success"
-                                : "bg-[#E6DED2]"
-                            }`}
+                        className={`h-7 w-12 rounded-full 
+                          ${!isOn ? "bg-success" : "bg-[#E6DED2]"
+                          }`}
                     />
 
                     <p className="mt-2 text-xs text-gray-500">
@@ -47,12 +45,9 @@ function Open() {
 
                 {/* 開 */}
                 <div>
-                    <button
-                        type="button"
-                        onClick={() => setIsOn(true)}
-                        className={`h-7 w-12 rounded-full ${isOn
-                                ? "bg-success"
-                                : "bg-[#E6DED2]"
+                    <button type="button" onClick={() => setIsOn(true)}
+                        className={`h-7 w-12 rounded-full 
+                          ${isOn ? "bg-success" : "bg-[#E6DED2]"
                             }`}
                     />
 
@@ -60,9 +55,7 @@ function Open() {
                         開 .on
                     </p>
                 </div>
-
             </div>
-
 
             {/* =====================
                 時段
