@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { Trash2, Plus, Minus } from "lucide-react";
+import minus from "../../assets/minus.svg";
+import plus from "../../assets/plus.svg";
+import redplus from "../../assets/redplus.svg";
+import redtrash from "../../assets/redtrash.svg";
+import noplus from "../../assets/noplus.svg";
 
 export default function Counter({
   size = "small",
@@ -29,10 +33,8 @@ export default function Counter({
     setCount(0);
   };
 
-  // =========================
   // 數量 = 0
   // 顯示紅色圓形 +
-  // =========================
   if (count === 0) {
     return (
       <button
@@ -40,19 +42,15 @@ export default function Counter({
         className="
           flex h-7 w-7
           items-center justify-center
-          rounded-full
-          bg-red-btn
-          text-white
         "
       >
-        <Plus size={22} />
+        <img src={redplus} />
       </button>
     );
   }
 
-  // =========================
-  // Large：186 × 58
-  // =========================
+  // Large：186 × 58 (開桌填人數)
+
   if (size === "large") {
     return (
       <div
@@ -64,28 +62,23 @@ export default function Counter({
           bg-white
         "
       >
+
         {/* 左邊 */}
         {count === 1 ? (
-          <button
-            onClick={remove}
+          <button onClick={remove}
             className="
               flex h-14 w-14
               shrink-0 items-center justify-center
-              text-red-btn
-            "
-          >
-            <Trash2 size={24} />
+            " >
+            <img src={redtrash} />
           </button>
         ) : (
-          <button
-            onClick={decrement}
+          <button onClick={decrement}
             className="
               flex h-14 w-14
               shrink-0 items-center justify-center
-              text-red-btn
-            "
-          >
-            <Minus size={24} />
+            ">
+            <img src={minus} />
           </button>
         )}
 
@@ -95,26 +88,20 @@ export default function Counter({
         </span>
 
         {/* 加號 */}
-        <button
-          onClick={increment}
+        <button onClick={increment}
           disabled={count >= MAX_COUNT}
           className="
             flex h-14 w-14
             shrink-0 items-center justify-center
-            text-red-btn
             disabled:cursor-not-allowed
-            disabled:text-gray-400
-          "
-        >
-          <Plus size={24} />
+          " >
+          <img src={count >= MAX_COUNT ? noplus : plus} />
         </button>
       </div>
     );
   }
 
-  // =========================
-  // Small：102 × 30
-  // =========================
+  // Small：102 × 30 (一般)
   return (
     <div
       className="
@@ -127,26 +114,16 @@ export default function Counter({
     >
       {/* 左邊 */}
       {count === 1 ? (
-        <button
-          onClick={remove}
-          className="
-            flex h-7 w-7
-            shrink-0 items-center justify-center
-            text-red-btn
-          "
-        >
-          <Trash2 size={18} />
+        <button onClick={remove} className="
+              flex h-7.5 w-7.5
+              shrink-0 items-center justify-center">
+          <img src={redtrash} />
         </button>
       ) : (
-        <button
-          onClick={decrement}
-          className="
-            flex h-7 w-7
-            shrink-0 items-center justify-center
-            text-red-btn
-          "
-        >
-          <Minus size={18} />
+        <button onClick={decrement} className="
+              flex h-7.5 w-7.5
+              shrink-0 items-center justify-center">
+          <img src={minus} />
         </button>
       )}
 
@@ -156,18 +133,13 @@ export default function Counter({
       </span>
 
       {/* 加號 */}
-      <button
-        onClick={increment}
-        disabled={count >= MAX_COUNT}
-        className="
-          flex h-7 w-7
-          shrink-0 items-center justify-center
-          text-red-btn
-          disabled:cursor-not-allowed
-          disabled:text-gray-400
-        "
-      >
-        <Plus size={18} />
+      <button onClick={increment}
+        disabled={count >= MAX_COUNT} className="
+            flex h-7.5 w-7.5
+            shrink-0 items-center justify-center
+            disabled:cursor-not-allowed
+          " >
+        <img src={count >= MAX_COUNT ? noplus : plus} />
       </button>
     </div>
   );
