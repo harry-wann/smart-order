@@ -50,6 +50,13 @@ export default function DS02() {
           ]}
         />
         <SMButton text={["純文字1", "純文字2"]} />
+        <SMButton
+          text="開始點餐"
+          disabled={true}
+          onClick={() => {
+            console.log("TEST");
+          }}
+        />
       </div>
     </DemoPage>
   );

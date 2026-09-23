@@ -4,9 +4,14 @@ export default function SMButton({
   type = "default",
   ...props
 }) {
-  const justifyClass = text?.length > 1 ? "justify-between" : "justify-center";
+  const justifyClass =
+    Array.isArray(text) && text.length > 1
+      ? "justify-between"
+      : "justify-center";
   const contentClass =
-    content?.length > 1 ? "justify-between" : "justify-center";
+    Array.isArray(content) && content.length > 1
+      ? "justify-between"
+      : "justify-center";
 
   const themeClass = {
     danger:
