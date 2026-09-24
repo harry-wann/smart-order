@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="用 Northwind 商品資源理解各種 HTTP 方法，尤其是 PUT 與 PATCH 的不同。">
+  <title>RESTful API：先定義合約，再寫方法｜Northwind Spring Boot 教室</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要內容</a>
+<main id="main" class="site-shell">
+<a class="breadcrumb" href="index.html">← 回到學習地圖</a>
+<header class="lesson-header">
+<p class="eyebrow">單元 06 · NORTHWIND LAB</p>
+<h1>RESTful API：先定義合約，再寫方法</h1>
+<p class="hero-text">用 Northwind 商品資源理解各種 HTTP 方法，尤其是 PUT 與 PATCH 的不同。</p>
+<div class="meta"><span>Spring Boot 4 主線</span><span>有差異再看 Boot 3</span><span>5 個閱讀步驟</span></div>
+</header>
+<aside class="learning-goal" aria-label="閱讀準備">
+<p><strong>先備觀念：</strong>已看懂單元 05：GET 請求如何經過 Controller、Service、Repository，再回傳一筆 JSON。</p>
+<p><strong>讀完能做到：</strong>能替查詢、新增、完整替換、部分修改與刪除，選擇方法、路徑和回應狀態。</p>
+</aside>
+<nav class="lesson-toc" aria-label="本頁目錄">
+<strong>本頁閱讀路線</strong>
+<ol><li><a href="#step-1">01 · 資源與方法一起讀</a></li>
+<li><a href="#step-2">02 · PUT 與 PATCH 不要只換註解</a></li>
+<li><a href="#step-3">03 · 冪等：同一請求重送會怎樣？</a></li>
+<li><a href="#step-4">04 · 成功以外，也要約定錯誤</a></li>
+<li><a href="#step-5">05 · HEAD 與 OPTIONS 也給例子</a></li>
+<li><a href="#step-6">延伸閱讀</a></li></ol>
+</nav>
+<article class="lesson">
+<section id="step-1"><h2>01 · 資源與方法一起讀</h2><p>上一頁只有「查固定商品」一條路徑。現在想新增商品、改價格、刪商品，先約定呼叫方式，再動手寫方法；這份約定就是 API 合約。</p><p>資源（Resource）是我們要操作的對象，例如商品；<code>/api/products/1</code> 指向編號 1 的商品。端點（Endpoint）在這裡指「HTTP 方法＋路徑」這個可呼叫的入口，例如 GET /api/products/1。</p><p>請求（Request）是呼叫端送來的要求；回應（Response）是伺服器的答覆。標頭（Header）放格式等資訊，本文（Body）放商品等資料，狀態碼（Status code）用數字告訴你結果。200 是成功、201 是建立完成、204 是成功但沒有本文。Location 是回應標頭，指出新增商品的位置。</p><p>REST 是 Representational State Transfer（表述性狀態轉移），是一種架構風格；RESTful 表示採用這種風格。API 是 Application Programming Interface（應用程式介面）。HTTP 是 Hypertext Transfer Protocol（超文字傳輸協定）。</p><p>本課採用業界常見、以資源與 HTTP 語意設計的 JSON API；JSON 是 JavaScript Object Notation（JavaScript 物件表示法）。只有 CRUD 並不代表滿足 REST 的全部架構限制。CRUD 是 Create、Read、Update、Delete（新增、讀取、更新、刪除）。</p><div class="table-wrap" tabindex="0"><table><thead><tr><th scope="col">方法與路徑</th><th scope="col">用途</th><th scope="col">成功回應</th></tr></thead><tbody><tr><td>GET /api/products?page=0&amp;size=10</td><td>查清單</td><td>200 + 分頁資料</td></tr><tr><td>GET /api/products/1</td><td>查單筆</td><td>200 + 商品</td></tr><tr><td>POST /api/products</td><td>新增商品</td><td>201 + 商品 + Location 標頭</td></tr><tr><td>PUT /api/products/1</td><td>替換 API 公開的全部可寫欄位</td><td>200 + 更新結果</td></tr><tr><td>PATCH /api/products/1</td><td>部分更新；本課只改單價</td><td>200 + 更新結果</td></tr><tr><td>DELETE /api/products/1</td><td>刪除未被訂單引用的商品</td><td>204，沒有內容</td></tr></tbody></table></div></section>
+<section id="step-2"><h2>02 · PUT 與 PATCH 不要只換註解</h2><figure class="code-block"><figcaption>PUT /api/products/{id} · 必須提供這五個可寫欄位</figcaption><pre tabindex="0"><code class="language-json"><span class="p">{</span>
+<span class="w">  </span><span class="nt">"productName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Training Tea"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"unitPrice"</span><span class="p">:</span><span class="w"> </span><span class="mf">25.0000</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"unitsInStock"</span><span class="p">:</span><span class="w"> </span><span class="mi">12</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"discontinued"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"categoryId"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
+<span class="p">}</span></code></pre></figure><figure class="code-block"><figcaption>PATCH /api/products/{id} · 本課的特定部分更新合約</figcaption><pre tabindex="0"><code class="language-json"><span class="p">{</span><span class="w"> </span><span class="nt">"unitPrice"</span><span class="p">:</span><span class="w"> </span><span class="mf">26.0000</span><span class="w"> </span><span class="p">}</span></code></pre></figure><p>這個 PATCH 只接受 unitPrice，而且不得為 null。這是自訂的 application/json 部分更新，不是 JSON Patch 標準操作陣列，也不是通用的 JSON Merge Patch。其他欄位會拒絕，避免讓人以為已更新。</p><p>PUT 的「完整」以此 API 公開的可寫資源表示為準，不表示重寫資料庫裡所有欄位。本課不公開 SupplierID 等欄位，更新時會保留它們。</p></section>
+<section id="step-3"><h2>03 · 冪等：同一請求重送會怎樣？</h2><p>Idempotent（冪等）是指重送同一請求，預期最終狀態相同。GET 不改資料；PUT 把資料設成指定值；DELETE 刪除指定資源，因此這些方法有冪等語意。第二次 DELETE 可以回 404，仍不違反冪等。</p><p>POST 重送可能新增兩筆；不要因網路逾時就無限制重試下單。PATCH 是否冪等取決於操作：設單價為 26 是冪等，每次加 1 則不是。</p></section>
+<section id="step-4"><h2>04 · 成功以外，也要約定錯誤</h2><div class="table-wrap" tabindex="0"><table><thead><tr><th scope="col">狀態碼</th><th scope="col">情境</th></tr></thead><tbody><tr><td>400 Bad Request</td><td>名稱空白、負價格、無效 JSON 或頁數</td></tr><tr><td>401 Unauthorized</td><td>缺少有效身分憑證</td></tr><tr><td>403 Forbidden</td><td>已識別身分，但權限不足；也可能是 CSRF 檢查失敗</td></tr><tr><td>404 Not Found</td><td>商品不存在</td></tr><tr><td>409 Conflict</td><td>商品被訂單明細引用，無法刪除</td></tr><tr><td>500 Internal Server Error</td><td>非預期的伺服器錯誤</td></tr></tbody></table></div><p>Location 是新增後資源位置的回應標頭。Content-Type 說明傳送的資料格式。CSRF 是 Cross-Site Request Forgery（跨站請求偽造），安全單元會解釋。</p></section>
+<section id="step-5"><h2>05 · HEAD 與 OPTIONS 也給例子</h2><p>這裡先閱讀命令，不需現在執行；對應的伺服器會在單元 10 建立。curl 是傳送網路請求的命令列工具：<code>-I</code> 發出 HEAD，<code>-i</code> 顯示回應標頭，<code>-X</code> 指定方法。</p><figure class="code-block"><figcaption>讀取標頭／查可用方法</figcaption><pre tabindex="0"><code class="language-bash">curl<span class="w"> </span>-I<span class="w"> </span>http://localhost:8080/api/products/1
+curl<span class="w"> </span>-i<span class="w"> </span>-X<span class="w"> </span>OPTIONS<span class="w"> </span>http://localhost:8080/api/products/1</code></pre></figure><p>HEAD 類似 GET，但回應不帶本文。OPTIONS 可用 Allow 標頭表示允許的方法；Spring MVC 可以自動處理。CORS 是 Cross-Origin Resource Sharing（跨來源資源共用）；瀏覽器的跨來源預檢還需要對應 CORS 設定，不是有 OPTIONS 就算完成。</p><p>TRACE 與 CONNECT 分別用於診斷與通道建立，不是商品 CRUD 的實作項目。「完整範例」在最後單元涵蓋上述六個業務端點，以及 HEAD／OPTIONS 操作。</p></section>
+<section id="step-6"><h2>延伸閱讀</h2><p><a href="https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-requestmapping.html">Spring MVC：HTTP HEAD 與 OPTIONS</a></p></section>
+</article>
+<nav class="page-nav" aria-label="單元導覽">
+<a href="unit-05-spring-mvc.html">← 單元 05 · 先走通一個請求，再學三層分工</a>
+<a href="unit-07-jpa.html">單元 07 · JPA 與 JPQL：用 Northwind 學資料查詢 →</a>
+</nav>
+</main>
+<footer class="site-footer">Northwind Spring Boot 教室 · Boot 4.1.1 / Java 21<br>程式碼為教學範例，由你逐步操作。版本查核：2026-09-22；閱讀順序修訂：2026-09-23。</footer>
+</body>
+</html>

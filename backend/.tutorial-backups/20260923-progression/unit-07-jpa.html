@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="以 Northwind 練習 Spring Boot 4，從 Servlet 基礎走向 Java 後端工作。">
+  <title>JPA 與 JPQL：用 Northwind 學資料查詢｜Northwind Spring Boot 教室</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要內容</a>
+<main id="main" class="site-shell">
+<a class="breadcrumb" href="index.html">← 回到學習地圖</a>
+<header class="lesson-header">
+<p class="eyebrow">單元 07 · NORTHWIND LAB</p>
+<h1>JPA 與 JPQL：用 Northwind 學資料查詢</h1>
+<p class="hero-text">先對上真正的表格與欄位，再比較方法名稱查詢、JPQL 與原生 SQL。</p>
+<div class="meta"><span>Spring Boot 4 主線</span><span>有差異再看 Boot 3</span><span>9 個閱讀步驟</span></div>
+</header>
+<nav class="lesson-toc" aria-label="本頁目錄">
+<strong>本頁閱讀路線</strong>
+<ol><li><a href="#step-1">01 · 固定 Northwind 版本，才不會查錯表</a></li>
+<li><a href="#step-2">02 · JPA、Hibernate、Spring Data 分別做什麼</a></li>
+<li><a href="#step-3">03 · 先把表格對上 Java</a></li>
+<li><a href="#step-4">04 · 最短的方法名稱查詢</a></li>
+<li><a href="#step-5">05 · 同一需求：SQL 對照 JPQL</a></li>
+<li><a href="#step-6">06 · 篩選、關聯與統計</a></li>
+<li><a href="#step-7">07 · 實際把 JPQL 跑起來</a></li>
+<li><a href="#step-8">08 · 原生 SQL：查 Northwind 訂單總額</a></li>
+<li><a href="#step-9">09 · 新增、更新與刪除</a></li>
+<li><a href="#step-10">練習與來源</a></li></ol>
+</nav>
+<article class="lesson">
+<section id="step-1"><h2>01 · 固定 Northwind 版本，才不會查錯表</h2><p>本教材使用 Microsoft SQL Server 經典 Northwind。它模擬食品貿易公司的客戶、商品與訂單。不同移植版可能叫 products 或 order_details；這裡固定使用 dbo.Products 與 dbo.[Order Details]。dbo 是 SQL Server 的資料表命名空間，稱為 Schema（結構描述）。</p><div class="table-wrap" tabindex="0"><table><thead><tr><th scope="col">資料表</th><th scope="col">用途／關係</th></tr></thead><tbody><tr><td>Categories</td><td>商品分類；CategoryID 是主鍵</td></tr><tr><td>Products</td><td>商品；ProductID 是主鍵，CategoryID 參考分類</td></tr><tr><td>Customers</td><td>客戶；CustomerID 是文字，例如 ALFKI</td></tr><tr><td>Orders</td><td>訂單；CustomerID 參考客戶</td></tr><tr><td>[Order Details]</td><td>訂單明細；OrderID + ProductID 組成複合主鍵</td></tr></tbody></table></div><p>主鍵（Primary Key）用來辨認每一筆資料；外鍵（Foreign Key）讓資料參考另一張表；複合主鍵就是用多個欄位共同辨認。Products 與 Orders 透過訂單明細連接。</p><aside class="note">後面的新增／更新範例只在你自己準備的練習副本執行。官方安裝腳本含重建物件的動作，不要直接套到正在使用的資料庫。</aside></section>
+<section id="step-2"><h2>02 · JPA、Hibernate、Spring Data 分別做什麼</h2><div class="table-wrap" tabindex="0"><table><thead><tr><th scope="col">名稱</th><th scope="col">全名與用途</th></tr></thead><tbody><tr><td>JPA</td><td>歷史全名 Java Persistence API，現行規格稱 Jakarta Persistence；定義 Java 持久化標準。API 是 Application Programming Interface（應用程式介面）</td></tr><tr><td>Hibernate ORM</td><td>ORM 是 Object–Relational Mapping（物件關聯對映）；Hibernate 是 JPA 的一種實作</td></tr><tr><td>Spring Data JPA</td><td>在 JPA 上提供 Repository，減少重複資料存取程式</td></tr><tr><td>SQL</td><td>Structured Query Language（結構化查詢語言）；查資料表</td></tr><tr><td>JPQL</td><td>Jakarta Persistence Query Language（舊稱 Java Persistence Query Language）；查 Entity 與 Java 屬性</td></tr></tbody></table></div><p>所以「JPA 的 SQL」可能有兩種意思：JPQL，或 JPA 呼叫的原生 SQL。兩者都會教，但不可混用表名與實體名。</p></section>
+<section id="step-3"><h2>03 · 先把表格對上 Java</h2><figure class="code-block"><figcaption>Entity 對映片段 · 完整類別在實作 10A</figcaption><pre tabindex="0"><code class="language-java"><span class="nd">@Entity</span>
+<span class="nd">@Table</span><span class="p">(</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"Products"</span><span class="p">,</span><span class="w"> </span><span class="n">schema</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"dbo"</span><span class="p">)</span>
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">Product</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nd">@Id</span>
+<span class="w">    </span><span class="nd">@GeneratedValue</span><span class="p">(</span><span class="n">strategy</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">GenerationType</span><span class="p">.</span><span class="na">IDENTITY</span><span class="p">)</span>
+<span class="w">    </span><span class="nd">@Column</span><span class="p">(</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"ProductID"</span><span class="p">)</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">Integer</span><span class="w"> </span><span class="n">id</span><span class="p">;</span>
+
+<span class="w">    </span><span class="nd">@Column</span><span class="p">(</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"ProductName"</span><span class="p">,</span><span class="w"> </span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">40</span><span class="p">,</span><span class="w"> </span><span class="n">nullable</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span><span class="p">)</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">productName</span><span class="p">;</span>
+
+<span class="w">    </span><span class="nd">@Column</span><span class="p">(</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"UnitPrice"</span><span class="p">,</span><span class="w"> </span><span class="n">columnDefinition</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"money"</span><span class="p">)</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">BigDecimal</span><span class="w"> </span><span class="n">unitPrice</span><span class="p">;</span>
+
+<span class="w">    </span><span class="nd">@ManyToOne</span><span class="p">(</span><span class="n">fetch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">FetchType</span><span class="p">.</span><span class="na">LAZY</span><span class="p">)</span>
+<span class="w">    </span><span class="nd">@JoinColumn</span><span class="p">(</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"CategoryID"</span><span class="p">)</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">Category</span><span class="w"> </span><span class="n">category</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure><p>@Entity 宣告持久化實體；@Table 對應資料表；@Column 對應欄位；@Id 標示主鍵；IDENTITY 對應資料庫自動產生編號。@ManyToOne 表示多項商品可以屬於同一分類，@JoinColumn 指向外鍵欄位。LAZY 是延遲載入，用到分類時才可能查詢。</p><p>SQL 使用 Products／ProductName；JPQL 使用 Product／productName。屬性名稱大小寫要和 Java 一致。完整 Entity 還需要無參數建構子與讀取方法，這裡先專注映射。</p></section>
+<section id="step-4"><h2>04 · 最短的方法名稱查詢</h2><figure class="code-block"><figcaption>ProductRepository 內的宣告 · 省略 imports</figcaption><pre tabindex="0"><code class="language-java"><span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">ProductRepository</span>
+<span class="w">        </span><span class="kd">extends</span><span class="w"> </span><span class="n">JpaRepository</span><span class="o">&lt;</span><span class="n">Product</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="n">List</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">findByDiscontinuedFalseAndUnitPriceGreaterThanEqual</span><span class="p">(</span>
+<span class="w">        </span><span class="n">BigDecimal</span><span class="w"> </span><span class="n">minimum</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure><p>Spring Data 解析方法名稱：找出未停產、且價格大於等於 minimum 的商品。它不是 SQL 或 JPQL 字串；適合短條件。條件太長時改用 @Query，閱讀比較清楚。</p></section>
+<section id="step-5"><h2>05 · 同一需求：SQL 對照 JPQL</h2><figure class="code-block"><figcaption>SQL Server · 表名與欄位名</figcaption><pre tabindex="0"><code class="language-sql"><span class="k">SELECT</span><span class="w"> </span><span class="n">ProductID</span><span class="p">,</span><span class="w"> </span><span class="n">ProductName</span><span class="p">,</span><span class="w"> </span><span class="n">UnitPrice</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">dbo</span><span class="p">.</span><span class="n">Products</span>
+<span class="k">WHERE</span><span class="w"> </span><span class="n">Discontinued</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="k">AND</span><span class="w"> </span><span class="n">UnitPrice</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="mi">20</span>
+<span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">UnitPrice</span><span class="w"> </span><span class="k">DESC</span><span class="p">,</span><span class="w"> </span><span class="n">ProductID</span><span class="w"> </span><span class="k">ASC</span><span class="p">;</span></code></pre></figure><figure class="code-block"><figcaption>JPQL · 寫在 ProductRepository 內</figcaption><pre tabindex="0"><code class="language-java"><span class="nd">@Query</span><span class="p">(</span><span class="s">"""</span>
+<span class="s">    select p from Product p</span>
+<span class="s">    where p.discontinued = false and p.unitPrice &gt;= :minimum</span>
+<span class="s">    order by p.unitPrice desc, p.id asc</span>
+<span class="s">    """</span><span class="p">)</span>
+<span class="n">List</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">findAvailable</span><span class="p">(</span><span class="nd">@Param</span><span class="p">(</span><span class="s">"minimum"</span><span class="p">)</span><span class="w"> </span><span class="n">BigDecimal</span><span class="w"> </span><span class="n">minimum</span><span class="p">);</span></code></pre></figure><p>p 是別名；:minimum 是命名參數。使用 @Param 綁定值，不把使用者輸入直接拼接進查詢。SQL 的 bit 欄位以 0／1 表示；Java 的 Boolean 屬性用 false／true。select p 回傳完整 Product 物件，不是只回三個欄位。</p></section>
+<section id="step-6"><h2>06 · 篩選、關聯與統計</h2><figure class="code-block"><figcaption>JPQL · 每段是一個獨立查詢</figcaption><pre tabindex="0"><code class="language-sql"><span class="c1">-- 依名稱搜尋；呼叫端把 :pattern 綁成 %Tea%</span>
+<span class="k">select</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">Product</span><span class="w"> </span><span class="n">p</span>
+<span class="k">where</span><span class="w"> </span><span class="k">lower</span><span class="p">(</span><span class="n">p</span><span class="p">.</span><span class="n">productName</span><span class="p">)</span><span class="w"> </span><span class="k">like</span><span class="w"> </span><span class="k">lower</span><span class="p">(:</span><span class="n">pattern</span><span class="p">)</span>
+
+<span class="c1">-- 找沒有分類的商品；null 要用 is null，不能用 = null</span>
+<span class="k">select</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">Product</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">category</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">null</span>
+
+<span class="c1">-- 沿著已對映的關聯查分類</span>
+<span class="k">select</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">Product</span><span class="w"> </span><span class="n">p</span>
+<span class="k">join</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">category</span><span class="w"> </span><span class="k">c</span>
+<span class="k">where</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">categoryName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">:</span><span class="n">name</span>
+
+<span class="c1">-- 每個分類的商品數，至少兩項才顯示</span>
+<span class="k">select</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">categoryName</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="k">from</span><span class="w"> </span><span class="n">Product</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="k">join</span><span class="w"> </span><span class="n">p</span><span class="p">.</span><span class="n">category</span><span class="w"> </span><span class="k">c</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="k">c</span><span class="p">.</span><span class="n">categoryName</span>
+<span class="k">having</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="n">p</span><span class="p">)</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="p">:</span><span class="n">minimumCount</span></code></pre></figure><p>JOIN 是關聯查詢；GROUP BY 分組；HAVING 篩選分組結果。上述多欄位統計會回傳每列的值組合，可用 Object[] 接收，或改為 DTO 投影（Projection，只選需要的資料）。範例中的 -- 是教材說明；放入 JPQL 時只複製各段查詢本體。</p></section>
+<section id="step-7"><h2>07 · 實際把 JPQL 跑起來</h2><figure class="code-block"><figcaption>查詢類別 · 方法片段，EntityManager 由 Spring 注入</figcaption><pre tabindex="0"><code class="language-java"><span class="nd">@PersistenceContext</span>
+<span class="kd">private</span><span class="w"> </span><span class="n">EntityManager</span><span class="w"> </span><span class="n">em</span><span class="p">;</span>
+
+<span class="kd">public</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">search</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">keyword</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">em</span><span class="p">.</span><span class="na">createQuery</span><span class="p">(</span><span class="s">"""</span>
+<span class="s">            select p from Product p</span>
+<span class="s">            where lower(p.productName) like lower(:pattern)</span>
+<span class="s">            order by p.id</span>
+<span class="s">            """</span><span class="p">,</span><span class="w"> </span><span class="n">Product</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="na">setParameter</span><span class="p">(</span><span class="s">"pattern"</span><span class="p">,</span><span class="w"> </span><span class="s">"%"</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">keyword</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">"%"</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="na">setFirstResult</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="na">setMaxResults</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="na">getResultList</span><span class="p">();</span>
+<span class="p">}</span></code></pre></figure><p>EntityManager 是 JPA 管理實體與執行查詢的介面。Product.class 指定結果型別；setFirstResult 是略過筆數，setMaxResults 是上限。綁定參數能防止把輸入當 SQL 指令，但 % 和 _ 在 LIKE 中仍是萬用字元；如果要按字面搜尋它們，需另外跳脫。</p></section>
+<section id="step-8"><h2>08 · 原生 SQL：查 Northwind 訂單總額</h2><figure class="code-block"><figcaption>Spring Data Repository 內 · 使用真實表名</figcaption><pre tabindex="0"><code class="language-java"><span class="nd">@Query</span><span class="p">(</span><span class="n">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"""</span>
+<span class="s">    SELECT SUM(d.UnitPrice * d.Quantity * (1 - d.Discount))</span>
+<span class="s">    FROM dbo.[Order Details] d</span>
+<span class="s">    WHERE d.OrderID = :orderId</span>
+<span class="s">    """</span><span class="p">,</span><span class="w"> </span><span class="n">nativeQuery</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
+<span class="n">BigDecimal</span><span class="w"> </span><span class="nf">orderTotal</span><span class="p">(</span><span class="nd">@Param</span><span class="p">(</span><span class="s">"orderId"</span><span class="p">)</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">orderId</span><span class="p">);</span></code></pre></figure><p>nativeQuery = true 表示原生 SQL，不再是 JPQL。訂單金額要用明細的成交單價，不用 Products 的目前單價。Discount 是折扣比例，例如 0.1 代表九折。沒有明細時 SUM 可能回 null；正式計價還要明確定義貨幣與捨入規則。</p><p>這個示例可宣告在資料存取 Repository；若你想建立 OrderRepository，必須先補 Order 的 Entity。本課先放在自訂報表 Repository 或現有 JpaRepository 練習，不假設已存在 Order 類別。</p></section>
+<section id="step-9"><h2>09 · 新增、更新與刪除</h2><figure class="code-block"><figcaption>JPA · Service 交易內的三個獨立操作示例</figcaption><pre tabindex="0"><code class="language-java"><span class="c1">// 新增：標準 JPQL 沒有一般 INSERT VALUES</span>
+<span class="n">Product</span><span class="w"> </span><span class="n">product</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Product</span><span class="p">();</span>
+<span class="n">product</span><span class="p">.</span><span class="na">replace</span><span class="p">(</span><span class="s">"Training Tea"</span><span class="p">,</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">BigDecimal</span><span class="p">(</span><span class="s">"20.0000"</span><span class="p">),</span>
+<span class="w">                </span><span class="p">(</span><span class="kt">short</span><span class="p">)</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w"> </span><span class="n">category</span><span class="p">);</span>
+<span class="n">em</span><span class="p">.</span><span class="na">persist</span><span class="p">(</span><span class="n">product</span><span class="p">);</span>
+
+<span class="c1">// 更新：find 取得受管理物件，交易提交時同步修改</span>
+<span class="n">Product</span><span class="w"> </span><span class="n">existing</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">em</span><span class="p">.</span><span class="na">find</span><span class="p">(</span><span class="n">Product</span><span class="p">.</span><span class="na">class</span><span class="p">,</span><span class="w"> </span><span class="n">id</span><span class="p">);</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">existing</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="kc">null</span><span class="p">)</span><span class="w"> </span><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ProductNotFound</span><span class="p">(</span><span class="n">id</span><span class="p">);</span>
+<span class="n">existing</span><span class="p">.</span><span class="na">changePrice</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">BigDecimal</span><span class="p">(</span><span class="s">"21.0000"</span><span class="p">));</span>
+
+<span class="c1">// 刪除：必須先確認存在；有訂單引用時外鍵可能阻擋</span>
+<span class="n">em</span><span class="p">.</span><span class="na">remove</span><span class="p">(</span><span class="n">existing</span><span class="p">);</span></code></pre></figure><p>category 是已查到的 Category 物件；replace 與 changePrice 是我們自己寫的方法，完整定義在 10A。這三段分別展示操作，不代表你應連續新增、更新再刪除同一筆。</p><figure class="code-block"><figcaption>JPQL 批次更新 · Repository 方法</figcaption><pre tabindex="0"><code class="language-java"><span class="nd">@Modifying</span><span class="p">(</span><span class="n">flushAutomatically</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="n">clearAutomatically</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
+<span class="nd">@Query</span><span class="p">(</span><span class="s">"""</span>
+<span class="s">    update Product p set p.discontinued = true</span>
+<span class="s">    where p.id = :id</span>
+<span class="s">    """</span><span class="p">)</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">discontinue</span><span class="p">(</span><span class="nd">@Param</span><span class="p">(</span><span class="s">"id"</span><span class="p">)</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">);</span></code></pre></figure><p>批次更新由有 @Transactional 的 Service 呼叫。@Modifying 表示這不是查詢；回傳值是受影響筆數。批次語句直接改資料庫，不會逐一同步已載入的物件；flush 先送出待處理變更，clear 清除管理中的舊物件。一般單筆修改先用受管理實體方式，容易維護。</p><aside class="version-note"><strong>Boot 3 對照</strong><p>Boot 3 與 Boot 4 都用 jakarta.persistence.*。以上 JPQL 基礎語法與 Repository 方式相同；Hibernate 的實際版本交由各自 Boot 管理，不自行混搭。</p></aside></section>
+<section id="step-10"><h2>練習與來源</h2><div class="checkpoint"><strong>停一下，自己想想</strong><p>查詢出現 UnknownEntityException: Products，先看哪裡？</p><details><summary>看解釋</summary><p>如果寫的是 JPQL／HQL，FROM 應該是 Product 實體，不是 Products 資料表。原生 SQL 才用 dbo.Products。</p></details></div><p><a href="https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2">Jakarta Persistence 規格</a> · <a href="https://docs.spring.io/spring-data/jpa/reference/jpa/query-methods.html">Spring Data JPA 查詢方法</a> · <a href="https://github.com/microsoft/sql-server-samples/blob/master/samples/databases/northwind-pubs/instnwnd.sql">Microsoft Northwind 原始結構</a></p></section>
+</article>
+<nav class="page-nav" aria-label="單元導覽">
+<a href="unit-06-rest-api.html">← 單元 06</a>
+<a href="unit-07a-hibernate.html">下一頁 · 07A Hibernate：Java 物件如何真的寫進資料庫 →</a>
+</nav>
+</main>
+<footer class="site-footer">Northwind Spring Boot 教室 · Boot 4.1.1 / Java 21<br>程式碼為教學範例，由你逐步操作。版本查核：2026-09-22。</footer>
+</body>
+</html>

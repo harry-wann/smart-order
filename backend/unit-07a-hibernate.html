@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="理解受管理物件、交易與延遲載入，就能看懂「沒有呼叫 save，為什麼資料還是變了」。">
+  <title>Hibernate：Java 物件如何真的寫進資料庫｜Northwind Spring Boot 教室</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要內容</a>
+<main id="main" class="site-shell">
+<a class="breadcrumb" href="index.html">← 回到學習地圖</a>
+<header class="lesson-header">
+<p class="eyebrow">單元 07A · NORTHWIND LAB</p>
+<h1>Hibernate：Java 物件如何真的寫進資料庫</h1>
+<p class="hero-text">理解受管理物件、交易與延遲載入，就能看懂「沒有呼叫 save，為什麼資料還是變了」。</p>
+<div class="meta"><span>Spring Boot 4 主線</span><span>有差異再看 Boot 3</span><span>8 個閱讀步驟</span></div>
+</header>
+<aside class="learning-goal" aria-label="閱讀準備">
+<p><strong>先備觀念：</strong>完成 07，知道 Product／Category 的欄位、Repository 與 EntityManager 的角色。</p>
+<p><strong>讀完能做到：</strong>理解一次修改何時寫入資料庫，再閱讀新增、更新與刪除；能分清 Spring Bean 與資料實體。</p>
+</aside>
+<nav class="lesson-toc" aria-label="本頁目錄">
+<strong>本頁閱讀路線</strong>
+<ol><li><a href="#step-1">01 · 一次查詢經過哪些角色</a></li>
+<li><a href="#step-2">02 · 先定義交易，再看物件狀態</a></li>
+<li><a href="#step-3">03 · 物件的四種狀態</a></li>
+<li><a href="#step-4">04 · 沒有 save 的更新，為什麼成立？</a></li>
+<li><a href="#step-5">05 · 理解交易後，再看新增與刪除</a></li>
+<li><a href="#step-6">06 · @Transactional 的邊界</a></li>
+<li><a href="#step-7">07 · LAZY 與 N+1</a></li>
+<li><a href="#step-8">08 · 在 Service 轉成 DTO</a></li>
+<li><a href="#step-9">延伸閱讀</a></li></ol>
+</nav>
+<article class="lesson">
+<section id="step-1"><h2>01 · 一次查詢經過哪些角色</h2><p>Hibernate 是 ORM（Object–Relational Mapping，物件關聯對映）工具，也是 Jakarta Persistence 的實作。Spring Data JPA 的 Repository 通常透過 EntityManager，交給 Hibernate 產生 SQL，再由 JDBC（Java Database Connectivity，Java 資料庫連線介面）送到 SQL Server。</p><p>Spring Data JPA → EntityManager → Hibernate → JDBC → SQL Server。Repository 減少樣板程式；Hibernate 負責映射與追蹤物件，兩者不是同一層。</p><aside class="version-note"><strong>Boot 3 對照</strong><p>主線 Boot 4.1.1 管理 Hibernate 7.4.5.Final；Boot 3.5 為 Hibernate 6.6 系列。不要因為看到新版 Hibernate 就另外指定版本覆蓋 Boot。</p></aside></section>
+<section id="step-2"><h2>02 · 先定義交易，再看物件狀態</h2><p><strong>Transaction（交易）</strong>是一起成功或回復的一組資料操作。例如建立訂單和扣庫存，不能只成功其中一半。Commit（提交）表示完成這一組操作；Rollback（回滾）表示取消這組未完成的操作。</p><p>@Transactional 表示讓 Spring 在方法執行前後安排交易。這頁先假設由另一個 Spring 管理的物件呼叫這個公開方法；稍後才解釋這個前提為什麼重要。</p><p>EntityManager 管理目前載入的資料實體。Persistence Context（持久化上下文）就是它追蹤這些實體與變更的工作範圍，不是整個網站永久共享的資料。</p></section>
+<section id="step-3"><h2>03 · 物件的四種狀態</h2><p>以下四個詞只是在描述同一個商品物件目前與資料管理環境的關係。先讀例子，再記英文。</p><div class="table-wrap" tabindex="0"><table><thead><tr><th scope="col">狀態</th><th scope="col">Northwind 商品例子</th></tr></thead><tbody><tr><td>Transient（暫態）</td><td>new Product()，尚未交給持久化管理</td></tr><tr><td>Managed（受管理）</td><td>在目前持久化環境中查到或 persist 的 Product</td></tr><tr><td>Detached（脫離管理）</td><td>交易相關的管理環境結束或 clear 後留下的物件</td></tr><tr><td>Removed（標記移除）</td><td>呼叫 remove，等待刪除同步到資料庫</td></tr></tbody></table></div><p>Persistence Context（持久化上下文）是追蹤實體的工作範圍，不是整個網站的永久快取。Spring 常把它和一次 Service 交易配合使用。</p><aside class="note">Spring Bean 的「受容器管理」，與這裡 Product 的 Managed 狀態不同。服務物件可長期由 Spring 管理；商品實體是否受 JPA 管理，要看當下的持久化上下文。</aside></section>
+<section id="step-4"><h2>04 · 沒有 save 的更新，為什麼成立？</h2><p>先有交易、再查商品、最後改單價。下面直接使用前頁介紹的 EntityManager，省去還沒需要的 Optional 和 Lambda 寫法。</p><figure class="code-block"><figcaption>Service 方法片段 · em 由 @PersistenceContext 提供</figcaption><pre tabindex="0"><code class="language-java"><span class="nd">@Transactional</span>
+<span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">changePrice</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">BigDecimal</span><span class="w"> </span><span class="n">price</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">Product</span><span class="w"> </span><span class="n">product</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">em</span><span class="p">.</span><span class="na">find</span><span class="p">(</span><span class="n">Product</span><span class="p">.</span><span class="na">class</span><span class="p">,</span><span class="w"> </span><span class="n">id</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">product</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="kc">null</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">IllegalArgumentException</span><span class="p">(</span><span class="s">"商品不存在"</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="n">product</span><span class="p">.</span><span class="na">changePrice</span><span class="p">(</span><span class="n">price</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure><p>em.find 的第一個參數是實體型別，第二個是主鍵值；找不到回 null。本例先用普通 Java 例外表達找不到，單元 08 才把它接到 HTTP 錯誤回應。changePrice 是前頁 Product 完整類別裡的修改方法。</p><p>Dirty Checking（變更檢查，常譯髒資料檢查）是 Hibernate 追蹤受管理物件的修改。方法在有效交易中取得 managed 的 Product，改單價後，交易提交前會同步到資料庫，不必再次呼叫 save。</p><p>Flush（同步）是把待處理修改送往資料庫，但尚不等於 Commit；之後仍可能回滾。若物件已脫離管理，單純改欄位不會自動寫回。</p></section>
+<section id="step-5"><h2>05 · 理解交易後，再看新增與刪除</h2><p>使用前頁 Product 的 replace、changePrice 方法。category 是用 em.find(Category.class, 分類編號) 查到、並已確認不為 null 的分類。下列操作各自位於自己的交易方法中，不是依序對同一筆資料全做一次。</p><figure class="code-block"><figcaption>三個獨立操作 · 先各看一段</figcaption><pre tabindex="0"><code class="language-java"><span class="c1">// 新增：建立物件，設定資料，再交給 JPA 保存</span>
+<span class="n">Product</span><span class="w"> </span><span class="n">product</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Product</span><span class="p">();</span>
+<span class="n">product</span><span class="p">.</span><span class="na">replace</span><span class="p">(</span><span class="s">"Training Tea"</span><span class="p">,</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">BigDecimal</span><span class="p">(</span><span class="s">"20.0000"</span><span class="p">),</span><span class="w"> </span><span class="p">(</span><span class="kt">short</span><span class="p">)</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w"> </span><span class="n">category</span><span class="p">);</span>
+<span class="n">em</span><span class="p">.</span><span class="na">persist</span><span class="p">(</span><span class="n">product</span><span class="p">);</span>
+
+<span class="c1">// 更新：先取得受管理物件</span>
+<span class="n">Product</span><span class="w"> </span><span class="n">existing</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">em</span><span class="p">.</span><span class="na">find</span><span class="p">(</span><span class="n">Product</span><span class="p">.</span><span class="na">class</span><span class="p">,</span><span class="w"> </span><span class="n">id</span><span class="p">);</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">existing</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="kc">null</span><span class="p">)</span><span class="w"> </span><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">IllegalArgumentException</span><span class="p">(</span><span class="s">"商品不存在"</span><span class="p">);</span>
+<span class="n">existing</span><span class="p">.</span><span class="na">changePrice</span><span class="p">(</span><span class="k">new</span><span class="w"> </span><span class="n">BigDecimal</span><span class="p">(</span><span class="s">"21.0000"</span><span class="p">));</span>
+
+<span class="c1">// 刪除：先找出受管理物件，確認存在，才要求移除</span>
+<span class="n">Product</span><span class="w"> </span><span class="n">target</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">em</span><span class="p">.</span><span class="na">find</span><span class="p">(</span><span class="n">Product</span><span class="p">.</span><span class="na">class</span><span class="p">,</span><span class="w"> </span><span class="n">id</span><span class="p">);</span>
+<span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">target</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="kc">null</span><span class="p">)</span><span class="w"> </span><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">IllegalArgumentException</span><span class="p">(</span><span class="s">"商品不存在"</span><span class="p">);</span>
+<span class="n">em</span><span class="p">.</span><span class="na">remove</span><span class="p">(</span><span class="n">target</span><span class="p">);</span></code></pre></figure><p>persist 是要求保存新實體；remove 是要求刪除受管理實體。兩者仍受交易與資料庫限制約束，例如被訂單引用的商品可能不能刪除。標準 JPQL 沒有一般 INSERT VALUES，新增通常走物件保存。</p><details class="optional-reading"><summary>選讀：很多商品一起更新時，才考慮批次語句</summary><figure class="code-block"><figcaption>Repository 方法 · 由 @Transactional Service 呼叫</figcaption><pre tabindex="0"><code class="language-java"><span class="nd">@Modifying</span><span class="p">(</span><span class="n">flushAutomatically</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="n">clearAutomatically</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
+<span class="nd">@Query</span><span class="p">(</span><span class="s">"update Product p set p.discontinued = true where p.id = :id"</span><span class="p">)</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">discontinue</span><span class="p">(</span><span class="nd">@Param</span><span class="p">(</span><span class="s">"id"</span><span class="p">)</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">);</span></code></pre></figure><p>@Modifying 表示這是異動而非查詢；回傳值是影響筆數。批次語句直接改資料庫，不會逐一改好已載入的物件，因此範例先 flush 待處理修改，再 clear（清除持久化上下文）以避免繼續使用舊狀態。單筆修改先採上一節的 managed 物件方式即可。</p></details></section>
+<section id="step-6"><h2>06 · @Transactional 的邊界</h2><p>交易讓一組資料異動共同成功或回復。交易通常放在公開的 Service 方法上，由另一個 Spring Bean 呼叫。Spring 透過 Proxy（代理物件，包住原物件並補上交易行為）攔截方法。</p><figure class="code-block"><figcaption>常見誤會 · 概念片段</figcaption><pre tabindex="0"><code class="language-java"><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">outer</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="na">updatePrice</span><span class="p">();</span><span class="w"> </span><span class="c1">// 同一物件內呼叫，通常不經過 Spring 代理</span>
+<span class="p">}</span>
+
+<span class="nd">@Transactional</span>
+<span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">updatePrice</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// 不可因為標了註解，就假設一定新開交易</span>
+<span class="p">}</span></code></pre></figure><p>在預設代理模式下，若 outer 本來沒有交易，這樣的內部呼叫不會靠註解啟動交易。讓外部呼叫帶 @Transactional 的公開 Service 方法更清楚。預設對 RuntimeException 與 Error 回滾；受檢例外的回滾需求要另外設定。</p></section>
+<section id="step-7"><h2>07 · LAZY 與 N+1</h2><p>LAZY（延遲載入）表示關聯資料可以等到存取時才查。如果先查一批 N 個商品，再逐筆讀分類，可能額外發生多次查詢，稱為 N+1 問題。同一分類可能被快取重用，因此實際筆數要看紀錄。</p><figure class="code-block"><figcaption>需要分類名稱時，一次查商品與分類</figcaption><pre tabindex="0"><code class="language-java"><span class="nd">@Query</span><span class="p">(</span><span class="s">"""</span>
+<span class="s">    select p from Product p</span>
+<span class="s">    left join fetch p.category</span>
+<span class="s">    order by p.id</span>
+<span class="s">    """</span><span class="p">)</span>
+<span class="n">List</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">findWithCategory</span><span class="p">();</span></code></pre></figure><p>FETCH JOIN（擷取關聯的連接）讓關聯一起載入；left 保留沒有分類的商品。不要因此把所有關聯改為 EAGER（立即載入）。一對多集合的 fetch join 搭配分頁容易放大列數，應另行設計；本例只示範多對一分類。</p></section>
+<section id="step-8"><h2>08 · 在 Service 轉成 DTO</h2><figure class="code-block"><figcaption>application.properties · 本課設定</figcaption><pre tabindex="0"><code class="language-properties"><span class="na">spring.jpa.open-in-view</span><span class="o">=</span><span class="s">false</span>
+<span class="na">spring.jpa.hibernate.ddl-auto</span><span class="o">=</span><span class="s">none</span>
+<span class="na">logging.level.org.hibernate.SQL</span><span class="o">=</span><span class="s">DEBUG</span></code></pre></figure><p>open-in-view=false 讓網頁層不依賴持久化環境繼續查資料；在交易內把需要欄位轉成 DTO（Data Transfer Object，資料傳輸物件）。否則關閉環境後再讀 LAZY 關聯，可能發生 LazyInitializationException（延遲載入環境已不可用）。</p><p>DDL 是 Data Definition Language（資料定義語言），用來改表格結構。Northwind 已有表格，none 表示不讓 Hibernate 自動建／改表；不是免除映射檢查。正式團隊用版本化的資料庫變更腳本。SQL 日誌適合本機觀察，避免把敏感參數寫進正式紀錄。</p><div class="checkpoint"><strong>停一下，自己想想</strong><p>用 changePrice 後資料沒更新，先檢查什麼？</p><details><summary>看解釋</summary><p>確認物件是否仍是 managed、交易方法是否經 Spring 代理呼叫、是否成功提交，以及是不是在另一個環境查看資料。</p></details></div></section>
+<section id="step-9"><h2>延伸閱讀</h2><p><a href="https://docs.hibernate.org/orm/7.4/userguide/html_single/">Hibernate 7.4 使用手冊</a> · <a href="https://docs.spring.io/spring-boot/appendix/dependency-versions/coordinates.html">Boot 管理的依賴版本</a></p></section>
+</article>
+<nav class="page-nav" aria-label="單元導覽">
+<a href="unit-07-jpa.html">← 單元 07 · JPA 與 JPQL：用 Northwind 學資料查詢</a>
+<a href="unit-07b-hql.html">單元 07B · HQL：從商品篩選到分組與批次修改 →</a>
+</nav>
+</main>
+<footer class="site-footer">Northwind Spring Boot 教室 · Boot 4.1.1 / Java 21<br>程式碼為教學範例，由你逐步操作。版本查核：2026-09-22；閱讀順序修訂：2026-09-23。</footer>
+</body>
+</html>
