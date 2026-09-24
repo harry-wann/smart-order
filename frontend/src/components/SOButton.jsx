@@ -1,4 +1,4 @@
-export default function SMButton({ text = null, content = null, type = 'default', ...props }) {
+export default function SOButton({ text = null, content = null, type = 'default', ...props }) {
   const justifyClass = Array.isArray(text) && text.length > 1 ? 'justify-between' : 'justify-center'
   const contentClass =
     Array.isArray(content) && content.length > 1 ? 'justify-between' : 'justify-center'
