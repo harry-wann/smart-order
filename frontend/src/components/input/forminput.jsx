@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-function FormInput() {
+function FormInput({ content }) {
   // 一般輸入框資料
   const [name, setName] = useState('陳小美')
   const [phone, setPhone] = useState('0912-345-678')
