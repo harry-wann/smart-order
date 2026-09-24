@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="以 Northwind 練習 Spring Boot 4，從 Servlet 基礎走向 Java 後端工作。">
+  <title>Hibernate：Java 物件如何真的寫進資料庫｜Northwind Spring Boot 教室</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要內容</a>
+<main id="main" class="site-shell">
+<a class="breadcrumb" href="index.html">← 回到學習地圖</a>
+<header class="lesson-header">
+<p class="eyebrow">單元 07A · NORTHWIND LAB</p>
+<h1>Hibernate：Java 物件如何真的寫進資料庫</h1>
+<p class="hero-text">理解受管理物件、交易與延遲載入，就能看懂「沒有呼叫 save，為什麼資料還是變了」。</p>
+<div class="meta"><span>Spring Boot 4 主線</span><span>有差異再看 Boot 3</span><span>6 個閱讀步驟</span></div>
+</header>
+<nav class="lesson-toc" aria-label="本頁目錄">
+<strong>本頁閱讀路線</strong>
+<ol><li><a href="#step-1">01 · 一次查詢經過哪些角色</a></li>
+<li><a href="#step-2">02 · 物件的四種狀態</a></li>
+<li><a href="#step-3">03 · 沒有 save 的更新，為什麼成立？</a></li>
+<li><a href="#step-4">04 · @Transactional 的邊界</a></li>
+<li><a href="#step-5">05 · LAZY 與 N+1</a></li>
+<li><a href="#step-6">06 · 在 Service 轉成 DTO</a></li>
+<li><a href="#step-7">延伸閱讀</a></li></ol>
+</nav>
+<article class="lesson">
+<section id="step-1"><h2>01 · 一次查詢經過哪些角色</h2><p>Hibernate 是 ORM（Object–Relational Mapping，物件關聯對映）工具，也是 Jakarta Persistence 的實作。Spring Data JPA 的 Repository 通常透過 EntityManager，交給 Hibernate 產生 SQL，再由 JDBC（Java Database Connectivity，Java 資料庫連線介面）送到 SQL Server。</p><p>Spring Data JPA → EntityManager → Hibernate → JDBC → SQL Server。Repository 減少樣板程式；Hibernate 負責映射與追蹤物件，兩者不是同一層。</p><aside class="version-note"><strong>Boot 3 對照</strong><p>主線 Boot 4.1.1 管理 Hibernate 7.4.5.Final；Boot 3.5 為 Hibernate 6.6 系列。不要因為看到新版 Hibernate 就另外指定版本覆蓋 Boot。</p></aside></section>
+<section id="step-2"><h2>02 · 物件的四種狀態</h2><div class="table-wrap" tabindex="0"><table><thead><tr><th scope="col">狀態</th><th scope="col">Northwind 商品例子</th></tr></thead><tbody><tr><td>Transient（暫態）</td><td>new Product()，尚未交給持久化管理</td></tr><tr><td>Managed（受管理）</td><td>在目前持久化環境中查到或 persist 的 Product</td></tr><tr><td>Detached（脫離管理）</td><td>交易相關的管理環境結束或 clear 後留下的物件</td></tr><tr><td>Removed（標記移除）</td><td>呼叫 remove，等待刪除同步到資料庫</td></tr></tbody></table></div><p>Persistence Context（持久化上下文）是追蹤實體的工作範圍，不是整個網站的永久快取。Spring 常把它和一次 Service 交易配合使用。</p></section>
+<section id="step-3"><h2>03 · 沒有 save 的更新，為什麼成立？</h2><figure class="code-block"><figcaption>ProductService 內 · products 是注入的 Repository</figcaption><pre tabindex="0"><code class="language-java"><span class="nd">@Transactional</span>
+<span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">changePrice</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">BigDecimal</span><span class="w"> </span><span class="n">price</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">Product</span><span class="w"> </span><span class="n">product</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">products</span><span class="p">.</span><span class="na">findById</span><span class="p">(</span><span class="n">id</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="na">orElseThrow</span><span class="p">(()</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ProductNotFound</span><span class="p">(</span><span class="n">id</span><span class="p">));</span>
+<span class="w">    </span><span class="n">product</span><span class="p">.</span><span class="na">changePrice</span><span class="p">(</span><span class="n">price</span><span class="p">);</span>
+<span class="w">    </span><span class="c1">// 沒有呼叫 save</span>
+<span class="p">}</span></code></pre></figure><p>Dirty Checking（髒資料檢查）是 Hibernate 比對受管理物件前後狀態，找出修改欄位的機制。交易同步時，改過的單價會轉成 UPDATE。</p><p>Flush（同步）把待處理變更送往資料庫；Commit（提交）才代表交易完成。flush 之後仍可能回滾，不等於已永久成功。離開管理環境後隨手改 detached 物件，不會自動更新資料庫。</p></section>
+<section id="step-4"><h2>04 · @Transactional 的邊界</h2><p>交易讓一組資料異動共同成功或回復。交易通常放在公開的 Service 方法上，由另一個 Spring Bean 呼叫。Spring 透過 Proxy（代理物件，包住原物件並補上交易行為）攔截方法。</p><figure class="code-block"><figcaption>常見誤會 · 概念片段</figcaption><pre tabindex="0"><code class="language-java"><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">outer</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="na">updatePrice</span><span class="p">();</span><span class="w"> </span><span class="c1">// 同一物件內呼叫，通常不經過 Spring 代理</span>
+<span class="p">}</span>
+
+<span class="nd">@Transactional</span>
+<span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">updatePrice</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// 不可因為標了註解，就假設一定新開交易</span>
+<span class="p">}</span></code></pre></figure><p>在預設代理模式下，若 outer 本來沒有交易，這樣的內部呼叫不會靠註解啟動交易。讓外部呼叫帶 @Transactional 的公開 Service 方法更清楚。預設對 RuntimeException 與 Error 回滾；受檢例外的回滾需求要另外設定。</p></section>
+<section id="step-5"><h2>05 · LAZY 與 N+1</h2><p>LAZY（延遲載入）表示關聯資料可以等到存取時才查。如果先查一批 N 個商品，再逐筆讀分類，可能額外發生多次查詢，稱為 N+1 問題。同一分類可能被快取重用，因此實際筆數要看紀錄。</p><figure class="code-block"><figcaption>需要分類名稱時，一次查商品與分類</figcaption><pre tabindex="0"><code class="language-java"><span class="nd">@Query</span><span class="p">(</span><span class="s">"""</span>
+<span class="s">    select p from Product p</span>
+<span class="s">    left join fetch p.category</span>
+<span class="s">    order by p.id</span>
+<span class="s">    """</span><span class="p">)</span>
+<span class="n">List</span><span class="o">&lt;</span><span class="n">Product</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">findWithCategory</span><span class="p">();</span></code></pre></figure><p>FETCH JOIN（擷取關聯的連接）讓關聯一起載入；left 保留沒有分類的商品。不要因此把所有關聯改為 EAGER（立即載入）。一對多集合的 fetch join 搭配分頁容易放大列數，應另行設計；本例只示範多對一分類。</p></section>
+<section id="step-6"><h2>06 · 在 Service 轉成 DTO</h2><figure class="code-block"><figcaption>application.properties · 本課設定</figcaption><pre tabindex="0"><code class="language-properties"><span class="na">spring.jpa.open-in-view</span><span class="o">=</span><span class="s">false</span>
+<span class="na">spring.jpa.hibernate.ddl-auto</span><span class="o">=</span><span class="s">none</span>
+<span class="na">logging.level.org.hibernate.SQL</span><span class="o">=</span><span class="s">DEBUG</span></code></pre></figure><p>open-in-view=false 讓網頁層不依賴持久化環境繼續查資料；在交易內把需要欄位轉成 DTO（Data Transfer Object，資料傳輸物件）。否則關閉環境後再讀 LAZY 關聯，可能發生 LazyInitializationException（延遲載入環境已不可用）。</p><p>DDL 是 Data Definition Language（資料定義語言），用來改表格結構。Northwind 已有表格，none 表示不讓 Hibernate 自動建／改表；不是免除映射檢查。正式團隊用版本化的資料庫變更腳本。SQL 日誌適合本機觀察，避免把敏感參數寫進正式紀錄。</p><div class="checkpoint"><strong>停一下，自己想想</strong><p>用 changePrice 後資料沒更新，先檢查什麼？</p><details><summary>看解釋</summary><p>確認物件是否仍是 managed、交易方法是否經 Spring 代理呼叫、是否成功提交，以及是不是在另一個環境查看資料。</p></details></div></section>
+<section id="step-7"><h2>延伸閱讀</h2><p><a href="https://docs.hibernate.org/orm/7.4/userguide/html_single/">Hibernate 7.4 使用手冊</a> · <a href="https://docs.spring.io/spring-boot/appendix/dependency-versions/coordinates.html">Boot 管理的依賴版本</a></p></section>
+</article>
+<nav class="page-nav" aria-label="單元導覽">
+<a href="unit-07-jpa.html">← 單元 07</a>
+<a href="unit-07b-hql.html">下一頁 · 07B HQL：從商品篩選到分組與批次修改 →</a>
+</nav>
+</main>
+<footer class="site-footer">Northwind Spring Boot 教室 · Boot 4.1.1 / Java 21<br>程式碼為教學範例，由你逐步操作。版本查核：2026-09-22。</footer>
+</body>
+</html>

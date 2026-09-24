@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="你親手建立一個可以讀寫 Northwind 的練習專案。這裡只提供教材與範例，不會替你建立或執行後端。">
+  <title>實際應用：Northwind 商品 RESTful API｜Northwind Spring Boot 教室</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要內容</a>
+<main id="main" class="site-shell">
+<a class="breadcrumb" href="index.html">← 回到學習地圖</a>
+<header class="lesson-header">
+<p class="eyebrow">單元 10 · NORTHWIND LAB</p>
+<h1>實際應用：Northwind 商品 RESTful API</h1>
+<p class="hero-text">你親手建立一個可以讀寫 Northwind 的練習專案。這裡只提供教材與範例，不會替你建立或執行後端。</p>
+<div class="meta"><span>Spring Boot 4 主線</span><span>有差異再看 Boot 3</span><span>5 個閱讀步驟</span></div>
+</header>
+<aside class="learning-goal" aria-label="閱讀準備">
+<p><strong>先備觀念：</strong>已讀過商品合約、JPA 查詢、Hibernate 交易與驗證；安全設定先只理解觀念。</p>
+<p><strong>讀完能做到：</strong>親手建立練習專案、設定套件與 Northwind 連線，再按照 10A～10D 組合完整功能。</p>
+</aside>
+<nav class="lesson-toc" aria-label="本頁目錄">
+<strong>本頁閱讀路線</strong>
+<ol><li><a href="#step-1">01 · 這次做到哪裡</a></li>
+<li><a href="#step-2">02 · VS Code 建立專案</a></li>
+<li><a href="#step-3">03 · 資料庫前置條件</a></li>
+<li><a href="#step-4">04 · 設定資料庫連線</a></li>
+<li><a href="#step-5">05 · 檔案地圖與下一步</a></li>
+<li><a href="#step-6">資料來源</a></li></ol>
+</nav>
+<article class="lesson">
+<section id="step-1"><h2>01 · 這次做到哪裡</h2><p>REST 是 Representational State Transfer（表述性狀態轉移）；API 是 Application Programming Interface（應用程式介面）。我們建立商品的新增、查詢、更新與刪除，涵蓋 GET、POST、PUT、PATCH、DELETE，另外驗證 HEAD／OPTIONS。</p><div class="table-wrap" tabindex="0"><table><thead><tr><th scope="col">小節</th><th scope="col">完成後你會得到</th></tr></thead><tbody><tr><td><a href="unit-10a-model.html">10A · 實體與資料合約</a></td><td>Product、Category、請求／回應 DTO、Repository</td></tr><tr><td><a href="unit-10b-service.html">10B · 業務與交易</a></td><td>分頁、查不到的處理、分類驗證、交易邊界</td></tr><tr><td><a href="unit-10c-controller.html">10C · HTTP 端點</a></td><td>六個端點與一致的 400／404／409 回應</td></tr><tr><td><a href="unit-10d-verify.html">10D · 手動驗收</a></td><td>每個方法的 curl、預期結果與錯誤案例</td></tr></tbody></table></div><p>每次完成一頁再往下。全部 Java 類別放在 com.example.northwind，避免初學階段先被套件拆分干擾；正式專案可以再依功能拆分。每個 public 型別各存為同名檔案。</p></section>
+<section id="step-2"><h2>02 · VS Code 建立專案</h2><ul><li>開啟命令面板，執行 Spring Initializr: Create a Maven Project。</li><li>選 Java、Boot 4 的穩定版；本文可重現基準為 4.1.1，Java 21，JAR（Java Archive，Java 封裝檔）。</li><li>Group 填 com.example，Artifact 填 northwind-training，package 使用 com.example.northwind。</li><li>選 Spring Web、Spring Data JPA、Validation、MS SQL Server Driver。確認產生的 Web starter 是 webmvc。</li><li>選擇你自己的練習資料夾。若網站選單版本更新，以該版官方文件核對；先不要選 SNAPSHOT（開發快照）或 M／RC（里程碑／候選版）。</li></ul><p>若產生的啟動類別叫 NorthwindTrainingApplication，可以保留；不用再複製第二個啟動類別。只要它位於 com.example.northwind 即可。以下提供完整 POM，供你逐項比對，不要求一次背起來。</p><details class="code-details"><summary>展開完整範例 · pom.xml · Boot 4.1.1</summary><figure class="code-block"><figcaption>pom.xml · Boot 4.1.1</figcaption><pre tabindex="0"><code class="language-xml"><span class="nt">&lt;project</span><span class="w"> </span><span class="na">xmlns=</span><span class="s">"http://maven.apache.org/POM/4.0.0"</span>
+<span class="w">         </span><span class="na">xmlns:xsi=</span><span class="s">"http://www.w3.org/2001/XMLSchema-instance"</span>
+<span class="w">         </span><span class="na">xsi:schemaLocation=</span><span class="s">"http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd"</span><span class="nt">&gt;</span>
+<span class="w">    </span><span class="nt">&lt;modelVersion&gt;</span>4.0.0<span class="nt">&lt;/modelVersion&gt;</span>
+<span class="w">    </span><span class="nt">&lt;parent&gt;</span>
+<span class="w">        </span><span class="nt">&lt;groupId&gt;</span>org.springframework.boot<span class="nt">&lt;/groupId&gt;</span>
+<span class="w">        </span><span class="nt">&lt;artifactId&gt;</span>spring-boot-starter-parent<span class="nt">&lt;/artifactId&gt;</span>
+<span class="w">        </span><span class="nt">&lt;version&gt;</span>4.1.1<span class="nt">&lt;/version&gt;</span>
+<span class="w">        </span><span class="nt">&lt;relativePath/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/parent&gt;</span>
+<span class="w">    </span><span class="nt">&lt;groupId&gt;</span>com.example<span class="nt">&lt;/groupId&gt;</span>
+<span class="w">    </span><span class="nt">&lt;artifactId&gt;</span>northwind-training<span class="nt">&lt;/artifactId&gt;</span>
+<span class="w">    </span><span class="nt">&lt;version&gt;</span>0.0.1-SNAPSHOT<span class="nt">&lt;/version&gt;</span>
+<span class="w">    </span><span class="nt">&lt;properties&gt;</span>
+<span class="w">        </span><span class="nt">&lt;java.version&gt;</span>21<span class="nt">&lt;/java.version&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/properties&gt;</span>
+<span class="w">    </span><span class="nt">&lt;dependencies&gt;</span>
+<span class="w">        </span><span class="nt">&lt;dependency&gt;</span>
+<span class="w">            </span><span class="nt">&lt;groupId&gt;</span>org.springframework.boot<span class="nt">&lt;/groupId&gt;</span>
+<span class="w">            </span><span class="nt">&lt;artifactId&gt;</span>spring-boot-starter-webmvc<span class="nt">&lt;/artifactId&gt;</span>
+<span class="w">        </span><span class="nt">&lt;/dependency&gt;</span>
+<span class="w">        </span><span class="nt">&lt;dependency&gt;</span>
+<span class="w">            </span><span class="nt">&lt;groupId&gt;</span>org.springframework.boot<span class="nt">&lt;/groupId&gt;</span>
+<span class="w">            </span><span class="nt">&lt;artifactId&gt;</span>spring-boot-starter-data-jpa<span class="nt">&lt;/artifactId&gt;</span>
+<span class="w">        </span><span class="nt">&lt;/dependency&gt;</span>
+<span class="w">        </span><span class="nt">&lt;dependency&gt;</span>
+<span class="w">            </span><span class="nt">&lt;groupId&gt;</span>org.springframework.boot<span class="nt">&lt;/groupId&gt;</span>
+<span class="w">            </span><span class="nt">&lt;artifactId&gt;</span>spring-boot-starter-validation<span class="nt">&lt;/artifactId&gt;</span>
+<span class="w">        </span><span class="nt">&lt;/dependency&gt;</span>
+<span class="w">        </span><span class="nt">&lt;dependency&gt;</span>
+<span class="w">            </span><span class="nt">&lt;groupId&gt;</span>com.microsoft.sqlserver<span class="nt">&lt;/groupId&gt;</span>
+<span class="w">            </span><span class="nt">&lt;artifactId&gt;</span>mssql-jdbc<span class="nt">&lt;/artifactId&gt;</span>
+<span class="w">            </span><span class="nt">&lt;scope&gt;</span>runtime<span class="nt">&lt;/scope&gt;</span>
+<span class="w">        </span><span class="nt">&lt;/dependency&gt;</span>
+<span class="w">        </span><span class="nt">&lt;dependency&gt;</span>
+<span class="w">            </span><span class="nt">&lt;groupId&gt;</span>org.springframework.boot<span class="nt">&lt;/groupId&gt;</span>
+<span class="w">            </span><span class="nt">&lt;artifactId&gt;</span>spring-boot-starter-webmvc-test<span class="nt">&lt;/artifactId&gt;</span>
+<span class="w">            </span><span class="nt">&lt;scope&gt;</span>test<span class="nt">&lt;/scope&gt;</span>
+<span class="w">        </span><span class="nt">&lt;/dependency&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/dependencies&gt;</span>
+<span class="w">    </span><span class="nt">&lt;build&gt;</span>
+<span class="w">        </span><span class="nt">&lt;plugins&gt;</span>
+<span class="w">            </span><span class="nt">&lt;plugin&gt;</span>
+<span class="w">                </span><span class="nt">&lt;groupId&gt;</span>org.springframework.boot<span class="nt">&lt;/groupId&gt;</span>
+<span class="w">                </span><span class="nt">&lt;artifactId&gt;</span>spring-boot-maven-plugin<span class="nt">&lt;/artifactId&gt;</span>
+<span class="w">            </span><span class="nt">&lt;/plugin&gt;</span>
+<span class="w">        </span><span class="nt">&lt;/plugins&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/build&gt;</span>
+<span class="nt">&lt;/project&gt;</span></code></pre></figure></details><aside class="version-note"><strong>Boot 3 對照</strong><p>Boot 3 的 Web starter 為 spring-boot-starter-web，測試 starter 為 spring-boot-starter-test；測試註解的 import 也不同，見單元 08。其他資料映射與 Controller 的基本寫法可沿用。</p></aside></section>
+<section id="step-3"><h2>03 · 資料庫前置條件</h2><p>需要一個可連線的 SQL Server，以及已匯入 Microsoft 經典 Northwind 的<strong>練習副本</strong>。本文不假設你已安裝資料庫，也不自動匯入資料；如果尚未準備好，可先讀程式結構，連線驗收等資料庫就緒再做。</p><p>在你使用的 SQL 查詢工具先執行下列唯讀檢查。SQL 是 Structured Query Language（結構化查詢語言）。確認連到的是練習副本，而非其他人的資料庫。</p><figure class="code-block"><figcaption>SQL Server · 唯讀檢查</figcaption><pre tabindex="0"><code class="language-sql"><span class="k">SELECT</span><span class="w"> </span><span class="n">DB_NAME</span><span class="p">()</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">CurrentDatabase</span><span class="p">;</span>
+
+<span class="k">SELECT</span><span class="w"> </span><span class="n">TOP</span><span class="w"> </span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="w">    </span><span class="n">ProductID</span><span class="p">,</span><span class="w"> </span><span class="n">ProductName</span><span class="p">,</span><span class="w"> </span><span class="n">CategoryID</span><span class="p">,</span><span class="w"> </span><span class="n">UnitPrice</span><span class="p">,</span>
+<span class="w">    </span><span class="n">UnitsInStock</span><span class="p">,</span><span class="w"> </span><span class="n">Discontinued</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">dbo</span><span class="p">.</span><span class="n">Products</span>
+<span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">ProductID</span><span class="p">;</span>
+
+<span class="k">SELECT</span><span class="w"> </span><span class="n">CategoryID</span><span class="p">,</span><span class="w"> </span><span class="n">CategoryName</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">dbo</span><span class="p">.</span><span class="n">Categories</span><span class="w"> </span><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="n">CategoryID</span><span class="p">;</span>
+
+<span class="k">SELECT</span><span class="w"> </span><span class="n">TOP</span><span class="w"> </span><span class="p">(</span><span class="mi">5</span><span class="p">)</span><span class="w"> </span><span class="n">OrderID</span><span class="p">,</span><span class="w"> </span><span class="n">ProductID</span>
+<span class="k">FROM</span><span class="w"> </span><span class="n">dbo</span><span class="p">.[</span><span class="k">Order</span><span class="w"> </span><span class="n">Details</span><span class="p">];</span></code></pre></figure><p>經典資料通常能查到 ProductID=1 的 Chai，CategoryID=1 的 Beverages。後面以分類 1 作例子；若你使用不同資料，請用實際存在的分類編號。</p></section>
+<section id="step-4"><h2>04 · 設定資料庫連線</h2><figure class="code-block"><figcaption>src/main/resources/application.properties</figcaption><pre tabindex="0"><code class="language-properties"><span class="na">server.address</span><span class="o">=</span><span class="s">127.0.0.1</span>
+<span class="na">server.port</span><span class="o">=</span><span class="s">8080</span>
+<span class="na">spring.datasource.url</span><span class="o">=</span><span class="s">${NORTHWIND_JDBC_URL}</span>
+<span class="na">spring.datasource.username</span><span class="o">=</span><span class="s">${NORTHWIND_DB_USER}</span>
+<span class="na">spring.datasource.password</span><span class="o">=</span><span class="s">${NORTHWIND_DB_PASSWORD}</span>
+<span class="na">spring.jpa.hibernate.ddl-auto</span><span class="o">=</span><span class="s">none</span>
+<span class="na">spring.jpa.open-in-view</span><span class="o">=</span><span class="s">false</span>
+<span class="na">spring.jpa.hibernate.naming.physical-strategy</span><span class="o">=</span><span class="s">org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl</span>
+<span class="na">spring.jackson.deserialization.fail-on-unknown-properties</span><span class="o">=</span><span class="s">true</span></code></pre></figure><p>JDBC 是 Java Database Connectivity（Java 資料庫連線介面）。NORTHWIND_JDBC_URL、NORTHWIND_DB_USER、NORTHWIND_DB_PASSWORD 是你在啟動環境提供的三個變數，不是照抄的帳號密碼。</p><figure class="code-block"><figcaption>連線網址格式 · 填入環境變數，不寫真密碼進教材</figcaption><pre tabindex="0"><code class="language-text">jdbc:sqlserver://localhost:1433;databaseName=Northwind;encrypt=true;trustServerCertificate=true</code></pre></figure><figure class="code-block"><figcaption>macOS zsh 終端機 · 在啟動應用的同一個終端機設定</figcaption><pre tabindex="0"><code class="language-bash"><span class="nb">export</span><span class="w"> </span><span class="nv">NORTHWIND_JDBC_URL</span><span class="o">=</span><span class="s1">'jdbc:sqlserver://localhost:1433;databaseName=Northwind;encrypt=true;trustServerCertificate=true'</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">NORTHWIND_DB_USER</span><span class="o">=</span><span class="s1">'換成你的練習帳號'</span>
+<span class="nb">read</span><span class="w"> </span>-s<span class="w"> </span>NORTHWIND_DB_PASSWORD
+<span class="nb">export</span><span class="w"> </span>NORTHWIND_DB_PASSWORD</code></pre></figure><p>先修改網址與帳號再執行。read -s 會等待你輸入密碼並按 Enter，輸入不顯示在螢幕，也不用把真密碼寫進命令歷史。接著在同一終端機執行 ./mvnw spring-boot:run。若改用 VS Code 的執行按鈕，需確認它的啟動環境也拿得到這些變數。</p><p>上例 trustServerCertificate=true 僅用於自有練習環境的自簽憑證。正式連線要驗證憑證並依資料庫設定配置。若資料庫在另一台機器，主機與埠號要換成實際值。</p><p>ddl-auto=none 保留既有表格；open-in-view=false 要求在 Service 交易內完成資料轉換。PhysicalNamingStrategyStandardImpl 保留 ProductID 等指定名稱，避免命名策略轉成 product_id。拒絕未知 JSON 欄位可避免 PATCH 傳錯欄位卻以為成功。</p><aside class="note">這一輪只練資料 API，POM 尚未加入 Security，因此服務綁在 127.0.0.1。完成後再依單元 09 加入身分與權限；加入安全設定後，驗收的寫入請求也要帶憑證與 CSRF token。</aside></section>
+<section id="step-5"><h2>05 · 檔案地圖與下一步</h2><figure class="code-block"><figcaption>完成後的結構</figcaption><pre tabindex="0"><code class="language-text">src/main/java/com/example/northwind/
+  NorthwindTrainingApplication.java  # Initializr 已產生的啟動類別
+  Product.java
+  Category.java
+  ProductWrite.java
+  PricePatch.java
+  ProductView.java
+  ProductPage.java
+  ProductRepository.java
+  CategoryRepository.java
+  ProductNotFound.java
+  InvalidInput.java
+  ProductService.java
+  ProductController.java
+  ApiErrors.java
+src/main/resources/application.properties
+src/test/java/com/example/northwind/
+  ProductServiceTest.java
+  ProductControllerTest.java</code></pre></figure><p># 後面是教材說明，不是檔名。測試觀念在單元 08，完整測試檔案在 10D。範例不使用 Lombok（自動產生重複 Java 程式碼的工具），讓你先看懂建構子與方法。</p></section>
+<section id="step-6"><h2>資料來源</h2><p><a href="https://github.com/microsoft/sql-server-samples/tree/master/samples/databases/northwind-pubs">Microsoft 經典 Northwind</a> · <a href="https://docs.spring.io/spring-boot/reference/using/build-systems.html">Boot 4 建置設定</a></p></section>
+</article>
+<nav class="page-nav" aria-label="單元導覽">
+<a href="unit-09-security.html">← 單元 09 · Spring Security：辨認身分，再檢查權限</a>
+<a href="unit-10a-model.html">單元 10A · 實作一：商品實體與資料合約 →</a>
+</nav>
+</main>
+<footer class="site-footer">Northwind Spring Boot 教室 · Boot 4.1.1 / Java 21<br>程式碼為教學範例，由你逐步操作。版本查核：2026-09-22；閱讀順序修訂：2026-09-23。</footer>
+</body>
+</html>
