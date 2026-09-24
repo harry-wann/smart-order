@@ -1,31 +1,28 @@
 import { useState } from 'react'
 
-function Open() {
-  // true = 開；false = 關；預設為「開」
-  const [isOn, setIsOn] = useState(true)
+export default function Open({ defaultValue = true, onChange }) {
+  // true = 開
+  // false = 關
+  const [isOn, setIsOn] = useState(defaultValue)
 
-  // 預設選擇 18:00
-  const [selectedTime, setSelectedTime] = useState('18:00')
+  // 修改開關狀態
+  const handleChange = (value) => {
+    setIsOn(value)
 
-  // 時段資料
-  const timeSlots = [
-    { time: '17:00', full: false },
-    { time: '18:00', full: false },
-    { time: '18:30', full: true },
-  ]
+    // 將新的狀態傳回 DS03
+    onChange?.(value)
+  }
 
   return (
     <div className="max-w-140 p-2">
-      {/* 標題 */}
-      <p className="mb-4 text-sm text-[#9C8E84]">開關與時段</p>
+      <p className="mb-4 text-sm text-[#9C8E84]">開關</p>
 
-      {/* ===================== 開 / 關  ===================== */}
-      <div className="mb-4 flex gap-4">
+      <div className="flex gap-4">
         {/* 關 */}
         <div>
           <button
             type="button"
-            onClick={() => setIsOn(false)}
+            onClick={() => handleChange(false)}
             className={`h-7 w-12 rounded-full ${!isOn ? 'bg-success' : 'bg-[#E6DED2]'}`}
           />
 
@@ -36,51 +33,13 @@ function Open() {
         <div>
           <button
             type="button"
-            onClick={() => setIsOn(true)}
+            onClick={() => handleChange(true)}
             className={`h-7 w-12 rounded-full ${isOn ? 'bg-success' : 'bg-[#E6DED2]'}`}
           />
 
-          <p className="mt-2 text-xs text-gray-500">開 .on</p>
+          <p className="mt-2 text-xs text-gray-500">開 </p>
         </div>
       </div>
-
-      {/* ===================== 時段 ===================== */}
-      <div className="grid grid-cols-3 gap-2">
-        {timeSlots.map((slot) => {
-          const isSelected = selectedTime === slot.time // 判斷這個時間是否被選中
-
-          return (
-            <button
-              key={slot.time}
-              type="button"
-
-              disabled={slot.full} // full 才不能按
-
-              onClick={() => setSelectedTime(slot.time)} // 點擊後選擇這個時間
-
-              className={`h-12 rounded-lg border text-base ${
-                // 額滿
-                slot.full
-                  ? 'cursor-not-allowed border-dashed border-[#e3dbd0] bg-surface-2 text-[#9C8E84]'
-                  : // 被選到
-                    isSelected
-                    ? 'border-[#D74432] bg-[#C8442E] font-semibold text-white'
-                    : // 正常
-                      'border-[#e3dbd0] bg-surface text-ink-900'
-              } `}
-            >
-              {slot.time}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* 說明 */}
-      <p className="mt-4 text-xs text-[#9a9087]">
-        slot 正常／已選 .on／額滿 full（虛線框、不可點）
-      </p>
     </div>
   )
 }
-
-export default Open
