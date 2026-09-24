@@ -9,12 +9,12 @@ export default function DS02() {
         <SMButton
           type="danger"
           content={[
-            <div key="param-1" className="flex items-center gap-1">
+            <div key="param-1" className="flex">
               <img src={IcShoppingCart}></img>
-              <span className="font-bold">參數一</span>
+              <span>參數一</span>
             </div>,
-            <div key="param-2" className="flex items-center gap-1">
-              <span className="font-bold">參數二</span>
+            <div key="param-2" className="flex">
+              <span>參數二</span>
               <img src={IcShoppingCart}></img>
             </div>,
           ]}
@@ -22,12 +22,12 @@ export default function DS02() {
         <SMButton
           type="ghost"
           content={[
-            <div key="param-1" className="flex items-center gap-1">
+            <div key="param-1" className="flex">
               <img src={IcShoppingCart}></img>
-              <span className="font-bold">參數一</span>
+              <span>參數一</span>
             </div>,
-            <div key="param-2" className="flex items-center gap-1">
-              <span className="font-bold">參數二</span>
+            <div key="param-2" className="flex">
+              <span>參數二</span>
               <img src={IcShoppingCart}></img>
             </div>,
           ]}
@@ -35,12 +35,12 @@ export default function DS02() {
         <SMButton
           type="secondary"
           content={[
-            <div key="param-1" className="flex items-center gap-1">
+            <div key="param-1" className="flex">
               <img src={IcShoppingCart}></img>
-              <span className="font-bold">參數一</span>
+              <span>參數一</span>
             </div>,
-            <div key="param-2" className="flex items-center gap-1">
-              <span className="font-bold">參數二</span>
+            <div key="param-2" className="flex">
+              <span>參數二</span>
               <img src={IcShoppingCart}></img>
             </div>,
           ]}
