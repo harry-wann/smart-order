@@ -10,7 +10,7 @@ export default function SOTextArea({ defaultValue = '', placeholder, onChange })
       onChange={(e) => {
         setConent(e.target.value)
       }}
-      className="min-h-12 w-full resize-none rounded-lg border border-[#E6DED2] p-3 text-sm outline-none focus:border-[#D74432]"
+      className="min-h-12 w-full resize-none rounded-lg border border-line p-3 text-sm outline-none focus:border-brand-600"
     />
   )
 }
