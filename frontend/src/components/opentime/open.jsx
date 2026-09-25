@@ -15,7 +15,7 @@ export default function Open({ defaultValue = true, onChange }) {
 
   return (
     <div className="max-w-140 p-2">
-      <p className="mb-4 text-sm text-[#9C8E84]">開關</p>
+      <p className="text-text-secondary mb-4 text-sm">開關</p>
 
       <div className="flex gap-4">
         {/* 關 */}
@@ -23,7 +23,7 @@ export default function Open({ defaultValue = true, onChange }) {
           <button
             type="button"
             onClick={() => handleChange(false)}
-            className={`h-7 w-12 rounded-full ${!isOn ? 'bg-success' : 'bg-[#E6DED2]'}`}
+            className={`h-7 w-12 rounded-full ${!isOn ? 'bg-success' : 'bg-line'}`}
           />
 
           <p className="mt-2 text-xs text-gray-500">關</p>
@@ -34,7 +34,7 @@ export default function Open({ defaultValue = true, onChange }) {
           <button
             type="button"
             onClick={() => handleChange(true)}
-            className={`h-7 w-12 rounded-full ${isOn ? 'bg-success' : 'bg-[#E6DED2]'}`}
+            className={`h-7 w-12 rounded-full ${isOn ? 'bg-success' : 'bg-line'}`}
           />
 
           <p className="mt-2 text-xs text-gray-500">開 </p>
