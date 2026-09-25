@@ -31,7 +31,7 @@ export default function SOFormInput({
   }
 
   return (
-    <div className="flex h-12 w-full items-center rounded-lg border border-line px-3 focus-within:border-[#D74432]">
+    <div className="flex h-12 w-full items-center rounded-lg border border-line px-3 focus-within:border-brand-600">
       {/* 有傳 icon 才顯示 */}
       {icon && <img src={icon} alt="" className="mr-3 h-5 w-5" />}
 
