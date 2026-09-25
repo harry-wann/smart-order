@@ -1,4 +1,4 @@
-import TableOverview from './features/admin/table/TableOverview'
+
 import { Routes, Route } from 'react-router';
 import Components from './features/components-demo/Components';
 import DS02 from './features/components-demo/DS02';
@@ -8,14 +8,14 @@ import DS05 from './features/components-demo/DS05';
 import DS06 from './features/components-demo/DS06';
 import DS07 from './features/components-demo/DS07';
 
-
+import TableOverview from './features/admin/table/TableOverview'
 
 
 function App() {
   return (
 
     <Routes>
-      <Route path="/" element={<TableOverview />} />
+      
       <Route path="/components" element={<Components />} />
       <Route path="/components/ds-02" element={<DS02 />} />
       <Route path="/components/ds-03" element={<DS03 />} />
@@ -23,6 +23,12 @@ function App() {
       <Route path="/components/ds-05" element={<DS05 />} />
       <Route path="/components/ds-06" element={<DS06 />} />
       <Route path="/components/ds-07" element={<DS07 />} />
+
+      <Route path="/" element={<TableOverview />} />
+      <Route path="/admin/tables" element={<TableOverview />} />
+      
+
+
     </Routes>
   );
 

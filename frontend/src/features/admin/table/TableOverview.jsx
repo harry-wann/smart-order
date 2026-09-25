@@ -1,3 +1,7 @@
+import bellIcon from '../../../assets/ic_tableOverview_bell.svg'
+
+
+
 // 桌況總覽的桌位資料
 const tables = [
   {
@@ -69,6 +73,7 @@ const tables = [
   },
 ]
 
+
 // 底部候位中的顯示
 const waitinglist = [
   {
@@ -112,7 +117,7 @@ function getStatusText(status) {
 function getStatusClass(status) {
   switch (status) {
     case 'available':
-      return 'bg-[#E6DED2]'
+      return 'color-line'
     case 'occupied':
       return 'bg-[#C8442E] text-white'
     case 'cleaning':
@@ -152,69 +157,83 @@ function TableCard({ table }) {
 }
 
 function TableOverview() {
-  return (
-    <div>
-      <h1>桌況總覽</h1>
-
-      <div className="border rounded-lg p-4 bg-white"></div>
-
-      <div className="grid grid-cols-4 gap-4">
-        {tables.map(table => (
-          <TableCard key={table.id} table={table} />
-        ))}
-      </div>
-
-      {/* 下面那排桌子狀態顯示 */}
-      測試
-
-      <div className="mt-8">
-        <div className="border rounded-lg p-4 bg-white">
-          <h2 className="text-x1 font-bold">
-            候位中
-
-            <span className="border rounded text-sm ml-2">
-              3組
+//算一下桌位現在連動下方的統計資料 
+    const availableCount= tables.filter(
+    table => table.status ==='available'
+    ).length
+    const occupiedCount= tables.filter(
+    table => table.status ==='occupied'
+    ).length
+    const cleaningCount= tables.filter(
+    table => table.status ==='cleaning'
+    ).length
+    const reservedCount= tables.filter(
+    table => table.status ==='reserved'
+    ).length
+  
+return (
+    <div className="flex flex-col">
+      <header className="flex h-15 items-center gap-4 border-b border-line bg-surface px-6">
+            <h1 className='type-h2 text-ink-900'>桌況總覽</h1>
+            <span className='type-caption rounded-pill bg-surface-2 px-2.5 py-0.5 text-ink-600'>
+              今天 9/13 (日)
             </span>
 
-            <span className="text-sm font-normal ml-2">
-              平均等候22分
-            </span>
-          </h2>
+    <div className='flex-1' />
 
-          <div className="flex gap-4">
-            {waitinglist.map(waiting => (
-              <div
-                className="border p-4 rounded-full px-4 py-2 bg-[#F5EFE5]"
-                key={waiting.id}
-              >
-                <div className="flex items-center gap-4">
-                  <h3 className="text-lg font-bold">
-                    {waiting.id}
-                  </h3>
+    <div className='type-caption flex h-9 items-center gap-2 rounded-btn border border-line bg-success-bg 
+                    px-3 text-success'>
+      <span className='size-2 rounded-full bg-success' />
+      即時同步中
+      
+    </div>
+    
+    <button className='flex size-11 items-center justify-center rounded-btn'>
+      <img src={bellIcon} alt="服務鈴" className='size-5' />
+    </button>
+</header>
 
-                  <p>{waiting.name}</p>
 
-                  <p className="text-sm">
-                    {waiting.people}
-                  </p>
+      
+      <div className="flex items-start gap-6 p-6">
+       
+        <main className="flex min-w-0 flex-1 flex-col gap-4">
+          <div className="rounded-card border border-line bg-surface p-4">
+            統計列
+          </div>
 
-                  {waiting.waitingtime === '已叫號' ? (
-                    <p className="text-sm border rounded-full px-2 py-1 bg-[#FCF0DC]">
-                      {waiting.waitingtime}
-                    </p>
-                  ) : (
-                    <p className="text-sm">
-                      {waiting.waitingtime}
-                    </p>
-                  )}
-                </div>
-              </div>
+          <div className="grid grid-cols-4 gap-card-gap">
+            {tables.map((table) => (
+              <TableCard key={table.id} table={table} />
             ))}
           </div>
-        </div>
+
+          <div className="rounded-card border border-line bg-surface p-4">
+            候位區
+          </div>
+        </main>
+
+      
+        <aside className="w-75 shrink-0">
+          <div className="rounded-card border border-line bg-surface p-4">
+            服務鈴
+          </div>
+        </aside>
       </div>
     </div>
   )
 }
 
 export default TableOverview
+
+
+
+
+
+
+
+
+    
+      
+
+      
