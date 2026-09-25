@@ -14,7 +14,7 @@ export default function TimeSlot({ timeSlots = [], defaultValue = '', onChange }
 
   return (
     <div className="max-w-140 p-2">
-      <p className="mb-4 text-sm text-[#9C8E84]">時段</p>
+      <p className="text-text-secondary mb-4 text-sm">時段</p>
 
       <div className="grid grid-cols-3 gap-2">
         {timeSlots.map((slot) => {
@@ -29,10 +29,10 @@ export default function TimeSlot({ timeSlots = [], defaultValue = '', onChange }
               onClick={() => handleSelect(slot.time)}
               className={`h-12 rounded-lg border text-base ${
                 slot.full
-                  ? 'cursor-not-allowed border-dashed border-[#e3dbd0] bg-surface-2 text-[#9C8E84]'
+                  ? 'cursor-not-allowed border-dashed border-line bg-surface-2 text-ink-400'
                   : isSelected
-                    ? 'border-[#D74432] bg-[#C8442E] font-semibold text-white'
-                    : 'border-[#e3dbd0] bg-surface text-ink-900'
+                    ? 'border-brand-600 bg-brand-600 font-semibold text-surface'
+                    : 'border-line bg-surface text-ink-900'
               }`}
             >
               {slot.time}
