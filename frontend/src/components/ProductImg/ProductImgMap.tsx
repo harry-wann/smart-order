@@ -1,59 +1,46 @@
 import React from "react";
 import ProductImg, {
-    type ProductArea,
-    type ProductRow,
-    type TagItem} from "./primary/ProductImg";
-
+  type ProductArea,
+  type ProductRow,
+  type TagItem,
+} from "./primary/ProductImg";
 
 export interface ProductImgData {
-    id: number;
-    TAG?: TagItem[];
-    AREA?: ProductArea;
-    ROW?: ProductRow;
-    SRC?: string;
+  id: number;
+  tag?: TagItem[];
+  area?: ProductArea;
+  row?: ProductRow;
+  src?: string;
 }
 
-
-type ProductImgRows =
-    | "1"
-    | "2"
-    | "3"
-    | "4";
-
+type ProductImgRows = "1" | "2" | "3" | "4";
 
 interface ProductImgMapProps {
-    DATA: ProductImgData[];
-    ROW?: ProductImgRows;
+  data: ProductImgData[];
+  row?: ProductImgRows;
 }
 
+const ProductImgMap = ({ data, row = "2" }: ProductImgMapProps) => {
+  const rows: Record<ProductImgRows, string> = {
+    1: "grid-cols-1",
+    2: "grid-cols-2",
+    3: "grid-cols-3",
+    4: "grid-cols-4",
+  };
 
-const ProductImgMap = ({
-    DATA,
-    ROW = "2"
-}: ProductImgMapProps) => {
-
-    const ROWS: Record<ProductImgRows, string> = {
-        1: "grid-cols-1",
-        2: "grid-cols-2",
-        3: "grid-cols-3",
-        4: "grid-cols-4"
-    };
-
-
-    return (
-        <div className={`grid ${ROWS[ROW]} gap-card`}>
-            {DATA.map((item) => (
-                <ProductImg
-                    key={item.id}
-                    TAG={item.TAG}
-                    AREA={item.AREA}
-                    ROW={item.ROW}
-                    SRC={item.SRC}
-                />
-            ))}
-        </div>
-    );
+  return (
+    <div className={`grid ${rows[row]} gap-card`}>
+      {data.map((item) => (
+        <ProductImg
+          key={item.id}
+          tag={item.tag}
+          area={item.area}
+          row={item.row}
+          src={item.src}
+        />
+      ))}
+    </div>
+  );
 };
-
 
 export default ProductImgMap;

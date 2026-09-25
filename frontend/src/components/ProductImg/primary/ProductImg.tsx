@@ -1,70 +1,55 @@
 import React from "react";
 
-export type ProductArea =
-    | "A169"
-    | "A11";
+export type ProductArea = "A169" | "A11";
 
-export type ProductRow =
-    | "1"
-    | "2"
-    | "3";
+export type ProductRow = "1" | "2" | "3";
 
-export type TagType =
-    | "h2"
-    | "p"
-    | "orther";
+export type TagType = "h2" | "p" | "other";
 
-export type TagItem = [
-    TagType,
-    React.ReactNode
-];
+export type TagItem = [TagType, React.ReactNode];
 
 export type ProductImgProps = {
-    TAG?: TagItem[];
-    AREA?: ProductArea;
-    ROW?: ProductRow;
-    SRC?: string;
+  tag?: TagItem[];
+  area?: ProductArea;
+  row?: ProductRow;
+  src?: string;
 };
 
 const ProductImg = ({
-    TAG = [],
-    AREA = "A169",
-    ROW = "1",
-    SRC = "",
+  tag = [],
+  area = "A169",
+  row = "1",
+  src = "",
 }: ProductImgProps) => {
+  const areas: Record<ProductArea, string> = {
+    A169: "aspect-[16/9]",
+    A11: "aspect-[1/1]",
+  };
 
-    const AREAS: Record<ProductArea, string> = {
-        A169: "aspect-[16/9]",
-        A11: "aspect-[1/1]"
-    };
+  const tags: Record<TagType, (val: React.ReactNode) => React.ReactNode> = {
+    h2: (val) => <h2 className="type-h3">{val}</h2>,
+    p: (val) => <p className="type-body">{val}</p>,
+    other: (val) => val,
+  };
 
+  const rows: Record<ProductRow, string> = {
+    1: "grid-cols-1",
+    2: "grid-cols-2",
+    3: "grid-cols-3",
+  };
 
-    const tag: Record<
-        TagType,
-        (val: React.ReactNode) => React.ReactNode
-    > = {
-        h2: (val) => <h2 className="type-h3">{val}</h2>,
-        p: (val) => <p className="type-body">{val}</p>,
-        orther: (val) => val
+  const a = tag.map(([K, V], idx) => {
+    if (tags[K]) {
+      return <div key={idx}>{tags[K](V)}</div>;
+    } else {
+      return null;
     }
+  });
 
-    const ROWS: Record<ProductRow, string> = {
-        1: "grid-cols-1",
-        2: "grid-cols-2",
-        3: "grid-cols-3"
-    };
-
-    const a = TAG.map(([K, V], idx) => {
-        if (tag[K]) {
-            return <div key={idx}>{tag[K](V)}</div >;
-        } else {
-            return null
-        }
-    });
-
-    return (
-        <>
-            <div className={`
+  return (
+    <>
+      <div
+        className={`
                     grid grid-rows-5
                     gap-card-gap
                     border border-dashed border-line-strong
@@ -72,24 +57,20 @@ const ProductImg = ({
                     rounded-card
                     p-page
                     m-card-gap
-                `}>
+                `}
+      >
+        <div
+          className={`${areas[area]} row-span-3 min-h-0 min-w-0 flex justify-center items-center `}
+        >
+          <img src={src} className="w-full h-full object-contain" />
+        </div>
 
-                <div className={`${AREAS[AREA]} row-span-3 min-h-0 min-w-0 flex justify-center items-center `}>
-                    <img
-                        src={SRC}
-                        className="w-full h-full object-contain"
-                    />
-                </div>
-
-                <div className="row-span-2 min-h-0 min-w-0 ">
-                    <div className={`grid ${ROWS[ROW]}`}>
-                        {a}
-                    </div>
-                </div>
-
-            </div>
-        </>
-    )
-}
+        <div className="row-span-2 min-h-0 min-w-0 ">
+          <div className={`grid ${rows[row]}`}>{a}</div>
+        </div>
+      </div>
+    </>
+  );
+};
 
 export default ProductImg;

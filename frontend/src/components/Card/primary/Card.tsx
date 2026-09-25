@@ -1,136 +1,79 @@
 import React from "react";
 
-export type CardStyleProps =
+export type borderProps =
     | "primary"
-    | "CardTigth"
+    | "CardTight"
     | "CardFlat";
 
-export type CardRowProps =
-    | "1"
-    | "2"
-    | "3"
-    | "4"
-    | "5"
-    | "6"
-    | "7";
+export type rowProps =
+    | "start"
+    | "center"
+    | "end"
+    | "between";
 
-export type TagTypeProps =
+export type tagProps =
     | "h2"
     | "p"
     | "img"
-    | "orther";
+    | "other";
 
-export type TagItemProps = [
-    TagTypeProps,
-    React.ReactNode
-];
+export type itemProps = [tagProps, React.ReactNode];
 
-
-export type CardProps = {
-    TAG?: TagItemProps[];
-    STYLE?: CardStyleProps;
-    ROW?: CardRowProps;
+export type RowProps = {
+    tags: itemProps[];
+    justify?: rowProps;
 };
 
+export type CardProps = {
+    data?: RowProps[];
+    border?: borderProps;
+};
 
+const p: Record<rowProps, string> = {
+    start: "justify-start",
+    center: "justify-center",
+    end: "justify-end",
+    between: "justify-between",
+};
 
 const Card = ({
-    TAG = [],
-    STYLE="primary",
-    ROW="1",
+    data = [],
+    border = "primary",
+}: CardProps) => {
 
-}:CardProps) => {
-
-
-    const STYLES: Record<CardStyleProps, string> = {
+    const borders: Record<borderProps, string> = {
         primary: 'shadow-card p-card',
-        CardTigth: 'shadow-card p-row',
+        CardTight: 'shadow-card p-row',
         CardFlat: 'p-card',
-    }
+    };
 
-    const tag: Record<TagTypeProps, (val: React.ReactNode) => React.ReactNode> = {
+    const tag: Record<tagProps, (val: React.ReactNode) => React.ReactNode> = {
         h2: (val) => <h2 className="type-h2">{val}</h2>,
         p: (val) => <p className="type-body">{val}</p>,
-        img: (val) => <img src={String(val)} />,
-        orther: (val) => val
-    }
-
-    const a = TAG.map(([K,V],idx) => {
-            if(tag[K]){
-                return <div key={idx}>{tag[K](V)}</div >;
-            }else{
-               return null
-            }
-    });
-
-
-        const ROWS: Record<CardRowProps, string> = {
-        1: "grid-cols-1",
-        2: "grid-cols-2",
-        3: "grid-cols-3",
-        4: "grid-cols-4",
-        5: "grid-cols-5",
-        6: "grid-cols-6",
-        7: "grid-cols-7",
+        img: (val) => <img src={String(val)} alt="" />,
+        other: (val) => val,
     };
+
+    const rows = data.map((row, rowIdx) => {
+        const a = p[row.justify ?? "start"];
+        return (
+            <div key={rowIdx} className={`flex items-center flex-wrap gap-tag w-full ${a}`}>
+                {row.tags.map(([K, V], idx) => (
+                    <div key={idx}>
+                        {tag[K](V)}
+                    </div>
+                ))}
+            </div>
+        );
+    });
 
     return (
         <div className={`
-            border 
-            border-line 
-            bg-surface 
-            rounded-card 
-            w-full 
-            flex 
-            items-center 
-            justify-start 
-            ${STYLES[STYLE]}`}>
-
-            <div className={`grid ${ROWS[ROW]} gap-row`}>
-                {a}
-            </div>
+            border border-line bg-surface rounded-card w-full
+            flex flex-col gap-row ${borders[border]}`}>
+            {rows}
         </div>
-    )
-}
+    );
+};
 
 export default Card;
-
-
-/*
-CARD使用規則
-
-陰影內距選擇
-STYLES:primary,CardTigth,CardFlat
-
-
-標籤每行幾個最多7個
-ROW:1,2,3,4,5,6,7
-
-建立標籤 (可重複使用)
-預設有h1,p,img
-[標籤,值]
-h1,p=>值填入標籤內容
-img=>值填入src位置
-
-自訂標籤 orther
-[標籤,值(填入完整標籤 或倒入的元件)]
-    ["orther", <CheckIcon/>]
-
-TAG={[
-        ["h2","card 一塊獨立資訊"],
-        ["orther", <a href="#">test</a>],
-        ["orther", <CheckIcon/>]
-    ]}
-
-
-
-<CARD
-    STYLE="primary"
-    ROW="1"
-        TAG={[
-        ["h2","card 一塊獨立資訊"],
-        ["orther", <CheckIcon/>]
-        ]}
-    />
-
-*/

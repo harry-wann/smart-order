@@ -1,52 +1,34 @@
 import React from "react";
-import Card, {
-    type TagItemProps,
-    type CardStyleProps,
-    type CardRowProps
-} from "./primary/Card";
+import Card, { type borderProps, type RowProps } from "./primary/Card";
 
-interface CardData{
-    id: number;
-    TAG: TagItemProps[];
-    STYLE?: CardStyleProps;
-    ROW?: CardRowProps;
+interface CardData {
+  id: number;
+  data: RowProps[];
+  border?: borderProps;
 }
 
-type CardRowProp =
-    | "1"
-    | "2"
-    | "3"
-    | "4";
+type CardColProp = "1" | "2" | "3" | "4";
 
-interface CardProps {
-    DATA: CardData[];
-    COL?: CardRowProp;
+interface CardMapProps {
+  data: CardData[];
+  col?: CardColProp;
 }
 
-const CardMap = ({
-    DATA,
-    COL = "2"
-}: CardProps) => {
+const CardMap = ({ data, col = "2" }: CardMapProps) => {
+  const cols: Record<CardColProp, string> = {
+    1: "grid-cols-1",
+    2: "grid-cols-2",
+    3: "grid-cols-3",
+    4: "grid-cols-4",
+  };
 
-    const ROW: Record<CardRowProp, string> = {
-        1: "grid-cols-1",
-        2: "grid-cols-2",
-        3: "grid-cols-3",
-        4: "grid-cols-4"
-    };
-
-    return (
-        <div className={`grid ${ROW[COL]} gap-card`}>
-            {DATA.map((item) => (
-                <Card
-                    key={item.id}
-                    TAG={item.TAG}
-                    STYLE={item.STYLE}
-                    ROW={item.ROW}
-                />
-            ))}
-        </div>
-    );
+  return (
+    <div className={`grid ${cols[col]} gap-card`}>
+      {data.map((item) => (
+        <Card key={item.id} data={item.data} border={item.border} />
+      ))}
+    </div>
+  );
 };
 
-export default CardMap
+export default CardMap;
