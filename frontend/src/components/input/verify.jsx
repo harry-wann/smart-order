@@ -84,8 +84,8 @@ export default function Verify({ length = 6, defaultValue = '', onChange }) {
                 handleKeyDown(index, e)
               }}
               className={`h-12 w-full rounded-md border text-center text-xl font-semibold outline-none ${
-                number ? 'border-[#D74432]' : 'border-[#E6DED2]'
-              } focus:border-[#D74432]`}
+                number ? 'border-brand-600' : 'border-line'
+              } focus:border-brand-600`}
             />
           ))}
         </div>
