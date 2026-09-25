@@ -2,6 +2,8 @@
 
 **難度** ★★☆☆☆　**用在哪些模組** 所有後端工作　**哪幾週** 第 1 週（L0）、第 3 週
 
+> 本頁用火鍋店功能解釋 Maven；目前 `backend/pom.xml` 使用 Spring Boot 4.1.1，Web 依賴名稱是 `spring-boot-starter-webmvc`。[單元 02](../../spring-boot/tutorial/unit-02-maven.html) 會帶你對照現有 POM。
+
 ## 一句話
 
 Maven 是**幫你自動下載別人寫好的程式庫**，順便幫你把專案編譯打包。
@@ -21,7 +23,7 @@ Maven 是**幫你自動下載別人寫好的程式庫**，順便幫你把專案�
     <!-- 我要「做網站 API」的功能 -->
     <dependency>
         <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-web</artifactId>
+        <artifactId>spring-boot-starter-webmvc</artifactId>
     </dependency>
 
     <!-- 我要「連資料庫」的功能 -->
@@ -45,21 +47,21 @@ Maven 是**幫你自動下載別人寫好的程式庫**，順便幫你把專案�
 
 Spring Boot 有個貼心設計叫 **starter**：它是一個「套餐」。
 
-你加 `spring-boot-starter-web` 一項，它自動幫你帶進來：Spring MVC、內建的 Tomcat 伺服器、JSON 處理工具……十幾個東西。
+在目前 Boot 4 專案中加入 `spring-boot-starter-webmvc`，就會帶入 Spring MVC 與 Web API 所需的相依套件；其他必要套件由 Maven 依賴關係一併下載。Boot 3 教材常見的名稱是 `spring-boot-starter-web`，讀範例時先看自己的 `pom.xml`。
 
-**所以你的 pom.xml 通常只有十幾行，但實際下載了上百個檔案。**
+**所以 pom.xml 只列出直接使用的套件，Maven 仍可能下載許多間接依賴。**
 
 ## 我們會用到的 starter
 
 | starter | 給你什麼 |
 |---|---|
-| `spring-boot-starter-web` | 做 REST API |
+| `spring-boot-starter-webmvc` | 做 REST API（目前 Boot 4 專案） |
 | `spring-boot-starter-data-jpa` | 用 [JPA](../database/25-ORM與JPA.md) 存取資料庫 |
 | `spring-boot-starter-security` | [登入與權限](20-SpringSecurity.md) |
 | `spring-boot-starter-validation` | 欄位驗證（`@NotNull` 那些） |
 | `spring-boot-starter-websocket` | [即時推播](../realtime/41-WebSocket與STOMP.md) |
 | `spring-boot-starter-data-redis` | [Redis](../realtime/44-Redis.md) |
-| `spring-boot-starter-test` | 寫[測試](../quality/47-單元測試.md) |
+| `spring-boot-starter-webmvc-test` 等測試 starter | 寫[測試](../quality/47-單元測試.md)；以現有 POM 為準 |
 | `flyway-core` + `flyway-mysql` | [資料庫版本控管](../database/29-Flyway.md) |
 | `springdoc-openapi-starter-webmvc-ui` | [Swagger 文件](19-Swagger.md) |
 | `lombok` | 少寫一堆重複的程式碼 |
@@ -76,7 +78,7 @@ Spring Boot 有個貼心設計叫 **starter**：它是一個「套餐」。
 
 注意是 `./mvnw` 不是 `mvn`——那個 `w` 是 wrapper，它會自動用專案指定的 Maven 版本，**這樣五個人就不用各自裝 Maven**。（Windows 用 `mvnw.cmd`）
 
-實務上你多半是在 IntelliJ 裡按綠色播放鍵，不會手動打這些。
+也可以在 VS Code 的 Spring Boot Dashboard 啟動；初學時先在終端機執行一次，比較容易看到錯誤訊息。
 
 ## 在我們的專案裡
 
@@ -86,14 +88,12 @@ Spring Boot 有個貼心設計叫 **starter**：它是一個「套餐」。
 
 ## 15 分鐘動手小練習
 
-1. 去 [Spring Initializr](https://start.spring.io/)
-2. 選 Maven、Java 17、Spring Boot 3.x
-3. 右邊 Dependencies 加：Spring Web、Spring Data JPA、MySQL Driver、Lombok
-4. 按 Generate 下載
-5. 解壓縮，用 IntelliJ 打開，看看 `pom.xml` 長什麼樣
-6. 等它跑完「下載相依套件」（第一次會很久，幾分鐘）
+1. 開啟現有 `backend/pom.xml`，找到 parent 中的 Spring Boot 版本與 `<java.version>`。
+2. 在 `<dependencies>` 內找出 Web MVC、Data JPA、Validation 和 MySQL Driver，說出各自的用途。
+3. 在 `backend/` 執行 `./mvnw -version`（Windows 用 `./mvnw.cmd -version`），確認 Wrapper 使用的 Java 是 21。
+4. 若想看完整啟動流程，再依 [後端環境建置](../../spring-boot/README.md) 準備 `.env`、Docker 和練習資料。
 
-**我們的專案就是這樣開始的。** 自己跑一次，你就知道那些設定從哪來的。
+這個練習直接使用團隊專案，避免新手另建一個版本與依賴不同的專案。
 
 ## 你會遇到的坑
 
@@ -151,4 +151,4 @@ IntelliJ 要裝 Lombok 外掛，而且要開啟 Annotation Processing。
 
 ## 相關頁面
 
-[Java 與 JDK](12-Java與JDK.md)　[Spring Boot 是什麼](14-SpringBoot是什麼.md)
+[Java 與 JDK](12-Java與JDK.md)　[Spring Boot 是什麼](14-SpringBoot是什麼.md)　[課程 02：Maven](../../spring-boot/tutorial/unit-02-maven.html)

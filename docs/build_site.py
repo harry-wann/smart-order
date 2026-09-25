@@ -34,6 +34,7 @@ GROUPS = [
     ("規格文件",        "spec",            False),
     ("模組規格",        "spec/modules",    False),
     ("UI 文件",         "ui",              False),
+    ("Spring Boot 專案", "spring-boot",     False),
     ("技術總表",        "tech",            False),
     ("技術 · 團隊與工具",   "tech/team",     True),
     ("技術 · 網頁運作原理", "tech/web",      True),
@@ -69,6 +70,8 @@ def read_title(path):
 def nav_label(rel, title):
     """側邊欄標籤：數字前綴 + 標題"""
     stem = os.path.splitext(os.path.basename(rel))[0]
+    if rel == "spring-boot/README.md":
+        return "後端環境建置"
     num = stem.split("-", 1)[0]
     short = title.split("：", 1)[-1].strip() if "：" in title else title
     if title.startswith(num):
@@ -367,6 +370,7 @@ def sidebar_html(pages, depth, current_html):
         else:
             out.append('<div class="navgroup">%s</div>%s' % (gtitle, links))
 
+    out.append('<a class="nav" href="%s../spring-boot/tutorial/index.html">Spring Boot 逐步課程</a>' % up)
     out.append('<div class="foot">由 Markdown 自動產生<br>'
                '改文件請編輯 <code>docs/</code> 下的 .md<br>'
                '再執行 <code>python3 docs/build_site.py</code></div></nav>')
@@ -423,6 +427,9 @@ def rewrite_links(body, src_dir, depth, md_to_html):
         key = os.path.normpath(os.path.join(src_dir, clean)).replace(os.sep, "/").lstrip("./")
         if key in md_to_html:
             return 'href="%s%s%s"' % (up, md_to_html[key], anchor)
+        # 教學 HTML、SQL 與 mockups 不在 docs/site/；從產生頁回到 docs/ 原檔。
+        if clean and os.path.isfile(os.path.join(DOCS, key)):
+            return 'href="%s../%s%s"' % (up, key, anchor)
         return m.group(0)
 
     return re.sub(r'href="([^"]+)"', sub, body)
@@ -507,8 +514,12 @@ def build_index(pages):
         "<strong>問題思考與解決思路</strong>、六週切分、常見卡關、驗收 demo 腳本。</p>",
         '<div class="cards">' + cards("模組規格") + "</div>",
         "<h2>UI 文件</h2>",
-        "<p>畫面長什麼樣、怎麼產設計稿。</p>",
+        "<p>畫面、設計規則與交接流程。</p>",
         '<div class="cards">' + cards("UI 文件") + "</div>",
+        "<h2>Spring Boot 專案與課程</h2>",
+        "<p>先完成 <a href=\"spring-boot/README.html\">後端環境建置</a>，再讀 "
+        "<a href=\"../spring-boot/tutorial/index.html\">Northwind Spring Boot 逐步課程</a>。"
+        "技術短篇用火鍋店情境查觀念；Northwind 用來練習現有商品 API，正式功能以規格文件為準。</p>",
         "<h2>技術教學 50 頁</h2>",
         "<p>用到的每一項技術一頁，寫給非本科背景的人看："
         "<strong>一句話 → 想像一下（零術語比喻）→ 在我們的專案裡 → 最小的例子 → "

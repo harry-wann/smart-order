@@ -2,6 +2,8 @@
 
 **難度** ★★☆☆☆　**用在哪些模組** 技術地基 L0　**哪幾週** 第 1 週（L0）
 
+> 本頁是**火鍋店正式資料表的規劃教學**，不是目前 Northwind 練習資料庫的啟動步驟。目前 `backend/application.properties` 設為 `spring.flyway.enabled=false`、`spring.jpa.hibernate.ddl-auto=none`，不會自動執行 migration；Northwind 表請依 [後端環境建置](../../spring-boot/README.md) 匯入。
+
 ## 一句話
 
 Flyway 是**資料庫的 Git**：每次改表都寫成一支檔案，誰 pull 下來都會自動升級到同一個版本。
@@ -21,7 +23,7 @@ Flyway 是**資料庫的 Git**：每次改表都寫成一支檔案，誰 pull �
 
 Flyway 的做法：**所有表結構的改動，都寫成一支帶編號的 SQL 檔案，放進專案裡跟著 Git 走。**
 
-程式啟動時，Flyway 會看資料庫目前跑到第幾版，然後把還沒跑的往下跑完。
+正式功能啟用 Flyway 後，程式啟動時才會檢查資料庫跑到第幾版，並執行還沒套用的 migration。現階段的 Northwind 練習不會做這件事。
 
 ## 長什麼樣
 
@@ -82,19 +84,19 @@ CREATE TABLE service_call (
 </dependency>
 ```
 
-`application.yml`：
+以下是**未來獨立正式資料庫**的設定示意；現有專案使用 `application.properties`，不要把這段直接加到 Northwind 練習環境：
 
 ```yaml
 spring:
   flyway:
     enabled: true
-    baseline-on-migrate: true
+    # 若要接手已有資料的正式庫，需先盤點現況，再決定是否 baseline
   jpa:
     hibernate:
       ddl-auto: validate      # ← 重點：JPA 只檢查，不准它改表
 ```
 
-**`ddl-auto: validate` 是關鍵。** 意思是「JPA 你只要檢查 Entity 跟資料表對不對得上就好，**不准自己去改**」。改表的權力完全交給 Flyway。
+未來正式表使用 `ddl-auto: validate` 時，JPA 只檢查 Entity 與資料表是否一致，不自行改表；修改表結構交給 Flyway。現有 Northwind 範例是 `none`，因為它使用已匯入的練習表。
 
 ## 日常流程
 
@@ -130,7 +132,7 @@ db/seed/               ← 開發用的假資料，用 CommandLineRunner + @Prof
 
 ## 15 分鐘動手小練習
 
-1. 在練習專案加上 flyway-core + flyway-mysql
+1. 準備**獨立的空白練習資料庫與練習專案**，不要在目前的 `northwind` 資料庫練這一段；在練習專案加上 flyway-core + flyway-mysql
 2. 建 `src/main/resources/db/migration/V1__create_note.sql`：
 
 ```sql
@@ -154,7 +156,7 @@ CREATE TABLE note (
 ```
 Migration checksum mismatch for migration version 1
 ```
-→ 本機開發時可以 `docker compose down -v` 砍掉資料庫重來。**已經 push 出去的絕對不要改。**
+→ 還原已執行的 migration 原檔；需要修改表結構時新增下一版。若練習資料庫已受影響，先查明目前版本與資料備份，再決定修復方式。
 
 **② 檔名格式錯**
 `V1_create_note.sql`（只有一個底線）→ Flyway 不認得。**要兩個底線。**
@@ -174,9 +176,9 @@ JPA 和 Flyway 打架，結構會亂掉。
 
 | 你會看到 | 中文意思 | 怎麼修 |
 |---|---|---|
-| `Migration checksum mismatch` | 有人改了跑過的檔案 | 還原那個檔案，或本機砍掉資料庫重來 |
-| `Found non-empty schema without schema history table` | 資料庫已有表但沒 Flyway 紀錄 | 設 `baseline-on-migrate: true` |
-| `Detected failed migration to version X` | 某一版跑失敗卡住了 | 修好 SQL，清掉 `flyway_schema_history` 那一列，重跑 |
+| `Migration checksum mismatch` | 有人改了跑過的檔案 | 先還原原檔；需要新變更就新增下一版 migration |
+| `Found non-empty schema without schema history table` | 資料庫已有表但沒 Flyway 紀錄 | 先確認連線的資料庫與既有表來源，再規劃 baseline；不要對 Northwind 練習庫直接啟用 |
+| `Detected failed migration to version X` | 某一版執行失敗 | 查看失敗 SQL、資料庫目前結構與 Flyway 紀錄，再依實際狀態修復 |
 | `Schema-validation: missing column [xxx]` | Entity 有欄位但表沒有 | 寫一支新 migration 加上去 |
 | `Schema-validation: wrong column type` | 型別對不上 | 檢查 Entity 和 SQL 的型別 |
 

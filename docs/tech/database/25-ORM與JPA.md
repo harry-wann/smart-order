@@ -2,6 +2,8 @@
 
 **難度** ★★★☆☆　**用在哪些模組** 所有後端工作　**哪幾週** 第 3 週
 
+> 本頁以火鍋店 `MenuItem` 說明 JPA。現有 `backend/` 的 Northwind 練習使用 `Product`，其欄位與查詢請看 [課程 07](../../spring-boot/tutorial/unit-07-jpa.html) 和 [單元 10A](../../spring-boot/tutorial/unit-10a-model.html)。兩套例子不要混用。
+
 ## 一句話
 
 ORM 就是**幫你把 Java 物件和資料表自動對應起來**，讓你少寫很多 SQL。
@@ -81,9 +83,9 @@ public class MenuItem {
 
 ```java
 public interface MenuItemRepository extends JpaRepository<MenuItem, Long> {
-    List<MenuItem> findByCategoryIdAndActiveTrue(Long categoryId);
-    List<MenuItem> findByIsSoupBaseTrueAndActiveTrue();
-    Optional<MenuItem> findByNameAndActiveTrue(String name);
+    List<MenuItem> findByNameContaining(String keyword);
+    List<MenuItem> findByIsSoupBaseTrue();
+    List<MenuItem> findByPriceGreaterThan(BigDecimal price);
 }
 ```
 
@@ -93,7 +95,7 @@ public interface MenuItemRepository extends JpaRepository<MenuItem, Long> {
 2. 拆解成 SQL
 3. 自動產生實作類別
 
-`findByCategoryIdAndActiveTrue` → `SELECT * FROM menu_item WHERE category_id = ? AND active = true`
+例如 `findByIsSoupBaseTrue()` 會用 Entity 的 `isSoupBase` 屬性當條件，對應到資料庫的 `is_soup_base` 欄位。Spring Data 依 Entity 屬性解析方法名稱；若屬性不存在，程式啟動時就會報錯。
 
 繼承 `JpaRepository` 還免費送你：
 
@@ -113,12 +115,11 @@ repo.findAll(pageable);       // 分頁
 | `findByName(String n)` | `WHERE name = ?` |
 | `findByNameContaining(String n)` | `WHERE name LIKE %?%` |
 | `findByPriceGreaterThan(BigDecimal p)` | `WHERE price > ?` |
-| `findByActiveTrue()` | `WHERE active = true` |
-| `findByCategoryIdOrderByPriceDesc(Long id)` | `WHERE category_id = ? ORDER BY price DESC` |
-| `existsByPhone(String phone)` | 回傳 true/false |
-| `countByStatus(String s)` | 回傳筆數 |
+| `findByIsSoupBaseTrue()` | `WHERE is_soup_base = true` |
+| `existsByName(String name)` | 回傳有沒有這個名稱的品項 |
+| `countByIsSoupBaseTrue()` | 回傳鍋底品項的筆數 |
 
-**方法名字太長的時候，就該改用 `@Query` 自己寫 SQL。**
+**方法名字太長時，可以改用 `@Query`。** 預設寫的是查 Entity 的 JPQL；只有加上 `nativeQuery = true` 才是資料庫原生 SQL，兩種語法不能混用。
 
 ## 複雜查詢自己寫
 
@@ -140,13 +141,13 @@ List<Object[]> findPopularItems(@Param("since") LocalDateTime since,
 
 ## 15 分鐘動手小練習
 
-1. 建一個 `Note` Entity（id、title、content、createdAt）
-2. 建 `NoteRepository extends JpaRepository<Note, Long>`
-3. 加一個方法 `List<Note> findByTitleContaining(String keyword);`
-4. 在 Controller 裡用它
-5. **打開 `application.yml` 加 `spring.jpa.show-sql: true`**，重跑，看 console 印出來的 SQL
+1. 開啟現有 `backend/src/main/java/tw/ispan/smartorder/entity/Product.java`，找出 `@Table`、`@Id` 與一個 `@Column`，說出它們對應的 MySQL 名稱。
+2. 開啟 `ProductRepository.java`，找出 `JpaRepository<Product, Integer>`；說出 `Product` 與 `Integer` 各代表什麼。
+3. 開啟 `ProductService.java`，追蹤 `findById()` 如何呼叫 Repository，再如何用 `ProductResponse.from()` 轉成 DTO。
+4. 依 [後端環境建置](../../spring-boot/README.md) 準備資料後，呼叫 `GET /api/products/1`，把 JSON 的 `id`、`productName` 和 phpMyAdmin 的 `Products` 第 1 筆對照。
+5. 想看實際 SQL，可在本機的 `backend/src/main/resources/application.properties` 暫時加上 `spring.jpa.show-sql=true`，重啟並呼叫商品查詢後觀察主控台；練習完移除這行。
 
-第 5 步很重要——**看到 JPA 幫你產生的 SQL**，你就知道它在做什麼，不是魔法。
+最後一步能讓你看到 Hibernate 送出的 SQL；先建立資料表並確認資料庫連線，才能順利操作。
 
 ## 你會遇到的坑
 
@@ -169,7 +170,7 @@ List<MenuItem> findAllWithCategory();
 
 **② `ddl-auto: update`**
 JPA 會自己去改資料庫結構。看起來方便，但它**只會加不會減**，而且五個人的結構會慢慢分岔。
-→ 我們用 `validate`，表結構交給 [Flyway](29-Flyway.md)。
+→ 現有 Northwind 練習用 `ddl-auto=none`，避免改動匯入的表；正式火鍋店資料表再由團隊規劃 [Flyway](29-Flyway.md) migration 與結構驗證。
 
 **③ 把 Entity 直接回傳給前端**
 見 [Entity 與 DTO](../backend/17-Entity與DTO.md)。
