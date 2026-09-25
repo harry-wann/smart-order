@@ -7,6 +7,7 @@
 | --- | --- |
 | 專案文件（規格、模組、UI、技術教學） | [`docs/README.md`](docs/README.md) |
 | 前端說明 | [`frontend/README.md`](frontend/README.md) |
+| Spring Boot 後端環境與團隊規範 | [`docs/spring-boot/README.md`](docs/spring-boot/README.md) |
 | 環境建置 | 見下方 ↓ |
 
 ---
@@ -26,15 +27,15 @@
 | 前端 | Vite | **8.3** | `npm ci` 自動安裝 | 同上 |
 | 前端 | react-router | **8.4** | `npm ci` 自動安裝 | 同上 |
 | 前端 | TypeScript | **7.0** | `npm ci` 自動安裝 | 同上；`npm run typecheck` 用 |
-| 後端 | JDK | **17 LTS** | 後端開工後必要 | 建議 Eclipse Temurin |
-| 後端 | Maven | Wrapper（`mvnw`，隨 repo 附上） | 不用另外裝 | Spring Boot 3.x 由 `pom.xml` 決定 |
-| 後端 | Docker Desktop（含 Docker Compose v2） | 最新版 | 後端開工後必要 | `docker compose up` 起本機 **MySQL 8.0** 與 **Redis 7**，不用手動裝資料庫 |
+| 後端 | JDK | **21** | 執行 Spring Boot 時必要 | 建議 Eclipse Temurin |
+| 後端 | Maven | Maven Wrapper（`backend/mvnw`） | 不用另外裝 | Spring Boot 4.1.1 與 Java 版本由 `backend/pom.xml` 決定 |
+| 後端 | Docker Desktop（含 Docker Compose v2） | 最新版 | 執行後端時必要 | `backend/compose.yaml` 提供 MySQL 5.7 與 phpMyAdmin |
 | 後端 | IntelliJ IDEA | Community 或 Ultimate | 建議 | |
 | 後端 | DBeaver | 最新版 | 選用 | 看資料庫用 |
 | 文件工具 | Python 3 + `markdown` 套件 | 3.x | 選用 | 只有要重建 `docs/site/` 才需要：`pip3 install markdown` |
 | 文件工具 | Playwright（Python）+ Chromium | 最新版 | 選用 | 只有要跑 `docs/ui/mockups/tools/extract_layout.py` 量測畫框才需要 |
 
-> 目前 repo 只有前端可跑，**現階段只要裝「共用」與「前端」兩類**；後端骨架推上 `develop` 後再裝後端工具。
+> 前端與 Spring Boot 範例都已建立；要執行後端需先準備 Docker MySQL 與 Northwind 資料庫，詳見 [`docs/spring-boot/README.md`](docs/spring-boot/README.md)。
 > 各技術的選型理由與版本依據見 [`docs/spec/01-專案總覽.md`](docs/spec/01-專案總覽.md#4-技術棧)。
 
 ### 版本來源（單一真實來源）
@@ -146,6 +147,6 @@ npm run dev
 ├── .nvmrc              # Node 版本（nvm）
 ├── .github/workflows/  # CI
 ├── frontend/           # React + Vite + Tailwind
-├── backend/            # Spring Boot（待建立）
-└── docs/               # 規格、模組、UI、技術教學
+├── backend/            # Spring Boot、Maven Wrapper、MySQL Compose
+└── docs/               # 規格、模組、UI、技術教學與後端實作教材
 ```

@@ -95,7 +95,7 @@ public class PrintConsumer {
 ## 怎麼裝
 
 ```yaml
-# docker-compose.yml
+# 未來要使用時才加入 backend/compose.yaml；目前專案沒有 rabbitmq 服務
   rabbitmq:
     image: rabbitmq:3-management
     ports:

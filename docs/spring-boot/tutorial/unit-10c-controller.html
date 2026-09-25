@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="對照現有 ProductController，理解六個入口如何處理五種 HTTP 方法。">
+  <title>實作三：Controller 與五種 HTTP 方法｜Northwind Spring Boot 教室</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要內容</a>
+<main id="main" class="site-shell">
+<a class="breadcrumb" href="unit-10-api.html">← 回到單元 10</a>
+<header class="lesson-header">
+<p class="eyebrow">單元 10C · CONTROLLER</p>
+<h1>實作三：Controller 與五種 HTTP 方法</h1>
+<p class="hero-text">Controller 是 HTTP 請求進入 Java 程式的入口。對照現有檔案，看看 URL、JSON 和狀態碼如何接到 Service。</p>
+<div class="meta"><span>GET</span><span>POST</span><span>PUT / PATCH / DELETE</span></div>
+</header>
+<aside class="learning-goal"><p><strong>讀完能做到：</strong>說明六個請求入口各自讀什麼、呼叫誰，以及成功時回傳什麼。</p></aside>
+<nav class="lesson-toc" aria-label="本頁目錄"><strong>本頁閱讀路線</strong><ol>
+<li><a href="#step-1">01 · URL 與方法表</a></li>
+<li><a href="#step-2">02 · Controller 共同結構</a></li>
+<li><a href="#step-3">03 · 六個請求入口</a></li>
+<li><a href="#step-4">04 · 錯誤與安全</a></li>
+</ol></nav>
+<article class="lesson">
+<section id="step-1"><h2>01 · URL 與方法表</h2>
+<p>HTTP 方法表達「我要對資源做什麼」。同一個 <code>/api/products/{id}</code> 因方法不同而執行不同動作。GET 有清單與單筆兩個入口，因此總共六個方法，涵蓋五種 HTTP 動詞。</p>
+<div class="table-wrap" tabindex="0"><table><thead><tr><th>方法</th><th>網址</th><th>用途</th><th>成功狀態</th></tr></thead><tbody>
+<tr><td>GET</td><td><code>/api/products</code></td><td>查詢分頁清單。</td><td>200 OK</td></tr>
+<tr><td>GET</td><td><code>/api/products/{id}</code></td><td>查詢單筆商品。</td><td>200 OK</td></tr>
+<tr><td>POST</td><td><code>/api/products</code></td><td>新增商品。</td><td>201 Created</td></tr>
+<tr><td>PUT</td><td><code>/api/products/{id}</code></td><td>完整替換可寫欄位。</td><td>200 OK</td></tr>
+<tr><td>PATCH</td><td><code>/api/products/{id}</code></td><td>只修改有傳入的欄位。</td><td>200 OK</td></tr>
+<tr><td>DELETE</td><td><code>/api/products/{id}</code></td><td>刪除商品。</td><td>204 No Content</td></tr>
+</tbody></table></div>
+</section>
+<section id="step-2"><h2>02 · Controller 共同結構</h2>
+<p>開啟 <code>backend/src/main/java/tw/ispan/smartorder/controller/ProductController.java</code>。<code>@RestController</code> 把方法回傳值轉成 HTTP 回應，<code>@RequestMapping</code> 設定共同網址前綴，<code>@Autowired</code> 由 Spring 注入 ProductService。</p>
+<figure class="code-block"><figcaption>ProductController.java · 類別開頭節錄</figcaption><pre tabindex="0"><code class="language-java">@RestController
+@RequestMapping("/api/products")
+public class ProductController {
+    @Autowired
+    private ProductService productService;
+    // 六個請求方法寫在這個類別裡
+}</code></pre></figure>
+<p>Controller 不自行建立 Service，也不直接寫 SQL。服務層與資料存取層的責任已在 <a href="unit-10b-service.html">10B</a> 說明。下面的方法都屬於同一個類別；閱讀時可以在現有檔案逐一找到。</p>
+</section>
+<section id="step-3"><h2>03 · 六個請求入口</h2>
+<figure class="code-block"><figcaption>清單、單筆與新增 · 現有方法</figcaption><pre tabindex="0"><code class="language-java">@GetMapping
+public ProductPageResponse findAll(
+    @PageableDefault(size = 20, sort = "id", direction = Sort.Direction.ASC)
+    Pageable pageable) {
+    return productService.findAll(pageable);
+}
+
+@GetMapping("/{id}")
+public ProductResponse findById(@PathVariable Integer id) {
+    return productService.findById(id);
+}
+
+@PostMapping
+public ResponseEntity&lt;ProductResponse&gt; create(
+    @Valid @RequestBody ProductCreateRequest request,
+    UriComponentsBuilder uriBuilder) {
+    ProductResponse response = productService.create(request);
+    URI location = uriBuilder.path("/api/products/{id}")
+        .buildAndExpand(response.id()).toUri();
+    return ResponseEntity.created(location).body(response);
+}</code></pre></figure>
+<p><code>@PathVariable</code> 讀網址裡的 id。<code>@RequestBody</code> 把 JSON 轉成 DTO，<code>@Valid</code> 啟用 10A 的欄位驗證。清單的 <code>page</code> 從 0 起算，預設每頁 20 筆並按 id 排序。POST 的 <code>Location</code> 標頭指向新商品網址，回應本文是新增後的 <code>ProductResponse</code>。</p>
+<figure class="code-block"><figcaption>替換、部分更新與刪除 · 現有方法</figcaption><pre tabindex="0"><code class="language-java">@PutMapping("/{id}")
+public ProductResponse replace(@PathVariable Integer id,
+        @Valid @RequestBody ProductUpdateRequest request) {
+    return productService.replace(id, request);
+}
+
+@PatchMapping("/{id}")
+public ProductResponse patch(@PathVariable Integer id,
+        @Valid @RequestBody ProductPatchRequest request) {
+    return productService.patch(id, request);
+}
+
+@DeleteMapping("/{id}")
+public ResponseEntity&lt;Void&gt; delete(@PathVariable Integer id) {
+    productService.delete(id);
+    return ResponseEntity.noContent().build();
+}</code></pre></figure>
+<p>PUT 與 PATCH 都回傳修改後的商品，但使用不同 DTO：PUT 欄位全部必填，PATCH 只帶要修改的欄位。DELETE 回 204，沒有 JSON 本文。以上是類別內的方法；import 和完整類別以現有檔案為準，不需再建立第二份 Controller。</p>
+</section>
+<section id="step-4"><h2>04 · 錯誤與安全</h2>
+<p><code>ApiExceptionHandler</code> 使用 <code>@RestControllerAdvice</code> 集中處理錯誤：找不到商品回 404、輸入錯誤或不存在的分類回 400、資料庫約束衝突回 409。錯誤本文包含 <code>status</code>、<code>message</code>、<code>path</code>、<code>timestamp</code>，所以 Controller 方法不用重複寫 try-catch。</p>
+<p>目前 <code>SecurityConfig</code> 允許 <code>/api/**</code> 本機練習，並使 API 請求不受 CSRF（跨網站請求偽造）檢查影響。這是教材的環境設定；火鍋店正式功能須依專案權限規格處理登入與角色。</p>
+<div class="checkpoint"><strong>停一下，自己想想</strong><p>POST 新增成功時為什麼用 201，而 GET 查詢用 200？</p><details><summary>看解釋</summary><p>201 表示新資源已建立，還用 Location 指出它的位置；200 表示查詢成功並回傳資料。</p></details></div>
+</section>
+</article>
+<nav class="page-nav" aria-label="單元導覽"><a href="unit-10b-service.html">← 單元 10B · Service</a><a href="unit-10d-verify.html">單元 10D · 手動驗收 →</a></nav>
+</main>
+<footer class="site-footer">Northwind Spring Boot 教室 · 單元 10C</footer>
+</body>
+</html>

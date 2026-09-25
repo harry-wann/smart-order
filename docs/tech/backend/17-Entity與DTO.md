@@ -136,7 +136,7 @@ private MenuItemDto toDto(MenuItem entity) {
 
 ## 為什麼用 record
 
-Java 17 的 `record` 一行就定義一個不可變的資料類別，自動有建構子、getter、`equals`、`toString`。DTO 只是資料容器，用 record 最乾淨。
+本專案使用 JDK 21，`record` 可以簡短定義不可變的資料類別，自動產生建構子、欄位存取方法、`equals`、`hashCode`、`toString`。存取方法名稱是 `productName()` 這種形式，不是一般 Java Bean 的 `getProductName()`。目前 Northwind API 的 `ProductCreateRequest` 和 `ProductResponse` 都是例子；對照步驟見 [單元 10A](../../spring-boot/tutorial/unit-10a-model.html)。
 
 Entity 不能用 record（JPA 需要無參數建構子和 setter）。
 

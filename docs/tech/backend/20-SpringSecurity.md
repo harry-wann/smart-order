@@ -212,4 +212,4 @@ WebSocket 的 HTTP 握手（升級請求）不會帶我們的權杖標頭，`any
 
 ## 相關頁面
 
-[JWT 與登入狀態](21-JWT.md)　[HTTP 狀態碼](../web/08-HTTP狀態碼.md)　[CORS 跨來源問題](../web/11-CORS跨來源.md)
+[JWT 與登入狀態](21-JWT.md)　[HTTP 狀態碼](../web/08-HTTP狀態碼.md)　[CORS 跨來源問題](../web/11-CORS跨來源.md)　[課程 09：Spring Security](../../spring-boot/tutorial/unit-09-security.html)

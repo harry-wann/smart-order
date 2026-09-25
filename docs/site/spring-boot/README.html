@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Spring Boot 後端：第一次啟動與學習順序 · 火鍋店點餐系統文件</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand-700:#A63522; --brand-600:#C8442E; --brand-500:#DB5B42; --brand-100:#FBE8E3;
+  --accent-500:#E8A33D; --accent-100:#FCF0DC;
+  --bg:#FBF7F0; --surface:#FFFFFF; --surface-2:#F5EFE5; --line:#E6DED2;
+  --t900:#2B211C; --t600:#6B5D54; --t400:#9C8E84;
+  --ok:#3F7A4E; --ok-bg:#E4EFE7; --warn:#D98324; --bad:#B3261E;
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --serif:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --shadow:0 1px 2px rgba(43,33,28,.06),0 4px 12px rgba(43,33,28,.05);
+  --sidebar:280px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:var(--bg);color:var(--t900);font-family:var(--sans);
+  font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased}
+
+.layout{display:flex;min-height:100vh;align-items:flex-start}
+.sidebar{width:var(--sidebar);flex:0 0 var(--sidebar);position:sticky;top:0;height:100vh;
+  overflow-y:auto;background:var(--surface);border-right:1px solid var(--line);padding:22px 0 48px}
+.brand{padding:0 20px 16px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.brand a{text-decoration:none;color:inherit;display:block}
+.brand .logo{font-family:var(--serif);font-weight:900;font-size:18px;line-height:1.35;color:var(--brand-600)}
+.brand .sub{font-size:11.5px;color:var(--t400);margin-top:4px;letter-spacing:.02em}
+.navgroup{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--t400);
+  padding:15px 20px 5px}
+.sidebar a.nav{display:block;padding:6px 20px;color:var(--t600);text-decoration:none;
+  font-size:14px;border-left:3px solid transparent;line-height:1.5}
+.sidebar a.nav:hover{background:var(--brand-100);color:var(--brand-700)}
+.sidebar a.nav.active{background:var(--brand-100);color:var(--brand-700);
+  border-left-color:var(--brand-600);font-weight:700}
+.sidebar details{border-top:1px solid transparent}
+.sidebar details>summary{list-style:none;cursor:pointer;font-size:11px;font-weight:700;
+  letter-spacing:.1em;color:var(--t400);padding:12px 20px 5px;user-select:none}
+.sidebar details>summary::-webkit-details-marker{display:none}
+.sidebar details>summary::before{content:"▸ ";font-size:10px}
+.sidebar details[open]>summary::before{content:"▾ "}
+.sidebar details>summary:hover{color:var(--brand-600)}
+.sidebar .foot{padding:18px 20px;margin-top:14px;border-top:1px solid var(--line);
+  font-size:11.5px;color:var(--t400);line-height:1.7}
+
+.main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 32px 96px}
+.wrap{width:100%;max-width:1140px;display:flex;gap:36px;align-items:flex-start}
+article{flex:1;min-width:0;max-width:880px;padding-top:40px}
+.toc{width:196px;flex:0 0 196px;position:sticky;top:24px;padding-top:52px;font-size:12.5px;
+  max-height:calc(100vh - 60px);overflow-y:auto}
+.toc .tt{font-size:10.5px;letter-spacing:.1em;color:var(--t400);font-weight:700;margin-bottom:9px}
+.toc a{display:block;color:var(--t600);text-decoration:none;padding:3px 0 3px 10px;
+  border-left:2px solid var(--line);line-height:1.5}
+.toc a:hover{color:var(--brand-600);border-left-color:var(--brand-500)}
+
+.topbar{display:none;position:sticky;top:0;z-index:40;background:var(--surface);
+  border-bottom:1px solid var(--line);padding:10px 16px;align-items:center;gap:12px}
+.topbar .logo{font-family:var(--serif);font-weight:900;color:var(--brand-600);font-size:16px}
+.menubtn{background:var(--brand-600);color:#fff;border:0;border-radius:8px;height:40px;
+  padding:0 14px;font-size:15px;font-family:inherit;cursor:pointer}
+
+article h1{font-family:var(--serif);font-weight:900;font-size:32px;line-height:1.35;margin:0 0 10px}
+article h1+p{color:var(--t600)}
+article h2{font-family:var(--serif);font-weight:700;font-size:24px;line-height:1.45;
+  margin:50px 0 14px;padding-bottom:9px;border-bottom:2px solid var(--line)}
+article h3{font-weight:700;font-size:18.5px;margin:30px 0 10px}
+article h4{font-weight:700;font-size:16px;margin:22px 0 8px;color:var(--t600)}
+article p{margin:0 0 16px}
+article ul,article ol{margin:0 0 16px;padding-left:24px}
+article li{margin:5px 0}
+article a{color:var(--brand-600);text-decoration:none;border-bottom:1px solid rgba(200,68,46,.3)}
+article a:hover{border-bottom-color:var(--brand-600)}
+article a.gloss{color:var(--t900);border-bottom:1px dashed var(--accent-500);
+  background:linear-gradient(transparent 72%,var(--accent-100) 72%)}
+article a.gloss:hover{color:var(--brand-700);border-bottom-color:var(--brand-500)}
+article strong{font-weight:700;color:var(--t900)}
+article hr{border:0;border-top:1px solid var(--line);margin:42px 0}
+article img{max-width:100%;border-radius:12px}
+article details{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:12px 16px;margin:0 0 18px}
+article details>summary{cursor:pointer;font-weight:700;color:var(--brand-600)}
+
+article code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.87em;
+  background:var(--surface-2);padding:2px 6px;border-radius:5px;color:var(--brand-700);
+  word-break:break-word}
+article pre{background:#2B211C;color:#F5EFE5;padding:18px 20px;border-radius:12px;
+  overflow-x:auto;margin:0 0 18px;line-height:1.65;font-size:13.5px}
+article pre code{background:none;color:inherit;padding:0;font-size:inherit}
+
+blockquote{margin:0 0 20px;padding:14px 18px;background:var(--accent-100);
+  border-left:4px solid var(--accent-500);border-radius:0 10px 10px 0;color:var(--t600)}
+blockquote p:last-child{margin-bottom:0}
+blockquote strong{color:var(--t900)}
+
+.tablewrap{overflow-x:auto;margin:0 0 20px;border:1px solid var(--line);
+  border-radius:12px;background:var(--surface);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:420px}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--surface-2);font-weight:700;white-space:nowrap;color:var(--t900)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--brand-100)}
+td code,th code{white-space:nowrap}
+article li input[type=checkbox]{width:16px;height:16px;margin-right:6px;accent-color:var(--brand-600)}
+
+pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:22px;text-align:center;overflow-x:auto;box-shadow:var(--shadow);margin:0 0 22px;color:inherit}
+pre.mermaid svg{max-width:100%;height:auto}
+
+.hero{padding:52px 0 32px;border-bottom:1px solid var(--line);margin-bottom:32px}
+.hero .eyebrow{display:inline-block;background:var(--brand-100);color:var(--brand-700);
+  font-size:12.5px;font-weight:700;padding:5px 13px;border-radius:999px;letter-spacing:.04em}
+.hero h1{font-family:var(--serif);font-weight:900;font-size:40px;line-height:1.25;margin:18px 0 12px}
+.hero p{font-size:17px;color:var(--t600);max-width:680px;margin:0}
+.facts{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:10px 16px;font-size:13px;box-shadow:var(--shadow)}
+.fact b{display:block;font-family:var(--serif);font-size:19px;color:var(--brand-600);font-weight:900}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:13px;margin:18px 0 8px}
+.card{display:block;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:16px;text-decoration:none;color:inherit;box-shadow:var(--shadow);transition:.15s}
+.card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(43,33,28,.12);border-color:var(--brand-500)}
+.card .k{font-size:10.5px;letter-spacing:.09em;color:var(--t400);font-weight:700}
+.card .n{font-family:var(--serif);font-weight:700;font-size:17px;margin:5px 0 6px;color:var(--t900)}
+.card .d{font-size:13px;color:var(--t600);line-height:1.6}
+.callout{background:var(--brand-100);border:1px solid var(--brand-500);border-radius:12px;
+  padding:18px 20px;margin:24px 0}
+.callout .h{font-family:var(--serif);font-weight:700;font-size:17px;margin-bottom:6px;color:var(--brand-700)}
+.callout p{margin:0;color:var(--t600);font-size:14.5px}
+.pending{background:var(--accent-100);border-color:var(--accent-500)}
+.pending .h{color:#8A5B12}
+
+.pager{display:flex;gap:12px;margin-top:52px;padding-top:22px;border-top:1px solid var(--line)}
+.pager a{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:13px 16px;text-decoration:none;color:inherit;box-shadow:var(--shadow)}
+.pager a:hover{border-color:var(--brand-500)}
+.pager .k{font-size:11px;color:var(--t400);letter-spacing:.06em}
+.pager .n{font-weight:700;color:var(--brand-600);margin-top:3px;font-size:14.5px}
+.pager .next{text-align:right}
+
+@media(max-width:1200px){ .toc{display:none} }
+@media(max-width:940px){
+  .topbar{display:flex}
+  .layout{display:block}
+  .sidebar{position:fixed;left:0;top:0;height:100vh;z-index:50;transform:translateX(-100%);
+    transition:transform .2s;box-shadow:0 0 40px rgba(43,33,28,.2);width:286px}
+  .sidebar.open{transform:translateX(0)}
+  .main{padding:0 16px 72px}
+  article{padding-top:24px}
+  .hero{padding:30px 0 24px}
+  .hero h1{font-size:30px}
+  article h1{font-size:26px}
+  article h2{font-size:21px;margin-top:38px}
+  .pager{flex-direction:column}
+}
+@media print{
+  .sidebar,.toc,.topbar,.pager{display:none!important}
+  body{background:#fff}
+  .main{padding:0}
+  article{max-width:none}
+  article h2{page-break-after:avoid}
+  .tablewrap,pre.mermaid{box-shadow:none;page-break-inside:avoid}
+  a.gloss{background:none!important;border:0!important}
+}
+</style>
+</head>
+<body>
+<div class="topbar"><button class="menubtn" onclick="document.getElementById('sb').classList.toggle('open')">☰ 目錄</button><span class="logo">火鍋店點餐系統</span></div>
+<div class="layout">
+<nav class="sidebar" id="sb"><div class="brand"><a href="../index.html"><div class="logo">火鍋店點餐系統</div><div class="sub">專案文件 · 72 頁</div></a></div><a class="nav" href="../index.html">首頁</a><div class="navgroup">規格文件</div><a class="nav" href="../spec/00-架構分層與技術選型.html">00 架構分層與技術選型</a><a class="nav" href="../spec/01-專案總覽.html">01 專案總覽</a><a class="nav" href="../spec/02-需求規格.html">02 需求規格：基礎與進階功能總表</a><a class="nav" href="../spec/03-資料庫設計.html">03 資料庫設計</a><a class="nav" href="../spec/04-API規格.html">04 API 規格</a><a class="nav" href="../spec/05-開發流程與分工.html">05 開發流程與時程</a><a class="nav" href="../spec/06-圖表總覽.html">06 圖表總覽</a><div class="navgroup">模組規格</div><a class="nav" href="../spec/modules/M1-菜單與品項.html">M1 菜單與品項</a><a class="nav" href="../spec/modules/M2-桌位開桌與候位.html">M2 桌位、開桌與候位</a><a class="nav" href="../spec/modules/M3-點餐與服務鈴.html">M3 點餐與服務鈴</a><a class="nav" href="../spec/modules/M4-出菜看板.html">M4 出菜看板（KDS）</a><a class="nav" href="../spec/modules/M5-庫存.html">M5 庫存</a><a class="nav" href="../spec/modules/M6-結帳.html">M6 結帳</a><a class="nav" href="../spec/modules/M7-訂位.html">M7 訂位</a><a class="nav" href="../spec/modules/M8-會員.html">M8 會員</a><div class="navgroup">UI 文件</div><a class="nav" href="../ui/10-UI-UX規格.html">10 UI / UX 規格</a><a class="nav" href="../ui/11-設計系統.html">11 設計系統</a><a class="nav" href="../ui/12-UI設計流程.html">12 UI 設計流程</a><a class="nav" href="../ui/13-畫框註解.html">13 畫框註解</a><a class="nav" href="../ui/14-色彩Token.html">14 色彩 Token</a><div class="navgroup">Spring Boot 專案</div><a class="nav active" href="../spring-boot/README.html">後端環境建置</a><div class="navgroup">技術總表</div><a class="nav" href="../tech/00-技術總表.html">00 技術總表</a><details><summary>技術 · 團隊與工具（5）</summary><a class="nav" href="../tech/team/01-命令列.html">01 命令列基本操作</a><a class="nav" href="../tech/team/02-Git是什麼.html">02 Git 是什麼</a><a class="nav" href="../tech/team/03-分支與合併.html">03 分支、合併與衝突</a><a class="nav" href="../tech/team/04-GitHub與PR.html">04 GitHub 與 Pull Request</a><a class="nav" href="../tech/team/05-Docker與Compose.html">05 Docker 與 Docker Compose</a></details><details><summary>技術 · 網頁運作原理（6）</summary><a class="nav" href="../tech/web/06-前端後端在做什麼.html">06 前端與後端各在做什麼</a><a class="nav" href="../tech/web/07-HTTP請求與回應.html">07 HTTP 請求與回應</a><a class="nav" href="../tech/web/08-HTTP狀態碼.html">08 HTTP 狀態碼</a><a class="nav" href="../tech/web/09-JSON.html">09 JSON</a><a class="nav" href="../tech/web/10-REST-API設計.html">10 REST API 設計</a><a class="nav" href="../tech/web/11-CORS跨來源.html">11 CORS 跨來源問題</a></details><details><summary>技術 · 後端（10）</summary><a class="nav" href="../tech/backend/12-Java與JDK.html">12 Java 與 JDK</a><a class="nav" href="../tech/backend/13-Maven.html">13 Maven 與相依套件</a><a class="nav" href="../tech/backend/14-SpringBoot是什麼.html">14 Spring Boot 是什麼</a><a class="nav" href="../tech/backend/15-依賴注入.html">15 依賴注入</a><a class="nav" href="../tech/backend/16-三層架構.html">16 Controller / Service / Repository</a><a class="nav" href="../tech/backend/17-Entity與DTO.html">17 Entity 與 DTO</a><a class="nav" href="../tech/backend/18-全域例外處理.html">18 全域例外處理</a><a class="nav" href="../tech/backend/19-Swagger.html">19 Swagger 自動產生 API 文件</a><a class="nav" href="../tech/backend/20-SpringSecurity.html">20 Spring Security 基礎</a><a class="nav" href="../tech/backend/21-JWT.html">21 JWT 與登入狀態</a></details><details><summary>技術 · 資料庫（8）</summary><a class="nav" href="../tech/database/22-關聯式資料庫與SQL.html">22 關聯式資料庫與 SQL</a><a class="nav" href="../tech/database/23-資料表設計.html">23 資料表設計</a><a class="nav" href="../tech/database/24-索引.html">24 索引是什麼</a><a class="nav" href="../tech/database/25-ORM與JPA.html">25 ORM 與 JPA</a><a class="nav" href="../tech/database/26-JPA關聯對應.html">26 JPA 關聯對應</a><a class="nav" href="../tech/database/27-交易Transaction.html">27 交易 Transaction</a><a class="nav" href="../tech/database/28-鎖與併發.html">28 鎖與併發（防超賣）</a><a class="nav" href="../tech/database/29-Flyway.html">29 Flyway 資料庫版本控管</a></details><details><summary>技術 · 前端（11）</summary><a class="nav" href="../tech/frontend/30-現代JavaScript.html">30 現代 JavaScript 速成</a><a class="nav" href="../tech/frontend/31-非同步與async.html">31 非同步與 async/await</a><a class="nav" href="../tech/frontend/32-npm與套件.html">32 npm 與 node_modules</a><a class="nav" href="../tech/frontend/33-Vite.html">33 Vite</a><a class="nav" href="../tech/frontend/34-React與JSX.html">34 React 與 JSX</a><a class="nav" href="../tech/frontend/35-Props與State.html">35 Props 與 State</a><a class="nav" href="../tech/frontend/36-useState.html">36 useState</a><a class="nav" href="../tech/frontend/37-useEffect.html">37 useEffect</a><a class="nav" href="../tech/frontend/38-ReactRouter.html">38 React Router</a><a class="nav" href="../tech/frontend/39-Tailwind.html">39 Tailwind CSS</a><a class="nav" href="../tech/frontend/40-fetch串接API.html">40 fetch 串接後端 API</a></details><details><summary>技術 · 即時與排程（4）</summary><a class="nav" href="../tech/realtime/41-WebSocket與STOMP.html">41 WebSocket 與 STOMP</a><a class="nav" href="../tech/realtime/42-前端接WebSocket.html">42 前端接 WebSocket</a><a class="nav" href="../tech/realtime/43-排程與Cron.html">43 排程任務與 Cron</a><a class="nav" href="../tech/realtime/44-Redis.html">44 Redis</a></details><details><summary>技術 · 進階（2）</summary><a class="nav" href="../tech/advanced/45-訊息佇列RabbitMQ.html">45 訊息佇列 RabbitMQ</a><a class="nav" href="../tech/advanced/46-區間重疊與訂位排程.html">46 訂位排程的演算法</a></details><details><summary>技術 · 品質與部署（4）</summary><a class="nav" href="../tech/quality/47-單元測試.html">47 單元測試 JUnit + Mockito</a><a class="nav" href="../tech/quality/48-Testcontainers.html">48 Testcontainers</a><a class="nav" href="../tech/quality/49-GitHubActions.html">49 GitHub Actions CI</a><a class="nav" href="../tech/quality/50-部署上線.html">50 部署上線</a></details><a class="nav" href="../../spring-boot/tutorial/index.html">Spring Boot 逐步課程</a><div class="foot">由 Markdown 自動產生<br>改文件請編輯 <code>docs/</code> 下的 .md<br>再執行 <code>python3 docs/build_site.py</code></div></nav>
+<div class="main"><div class="wrap">
+<article>
+<h1 id="spring-boot-後端第一次啟動與學習順序">Spring Boot 後端：第一次啟動與學習順序</h1>
+<p>這是現有 <code>backend/</code> 專案的操作入口。先完成本頁的環境準備，再到 <a href="../../spring-boot/tutorial/index.html">Spring Boot 課程</a> 讀觀念與商品 API 實作。課程用 Northwind 練習資料；火鍋店正式功能仍以 <a href="../spec/00-架構分層與技術選型.html">專案規格</a> 和 <a href="../spec/04-API規格.html">API 規格</a> 為準。</p>
+<h2 id="先備工具與版本">先備工具與版本</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>工具</th>
+<th>本專案設定</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a class="gloss" href="../tech/backend/12-Java與JDK.html" title="看這個技術的白話說明">JDK</a></td>
+<td>21</td>
+<td>編譯與執行 Java；在終端機執行 <code>java -version</code> 確認。</td>
+</tr>
+<tr>
+<td><a class="gloss" href="../tech/backend/14-SpringBoot是什麼.html" title="看這個技術的白話說明">Spring Boot</a></td>
+<td>以 <code>backend/pom.xml</code> 的 parent 版本為準，目前 4.1.1</td>
+<td>不需單獨安裝，由 <a class="gloss" href="../tech/backend/13-Maven.html" title="看這個技術的白話說明">Maven</a> 下載。</td>
+</tr>
+<tr>
+<td>Maven</td>
+<td>使用 <code>backend/mvnw</code>／<code>mvnw.cmd</code></td>
+<td>Wrapper 會使用專案指定的 Maven，不需另行安裝。</td>
+</tr>
+<tr>
+<td><a class="gloss" href="../tech/team/05-Docker與Compose.html" title="看這個技術的白話說明">Docker</a> Desktop 或 OrbStack</td>
+<td>能執行 <code>docker compose</code></td>
+<td>啟動 <a class="gloss" href="../tech/database/22-關聯式資料庫與SQL.html" title="看這個技術的白話說明">MySQL</a> 5.7 與 phpMyAdmin。</td>
+</tr>
+<tr>
+<td>VS Code</td>
+<td>建議安裝 Extension Pack for Java、Spring Boot Extension Pack</td>
+<td>開啟 <code>backend/</code>，讓 Java 與 Maven 專案匯入。</td>
+</tr>
+</tbody>
+</table></div>
+<p>macOS、Linux 和 Windows 都要先安裝 <a class="gloss" href="../tech/team/02-Git是什麼.html" title="看這個技術的白話說明">Git</a> 與 JDK 21。VS Code 請開啟<strong>包含 <code>pom.xml</code> 的 <code>backend/</code> 資料夾</strong>，不要只開 <code>src/</code>。若編輯器顯示錯誤，先用命令面板的 <code>Java: Configure Java Runtime</code> 確認專案使用 JDK 21。</p>
+<h2 id="第一次啟動照順序做">第一次啟動：照順序做</h2>
+<p>下列指令假設目前站在 repository 根目錄。第一次只需建立一次 <code>.env</code>；以後從第 3 步開始。</p>
+<ol>
+<li><strong>建立本機設定檔。</strong> macOS／Linux 執行：</li>
+</ol>
+<p><code>bash
+   cd backend
+   cp .env.example .env</code></p>
+<p>Windows PowerShell 執行：</p>
+<p><code>powershell
+   Set-Location backend
+   Copy-Item .env.example .env</code></p>
+<ol start="2">
+<li><strong>編輯 <code>backend/.env</code>。</strong> 換掉兩個範例密碼，並使 <code>SPRING_DATASOURCE_USERNAME</code> 與 <code>MYSQL_USER</code> 相同、<code>SPRING_DATASOURCE_PASSWORD</code> 與 <code>MYSQL_PASSWORD</code> 相同。<code>MYSQL_ROOT_PASSWORD</code> 是資料庫管理員密碼，和一般應用程式帳號分開。不要把 <code>.env</code> 提交到 Git；專案只提交 <code>.env.example</code>。</li>
+<li><strong>啟動資料庫。</strong> 在 <code>backend/</code> 執行：</li>
+</ol>
+<p><code>bash
+   docker compose up -d
+   docker compose ps</code></p>
+<p>等 <code>mysql</code> 顯示 healthy，再開啟 <code>http://localhost/</code>。若 80 或 3306 埠已被其他程式使用，先排除衝突；不要以為容器已成功啟動。
+4. <strong>準備練習資料。</strong> 在 phpMyAdmin 選取 <code>northwind</code> 資料庫後，匯入老師提供的 <strong>My<a class="gloss" href="../tech/database/22-關聯式資料庫與SQL.html" title="看這個技術的白話說明">SQL</a> 版 Northwind</strong> SQL。Repository 沒有附完整 Northwind；如果手邊沒有 SQL，可在全新、空白的 <code>northwind</code> 資料庫匯入 <a href="../../spring-boot/northwind-minimal.sql">最小練習資料</a>。最小資料只有 <code>Categories</code>、<code>Products</code> 和一筆 Chai，足以完成商品 API 練習，不能當作完整 Northwind。已匯入完整版本時，<strong>不要再匯入最小資料</strong>。
+5. <strong>檢查資料表。</strong> 在 phpMyAdmin 的 SQL 頁籤執行：</p>
+<p><code>sql
+   SELECT ProductID, ProductName FROM Products ORDER BY ProductID LIMIT 5;
+   SELECT CategoryID, CategoryName FROM Categories WHERE CategoryID = 1;</code></p>
+<p>兩句都應成功，第二句應回傳分類 1；<a href="../../spring-boot/tutorial/unit-10d-verify.html">單元 10D</a> 的新增範例會用到它。
+6. <strong>啟動後端。</strong> 仍在 <code>backend/</code>，macOS／Linux 執行 <code>./mvnw spring-boot:run</code>；Windows PowerShell 執行 <code>./mvnw.cmd spring-boot:run</code>。第一次執行會下載依賴。看到 <code>Started SmartOrderApplication</code> 後，另開終端機瀏覽 <code>http://localhost:8080/api/products</code>，應取得 <a class="gloss" href="../tech/web/09-JSON.html" title="看這個技術的白話說明">JSON</a> 商品清單。</p>
+<p><code>application.properties</code> 會讀取 <code>backend/.env</code>；<code>compose.yaml</code> 也讀同一份檔案。Spring Boot 在主機執行，連到 <code>127.0.0.1:3306/northwind</code>。<code>spring.jpa.hibernate.ddl-auto=none</code>，因此應先匯入資料表，啟動程式不會替你建立 Northwind 表。</p>
+<h2 id="常見卡關">常見卡關</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>現象</th>
+<th>先檢查</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>docker compose</code> 說變數未設定</td>
+<td>是否先在 <code>backend/</code> 建立並填好 <code>.env</code>，且從該目錄執行指令。</td>
+</tr>
+<tr>
+<td>3306 或 80 埠已被使用</td>
+<td><code>docker compose ps</code> 是否顯示容器失敗；檢查本機既有 MySQL 或網頁服務。</td>
+</tr>
+<tr>
+<td><code>Access denied for user</code></td>
+<td><code>.env</code> 中的應用程式帳密是否與 MySQL 初始化時使用的帳密一致。MySQL 已建立資料卷後，修改 <code>.env</code> 不會自動修改資料庫內的帳密。</td>
+</tr>
+<tr>
+<td><code>Table 'northwind.Products' doesn't exist</code></td>
+<td>是否選對 <code>northwind</code> 資料庫並匯入 MySQL 版 SQL；到 phpMyAdmin 看表名大小寫。</td>
+</tr>
+<tr>
+<td>連得上資料庫，但 API 回空清單</td>
+<td>先在 phpMyAdmin 執行上面的 <code>SELECT</code>，確認 <code>Products</code> 真的有資料。</td>
+</tr>
+<tr>
+<td>HTTP 401／403</td>
+<td>核對目前 <code>backend/config/SecurityConfig.java</code>。教材的本機商品 API 範例可直接呼叫；若團隊已改權限設定，需依新設定登入。</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="學習順序與既有文件的關係">學習順序與既有文件的關係</h2>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>目的</th>
+<th>文件</th>
+<th>本專案對照</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>先用白話理解 Maven、DI、<a class="gloss" href="../tech/backend/16-三層架構.html" title="看這個技術的白話說明">三層架構</a>、<a class="gloss" href="../tech/database/25-ORM與JPA.html" title="看這個技術的白話說明">JPA</a></td>
+<td><a href="../tech/00-技術總表.html">技術總表</a> 的後端與資料庫短篇</td>
+<td>短篇以火鍋店功能為例，適合查名詞。</td>
+</tr>
+<tr>
+<td>從普通 Java 一步步走到 HTTP 和資料庫</td>
+<td><a href="../../spring-boot/tutorial/index.html">課程 02～09</a></td>
+<td>Northwind 練習情境；部分程式碼是觀念片段，不需全部複製進專案。</td>
+</tr>
+<tr>
+<td>對著現有程式完成商品 API</td>
+<td><a href="../../spring-boot/tutorial/unit-10-api.html">單元 10～10D</a></td>
+<td><code>backend/src/main/java/tw/ispan/smartorder/</code> 已有 Entity、DTO、Repository、Service、Controller 與例外處理。按 10A → 10B → 10C → 10D 對照閱讀。</td>
+</tr>
+<tr>
+<td>實作火鍋店功能</td>
+<td><a href="../spec/02-需求規格.html">模組規格</a> 與 <a href="../spec/04-API規格.html">API 規格</a></td>
+<td>Northwind 的 <code>Products</code>／<code>Categories</code> 是練習表，不等於正式菜單表。</td>
+</tr>
+</tbody>
+</table></div>
+<p>單元 10D 只更新、刪除自己 POST 建立的測試商品。不要修改原始 Northwind 商品。</p>
+<h3 id="相同主題該讀哪一份">相同主題，該讀哪一份？</h3>
+<p>原本已有 50 篇火鍋店技術短文；新課程保留 Northwind 範例，是因為它把同一觀念串成連續的操作。下表把重疊主題接起來，避免把兩套範例當成兩個不同做法。</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>想學的事</th>
+<th>先查短篇</th>
+<th>再看連續課程</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>工具、Java 與 Spring 啟動</td>
+<td><a href="../tech/backend/12-Java與JDK.html">Java 與 JDK</a>、<a href="../tech/backend/13-Maven.html">Maven</a>、<a href="../tech/backend/14-SpringBoot是什麼.html">Spring Boot</a></td>
+<td><a href="../../spring-boot/tutorial/unit-02-maven.html">02 Maven</a> → <a href="../../spring-boot/tutorial/unit-04-spring-boot.html">04 Spring Boot</a></td>
+</tr>
+<tr>
+<td><a class="gloss" href="../tech/backend/15-依賴注入.html" title="看這個技術的白話說明">依賴注入</a>與三層分工</td>
+<td><a href="../tech/backend/15-依賴注入.html">依賴注入</a>、<a href="../tech/backend/16-三層架構.html">三層架構</a></td>
+<td><a href="../../spring-boot/tutorial/unit-03-spring-core.html">03～03B</a> → <a href="../../spring-boot/tutorial/unit-05-spring-mvc.html">05 MVC</a></td>
+</tr>
+<tr>
+<td>HTTP 與 REST 合約</td>
+<td><a href="../tech/web/10-REST-API設計.html">REST API 設計</a></td>
+<td><a href="../../spring-boot/tutorial/unit-06-rest-api.html">06 REST</a> → <a href="../../spring-boot/tutorial/unit-10c-controller.html">10C Controller</a></td>
+</tr>
+<tr>
+<td>Entity、JPA、查詢與交易</td>
+<td><a href="../tech/database/25-ORM與JPA.html">ORM 與 JPA</a>、<a href="../tech/database/27-交易Transaction.html">交易</a></td>
+<td><a href="../../spring-boot/tutorial/unit-07-jpa.html">07～07B</a> → <a href="../../spring-boot/tutorial/unit-10a-model.html">10A</a> → <a href="../../spring-boot/tutorial/unit-10b-service.html">10B</a></td>
+</tr>
+<tr>
+<td>驗證、錯誤、測試與權限</td>
+<td><a href="../tech/backend/18-全域例外處理.html">全域例外處理</a>、<a href="../tech/quality/47-單元測試.html">單元測試</a>、<a href="../tech/backend/20-SpringSecurity.html">Spring Security</a></td>
+<td><a href="../../spring-boot/tutorial/unit-08-quality.html">08 品質</a> → <a href="../../spring-boot/tutorial/unit-09-security.html">09 安全</a>；09 的安全設定是獨立延伸，不是單元 10 的目前設定</td>
+</tr>
+</tbody>
+</table></div>
+<p>短篇說明火鍋店規格與通用做法；單元 10A～10D 則對照已存在的 Northwind 程式碼。當兩份文件的示例類別名稱不同，以你正在操作的專案檔案為準。</p>
+<h2 id="團隊共用設定">團隊共用設定</h2>
+<ul>
+<li>Spring Boot 版本固定在 <code>backend/pom.xml</code>，Java 版本固定為 21。更新版本時同步調整本文件與課程中的版本說明。</li>
+<li>提交 <code>pom.xml</code>、Maven Wrapper、<code>src/</code> 與 <code>.env.example</code>；保留 <code>.env</code>、<code>target/</code>、IDE 暫存檔與密碼在本機。</li>
+<li><code>backend/</code> 是程式碼所在位置；<code>docs/spring-boot/</code> 是教學。更改實際程式行為後，對照更新單元 10 的說明與驗收請求。</li>
+</ul><div class="pager"><a href="../ui/14-色彩Token.html"><div class="k">← 上一篇</div><div class="n">14 色彩 Token</div></a><a class="next" href="../tech/00-技術總表.html"><div class="k">下一篇 →</div><div class="n">00 技術總表</div></a></div>
+</article>
+<aside class="toc"><div class="tt">本頁目錄</div><a href="#先備工具與版本">先備工具與版本</a><a href="#第一次啟動照順序做">第一次啟動：照順序做</a><a href="#常見卡關">常見卡關</a><a href="#學習順序與既有文件的關係">學習順序與既有文件的關係</a><a href="#團隊共用設定">團隊共用設定</a></aside>
+</div></div>
+</div>
+<script src="../vendor/mermaid.min.js"></script>
+<script>
+mermaid.initialize({
+  startOnLoad: true, securityLevel: 'loose', theme: 'base',
+  fontFamily: '"Noto Sans TC","PingFang TC",system-ui,sans-serif',
+  themeVariables: {
+    background:'#FFFFFF',
+    primaryColor:'#FBE8E3', primaryTextColor:'#2B211C', primaryBorderColor:'#C8442E',
+    secondaryColor:'#FCF0DC', secondaryBorderColor:'#E8A33D',
+    tertiaryColor:'#F5EFE5', tertiaryBorderColor:'#E6DED2',
+    lineColor:'#9C8E84', textColor:'#2B211C',
+    mainBkg:'#FBE8E3', nodeBorder:'#C8442E', clusterBkg:'#FBF7F0', clusterBorder:'#E6DED2',
+    titleColor:'#2B211C', edgeLabelBackground:'#FBF7F0',
+    actorBkg:'#FBE8E3', actorBorder:'#C8442E', actorTextColor:'#2B211C',
+    signalColor:'#6B5D54', signalTextColor:'#2B211C',
+    labelBoxBkgColor:'#FCF0DC', labelBoxBorderColor:'#E8A33D', labelTextColor:'#2B211C',
+    loopTextColor:'#2B211C', noteBkgColor:'#FCF0DC', noteBorderColor:'#E8A33D', noteTextColor:'#2B211C',
+    activationBkgColor:'#E6DED2', activationBorderColor:'#9C8E84', sequenceNumberColor:'#FFFFFF',
+    altBackground:'#F5EFE5',
+    taskBkgColor:'#FBE8E3', taskBorderColor:'#C8442E', taskTextColor:'#2B211C',
+    taskTextOutsideColor:'#2B211C', taskTextDarkColor:'#2B211C',
+    activeTaskBkgColor:'#E8A33D', activeTaskBorderColor:'#C9862A',
+    doneTaskBkgColor:'#E4EFE7', doneTaskBorderColor:'#3F7A4E',
+    critBkgColor:'#C8442E', critBorderColor:'#A63522',
+    gridColor:'#E6DED2', todayLineColor:'#B3261E',
+    sectionBkgColor:'#FBF7F0', sectionBkgColor2:'#F5EFE5', altSectionBkgColor:'#FFFFFF',
+    classText:'#2B211C',
+    attributeBackgroundColorOdd:'#FFFFFF', attributeBackgroundColorEven:'#F5EFE5'
+  },
+  gantt:{barHeight:18,barGap:5,topPadding:52,leftPadding:180,fontSize:12},
+  mindmap:{padding:12},
+  sequence:{actorMargin:42,boxTextMargin:6,noteMargin:10,messageMargin:32,width:150},
+  er:{entityPadding:12,minEntityWidth:110}
+});
+</script>
+<script>document.addEventListener('click',function(e){var sb=document.getElementById('sb');if(window.innerWidth<=940&&sb.classList.contains('open')&&!sb.contains(e.target)&&!e.target.closest('.menubtn')){sb.classList.remove('open');}});</script>
+</body>
+</html>

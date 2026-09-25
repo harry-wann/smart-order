@@ -203,4 +203,4 @@ public void submit() {
 
 ## 相關頁面
 
-[鎖與併發](28-鎖與併發.md)　[ORM 與 JPA](25-ORM與JPA.md)　[三層架構](../backend/16-三層架構.md)
+[鎖與併發](28-鎖與併發.md)　[ORM 與 JPA](25-ORM與JPA.md)　[三層架構](../backend/16-三層架構.md)　[課程 07A：Hibernate 與交易](../../spring-boot/tutorial/unit-07a-hibernate.html)

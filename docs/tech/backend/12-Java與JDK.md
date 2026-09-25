@@ -16,12 +16,12 @@ Java 最有名的口號是「**Write once, run anywhere**」——寫一次，�
 
 ## 我們用哪個版本
 
-**Java 17**（LTS 版本）。
+**本專案統一使用 JDK 21**。先看 `backend/pom.xml` 的 `<java.version>21</java.version>`，再確認終端機與 VS Code 都指向同一版。
 
 | 名詞 | 意思 |
 |---|---|
 | **LTS** | Long Term Support，長期支援版，比較穩、公司多半用這個 |
-| Java 8 / 11 / 17 / 21 | 都是 LTS，但 Spring Boot 3 最低要求 17 |
+| Java 8 / 11 / 17 / 21 | 都曾是常見的長期支援版本；本專案只以 21 開發與建置 |
 
 **五個人一定要裝同一個版本。** 版本不同會出現「我這邊可以編譯，你那邊不行」的鬼故事。
 
@@ -34,10 +34,10 @@ java -version
 看到類似這樣就對了：
 
 ```
-openjdk version "17.0.x"
+openjdk version "21.0.x"
 ```
 
-如果顯示 1.8 或 11，去換成 17。
+如果顯示 8、11 或 17，先切換到 JDK 21。接著在 `backend/` 執行 `./mvnw -version`（Windows 用 `./mvnw.cmd -version`），確認 Maven Wrapper 使用的也是 Java 21。
 
 ## 你會用到的 Java 語法
 
@@ -74,10 +74,10 @@ BigDecimal total = price.multiply(BigDecimal.valueOf(2));  // 560.00
 
 ## 15 分鐘動手小練習
 
-1. 裝 JDK 17（建議用 [Adoptium Temurin](https://adoptium.net/)，免費且乾淨）
-2. 裝 IntelliJ IDEA Community 版（免費）
-3. 打 `java -version` 確認是 17
-4. 在 IntelliJ 建一個空的 Java 專案，跑一次 `System.out.println("Hello")`
+1. 安裝 JDK 21；若還沒裝，可使用 [Adoptium Temurin](https://adoptium.net/) 選擇 21。
+2. 在 VS Code 安裝 Extension Pack for Java，並開啟現有 `backend/`。
+3. 執行 `java -version` 與 `./mvnw -version`，兩邊都應顯示 Java 21。
+4. 在 VS Code 用命令面板的 `Java: Configure Java Runtime` 檢查專案 JDK。
 5. 試試看這段，親眼看到浮點數問題：
 
 ```java
@@ -88,8 +88,8 @@ System.out.println(0.1 + 0.2);
 ## 你會遇到的坑
 
 **① 電腦裡有好幾個 Java 版本**
-`java -version` 顯示的跟 IntelliJ 用的不一樣。
-→ 在 IntelliJ 的 Project Structure 裡明確指定 SDK 為 17。
+`java -version` 顯示的跟 VS Code 使用的版本不一樣。
+→ 在 VS Code 的 `Java: Configure Java Runtime` 指定 JDK 21，再確認 `./mvnw -version`。
 
 **② `JAVA_HOME` 沒設**
 Maven 會找不到 Java。
@@ -98,13 +98,13 @@ Maven 會找不到 Java。
 第 3 週結帳金額對不起來，找一整天。
 
 **④ 中文變亂碼**
-檔案編碼要統一用 UTF-8（IntelliJ 預設就是）。
+檔案編碼要統一用 UTF-8；VS Code 右下角可檢查目前檔案的編碼。
 
 ## 常見錯誤訊息對照
 
 | 你會看到 | 中文意思 | 怎麼修 |
 |---|---|---|
-| `UnsupportedClassVersionError` | 編譯用的版本比執行的新 | 統一成 Java 17 |
+| `UnsupportedClassVersionError` | 編譯用的版本比執行的新 | 統一成 JDK 21，檢查 VS Code 與 Maven Wrapper 使用的版本 |
 | `JAVA_HOME is not set` | 系統不知道 Java 裝在哪 | 設定環境變數 |
 | `java: command not found` | 根本沒裝，或沒加進 PATH | 重裝 JDK |
 | `NullPointerException` | 你對一個「沒有東西」的變數動手 | 檢查那個變數是不是 null |
@@ -135,4 +135,4 @@ Maven 會找不到 Java。
 
 ## 相關頁面
 
-[Maven 與相依套件](13-Maven.md)　[Spring Boot 是什麼](14-SpringBoot是什麼.md)
+[Maven 與相依套件](13-Maven.md)　[Spring Boot 是什麼](14-SpringBoot是什麼.md)　[後端環境建置](../../spring-boot/README.md)

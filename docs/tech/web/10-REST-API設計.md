@@ -186,4 +186,4 @@ DELETE /api/admin/waitlist/{id}         放棄
 
 ## 相關頁面
 
-[HTTP 請求與回應](07-HTTP請求與回應.md)　[HTTP 狀態碼](08-HTTP狀態碼.md)　[Swagger](../backend/19-Swagger.md)
+[HTTP 請求與回應](07-HTTP請求與回應.md)　[HTTP 狀態碼](08-HTTP狀態碼.md)　[Swagger](../backend/19-Swagger.md)　[課程 06：REST 合約](../../spring-boot/tutorial/unit-06-rest-api.html)
