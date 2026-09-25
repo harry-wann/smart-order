@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="使用目前 backend 專案，一步一步建立 Spring Boot MVC 與 Northwind 商品 RESTful API。">
+  <title>實際應用：Northwind 商品 RESTful API｜Northwind Spring Boot 教室</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要內容</a>
+<main id="main" class="site-shell">
+<a class="breadcrumb" href="index.html">← 回到學習地圖</a>
+<header class="lesson-header">
+<p class="eyebrow">單元 10 · NORTHWIND LAB</p>
+<h1>實際應用：Northwind 商品 RESTful API</h1>
+<p class="hero-text">商品 API 的程式碼已在目前的 <code>backend</code> 專案中。本單元帶你從資料庫、Entity 一路對照到 HTTP 請求，最後親手呼叫它。</p>
+<div class="meta"><span>Spring Boot 4.1.1</span><span>Java 21</span><span>循序完成 10A～10D</span></div>
+</header>
+<aside class="learning-goal" aria-label="閱讀準備">
+<p><strong>先備觀念：</strong>知道 Controller、Service、Repository 大概各自負責什麼；不熟也沒關係，10A～10C 會逐層說明。</p>
+<p><strong>讀完能做到：</strong>用 GET、POST、PUT、PATCH、DELETE 操作 Northwind 的商品資料，並理解每一層為什麼要分開。</p>
+</aside>
+<nav class="lesson-toc" aria-label="本頁目錄">
+<strong>本頁閱讀路線</strong>
+<ol>
+<li><a href="#step-1">01 · 先看完成後的資料流</a></li>
+<li><a href="#step-2">02 · 目前專案與依賴</a></li>
+<li><a href="#step-3">03 · 準備 MySQL Northwind</a></li>
+<li><a href="#step-4">04 · 啟動專案</a></li>
+<li><a href="#step-5">05 · 往下閱讀</a></li>
+</ol>
+</nav>
+<article class="lesson">
+<section id="step-1">
+<h2>01 · 先看完成後的資料流</h2>
+<p>REST 是 Representational State Transfer（表述性狀態轉移），API 是 Application Programming Interface（應用程式介面）。瀏覽器或前端送出 HTTP（Hypertext Transfer Protocol，超文字傳輸協定）請求後，資料會依序經過下面幾層：</p>
+<figure class="code-block"><figcaption>一次 GET 請求的方向</figcaption><pre tabindex="0"><code class="language-text"><span class="nv">前端 / curl</span> → <span class="nc">Controller</span> → <span class="nc">Service</span> → <span class="nc">Repository</span> → <span class="nc">MySQL</span>
+             HTTP          業務規則       JPA 查詢</code></pre></figure>
+<div class="table-wrap" tabindex="0"><table><thead><tr><th>層</th><th>白話責任</th><th>本專案位置</th></tr></thead><tbody>
+<tr><td>Controller（控制器）</td><td>接收 URL、JSON 與 HTTP 方法，決定回應狀態碼。</td><td><code>controller/ProductController.java</code></td></tr>
+<tr><td>Service（服務層）</td><td>處理業務規則，例如分類是否存在、更新哪些欄位、交易何時完成。</td><td><code>service/ProductService.java</code></td></tr>
+<tr><td>Entity（實體）</td><td>描述 Java 物件如何對應資料庫資料表。</td><td><code>entity/Product.java</code></td></tr>
+<tr><td>Repository（資料存取層）</td><td>使用 Spring Data JPA（Java Persistence API，Java 持久化 API）讀寫資料庫。</td><td><code>repository/ProductRepository.java</code></td></tr>
+</tbody></table></div>
+<p>這就是 MVC（Model-View-Controller，模型－視圖－控制器）在 REST API 的簡化用法：這裡沒有 JSP 頁面，所以 View 通常改成 JSON 回應；Model 主要由 Entity 與資料存取組成。</p>
+</section>
+<section id="step-2">
+<h2>02 · 目前專案與依賴</h2>
+<p>專案已經建立在 repository 根目錄的 <code>backend</code>。請用 VS Code 開啟這個資料夾，不要另外建立第二個 Spring Boot 專案。第一次操作先看 <a href="../README.md">後端環境建置</a>；這裡只重述單元 10 需要的步驟。</p>
+<ul>
+<li><code>spring-boot-starter-webmvc</code>：建立 Controller 與 REST API。</li>
+<li><code>spring-boot-starter-data-jpa</code>：用 Entity、Repository 操作資料庫。</li>
+<li><code>spring-boot-starter-validation</code>：檢查 POST、PUT、PATCH 的輸入。</li>
+<li>MySQL Driver：讓 Java 能連到 MySQL。</li>
+<li>Spring Security：本教學的 API 暫時允許本機測試，正式環境仍要加入登入與權限。</li>
+</ul>
+<p>實際版本以 <code>backend/pom.xml</code> 為準：Spring Boot 4.1.1、Java 21。Maven Wrapper（Maven 專案版本包裝器）也已放在專案中，組員不必各自安裝不同 Maven。</p>
+<aside class="version-note"><strong>Boot 3 對照</strong><p>Boot 3 的核心 MVC、Service、JPA 寫法大多相同；常見差異是 Web 依賴通常寫成 <code>spring-boot-starter-web</code>，測試套件與部分測試 import 也不同。本專案以 Boot 4 為準，不要把 Boot 3 的 POM 直接貼進來。</p></aside>
+</section>
+<section id="step-3">
+<h2>03 · 準備 MySQL Northwind</h2>
+<p>本專案對齊團隊的 Docker 設定：MySQL 5.7 使用主機 <code>3306</code>，資料庫名稱是 <code>northwind</code>，phpMyAdmin 可從 <code>http://localhost</code> 開啟。<strong>先建立並編輯 <code>backend/.env</code>，再啟動 Docker</strong>；否則 Compose 讀不到帳密。</p>
+<figure class="code-block"><figcaption>第一次使用：從 repository 根目錄執行</figcaption><pre tabindex="0"><code class="language-bash"><span class="nb">cd</span> backend
+<span class="nb">cp</span> .env.example .env
+<span class="c1"># 開啟 .env，換掉範例密碼；讓 SPRING_DATASOURCE_USERNAME/PASSWORD</span>
+<span class="c1"># 分別與 MYSQL_USER/PASSWORD 一致</span>
+<span class="nb">docker</span> compose up -d
+<span class="nb">docker</span> compose ps</code></pre></figure>
+<p>等 MySQL 顯示 healthy，接著用 phpMyAdmin 將老師提供的 <strong>MySQL 版</strong> Northwind 匯入 <code>northwind</code>。Repository 沒附完整 Northwind；如果沒有匯入檔，可在全新空白資料庫匯入 <a href="../northwind-minimal.sql">最小練習資料 SQL</a>。這份 SQL 只建兩張表與一筆商品，足夠完成本單元，不能當完整 Northwind；已匯入完整版本時不要再匯入。至少要確認 <code>Products</code> 與 <code>Categories</code> 存在，而且分類 1 存在。</p>
+<figure class="code-block"><figcaption>在 phpMyAdmin 的 SQL 頁籤做唯讀檢查</figcaption><pre tabindex="0"><code class="language-sql"><span class="k">SELECT</span> <span class="n">DATABASE</span><span class="p">();</span>
+<span class="k">SELECT</span> <span class="n">ProductID</span><span class="p">,</span> <span class="n">ProductName</span><span class="p">,</span> <span class="n">UnitPrice</span> <span class="k">FROM</span> <span class="n">Products</span> <span class="k">ORDER BY</span> <span class="n">ProductID</span> <span class="k">LIMIT</span> <span class="mi">5</span><span class="p">;</span>
+<span class="k">SELECT</span> <span class="n">CategoryID</span><span class="p">,</span> <span class="n">CategoryName</span> <span class="k">FROM</span> <span class="n">Categories</span> <span class="k">WHERE</span> <span class="n">CategoryID</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span></code></pre></figure>
+<p>SQL 是 Structured Query Language（結構化查詢語言）。這裡使用 MySQL 語法，因此是 <code>LIMIT 5</code>，不是 SQL Server 的 <code>TOP (5)</code>；資料表是 <code>OrderDetails</code>，不是 <code>dbo.[Order Details]</code>。</p>
+</section>
+<section id="step-4">
+<h2>04 · 啟動專案</h2>
+<p><code>application.properties</code> 與 Docker Compose 共用 <code>backend/.env</code>，並連到 <code>127.0.0.1:3306/northwind</code>。確認上一節兩句 SQL 查得到表，再在 <code>backend/</code> 執行下面指令；Windows PowerShell 用 <code>./mvnw.cmd spring-boot:run</code>。</p>
+<figure class="code-block"><figcaption>macOS / Linux · 保持這個終端機開啟</figcaption><pre tabindex="0"><code class="language-bash">./mvnw spring-boot:run</code></pre></figure>
+<p>看到 <code>Started SmartOrderApplication</code> 後，另開終端機瀏覽 <code>http://localhost:8080/api/products</code>，應看到包含 <code>items</code> 的 JSON。若遇到 <code>Access denied</code> 或找不到表，回到 <a href="../README.md">環境建置的常見卡關</a> 逐項檢查。接著依序閱讀 10A、10B、10C，最後到 10D 用自己新增的商品測試五種方法。</p>
+</section>
+<section id="step-5">
+<h2>05 · 往下閱讀</h2>
+<div class="table-wrap" tabindex="0"><table><thead><tr><th>頁面</th><th>這一頁只解決一件事</th></tr></thead><tbody>
+<tr><td><a href="unit-10a-model.html">10A · Entity、DTO、Repository</a></td><td>資料怎麼對應，以及為什麼不直接把 Entity 當 API 輸入。</td></tr>
+<tr><td><a href="unit-10b-service.html">10B · Service</a></td><td>業務規則、目前程式的 @Autowired 欄位注入與交易邊界放在哪裡。</td></tr>
+<tr><td><a href="unit-10c-controller.html">10C · Controller</a></td><td>五種 HTTP 方法如何變成五個可呼叫的端點。</td></tr>
+<tr><td><a href="unit-10d-verify.html">10D · 手動驗收</a></td><td>用 curl 逐一驗證 GET、POST、PUT、PATCH、DELETE。</td></tr>
+</tbody></table></div>
+<aside class="note">如果你只想先看完整結果，可以直接開啟 <code>backend/src/main/java/tw/ispan/smartorder</code>；但建議仍按照 10A → 10B → 10C → 10D 閱讀，才能知道每個檔案為什麼存在。</aside>
+</section>
+</article>
+<nav class="page-nav" aria-label="單元導覽">
+<a href="unit-09-security.html">← 單元 09 · Spring Security</a>
+<a href="unit-10a-model.html">單元 10A · Entity、DTO、Repository →</a>
+</nav>
+</main>
+<footer class="site-footer">Northwind Spring Boot 教室 · Boot 4.1.1 / Java 21<br>程式碼與文件已對齊 backend 專案。</footer>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="用 curl 實際驗收 Northwind 商品 API 的 GET、POST、PUT、PATCH、DELETE。">
+  <title>實作四：手動驗收五種 API｜Northwind Spring Boot 教室</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要內容</a>
+<main id="main" class="site-shell">
+<a class="breadcrumb" href="unit-10-api.html">← 回到單元 10</a>
+<header class="lesson-header">
+<p class="eyebrow">單元 10D · VERIFY</p>
+<h1>實作四：手動驗收五種 API</h1>
+<p class="hero-text">先啟動服務，再按照順序執行。POST 產生的商品 id 會拿來測試 PUT、PATCH、DELETE。</p>
+<div class="meta"><span>curl</span><span>預期狀態碼</span><span>只刪自己的測試資料</span></div>
+</header>
+<aside class="learning-goal"><p><strong>安全提醒：</strong>不要拿原始 Northwind 商品做 PUT、PATCH 或 DELETE。請先 POST 一筆 Training Tea，最後只刪除那一筆。</p></aside>
+<nav class="lesson-toc" aria-label="本頁目錄"><strong>本頁閱讀路線</strong><ol>
+<li><a href="#step-1">01 · 啟動</a></li><li><a href="#step-2">02 · GET</a></li><li><a href="#step-3">03 · POST</a></li><li><a href="#step-4">04 · PUT</a></li><li><a href="#step-5">05 · PATCH</a></li><li><a href="#step-6">06 · DELETE 與錯誤</a></li>
+</ol></nav>
+<article class="lesson">
+<section id="step-1"><h2>01 · 啟動</h2>
+<p>先完成 <a href="../README.md">後端環境建置</a>：MySQL healthy、兩張表可查詢、<code>backend/.env</code> 已填好。以下 <code>cd backend</code> 假設你站在 repository 根目錄；若 VS Code 終端機已在 <code>backend/</code>，不要再執行一次。啟動後保持終端機開啟，另開終端機執行 curl。</p>
+<figure class="code-block"><figcaption>macOS / Linux · 從 repository 根目錄執行</figcaption><pre tabindex="0"><code class="language-bash"><span class="nb">cd</span> backend
+./mvnw spring-boot:run</code></pre></figure>
+<figure class="code-block"><figcaption>Windows PowerShell · 已在 backend/ 時</figcaption><pre tabindex="0"><code class="language-powershell">./mvnw.cmd spring-boot:run</code></pre></figure>
+<p>以下 curl 範例使用 macOS／Linux 或 Windows 的 Git Bash 語法。Windows 若使用 PowerShell，可以改在 <a href="http://localhost:8080/swagger-ui/index.html">Swagger UI</a> 依相同順序試呼叫，避免 PowerShell 把 <code>curl</code> 解析成別的命令。curl 的 <code>-i</code> 顯示狀態碼與標頭，<code>-H</code> 設定標頭，<code>-d</code> 提供 JSON 本文。</p>
+</section>
+<section id="step-2"><h2>02 · GET：查詢清單與單筆</h2>
+<figure class="code-block"><figcaption>先查原始資料，不會修改資料庫</figcaption><pre tabindex="0"><code class="language-bash">curl -i <span class="s1">'http://localhost:8080/api/products?page=0&amp;size=10'</span>
+curl -i http://localhost:8080/api/products/1</code></pre></figure>
+<p>預期是 <strong>200 OK</strong>。清單回應包含 <code>items</code>、<code>page</code>、<code>size</code>、<code>totalElements</code>；單筆回應包含 <code>id</code>、<code>productName</code>、<code>unitPrice</code>、<code>unitsInStock</code>、<code>discontinued</code>、<code>categoryId</code>。</p>
+<p>若清單是 <code>items: []</code>，回到 phpMyAdmin 查 <code>Products</code> 是否有資料。若連不上 <code>8080</code>，先看啟動終端機有沒有 <code>Started SmartOrderApplication</code>；若回 401／403，對照目前的 <code>SecurityConfig</code> 是否仍是教材設定。</p>
+</section>
+<section id="step-3"><h2>03 · POST：新增自己的測試商品</h2>
+<figure class="code-block"><figcaption>categoryId=1 必須在 Categories 存在</figcaption><pre tabindex="0"><code class="language-bash">curl -i -X POST http://localhost:8080/api/products \
+  -H <span class="s1">'Content-Type: application/json'</span> \
+  -d <span class="s1">'{"productName":"Training Tea","unitPrice":20.0000,"unitsInStock":10,"discontinued":false,"categoryId":1}'</span></code></pre></figure>
+<p>預期是 <strong>201 Created</strong>，標頭有 <code>Location: /api/products/...</code>，本文有新商品的 <code>id</code>。請記下這個 id；每個人的數字可能不同。若回 400 且提到分類，先用 phpMyAdmin 確認 <code>Categories</code> 有分類 1。</p>
+<figure class="code-block"><figcaption>把 78 改成剛才 POST 回應的真實 id</figcaption><pre tabindex="0"><code class="language-bash"><span class="nb">export</span> <span class="nv">PRODUCT_ID</span>=78
+<span class="nb">echo</span> <span class="s2">"$PRODUCT_ID"</span></code></pre></figure>
+<p>下面所有含 <code>$PRODUCT_ID</code> 的命令都在<strong>同一個 curl 終端機</strong>執行；若換終端機，要重新設定變數。先用 <code>GET /api/products/$PRODUCT_ID</code> 確認那筆商品是你剛新增的 Training Tea，再進行修改。</p>
+</section>
+<section id="step-4"><h2>04 · PUT：完整替換</h2>
+<figure class="code-block"><figcaption>PUT 必須提供所有可寫欄位</figcaption><pre tabindex="0"><code class="language-bash">curl -i -X PUT <span class="s2">"http://localhost:8080/api/products/</span><span class="nv">$PRODUCT_ID</span><span class="s2">"</span> \
+  -H <span class="s1">'Content-Type: application/json'</span> \
+  -d <span class="s1">'{"productName":"Training Green Tea","unitPrice":25.0000,"unitsInStock":12,"discontinued":false,"categoryId":1}'</span></code></pre></figure>
+<p>預期是 <strong>200 OK</strong>。PUT 是完整替換；漏掉必要欄位會得到 400。不存在的 id 得到 404，而且不會偷偷新增。</p>
+<p>回應中的 <code>productName</code> 應變成 <code>Training Green Tea</code>，<code>unitPrice</code> 應是 25，<code>unitsInStock</code> 應是 12。這三項一起核對，才能確認完整替換真的完成。</p>
+</section>
+<section id="step-5"><h2>05 · PATCH：只改一個欄位</h2>
+<figure class="code-block"><figcaption>只修改單價，其他欄位保持原值</figcaption><pre tabindex="0"><code class="language-bash">curl -i -X PATCH <span class="s2">"http://localhost:8080/api/products/</span><span class="nv">$PRODUCT_ID</span><span class="s2">"</span> \
+  -H <span class="s1">'Content-Type: application/json'</span> \
+  -d <span class="s1">'{"unitPrice":26.0000}'</span></code></pre></figure>
+<p>預期是 <strong>200 OK</strong>，名稱仍是 Training Green Tea，庫存仍是 12。PATCH 不接受本例沒有開放的欄位；傳入未知欄位會得到 400。</p>
+<p>這次只有 <code>unitPrice</code> 應變成 26。若送空物件 <code>{}</code>，現有 Service 會回 400；本例把 <code>null</code> 視為「不修改」，沒有示範將欄位清空。</p>
+</section>
+<section id="step-6"><h2>06 · DELETE：刪除測試資料與檢查錯誤</h2>
+<figure class="code-block"><figcaption>只刪除剛才新增的商品</figcaption><pre tabindex="0"><code class="language-bash">curl -i -X DELETE <span class="s2">"http://localhost:8080/api/products/</span><span class="nv">$PRODUCT_ID</span><span class="s2">"</span>
+curl -i <span class="s2">"http://localhost:8080/api/products/</span><span class="nv">$PRODUCT_ID</span><span class="s2">"</span></code></pre></figure>
+<p>先再確認 <code>$PRODUCT_ID</code> 指向你新增的 Training Tea，才執行 DELETE。DELETE 預期是 <strong>204 No Content</strong>，沒有回應本文；接著 GET 預期是 <strong>404 Not Found</strong>。錯誤的商品編號、負價格與不存在的分類，可以用下面的請求練習：</p>
+<figure class="code-block"><figcaption>刻意送錯，觀察錯誤回應</figcaption><pre tabindex="0"><code class="language-bash">curl -i http://localhost:8080/api/products/999999
+
+curl -i -X POST http://localhost:8080/api/products \
+  -H <span class="s1">'Content-Type: application/json'</span> \
+  -d <span class="s1">'{"productName":"","unitPrice":-1,"unitsInStock":10,"discontinued":false,"categoryId":1}'</span>
+
+curl -i -X POST http://localhost:8080/api/products \
+  -H <span class="s1">'Content-Type: application/json'</span> \
+  -d <span class="s1">'{"productName":"Unknown Category","unitPrice":10,"unitsInStock":1,"discontinued":false,"categoryId":999999}'</span></code></pre></figure>
+<p>三個案例預期分別是 404、400、400。Swagger UI（OpenAPI 介面文件）也可以在 <a href="http://localhost:8080/swagger-ui/index.html">http://localhost:8080/swagger-ui/index.html</a> 查看與試呼叫。</p>
+</section>
+</article>
+<nav class="page-nav" aria-label="單元導覽"><a href="unit-10c-controller.html">← 單元 10C · Controller</a><a href="unit-11-versions.html">單元 11 · Boot 4 與 Boot 3 →</a></nav>
+</main>
+<footer class="site-footer">Northwind Spring Boot 教室 · 單元 10D</footer>
+</body>
+</html>

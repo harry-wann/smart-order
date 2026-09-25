@@ -18,7 +18,7 @@
 <div class="meta"><span>Spring Boot 4 主線</span><span>有差異再看 Boot 3</span><span>7 個閱讀步驟</span></div>
 </header>
 <aside class="learning-goal" aria-label="閱讀準備">
-<p><strong>先備觀念：</strong>已知道 Spring 用建構子注入依賴，Controller 的方法可以處理 GET 請求。</p>
+<p><strong>先備觀念：</strong>已知道 Spring 容器可以組裝物件的依賴，Controller 的方法可以處理 GET 請求。</p>
 <p><strong>讀完能做到：</strong>從 /demo/product 一路指出資料來源、組裝方式與 JSON 回應；看懂每個類別的工作。</p>
 </aside>
 <nav class="lesson-toc" aria-label="本頁目錄">
@@ -44,30 +44,26 @@
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ProductView</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="s">"Chai"</span><span class="p">);</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">}</span></code></pre></figure><p>findExample 是我們自己寫的方法，回傳剛才定義的 ProductView。這次直接建立固定資料；之後學 JPA 時會改成資料庫實體與查詢。</p></section>
-<section id="step-4"><h2>04 · Service：安排應用要做的事</h2><p><strong>Service（服務層）</strong>負責應用流程與業務規則。這次只有讀一筆資料，所以它很短；往後像「分類是否存在、停產商品是否能下單」才會在這裡判斷。@Service 表達這個角色，也把類別登記為 Spring 元件。</p><figure class="code-block"><figcaption>ProductService.java · 建構子注入已學過的依賴</figcaption><pre tabindex="0"><code class="language-java"><span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.stereotype.Service</span><span class="p">;</span>
+<section id="step-4"><h2>04 · Service：安排應用要做的事</h2><p><strong>Service（服務層）</strong>負責應用流程與業務規則。這次只有讀一筆資料，所以它很短；往後像「分類是否存在、停產商品是否能下單」才會在這裡判斷。@Service 表達這個角色，也把類別登記為 Spring 元件。</p><figure class="code-block"><figcaption>ProductService.java · @Autowired 注入 Repository</figcaption><pre tabindex="0"><code class="language-java"><span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.beans.factory.annotation.Autowired</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.stereotype.Service</span><span class="p">;</span>
 
 <span class="nd">@Service</span>
 <span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">ProductService</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">ProductRepository</span><span class="w"> </span><span class="n">products</span><span class="p">;</span>
-
-<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="nf">ProductService</span><span class="p">(</span><span class="n">ProductRepository</span><span class="w"> </span><span class="n">products</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="na">products</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">products</span><span class="p">;</span>
-<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="nd">@Autowired</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">ProductRepository</span><span class="w"> </span><span class="n">products</span><span class="p">;</span>
 
 <span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">ProductView</span><span class="w"> </span><span class="nf">getExample</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">products</span><span class="p">.</span><span class="na">findExample</span><span class="p">();</span>
 <span class="w">    </span><span class="p">}</span>
 <span class="p">}</span></code></pre></figure><p>這和 03A 的 ProductLabel 接收 ProductCatalog 是同一個原理，只是角色名稱不同。Service 使用資料來源，不在自己裡面建立 Repository。</p></section>
-<section id="step-5"><h2>05 · Controller：接住請求，回傳結果</h2><p>Controller 的工作是把網路請求接到應用方法。本例只要收到 GET /demo/product，就呼叫 Service 的 getExample()。@RestController 會讓這個資料物件轉成 JSON 回應。</p><figure class="code-block"><figcaption>ProductController.java</figcaption><pre tabindex="0"><code class="language-java"><span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.web.bind.annotation.GetMapping</span><span class="p">;</span>
+<section id="step-5"><h2>05 · Controller：接住請求，回傳結果</h2><p>Controller 的工作是把網路請求接到應用方法。本例只要收到 GET /demo/product，就呼叫 Service 的 getExample()。@RestController 會讓這個資料物件轉成 JSON 回應。</p><figure class="code-block"><figcaption>ProductController.java</figcaption><pre tabindex="0"><code class="language-java"><span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.beans.factory.annotation.Autowired</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.web.bind.annotation.GetMapping</span><span class="p">;</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.web.bind.annotation.RestController</span><span class="p">;</span>
 
 <span class="nd">@RestController</span>
 <span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">ProductController</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">ProductService</span><span class="w"> </span><span class="n">service</span><span class="p">;</span>
-
-<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="nf">ProductController</span><span class="p">(</span><span class="n">ProductService</span><span class="w"> </span><span class="n">service</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
-<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="na">service</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">service</span><span class="p">;</span>
-<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="nd">@Autowired</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">ProductService</span><span class="w"> </span><span class="n">service</span><span class="p">;</span>
 
 <span class="w">    </span><span class="nd">@GetMapping</span><span class="p">(</span><span class="s">"/demo/product"</span><span class="p">)</span>
 <span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">ProductView</span><span class="w"> </span><span class="nf">getExample</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
