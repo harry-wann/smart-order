@@ -25,11 +25,13 @@ services:
       environment:
         PMA_HOST: mysql
         PMA_PORT: 3306
+        PMA_USER: root
+        PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       ports:
         - "80:80"
       depends_on:
         mysql:
           condition: service_healthy
 
-  volumes:
-    mysql57_data:
+volumes:
+  mysql57_data:

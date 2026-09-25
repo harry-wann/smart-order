@@ -58,6 +58,11 @@ pnpm-debug.log*
 .classpath
 !.vscode/settings.json
 !.vscode/extensions.json
+!backend/.vscode/
+backend/.vscode/*
+!backend/.vscode/settings.json
+!backend/.vscode/extensions.json
+!backend/.vscode/eclipse-formatter.xml
 
 # ─────────────────────────────────────────────────────────────
 # 環境變數與機密（絕對不要進版控）
