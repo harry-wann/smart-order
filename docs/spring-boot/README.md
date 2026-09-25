@@ -1,69 +1,8 @@
-# Spring Boot 後端：第一次啟動與學習順序
+# Spring Boot 學習導覽
 
-這是現有 `backend/` 專案的操作入口。先完成本頁的環境準備，再到 [Spring Boot 課程](tutorial/index.html) 讀觀念與商品 API 實作。課程用 Northwind 練習資料；火鍋店正式功能仍以 [專案規格](../spec/00-架構分層與技術選型.md) 和 [API 規格](../spec/04-API規格.md) 為準。
+> **第一次啟動專案：請看 [根目錄 README 的環境建置](../../README.md#啟動後端)。** 安裝工具、MySQL、IntelliJ 與常見問題統一維護在根目錄。
 
-## 先備工具與版本
-
-| 工具 | 本專案設定 | 用途 |
-|---|---|---|
-| JDK | 21 | 編譯與執行 Java；在終端機執行 `java -version` 確認。 |
-| Spring Boot | 以 `backend/pom.xml` 的 parent 版本為準，目前 4.1.1 | 不需單獨安裝，由 Maven 下載。 |
-| Maven | 使用 `backend/mvnw`／`mvnw.cmd` | Wrapper 會使用專案指定的 Maven，不需另行安裝。 |
-| Docker Desktop 或 OrbStack | 能執行 `docker compose` | 啟動 MySQL 5.7 與 phpMyAdmin。 |
-| VS Code | 建議安裝 Extension Pack for Java、Spring Boot Extension Pack | 開啟 `backend/`，讓 Java 與 Maven 專案匯入。 |
-
-macOS、Linux 和 Windows 都要先安裝 Git 與 JDK 21。VS Code 請開啟**包含 `pom.xml` 的 `backend/` 資料夾**，不要只開 `src/`。若編輯器顯示錯誤，先用命令面板的 `Java: Configure Java Runtime` 確認專案使用 JDK 21。
-
-## 第一次啟動：照順序做
-
-下列指令假設目前站在 repository 根目錄。第一次只需建立一次 `.env`；以後從第 3 步開始。
-
-1. **建立本機設定檔。** macOS／Linux 執行：
-
-   ```bash
-   cd backend
-   cp .env.example .env
-   ```
-
-   Windows PowerShell 執行：
-
-   ```powershell
-   Set-Location backend
-   Copy-Item .env.example .env
-   ```
-
-2. **編輯 `backend/.env`。** 換掉兩個範例密碼，並使 `SPRING_DATASOURCE_USERNAME` 與 `MYSQL_USER` 相同、`SPRING_DATASOURCE_PASSWORD` 與 `MYSQL_PASSWORD` 相同。`MYSQL_ROOT_PASSWORD` 是資料庫管理員密碼，和一般應用程式帳號分開。不要把 `.env` 提交到 Git；專案只提交 `.env.example`。
-3. **啟動資料庫。** 在 `backend/` 執行：
-
-   ```bash
-   docker compose up -d
-   docker compose ps
-   ```
-
-   等 `mysql` 顯示 healthy，再開啟 `http://localhost/`。若 80 或 3306 埠已被其他程式使用，先排除衝突；不要以為容器已成功啟動。
-4. **準備練習資料。** 在 phpMyAdmin 選取 `northwind` 資料庫後，匯入老師提供的 **MySQL 版 Northwind** SQL。Repository 沒有附完整 Northwind；如果手邊沒有 SQL，可在全新、空白的 `northwind` 資料庫匯入 [最小練習資料](northwind-minimal.sql)。最小資料只有 `Categories`、`Products` 和一筆 Chai，足以完成商品 API 練習，不能當作完整 Northwind。已匯入完整版本時，**不要再匯入最小資料**。
-5. **檢查資料表。** 在 phpMyAdmin 的 SQL 頁籤執行：
-
-   ```sql
-   SELECT ProductID, ProductName FROM Products ORDER BY ProductID LIMIT 5;
-   SELECT CategoryID, CategoryName FROM Categories WHERE CategoryID = 1;
-   ```
-
-   兩句都應成功，第二句應回傳分類 1；[單元 10D](tutorial/unit-10d-verify.html) 的新增範例會用到它。
-6. **啟動後端。** 仍在 `backend/`，macOS／Linux 執行 `./mvnw spring-boot:run`；Windows PowerShell 執行 `./mvnw.cmd spring-boot:run`。第一次執行會下載依賴。看到 `Started SmartOrderApplication` 後，另開終端機瀏覽 `http://localhost:8080/api/products`，應取得 JSON 商品清單。
-
-`application.properties` 會讀取 `backend/.env`；`compose.yaml` 也讀同一份檔案。Spring Boot 在主機執行，連到 `127.0.0.1:3306/northwind`。`spring.jpa.hibernate.ddl-auto=none`，因此應先匯入資料表，啟動程式不會替你建立 Northwind 表。
-
-## 常見卡關
-
-| 現象 | 先檢查 |
-|---|---|
-| `docker compose` 說變數未設定 | 是否先在 `backend/` 建立並填好 `.env`，且從該目錄執行指令。 |
-| 3306 或 80 埠已被使用 | `docker compose ps` 是否顯示容器失敗；檢查本機既有 MySQL 或網頁服務。 |
-| `Access denied for user` | `.env` 中的應用程式帳密是否與 MySQL 初始化時使用的帳密一致。MySQL 已建立資料卷後，修改 `.env` 不會自動修改資料庫內的帳密。 |
-| `Table 'northwind.Products' doesn't exist` | 是否選對 `northwind` 資料庫並匯入 MySQL 版 SQL；到 phpMyAdmin 看表名大小寫。 |
-| 連得上資料庫，但 API 回空清單 | 先在 phpMyAdmin 執行上面的 `SELECT`，確認 `Products` 真的有資料。 |
-| HTTP 401／403 | 核對目前 `backend/config/SecurityConfig.java`。教材的本機商品 API 範例可直接呼叫；若團隊已改權限設定，需依新設定登入。 |
+這一頁整理課程的閱讀順序。課程使用 Northwind 練習資料；火鍋店正式功能以[專案規格](../spec/00-架構分層與技術選型.md)與 [API 規格](../spec/04-API規格.md)為準。
 
 ## 學習順序與既有文件的關係
 
@@ -90,8 +29,6 @@ macOS、Linux 和 Windows 都要先安裝 Git 與 JDK 21。VS Code 請開啟**�
 
 短篇說明火鍋店規格與通用做法；單元 10A～10D 則對照已存在的 Northwind 程式碼。當兩份文件的示例類別名稱不同，以你正在操作的專案檔案為準。
 
-## 團隊共用設定
+## 教材維護
 
-- Spring Boot 版本固定在 `backend/pom.xml`，Java 版本固定為 21。更新版本時同步調整本文件與課程中的版本說明。
-- 提交 `pom.xml`、Maven Wrapper、`src/` 與 `.env.example`；保留 `.env`、`target/`、IDE 暫存檔與密碼在本機。
-- `backend/` 是程式碼所在位置；`docs/spring-boot/` 是教學。更改實際程式行為後，對照更新單元 10 的說明與驗收請求。
+`backend/` 是程式碼，`docs/spring-boot/` 是教學。調整實際程式行為後，請同步更新單元 10 的說明與驗收請求。

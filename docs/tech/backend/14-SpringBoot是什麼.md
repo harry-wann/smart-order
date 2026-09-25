@@ -2,7 +2,7 @@
 
 **難度** ★★☆☆☆　**用在哪些模組** 所有後端工作　**哪幾週** 第 1 週（L0）、第 3 週
 
-> 本頁的 `MenuController` 是火鍋店概念範例；現有 `backend/` 先以 Northwind 商品 API 練習。實際啟動指令、`.env` 和資料庫準備見 [後端環境建置](../../spring-boot/README.md)。
+> 本頁的 `MenuController` 是火鍋店概念範例；現有 `backend/` 先以 Northwind 商品 API 練習。實際啟動指令、`.env` 和資料庫準備見 [後端環境建置](../../../README.md#啟動後端)。
 
 ## 一句話
 

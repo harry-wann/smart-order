@@ -91,7 +91,7 @@ Spring Boot 有個貼心設計叫 **starter**：它是一個「套餐」。
 1. 開啟現有 `backend/pom.xml`，找到 parent 中的 Spring Boot 版本與 `<java.version>`。
 2. 在 `<dependencies>` 內找出 Web MVC、Data JPA、Validation 和 MySQL Driver，說出各自的用途。
 3. 在 `backend/` 執行 `./mvnw -version`（Windows 用 `./mvnw.cmd -version`），確認 Wrapper 使用的 Java 是 21。
-4. 若想看完整啟動流程，再依 [後端環境建置](../../spring-boot/README.md) 準備 `.env`、Docker 和練習資料。
+4. 若想看完整啟動流程，再依 [後端環境建置](../../../README.md#啟動後端) 準備 `.env`、MySQL（MAMP／自行安裝／Docker 擇一）和練習資料。
 
 這個練習直接使用團隊專案，避免新手另建一個版本與依賴不同的專案。
 

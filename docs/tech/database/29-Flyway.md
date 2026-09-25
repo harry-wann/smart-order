@@ -2,7 +2,7 @@
 
 **難度** ★★☆☆☆　**用在哪些模組** 技術地基 L0　**哪幾週** 第 1 週（L0）
 
-> 本頁是**火鍋店正式資料表的規劃教學**，不是目前 Northwind 練習資料庫的啟動步驟。目前 `backend/application.properties` 設為 `spring.flyway.enabled=false`、`spring.jpa.hibernate.ddl-auto=none`，不會自動執行 migration；Northwind 表請依 [後端環境建置](../../spring-boot/README.md) 匯入。
+> 本頁是**火鍋店正式資料表的規劃教學**，不是目前 Northwind 練習資料庫的啟動步驟。目前 `backend/application.properties` 設為 `spring.flyway.enabled=false`、`spring.jpa.hibernate.ddl-auto=none`，不會自動執行 migration；Northwind 表請依 [後端環境建置](../../../README.md#啟動後端) 匯入。
 
 ## 一句話
 
