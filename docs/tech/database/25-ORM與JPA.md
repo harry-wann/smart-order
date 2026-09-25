@@ -144,7 +144,7 @@ List<Object[]> findPopularItems(@Param("since") LocalDateTime since,
 1. 開啟現有 `backend/src/main/java/tw/ispan/smartorder/entity/Product.java`，找出 `@Table`、`@Id` 與一個 `@Column`，說出它們對應的 MySQL 名稱。
 2. 開啟 `ProductRepository.java`，找出 `JpaRepository<Product, Integer>`；說出 `Product` 與 `Integer` 各代表什麼。
 3. 開啟 `ProductService.java`，追蹤 `findById()` 如何呼叫 Repository，再如何用 `ProductResponse.from()` 轉成 DTO。
-4. 依 [後端環境建置](../../spring-boot/README.md) 準備資料後，呼叫 `GET /api/products/1`，把 JSON 的 `id`、`productName` 和 phpMyAdmin 的 `Products` 第 1 筆對照。
+4. 依 [後端環境建置](../../../README.md#啟動後端) 準備資料後，呼叫 `GET /api/products/1`，把 JSON 的 `id`、`productName` 和 phpMyAdmin 的 `Products` 第 1 筆對照。
 5. 想看實際 SQL，可在本機的 `backend/src/main/resources/application.properties` 暫時加上 `spring.jpa.show-sql=true`，重啟並呼叫商品查詢後觀察主控台；練習完移除這行。
 
 最後一步能讓你看到 Hibernate 送出的 SQL；先建立資料表並確認資料庫連線，才能順利操作。

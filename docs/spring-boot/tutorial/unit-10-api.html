@@ -47,7 +47,7 @@
 </section>
 <section id="step-2">
 <h2>02 · 目前專案與依賴</h2>
-<p>專案已經建立在 repository 根目錄的 <code>backend</code>。請用 VS Code 開啟這個資料夾，不要另外建立第二個 Spring Boot 專案。第一次操作先看 <a href="../README.md">後端環境建置</a>；這裡只重述單元 10 需要的步驟。</p>
+<p>專案已經建立在 repository 根目錄的 <code>backend</code>。請用 IntelliJ IDEA（或 VS Code）開啟這個資料夾，不要另外建立第二個 Spring Boot 專案。第一次操作先看 <a href="../../site/setup.html#啟動後端">後端環境建置</a>，完成後再繼續本單元。</p>
 <ul>
 <li><code>spring-boot-starter-webmvc</code>：建立 Controller 與 REST API。</li>
 <li><code>spring-boot-starter-data-jpa</code>：用 Entity、Repository 操作資料庫。</li>
@@ -59,25 +59,13 @@
 <aside class="version-note"><strong>Boot 3 對照</strong><p>Boot 3 的核心 MVC、Service、JPA 寫法大多相同；常見差異是 Web 依賴通常寫成 <code>spring-boot-starter-web</code>，測試套件與部分測試 import 也不同。本專案以 Boot 4 為準，不要把 Boot 3 的 POM 直接貼進來。</p></aside>
 </section>
 <section id="step-3">
-<h2>03 · 準備 MySQL Northwind</h2>
-<p>本專案對齊團隊的 Docker 設定：MySQL 5.7 使用主機 <code>3306</code>，資料庫名稱是 <code>northwind</code>，phpMyAdmin 可從 <code>http://localhost</code> 開啟。<strong>先建立並編輯 <code>backend/.env</code>，再啟動 Docker</strong>；否則 Compose 讀不到帳密。</p>
-<figure class="code-block"><figcaption>第一次使用：從 repository 根目錄執行</figcaption><pre tabindex="0"><code class="language-bash"><span class="nb">cd</span> backend
-<span class="nb">cp</span> .env.example .env
-<span class="c1"># 開啟 .env，換掉範例密碼；讓 SPRING_DATASOURCE_USERNAME/PASSWORD</span>
-<span class="c1"># 分別與 MYSQL_USER/PASSWORD 一致</span>
-<span class="nb">docker</span> compose up -d
-<span class="nb">docker</span> compose ps</code></pre></figure>
-<p>等 MySQL 顯示 healthy，接著用 phpMyAdmin 將老師提供的 <strong>MySQL 版</strong> Northwind 匯入 <code>northwind</code>。Repository 沒附完整 Northwind；如果沒有匯入檔，可在全新空白資料庫匯入 <a href="../northwind-minimal.sql">最小練習資料 SQL</a>。這份 SQL 只建兩張表與一筆商品，足夠完成本單元，不能當完整 Northwind；已匯入完整版本時不要再匯入。至少要確認 <code>Products</code> 與 <code>Categories</code> 存在，而且分類 1 存在。</p>
-<figure class="code-block"><figcaption>在 phpMyAdmin 的 SQL 頁籤做唯讀檢查</figcaption><pre tabindex="0"><code class="language-sql"><span class="k">SELECT</span> <span class="n">DATABASE</span><span class="p">();</span>
-<span class="k">SELECT</span> <span class="n">ProductID</span><span class="p">,</span> <span class="n">ProductName</span><span class="p">,</span> <span class="n">UnitPrice</span> <span class="k">FROM</span> <span class="n">Products</span> <span class="k">ORDER BY</span> <span class="n">ProductID</span> <span class="k">LIMIT</span> <span class="mi">5</span><span class="p">;</span>
-<span class="k">SELECT</span> <span class="n">CategoryID</span><span class="p">,</span> <span class="n">CategoryName</span> <span class="k">FROM</span> <span class="n">Categories</span> <span class="k">WHERE</span> <span class="n">CategoryID</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span></code></pre></figure>
-<p>SQL 是 Structured Query Language（結構化查詢語言）。這裡使用 MySQL 語法，因此是 <code>LIMIT 5</code>，不是 SQL Server 的 <code>TOP (5)</code>；資料表是 <code>OrderDetails</code>，不是 <code>dbo.[Order Details]</code>。</p>
+<h2>03 · 確認練習資料</h2>
+<p>請先完成 <a href="../../site/setup.html#啟動後端">根目錄 README 的後端建置流程</a>，匯入 Northwind。繼續前，確認 <code>Products</code> 與 <code>Categories</code> 存在，且分類 1 可查詢；10D 的新增範例會用到它。</p>
+<p>本課使用 MySQL 語法：分頁查詢是 <code>LIMIT 5</code>，不是 SQL Server 的 <code>TOP (5)</code>。</p>
 </section>
 <section id="step-4">
-<h2>04 · 啟動專案</h2>
-<p><code>application.properties</code> 與 Docker Compose 共用 <code>backend/.env</code>，並連到 <code>127.0.0.1:3306/northwind</code>。確認上一節兩句 SQL 查得到表，再在 <code>backend/</code> 執行下面指令；Windows PowerShell 用 <code>./mvnw.cmd spring-boot:run</code>。</p>
-<figure class="code-block"><figcaption>macOS / Linux · 保持這個終端機開啟</figcaption><pre tabindex="0"><code class="language-bash">./mvnw spring-boot:run</code></pre></figure>
-<p>看到 <code>Started SmartOrderApplication</code> 後，另開終端機瀏覽 <code>http://localhost:8080/api/products</code>，應看到包含 <code>items</code> 的 JSON。若遇到 <code>Access denied</code> 或找不到表，回到 <a href="../README.md">環境建置的常見卡關</a> 逐項檢查。接著依序閱讀 10A、10B、10C，最後到 10D 用自己新增的商品測試五種方法。</p>
+<h2>04 · 確認 API 已啟動</h2>
+<p>瀏覽 <code>http://localhost:8080/api/products</code>，應看到包含 <code>items</code> 的 JSON。若無法取得資料，依 <a href="../../site/setup.html#常見問題">環境建置的常見問題</a> 排查。接著依序閱讀 10A、10B、10C，最後到 10D 用自己新增的商品測試五種方法。</p>
 </section>
 <section id="step-5">
 <h2>05 · 往下閱讀</h2>

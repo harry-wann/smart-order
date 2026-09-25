@@ -23,10 +23,7 @@
 </ol></nav>
 <article class="lesson">
 <section id="step-1"><h2>01 · 啟動</h2>
-<p>先完成 <a href="../README.md">後端環境建置</a>：MySQL healthy、兩張表可查詢、<code>backend/.env</code> 已填好。以下 <code>cd backend</code> 假設你站在 repository 根目錄；若 VS Code 終端機已在 <code>backend/</code>，不要再執行一次。啟動後保持終端機開啟，另開終端機執行 curl。</p>
-<figure class="code-block"><figcaption>macOS / Linux · 從 repository 根目錄執行</figcaption><pre tabindex="0"><code class="language-bash"><span class="nb">cd</span> backend
-./mvnw spring-boot:run</code></pre></figure>
-<figure class="code-block"><figcaption>Windows PowerShell · 已在 backend/ 時</figcaption><pre tabindex="0"><code class="language-powershell">./mvnw.cmd spring-boot:run</code></pre></figure>
+<p>先依 <a href="../../site/setup.html#啟動後端">根目錄 README</a> 啟動後端，確認 MySQL 已啟動、兩張表可查詢，並保持後端執行中。以下在另一個終端機呼叫 API。</p>
 <p>以下 curl 範例使用 macOS／Linux 或 Windows 的 Git Bash 語法。Windows 若使用 PowerShell，可以改在 <a href="http://localhost:8080/swagger-ui/index.html">Swagger UI</a> 依相同順序試呼叫，避免 PowerShell 把 <code>curl</code> 解析成別的命令。curl 的 <code>-i</code> 顯示狀態碼與標頭，<code>-H</code> 設定標頭，<code>-d</code> 提供 JSON 本文。</p>
 </section>
 <section id="step-2"><h2>02 · GET：查詢清單與單筆</h2>

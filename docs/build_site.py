@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-把 docs/ 下的 Markdown 轉成 docs/site/ 的靜態 HTML 文件網站。
+把根目錄 README.md 與 docs/ 下的 Markdown 轉成 docs/site/ 的靜態 HTML 文件網站。
 
 功能：
-  1. 自動探索所有 .md（site/ 除外），輸出路徑與原始結構一對一對應
+  1. 根目錄 README.md 輸出 setup.html；docs/ 下的 .md（site/ 除外）依原始結構輸出
   2. Mermaid 圖表用隨附的 vendor/mermaid.min.js 離線渲染
   3. 技術名詞自動連結：每頁第一次出現的術語自動連到 tech/ 的教學頁
      （術語表在 docs/tech/glossary.json，新增技術頁記得更新）
@@ -31,6 +31,7 @@ SITE = os.path.join(DOCS, "site")
 
 # 側邊欄的分組與順序：(標題, 目錄, 是否可摺疊)
 GROUPS = [
+    ("開始使用",        "",                False),
     ("規格文件",        "spec",            False),
     ("模組規格",        "spec/modules",    False),
     ("UI 文件",         "ui",              False),
@@ -70,8 +71,10 @@ def read_title(path):
 def nav_label(rel, title):
     """側邊欄標籤：數字前綴 + 標題"""
     stem = os.path.splitext(os.path.basename(rel))[0]
+    if rel == "../README.md":
+        return "環境建置與啟動"
     if rel == "spring-boot/README.md":
-        return "後端環境建置"
+        return "Spring Boot 學習導覽"
     num = stem.split("-", 1)[0]
     short = title.split("：", 1)[-1].strip() if "：" in title else title
     if title.startswith(num):
@@ -81,8 +84,11 @@ def nav_label(rel, title):
 
 def discover():
     """回傳 [(rel_md, rel_html, title, group_title)]，依 GROUPS 的順序"""
-    pages, seen = [], set()
+    pages = [("../README.md", "setup.html", "環境建置與啟動", "開始使用")]
+    seen = set()
     for gtitle, gdir, _collapsible in GROUPS:
+        if not gdir:
+            continue
         d = os.path.join(DOCS, gdir)
         if not os.path.isdir(d):
             continue
@@ -372,7 +378,8 @@ def sidebar_html(pages, depth, current_html):
 
     out.append('<a class="nav" href="%s../spring-boot/tutorial/index.html">Spring Boot 逐步課程</a>' % up)
     out.append('<div class="foot">由 Markdown 自動產生<br>'
-               '改文件請編輯 <code>docs/</code> 下的 .md<br>'
+               '環境建置請編輯根目錄 README.md<br>'
+               '其餘文件請編輯 <code>docs/</code> 下的 .md<br>'
                '再執行 <code>python3 docs/build_site.py</code></div></nav>')
     return "".join(out)
 
@@ -424,9 +431,12 @@ def rewrite_links(body, src_dir, depth, md_to_html):
             return m.group(0)
         clean, _, anchor = href.partition("#")
         anchor = ("#" + anchor) if anchor else ""
-        key = os.path.normpath(os.path.join(src_dir, clean)).replace(os.sep, "/").lstrip("./")
+        key = os.path.relpath(os.path.join(DOCS, src_dir, clean), DOCS).replace(os.sep, "/")
         if key in md_to_html:
             return 'href="%s%s%s"' % (up, md_to_html[key], anchor)
+        # 根目錄 README 可連到自己的網頁版；首次建置時輸出檔也不必先存在。
+        if key.startswith("site/") and key[5:] in md_to_html.values():
+            return 'href="%s%s%s"' % (up, key[5:], anchor)
         # 教學 HTML、SQL 與 mockups 不在 docs/site/；從產生頁回到 docs/ 原檔。
         if clean and os.path.isfile(os.path.join(DOCS, key)):
             return 'href="%s../%s%s"' % (up, key, anchor)
@@ -517,7 +527,8 @@ def build_index(pages):
         "<p>畫面、設計規則與交接流程。</p>",
         '<div class="cards">' + cards("UI 文件") + "</div>",
         "<h2>Spring Boot 專案與課程</h2>",
-        "<p>先完成 <a href=\"spring-boot/README.html\">後端環境建置</a>，再讀 "
+        "<p>先完成 <a href=\"setup.html\">環境建置與啟動</a>，再依 "
+        "<a href=\"spring-boot/README.html\">學習導覽</a>閱讀 "
         "<a href=\"../spring-boot/tutorial/index.html\">Northwind Spring Boot 逐步課程</a>。"
         "技術短篇用火鍋店情境查觀念；Northwind 用來練習現有商品 API，正式功能以規格文件為準。</p>",
         "<h2>技術教學 50 頁</h2>",
@@ -531,7 +542,7 @@ def build_index(pages):
         "<tbody>" + tech_rows + "</tbody></table></div>",
         '<p><a href="tech/00-技術總表.html">→ 完整技術總表與必修八頁</a></p>',
         "<h2>文件維護</h2>",
-        "<p>這些 HTML 是從 <code>docs/</code> 下的 Markdown 自動產生的。"
+        "<p>環境建置頁由根目錄 <code>README.md</code> 產生，其餘頁面來自 <code>docs/</code> 下的 Markdown。"
         "<strong>改文件請編輯 .md，不要直接改 HTML</strong>，改完後執行：</p>"
         "<pre><code>python3 docs/build_site.py</code></pre>"
         "<p>新增技術頁時記得更新 <code>docs/tech/glossary.json</code>，自動連結才會生效。</p>",
