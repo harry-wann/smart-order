@@ -1,6 +1,5 @@
-import FormInput from '../../components/input/forminput'
 import DemoPage from './DemoPage'
-import SearchIcon from '../../assets/ic_verify_search.svg'
+// import SearchIcon from '../../assets/ic_verify_search.svg'
 
 import Verify from '../../components/input/verify'
 import Open from '../../components/opentime/open'
@@ -20,7 +19,7 @@ export default function DS03() {
       <div className="flex flex-4 flex-col gap-3">
         <SOFormInput
           type={SOFormInputType.NORMAL}
-          icon={SearchIcon} // 不需要icon的時候這列直接註解掉
+          // icon={SearchIcon} // 不需要icon的時候這列直接註解掉
           defaultValue=""
           placeholder="請輸入姓名"
           onChange={(e) => console.log(e.target.value)}
