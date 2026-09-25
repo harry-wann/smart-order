@@ -44,7 +44,7 @@ export default function Counter({ size = 'small', initialCount = 0 }) {
 
   if (size === 'large') {
     return (
-      <div className="flex h-14.5 w-46.5 items-center rounded-full border border-[#eadfd8] bg-white">
+      <div className="flex h-14.5 w-46.5 items-center rounded-full border border-line bg-surface">
         {/* 左邊 */}
         {count === 1 ? (
           <button onClick={remove} className="flex h-14 w-14 shrink-0 items-center justify-center">
@@ -76,7 +76,7 @@ export default function Counter({ size = 'small', initialCount = 0 }) {
 
   // Small：102 × 30 (一般)
   return (
-    <div className="flex h-7.5 w-25.5 items-center rounded-full border border-[#eadfd8] bg-white">
+    <div className="flex h-7.5 w-25.5 items-center rounded-full border border-line bg-surface">
       {/* 左邊 */}
       {count === 1 ? (
         <button onClick={remove} className="flex h-7.5 w-7.5 shrink-0 items-center justify-center">
