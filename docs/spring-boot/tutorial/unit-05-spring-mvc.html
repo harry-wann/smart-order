@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="先用一筆已知的 Northwind 商品資料，把 Controller、Service、Repository 串起來。這頁不加入資料庫查詢或交易。">
+  <title>先走通一個請求，再學三層分工｜Northwind Spring Boot 教室</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要內容</a>
+<main id="main" class="site-shell">
+<a class="breadcrumb" href="index.html">← 回到學習地圖</a>
+<header class="lesson-header">
+<p class="eyebrow">單元 05 · NORTHWIND LAB</p>
+<h1>先走通一個請求，再學三層分工</h1>
+<p class="hero-text">先用一筆已知的 Northwind 商品資料，把 Controller、Service、Repository 串起來。這頁不加入資料庫查詢或交易。</p>
+<div class="meta"><span>Spring Boot 4 主線</span><span>有差異再看 Boot 3</span><span>7 個閱讀步驟</span></div>
+</header>
+<aside class="learning-goal" aria-label="閱讀準備">
+<p><strong>先備觀念：</strong>已知道 Spring 容器可以組裝物件的依賴，Controller 的方法可以處理 GET 請求。</p>
+<p><strong>讀完能做到：</strong>從 /demo/product 一路指出資料來源、組裝方式與 JSON 回應；看懂每個類別的工作。</p>
+</aside>
+<nav class="lesson-toc" aria-label="本頁目錄">
+<strong>本頁閱讀路線</strong>
+<ol><li><a href="#step-1">01 · 先決定這次要回傳什麼</a></li>
+<li><a href="#step-2">02 · 先定義資料形狀，再使用它</a></li>
+<li><a href="#step-3">03 · Repository：提供資料</a></li>
+<li><a href="#step-4">04 · Service：安排應用要做的事</a></li>
+<li><a href="#step-5">05 · Controller：接住請求，回傳結果</a></li>
+<li><a href="#step-6">06 · 用兩條流程看懂注入與請求</a></li>
+<li><a href="#step-7">07 · MVC 和三層架構，再放在一起比較</a></li>
+<li><a href="#step-8">延伸閱讀</a></li></ol>
+</nav>
+<article class="lesson">
+<section id="step-1"><h2>01 · 先決定這次要回傳什麼</h2><p>固定任務：GET /demo/product 回傳商品 1 的名稱 Chai。前一頁學過 JSON（JavaScript Object Notation，JavaScript 物件表示法），先把預期結果寫出來。</p><figure class="code-block"><figcaption>這次的預期回應</figcaption><pre tabindex="0"><code class="language-json"><span class="p">{</span><span class="nt">"id"</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="nt">"productName"</span><span class="p">:</span><span class="s2">"Chai"</span><span class="p">}</span></code></pre></figure><p>這頁的資料固定在程式裡，讓你專心追蹤請求。第 07 單元才把來源換成真正資料庫；第 10 單元再擴充新增、修改與錯誤處理。</p></section>
+<section id="step-2"><h2>02 · 先定義資料形狀，再使用它</h2><p>DTO = Data Transfer Object（資料傳輸物件），用來表達「要傳出去哪些欄位」。本例的 ProductView 只需要 id 和 productName。Java 的 record 是簡潔資料型別，會自動產生建構子與讀取方法。</p><figure class="code-block"><figcaption>ProductView.java · 此教學版本只有兩個欄位</figcaption><pre tabindex="0"><code class="language-java"><span class="kd">public</span><span class="w"> </span><span class="kd">record</span> <span class="nc">ProductView</span><span class="p">(</span><span class="n">Integer</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">productName</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span></code></pre></figure><figure class="code-block"><figcaption>先不用框架，也能建立與讀取它</figcaption><pre tabindex="0"><code class="language-java"><span class="n">ProductView</span><span class="w"> </span><span class="n">product</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ProductView</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="s">"Chai"</span><span class="p">);</span>
+<span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">product</span><span class="p">.</span><span class="na">productName</span><span class="p">());</span><span class="w"> </span><span class="o">//</span><span class="w"> </span><span class="n">Chai</span></code></pre></figure><p>ProductView 是我們自己取的名稱，不是 Spring 內建型別。先認得它，再看後面方法為什麼都把 ProductView 寫在方法名稱前面：那是宣告回傳值的型別。</p></section>
+<section id="step-3"><h2>03 · Repository：提供資料</h2><p><strong>Repository（資料存取層）</strong>專注資料從哪裡取得。這裡先用一個普通類別提供固定資料；還沒有介接資料庫，也沒有任何自動查詢魔法。@Repository 是用來表達資料存取角色的 Spring 元件標記。</p><figure class="code-block"><figcaption>ProductRepository.java · 示範來源</figcaption><pre tabindex="0"><code class="language-java"><span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.stereotype.Repository</span><span class="p">;</span>
+
+<span class="nd">@Repository</span>
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">ProductRepository</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">ProductView</span><span class="w"> </span><span class="nf">findExample</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ProductView</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="s">"Chai"</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure><p>findExample 是我們自己寫的方法，回傳剛才定義的 ProductView。這次直接建立固定資料；之後學 JPA 時會改成資料庫實體與查詢。</p></section>
+<section id="step-4"><h2>04 · Service：安排應用要做的事</h2><p><strong>Service（服務層）</strong>負責應用流程與業務規則。這次只有讀一筆資料，所以它很短；往後像「分類是否存在、停產商品是否能下單」才會在這裡判斷。@Service 表達這個角色，也把類別登記為 Spring 元件。</p><figure class="code-block"><figcaption>ProductService.java · @Autowired 注入 Repository</figcaption><pre tabindex="0"><code class="language-java"><span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.beans.factory.annotation.Autowired</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.stereotype.Service</span><span class="p">;</span>
+
+<span class="nd">@Service</span>
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">ProductService</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nd">@Autowired</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">ProductRepository</span><span class="w"> </span><span class="n">products</span><span class="p">;</span>
+
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">ProductView</span><span class="w"> </span><span class="nf">getExample</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">products</span><span class="p">.</span><span class="na">findExample</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure><p>這和 03A 的 ProductLabel 接收 ProductCatalog 是同一個原理，只是角色名稱不同。Service 使用資料來源，不在自己裡面建立 Repository。</p></section>
+<section id="step-5"><h2>05 · Controller：接住請求，回傳結果</h2><p>Controller 的工作是把網路請求接到應用方法。本例只要收到 GET /demo/product，就呼叫 Service 的 getExample()。@RestController 會讓這個資料物件轉成 JSON 回應。</p><figure class="code-block"><figcaption>ProductController.java</figcaption><pre tabindex="0"><code class="language-java"><span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.beans.factory.annotation.Autowired</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.web.bind.annotation.GetMapping</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.web.bind.annotation.RestController</span><span class="p">;</span>
+
+<span class="nd">@RestController</span>
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">ProductController</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nd">@Autowired</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">ProductService</span><span class="w"> </span><span class="n">service</span><span class="p">;</span>
+
+<span class="w">    </span><span class="nd">@GetMapping</span><span class="p">(</span><span class="s">"/demo/product"</span><span class="p">)</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">ProductView</span><span class="w"> </span><span class="nf">getExample</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">service</span><span class="p">.</span><span class="na">getExample</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure><p>四個類別放在 Boot 啟動類別可掃描的同一套件或子套件。此處為了讀懂分工省略 package 宣告；實際建立專案時仍要與資料夾一致。這套短示例與第 10 單元是不同階段的替代版本，不要同時放入兩個 ProductController。</p></section>
+<section id="step-6"><h2>06 · 用兩條流程看懂注入與請求</h2><div class="table-wrap" tabindex="0"><table><thead><tr><th scope="col">何時</th><th scope="col">發生什麼</th></tr></thead><tbody><tr><td>啟動時</td><td>Spring 找到 Repository，建立它；交給 Service；再把 Service 交給 Controller</td></tr><tr><td>有請求時</td><td>Controller 呼叫 Service，Service 呼叫 Repository，Repository 回傳 ProductView</td></tr><tr><td>回應時</td><td>ProductView 逐層回傳，框架轉成 JSON 送出</td></tr></tbody></table></div><p>不要把「組裝順序」和「方法呼叫順序」混為一談。通常不是每次 GET 都重新 new 一組這些預設共用的元件；每次請求是在呼叫它們的方法。</p></section>
+<section id="step-7"><h2>07 · MVC 和三層架構，再放在一起比較</h2><p>MVC = Model–View–Controller（模型、視圖、控制器）。Model 是顯示需要的資料，View 是畫面呈現，Controller 協調請求。你學過的 Servlet 與 JSP 就能用這個角度理解。</p><p>Controller／Service／Repository 是應用的<strong>責任分層</strong>，不是 MVC 三個字母的替代名稱。資料 API 回傳 JSON，沒有 JSP 畫面層，也仍然可以使用 Spring MVC 處理請求。</p><div class="table-wrap" tabindex="0"><table><thead><tr><th scope="col">角色</th><th scope="col">自己檢查責任的方法</th></tr></thead><tbody><tr><td>Controller</td><td>是否主要在處理路徑、輸入與回應？</td></tr><tr><td>Service</td><td>是否主要在處理應用規則與流程？</td></tr><tr><td>Repository</td><td>是否主要在處理資料取得與保存？</td></tr><tr><td>DTO</td><td>是否只定義傳輸的資料形狀？</td></tr></tbody></table></div><div class="checkpoint"><strong>停一下，自己想想</strong><p>今天名稱來源改成資料庫，要不要把查詢程式寫進 Controller？</p><details><summary>看解釋</summary><p>不需要。先改資料存取部分，必要時調整 Service；Controller 維持它的請求與回應責任。完整資料庫做法從第 07 單元開始。</p></details></div></section>
+<section id="step-8"><h2>延伸閱讀</h2><p><a href="https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-requestmapping.html">Spring MVC：請求對應方法</a></p></section>
+</article>
+<nav class="page-nav" aria-label="單元導覽">
+<a href="unit-04-spring-boot.html">← 單元 04 · Spring Boot：把物件管理接上 Tomcat</a>
+<a href="unit-06-rest-api.html">單元 06 · RESTful API：先定義合約，再寫方法 →</a>
+</nav>
+</main>
+<footer class="site-footer">Northwind Spring Boot 教室 · Boot 4.1.1 / Java 21<br>程式碼為教學範例，由你逐步操作。版本查核：2026-09-22；閱讀順序修訂：2026-09-23。</footer>
+</body>
+</html>

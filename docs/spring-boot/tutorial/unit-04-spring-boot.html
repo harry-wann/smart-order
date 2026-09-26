@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="你已經知道容器怎麼組裝物件。現在沿用 Servlet 課的觀念，看看整個應用如何啟動、接到請求。">
+  <title>Spring Boot：把物件管理接上 Tomcat｜Northwind Spring Boot 教室</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要內容</a>
+<main id="main" class="site-shell">
+<a class="breadcrumb" href="index.html">← 回到學習地圖</a>
+<header class="lesson-header">
+<p class="eyebrow">單元 04 · NORTHWIND LAB</p>
+<h1>Spring Boot：把物件管理接上 Tomcat</h1>
+<p class="hero-text">你已經知道容器怎麼組裝物件。現在沿用 Servlet 課的觀念，看看整個應用如何啟動、接到請求。</p>
+<div class="meta"><span>Spring Boot 4 主線</span><span>有差異再看 Boot 3</span><span>6 個閱讀步驟</span></div>
+</header>
+<aside class="learning-goal" aria-label="閱讀準備">
+<p><strong>先備觀念：</strong>完成 03、03A、03B，能分辨普通物件、Spring 容器與 Spring Bean。</p>
+<p><strong>讀完能做到：</strong>說明 Tomcat 沒有消失，並追蹤 /hello 請求最後由哪個方法處理。</p>
+</aside>
+<nav class="lesson-toc" aria-label="本頁目錄">
+<strong>本頁閱讀路線</strong>
+<ol><li><a href="#step-1">01 · 先分清楚兩個「管理」</a></li>
+<li><a href="#step-2">02 · Boot 的 main 方法接手啟動</a></li>
+<li><a href="#step-3">03 · 先從你熟悉的 Servlet 看一個請求</a></li>
+<li><a href="#step-4">04 · 再看 Spring 的處理類別</a></li>
+<li><a href="#step-5">05 · JSP 畫面與資料回應有什麼不同？</a></li>
+<li><a href="#step-6">06 · 已學技術與版本放回正確位置</a></li>
+<li><a href="#step-7">延伸閱讀</a></li></ol>
+</nav>
+<article class="lesson">
+<section id="step-1"><h2>01 · 先分清楚兩個「管理」</h2><div class="table-wrap" tabindex="0"><table><thead><tr><th scope="col">角色</th><th scope="col">你已知道的責任</th></tr></thead><tbody><tr><td>Tomcat</td><td>接收網路請求、管理 Servlet 的生命週期</td></tr><tr><td>Spring 容器</td><td>組裝並管理應用內的物件，也就是前頁的 Bean</td></tr><tr><td>Spring Boot</td><td>提供相容套件、常見預設與啟動整合，把上述工作接起來</td></tr></tbody></table></div><p>Tomcat 容器與 Spring 容器不是同一個概念。這份應用會同時使用兩者：Tomcat 接請求，Spring 提供處理請求需要的物件。</p></section>
+<section id="step-2"><h2>02 · Boot 的 main 方法接手啟動</h2><p>上一頁為了理解原理，手動建立 Spring 容器。Boot 專案一般讓 SpringApplication.run(...) 建立應用環境；若加入了 Web 套件，也會啟動內嵌 Tomcat。</p><p>@SpringBootApplication 是啟動類別上的標記，包含三件事：把類別當成設定、開啟自動設定，以及掃描元件。自動設定是依已安裝套件與設定值準備常用功能；掃描元件則是尋找前頁學過的 @Component 等標記。</p><figure class="code-block"><figcaption>啟動類別 · main 是 Java 程式的入口</figcaption><pre tabindex="0"><code class="language-java"><span class="kn">package</span><span class="w"> </span><span class="nn">com.example.northwind</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.boot.SpringApplication</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.boot.autoconfigure.SpringBootApplication</span><span class="p">;</span>
+
+<span class="nd">@SpringBootApplication</span>
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">NorthwindApplication</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="o">[]</span><span class="w"> </span><span class="n">args</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">SpringApplication</span><span class="p">.</span><span class="na">run</span><span class="p">(</span><span class="n">NorthwindApplication</span><span class="p">.</span><span class="na">class</span><span class="p">,</span><span class="w"> </span><span class="n">args</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure><p>套件（Package）用來組織 Java 類別。預設掃描從 com.example.northwind 開始，包含其子套件；所以把應用類別放在這個範圍裡。不要把啟動類別放到無套件的預設位置。</p></section>
+<section id="step-3"><h2>03 · 先從你熟悉的 Servlet 看一個請求</h2><p>HTTP = Hypertext Transfer Protocol（超文字傳輸協定），瀏覽器與伺服器用它傳遞請求與回應。GET 是讀取資料的方法。假設瀏覽器用 GET 請求 /hello，傳統 Servlet 可以這樣回傳文字。</p><figure class="code-block"><figcaption>Servlet 方式 · 省略 imports，沿用既有知識</figcaption><pre tabindex="0"><code class="language-java"><span class="nd">@WebServlet</span><span class="p">(</span><span class="s">"/hello"</span><span class="p">)</span>
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">HelloServlet</span><span class="w"> </span><span class="kd">extends</span><span class="w"> </span><span class="n">HttpServlet</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nd">@Override</span>
+<span class="w">    </span><span class="kd">protected</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">doGet</span><span class="p">(</span><span class="n">HttpServletRequest</span><span class="w"> </span><span class="n">request</span><span class="p">,</span><span class="w"> </span><span class="n">HttpServletResponse</span><span class="w"> </span><span class="n">response</span><span class="p">)</span>
+<span class="w">            </span><span class="kd">throws</span><span class="w"> </span><span class="n">IOException</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">response</span><span class="p">.</span><span class="na">setContentType</span><span class="p">(</span><span class="s">"text/plain;charset=UTF-8"</span><span class="p">);</span>
+<span class="w">        </span><span class="n">response</span><span class="p">.</span><span class="na">getWriter</span><span class="p">().</span><span class="na">write</span><span class="p">(</span><span class="s">"Northwind"</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure><p>你已經把「何時呼叫 doGet」交給 Tomcat。Spring Web 的做法會在這條流程中加入一個統一分派請求的 Servlet。</p></section>
+<section id="step-4"><h2>04 · 再看 Spring 的處理類別</h2><p><strong>Controller（控制器）</strong>是接收與協調請求的類別。@RestController 讓它被 Spring 管理，並把方法回傳值寫入回應內容；@GetMapping("/hello") 指定這個方法處理 GET /hello。先知道兩個註解的目的，再讀程式。</p><figure class="code-block"><figcaption>同一個結果 · Spring 的 Controller</figcaption><pre tabindex="0"><code class="language-java"><span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.web.bind.annotation.GetMapping</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.web.bind.annotation.RestController</span><span class="p">;</span>
+
+<span class="nd">@RestController</span>
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">HelloController</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nd">@GetMapping</span><span class="p">(</span><span class="s">"/hello"</span><span class="p">)</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="nf">hello</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="s">"Northwind"</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure><ul><li>瀏覽器送 GET /hello 給 Tomcat。</li><li>Tomcat 把請求交給 DispatcherServlet（Spring 用來統一分派請求的 Servlet）。</li><li>DispatcherServlet 依路徑找到 HelloController.hello()。</li><li>方法回傳 Northwind，框架把文字寫入 HTTP 回應。</li></ul><p>你不必自己呼叫 hello()。也不必讓 HelloController 繼承 HttpServlet；Servlet 這層由 DispatcherServlet 處理。MVC = Model–View–Controller（模型、視圖、控制器），是這套 Web 框架的分工背景，下一頁再展開。</p></section>
+<section id="step-5"><h2>05 · JSP 畫面與資料回應有什麼不同？</h2><p>JSP = JavaServer Pages，現稱 Jakarta Server Pages，通常由伺服器產生網頁。API = Application Programming Interface（應用程式介面），讓另一個程式按約定取得資料或執行操作。這份教材後面採資料 API，讓前端決定畫面怎麼顯示。</p><div class="table-wrap" tabindex="0"><table><thead><tr><th scope="col">你熟悉的流程</th><th scope="col">本課接下來的流程</th></tr></thead><tbody><tr><td>Servlet 把資料放進 request</td><td>Controller 回傳 Java 資料物件</td></tr><tr><td>轉交 JSP 產生 HTML 網頁</td><td>框架轉成 JSON 資料</td></tr><tr><td>瀏覽器顯示伺服器產出的畫面</td><td>前端接收資料，再組成畫面</td></tr></tbody></table></div><p>JSON = JavaScript Object Notation（JavaScript 物件表示法），常用鍵值對交換資料；例如 {"id":1,"productName":"Chai"}。下一頁先定義那個 Java 資料物件，再看自動轉換。</p><aside class="note">Spring 仍能回傳網頁，不是只能做資料 API。Boot 使用 JSP 時需另外確認 WAR 封裝等限制；本課的主線先不混入 JSP 部署設定。</aside></section>
+<section id="step-6"><h2>06 · 已學技術與版本放回正確位置</h2><p>Jakarta EE = Jakarta Enterprise Edition（Jakarta 企業版），是一組企業 Java 規格，不是單一伺服器。Persistence 是持久化規格，Validation 是資料驗證規格；分別到資料庫與驗證單元再學。Tomcat 實作部分 Web 規格，不是完整 Jakarta EE 平台。</p><details class="optional-reading"><summary>選讀：Boot 3／4 的版本差異，第一次可先跳過</summary><div class="table-wrap" tabindex="0"><table><thead><tr><th scope="col">項目</th><th scope="col">主線 Boot 4</th><th scope="col">Boot 3.5 對照</th></tr></thead><tbody><tr><td>核心框架</td><td>Spring Framework 7</td><td>Spring Framework 6.2</td></tr><tr><td>Web starter</td><td>spring-boot-starter-webmvc</td><td>spring-boot-starter-web</td></tr><tr><td>Tomcat／Servlet</td><td>Tomcat 11／Servlet 6.1</td><td>Tomcat 10.1／Servlet 6.0</td></tr><tr><td>JSON 轉換工具</td><td>Jackson 3</td><td>Jackson 2</td></tr><tr><td>Servlet 等 imports</td><td>jakarta.*</td><td>同樣 jakarta.*，不是 javax.*</td></tr></tbody></table></div><p>Jackson 是 Java 物件與 JSON 的轉換工具。本課使用框架的預設轉換，暫時不需要自行設定它。</p> </details><div class="checkpoint"><strong>停一下，自己想想</strong><p>用了 Boot 以後，Tomcat 和 Servlet 是否都不見了？</p><details><summary>看解釋</summary><p>沒有。Tomcat 仍接收請求，DispatcherServlet 仍是 Servlet。你主要改寫 Controller 方法，而讓框架處理路徑分派與回應轉換。</p></details></div></section>
+<section id="step-7"><h2>延伸閱讀</h2><p><a href="https://docs.spring.io/spring-boot/reference/web/servlet.html">Boot 4 Servlet 應用</a> · <a href="https://docs.spring.io/spring-boot/reference/using/structuring-your-code.html">Boot 類別組織與掃描</a></p></section>
+</article>
+<nav class="page-nav" aria-label="單元導覽">
+<a href="unit-03b-container.html">← 單元 03B · 交給 Spring 組裝：現在才認識容器與 Bean</a>
+<a href="unit-05-spring-mvc.html">單元 05 · 先走通一個請求，再學三層分工 →</a>
+</nav>
+</main>
+<footer class="site-footer">Northwind Spring Boot 教室 · Boot 4.1.1 / Java 21<br>程式碼為教學範例，由你逐步操作。版本查核：2026-09-22；閱讀順序修訂：2026-09-23。</footer>
+</body>
+</html>

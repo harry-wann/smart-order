@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="沿用 Northwind 商品 API，從負價格、查不到商品，到可重複執行的測試。">
+  <title>驗證、例外與測試：讓錯誤也有規格｜Northwind Spring Boot 教室</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要內容</a>
+<main id="main" class="site-shell">
+<a class="breadcrumb" href="index.html">← 回到學習地圖</a>
+<header class="lesson-header">
+<p class="eyebrow">單元 08 · NORTHWIND LAB</p>
+<h1>驗證、例外與測試：讓錯誤也有規格</h1>
+<p class="hero-text">沿用 Northwind 商品 API，從負價格、查不到商品，到可重複執行的測試。</p>
+<div class="meta"><span>Spring Boot 4 主線</span><span>有差異再看 Boot 3</span><span>6 個閱讀步驟</span></div>
+</header>
+<aside class="learning-goal" aria-label="閱讀準備">
+<p><strong>先備觀念：</strong>已學過請求資料、狀態碼、資料查詢與交易；還不需要先寫完第 10 單元。</p>
+<p><strong>讀完能做到：</strong>分清輸入驗證、業務例外與測試，各用一個小例子看見成功和失敗。</p>
+</aside>
+<nav class="lesson-toc" aria-label="本頁目錄">
+<strong>本頁閱讀路線</strong>
+<ol><li><a href="#step-1">01 · 格式驗證與業務規則分開</a></li>
+<li><a href="#step-2">02 · 讓 Controller 真的啟動驗證</a></li>
+<li><a href="#step-3">03 · 不存在與資料衝突要分得開</a></li>
+<li><a href="#step-4">04 · 先用已知的例子理解單元測試</a></li>
+<li><a href="#step-5">05 · 然後才測網路入口</a></li>
+<li><a href="#step-6">06 · 什麼時候才需要資料庫測試？</a></li>
+<li><a href="#step-7">延伸閱讀</a></li></ol>
+</nav>
+<article class="lesson">
+<section id="step-1"><h2>01 · 格式驗證與業務規則分開</h2><p>@NotNull 要求有值，@DecimalMin 限定最低金額，@Digits 限制整數與小數位數。它們來自 jakarta.validation.constraints，需要 spring-boot-starter-validation。先知道規則，再看它們貼在哪些欄位。</p><p>Validation（資料驗證）先檢查資料形狀：名稱不能空白、價格不能負數。業務規則則包括「分類必須存在」、「已下單商品不可直接刪除」。前者放在請求 DTO，後者由 Service 與資料庫限制共同處理。DTO 是 Data Transfer Object（資料傳輸物件）。</p><figure class="code-block"><figcaption>請求 DTO · 片段</figcaption><pre tabindex="0"><code class="language-java"><span class="kd">public</span><span class="w"> </span><span class="kd">record</span> <span class="nc">PricePatch</span><span class="p">(</span>
+<span class="w">    </span><span class="nd">@NotNull</span>
+<span class="w">    </span><span class="nd">@DecimalMin</span><span class="p">(</span><span class="s">"0.0000"</span><span class="p">)</span>
+<span class="w">    </span><span class="nd">@Digits</span><span class="p">(</span><span class="n">integer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">15</span><span class="p">,</span><span class="w"> </span><span class="n">fraction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">4</span><span class="p">)</span>
+<span class="w">    </span><span class="n">BigDecimal</span><span class="w"> </span><span class="n">unitPrice</span>
+<span class="p">)</span><span class="w"> </span><span class="p">{}</span></code></pre></figure><p>@NotNull 要求有值；@DecimalMin 設最低值；@Digits 限制小數位數。這些來自 jakarta.validation.constraints，搭配 spring-boot-starter-validation。@DecimalMin 本身不會拒絕 null，所以要加 @NotNull。</p></section>
+<section id="step-2"><h2>02 · 讓 Controller 真的啟動驗證</h2><p>前一節把規則寫在請求物件上，這一節才啟動檢查。@RequestBody 先把 JSON 轉成物件，@Valid 再要求驗證規則；不是寫了規則就會在所有普通 Java 呼叫中自動執行。</p><figure class="code-block"><figcaption>Controller 方法片段</figcaption><pre tabindex="0"><code class="language-java"><span class="nd">@PatchMapping</span><span class="p">(</span><span class="s">"/{id}"</span><span class="p">)</span>
+<span class="kd">public</span><span class="w"> </span><span class="n">ProductView</span><span class="w"> </span><span class="nf">patch</span><span class="p">(</span><span class="nd">@PathVariable</span><span class="p">(</span><span class="s">"id"</span><span class="p">)</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="nd">@Valid</span><span class="w"> </span><span class="nd">@RequestBody</span><span class="w"> </span><span class="n">PricePatch</span><span class="w"> </span><span class="n">request</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">service</span><span class="p">.</span><span class="na">patchPrice</span><span class="p">(</span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">request</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure><p>@RequestBody 將 JSON 請求本文轉成 DTO；JSON 是 JavaScript Object Notation（JavaScript 物件表示法）。@Valid 觸發 Jakarta Validation 檢查。若價格 -1，請求應在進入 Service 前回 400。</p><p>這段先展示請求入口，ProductView 是 05 定義的回應形狀。這裡的 PricePatch 與 ProductView 是概念例子，和單元 10 的 ProductPatchRequest、ProductResponse 名稱不同，不要直接貼進現有專案。完整修改方法在 10B；目前先追蹤：合法輸入進 Service，負價格先回 400。</p></section>
+<section id="step-3"><h2>03 · 不存在與資料衝突要分得開</h2><p><strong>Exception（例外）</strong>是程式以特殊方式回報處理失敗。普通 Java 例外不會自己變成 HTTP 狀態碼；@ExceptionHandler 指定例外要由哪個方法轉成回應。@RestControllerAdvice 把這種處理集中到一個類別。</p><p>ResponseEntity 可以設定 HTTP 狀態與回應內容；ProblemDetail 是 Spring 提供的錯誤資料物件。下面先定義查不到商品的例外，再示範如何回 404。</p><figure class="code-block"><figcaption>自訂例外與集中處理 · 概念片段</figcaption><pre tabindex="0"><code class="language-java"><span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">ProductNotFound</span><span class="w"> </span><span class="kd">extends</span><span class="w"> </span><span class="n">RuntimeException</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="nf">ProductNotFound</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">super</span><span class="p">(</span><span class="s">"商品不存在："</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">id</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="nd">@RestControllerAdvice</span>
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">ApiErrors</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nd">@ExceptionHandler</span><span class="p">(</span><span class="n">ProductNotFound</span><span class="p">.</span><span class="na">class</span><span class="p">)</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">ResponseEntity</span><span class="o">&lt;</span><span class="n">ProblemDetail</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">notFound</span><span class="p">(</span><span class="n">ProductNotFound</span><span class="w"> </span><span class="n">ex</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">ResponseEntity</span><span class="p">.</span><span class="na">status</span><span class="p">(</span><span class="mi">404</span><span class="p">).</span><span class="na">body</span><span class="p">(</span>
+<span class="w">            </span><span class="n">ProblemDetail</span><span class="p">.</span><span class="na">forStatusAndDetail</span><span class="p">(</span>
+<span class="w">                </span><span class="n">HttpStatus</span><span class="p">.</span><span class="na">NOT_FOUND</span><span class="p">,</span><span class="w"> </span><span class="n">ex</span><span class="p">.</span><span class="na">getMessage</span><span class="p">()));</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure><p>@RestControllerAdvice 可以集中處理不同 Controller 的例外。ProblemDetail 是 Spring 提供的標準問題回應物件，包含 status、title、detail 等欄位。最終實作使用同樣風格，並加上 400／409。</p><p>不要把 SQL、資料庫密碼或整段堆疊回傳給前端。資料庫外鍵阻擋刪除可回 409；未知失敗記錄在伺服器後回一般錯誤訊息。</p></section>
+<section id="step-4"><h2>04 · 先用已知的例子理解單元測試</h2><p>Unit Test（單元測試）驗證一小段功能。JUnit 是 Java 測試框架；@Test 標示一個測試方法；assertEquals 表示「實際值應等於預期值」，不相等就算失敗。</p><figure class="code-block"><figcaption>沿用 03A 的三個型別 · 這裡只示範測試方法</figcaption><pre tabindex="0"><code class="language-java"><span class="nd">@Test</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">labelUsesTheProvidedCatalog</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">ProductCatalog</span><span class="w"> </span><span class="n">catalog</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">TrainingCatalog</span><span class="p">();</span>
+<span class="w">    </span><span class="n">ProductLabel</span><span class="w"> </span><span class="n">label</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ProductLabel</span><span class="p">(</span><span class="n">catalog</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">assertEquals</span><span class="p">(</span><span class="s">"商品：測試茶"</span><span class="p">,</span><span class="w"> </span><span class="n">label</span><span class="p">.</span><span class="na">text</span><span class="p">());</span>
+<span class="p">}</span></code></pre></figure><p>@Test 來自 org.junit.jupiter.api.Test；assertEquals 以 static import 匯入 org.junit.jupiter.api.Assertions.assertEquals。這段放在測試類別內，且需要 03A 的 ProductCatalog、TrainingCatalog、ProductLabel 同套件類別。</p><p>你在 03A 已經手動看過輸出；現在把「看到的結果要是什麼」交給工具反覆檢查。未來有人把標籤格式改壞，就能在測試時發現。這裡不需要資料庫，也不用測試替身框架。</p></section>
+<section id="step-5"><h2>05 · 然後才測網路入口</h2><p>Web 測試要確認的不只是方法結果，而是請求進入 Controller 後，有沒有轉成對的 HTTP 狀態與資料。MockMvc 是 Spring 模擬這條處理流程的測試工具。</p><div class="table-wrap" tabindex="0"><table><thead><tr><th scope="col">送什麼</th><th scope="col">要檢查什麼</th></tr></thead><tbody><tr><td>PATCH 價格 -1</td><td>回 400，而且不執行修改</td></tr><tr><td>GET 不存在的商品</td><td>回 404，而不是 200 搭配錯誤文字</td></tr><tr><td>POST 合法商品</td><td>回 201，並提供新商品位置</td></tr></tbody></table></div><p>此時先讀懂測試目標。<a href="unit-10d-verify.html">10D</a> 提供逐步的 curl 手動驗收，不是 JUnit 測試檔。要寫自動化測試時，先看目前專案的 src/test/java，再逐項加入上表案例。</p></section>
+<section id="step-6"><h2>06 · 什麼時候才需要資料庫測試？</h2><p>Integration Test（整合測試）確認 Repository、實際 SQL 與 MySQL 能共同工作。E2E 是 End-to-End（端對端），從真正網路入口驗證完整流程。用 MySQL 測試資料庫或單元 10D 的本機環境驗證外鍵、DECIMAL 金額與原生 SQL，不能只靠測試替身。</p><div class="checkpoint"><strong>停一下，自己想想</strong><p>Controller 測試全綠，是否代表查詢 SQL 一定正確？</p><details><summary>看解釋</summary><p>不是。這裡把 Service 換成替身；真正資料庫行為要在整合測試或最後單元的人工驗收檢查。</p></details></div></section>
+<section id="step-7"><h2>延伸閱讀</h2><p><a href="https://docs.spring.io/spring-boot/api/java/org/springframework/boot/webmvc/test/autoconfigure/WebMvcTest.html">Boot 4 WebMvcTest</a> · <a href="https://docs.spring.io/spring-framework/reference/testing/annotations/integration-spring/annotation-mockitobean.html">@MockitoBean 官方說明</a></p></section>
+</article>
+<nav class="page-nav" aria-label="單元導覽">
+<a href="unit-07b-hql.html">← 單元 07B · JPQL、HQL 與原生 SQL</a>
+<a href="unit-09-security.html">單元 09 · Spring Security：辨認身分，再檢查權限 →</a>
+</nav>
+</main>
+<footer class="site-footer">Northwind Spring Boot 教室 · Boot 4.1.1 / Java 21<br>程式碼為教學範例，由你逐步操作。版本查核：2026-09-22；閱讀順序修訂：2026-09-23。</footer>
+</body>
+</html>

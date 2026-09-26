@@ -2,6 +2,8 @@
 
 **難度** ★★☆☆☆　**用在哪些模組** 所有後端工作　**哪幾週** 第 1 週（L0）、第 3 週
 
+> 本頁的 `MenuController` 是火鍋店概念範例；現有 `backend/` 先以 Northwind 商品 API 練習。實際啟動指令、`.env` 和資料庫準備見 [後端環境建置](../../../README.md#啟動後端)。
+
 ## 一句話
 
 Spring Boot 是**幫你把後端的雜事全部做好的框架**，你只要寫「這個網址要回什麼」。
@@ -35,6 +37,10 @@ public class MenuController {
 
     private final MenuService menuService;
 
+    public MenuController(MenuService menuService) {
+        this.menuService = menuService;
+    }
+
     @GetMapping("/items")
     public List<MenuItemDto> list(@RequestParam(required = false) Long categoryId) {
         return menuService.findItems(categoryId);
@@ -49,7 +55,7 @@ public class MenuController {
 | 雜事 | Servlet 時代 | Spring Boot |
 |---|---|---|
 | 伺服器 | 自己裝 Tomcat、部署 war | **內建**，直接跑 main 方法 |
-| 設定檔 | `web.xml` 一大堆 | 一個 `application.yml`，多數有預設值 |
+| 設定檔 | `web.xml` 一大堆 | `application.yml` 或 `application.properties`，多數有預設值 |
 | 網址對應 | `web.xml` 裡宣告 | `@GetMapping("/items")` 貼在方法上 |
 | 拿參數 | `req.getParameter()` 手動轉型 | `@RequestParam Long categoryId` 自動轉 |
 | 回 JSON | 自己拼字串 | 回傳物件，自動轉 |
@@ -83,16 +89,16 @@ public class SmartOrderApplication {
 
 **跑這個 main 方法，你的後端就起來了。** 預設在 `http://localhost:8080`。
 
-## application.yml
+## 設定檔放哪裡
 
-所有設定放在一個檔案裡：
+目前專案使用 `backend/src/main/resources/application.properties`，再透過 `backend/.env` 提供每台電腦自己的資料庫帳密。下面是**未來火鍋店正式功能的 YAML 示意**，不是現有專案中可以直接編輯的檔案：
 
 ```yaml
 spring:
   datasource:
     url: jdbc:mysql://localhost:3306/smart_order?useUnicode=true&characterEncoding=utf8
-    username: root
-    password: root
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: validate      # 不要讓 JPA 自動改表，交給 Flyway
@@ -106,7 +112,7 @@ smartorder:                   # 我們自己的設定
   polling-interval-seconds: 3
 ```
 
-**所有寫死的數字都應該搬到這裡**，不要散落在程式碼裡。
+不含機密的共用設定可放在設定檔；密碼等每台電腦不同的值放在 `.env`，不要寫成 `root/root` 或提交到 Git。現有 Northwind 練習設定是 `ddl-auto=none`、Flyway 暫停；未來正式表格才依團隊資料庫規格安排 migration。
 
 ## 15 分鐘動手小練習
 
@@ -131,15 +137,15 @@ public class HelloController {
 ## 你會遇到的坑
 
 **① 8080 被佔用**
-→ `application.yml` 裡改 `server.port: 8081`。
+→ 檢查現有 `application.properties` 的 `server.port`，或關閉已佔用的服務。
 
 **② Controller 沒被掃描到**
 Spring 只會掃描「主程式所在套件」和它底下的。
-→ `SmartOrderApplication.java` 要放在最外層（`com.smartorder`），其他都放在它底下。
+→ 現有 `SmartOrderApplication.java` 位於 `tw.ispan.smartorder`，Controller、Service 等放在其子套件。
 
 **③ `ddl-auto: update` 把資料表改壞**
 JPA 會自己去改資料庫結構，很危險。
-→ 我們用 `validate`，表結構交給 [Flyway](../database/29-Flyway.md) 管。
+→ 現有 Northwind 練習用 `none` 保護既有表格；正式功能的表結構再依 [Flyway](../database/29-Flyway.md) 規劃。
 
 **④ 改了程式沒重啟**
 Java 不像 JS 會自動重載。
@@ -151,7 +157,7 @@ Java 不像 JS 會自動重載。
 |---|---|---|
 | `Web server failed to start. Port 8080 was already in use` | 埠號被佔 | 改 port，或關掉舊的 |
 | `Field xxx required a bean of type ... that could not be found` | Spring 找不到要注入的東西 | 類別上忘記貼 `@Service` 之類的標籤 |
-| `Failed to configure a DataSource` | 資料庫設定沒寫或連不上 | 檢查 `application.yml`，確認 Docker 的 MySQL 有開 |
+| `Failed to configure a DataSource` | 資料庫設定沒寫或連不上 | 檢查 `backend/.env`、`application.properties`，確認 Docker 的 MySQL 有開 |
 | `Whitelabel Error Page` + 404 | 這個網址沒對應的 Controller | 網址打錯，或 Controller 沒被掃到 |
 
 ## 術語對照表
@@ -184,4 +190,4 @@ Java 不像 JS 會自動重載。
 
 ## 相關頁面
 
-[依賴注入](15-依賴注入.md)　[三層架構](16-三層架構.md)　[Maven 與相依套件](13-Maven.md)
+[依賴注入](15-依賴注入.md)　[三層架構](16-三層架構.md)　[Maven 與相依套件](13-Maven.md)　[課程 04：Spring Boot](../../spring-boot/tutorial/unit-04-spring-boot.html)
