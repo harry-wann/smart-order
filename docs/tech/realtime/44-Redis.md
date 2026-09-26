@@ -129,7 +129,7 @@ try {
 
 ## 怎麼裝
 
-Redis 尚未加入目前的 `backend/compose.yaml`。這是未來需要快取或分散式協調時的設定示意；先完成 [後端環境建置](../../spring-boot/README.md) 的 MySQL 練習，再決定是否加入：
+Redis 尚未加入目前的 `backend/compose.yaml`。這是未來需要快取或分散式協調時的設定示意；先完成 [後端環境建置](../../../README.md#啟動後端) 的 MySQL 練習，再決定是否加入：
 
 ```yaml
   redis:

@@ -3,6 +3,8 @@
 > 中高價位、多人共鍋的台式火鍋店線上點餐系統｜5 人協作｜開發期 6 週
 > 技術棧：Spring Boot + MySQL ／ React + Tailwind ／ WebSocket + 排程 + Redis
 
+> **安裝與啟動專案：請看 [根目錄 README](../README.md#環境建置)。** 前後端環境建置統一維護在那裡。
+
 ## 團隊與連結
 
 | 項目 | 內容 |
@@ -93,7 +95,7 @@
 | 需求 | 從這裡開始 | 接下來 |
 |---|---|---|
 | 第一次碰後端，想先理解名詞 | [技術總表](tech/00-技術總表.md) 的 Java、Maven、Spring Boot、JPA 等短篇 | [Spring Boot 課程](spring-boot/tutorial/index.html) 的 02～09 單元，用 Northwind 看物件與 HTTP 請求如何流動 |
-| 要在本機啟動專案 | [後端環境與啟動步驟](spring-boot/README.md) | [單元 10](spring-boot/tutorial/unit-10-api.html) 對照現有 `backend/` 程式碼，再做 10D 的 API 練習 |
+| 要在本機啟動專案 | [後端環境與啟動步驟](../README.md#啟動後端) | [單元 10](spring-boot/tutorial/unit-10-api.html) 對照現有 `backend/` 程式碼，再做 10D 的 API 練習 |
 | 要做火鍋店正式功能 | [專案規格](spec/00-架構分層與技術選型.md) 與 [API 規格](spec/04-API規格.md) | 參考 `backend/` 的分層寫法，但以火鍋店規格的資料表、端點與權限為準 |
 
 技術短篇使用火鍋店情境；Spring Boot 課程使用 Northwind 練習資料庫。兩者講同一套觀念，例子與資料表名稱不同，請不要把 `Products` 直接當作正式菜單表。
@@ -102,7 +104,7 @@
 
 ## HTML 版（給人看）
 
-規格、UI 與技術短篇以 `docs/` 下的 `.md` 為原始檔，並產生排版過的靜態網頁版。Spring Boot 課程則直接維護在 `docs/spring-boot/tutorial/` 的 HTML 檔案中。
+環境建置以根目錄 `README.md` 為原始檔，產生 `docs/site/setup.html`；規格、UI 與技術短篇以 `docs/` 下的 `.md` 為原始檔，產生靜態網頁版。Spring Boot 課程則直接維護在 `docs/spring-boot/tutorial/` 的 HTML 檔案中。
 
 **用瀏覽器打開 `docs/site/index.html`**（不需要架伺服器）
 
