@@ -44,12 +44,14 @@ export default function DS03() {
         {/* 時段 */}
         <Time timeSlots={timeSlots} defaultValue="18:00" onChange={(time) => console.log(time)} />
 
-        {/* 小型：102 × 30 */}
-        <Counter size="small" initialCount={10} />
-        {/* 大型：186 × 58 */}
+        {/* 小：數量 1 顯示垃圾桶 */}
+        <Counter size="small" initialCount={1} />
+
+        {/* 大：數量 1 顯示垃圾桶 */}
         <Counter size="large" initialCount={1} />
-        {/* 未選擇：28 × 28 */}
-        <Counter size="small" initialCount={0} />
+
+        {/* 小：數量 1 顯示減號 */}
+        <Counter size="small" initialCount={1} showTrash={false} />
       </div>
     </DemoPage>
   )
