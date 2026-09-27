@@ -9,6 +9,7 @@ import DS06 from './features/components-demo/DS06';
 import DS07 from './features/components-demo/DS07';
 
 import TableOverview from './features/admin/table/TableOverview'
+import TableOpen from './features/admin/table/TableOpen'
 
 
 function App() {
@@ -26,7 +27,7 @@ function App() {
 
       <Route path="/" element={<TableOverview />} />
       <Route path="/admin/tables" element={<TableOverview />} />
-      
+      <Route path="/admin/tables/:tableNo/open" element={<TableOpen />} />
 
 
     </Routes>
