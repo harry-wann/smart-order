@@ -28,10 +28,9 @@
        而且不會報任何錯。2026-09-14 那版 layout.json 就是這樣壞掉的
        （見 docs/ui/mockups/tools/extract_layout.py 開頭的守門檢查）。
      ------------------------------------------------------------------------ */
-  --font-sans: "Noto Sans TC", "Noto Sans CJK TC", "PingFang TC",
-               "Microsoft JhengHei", system-ui, sans-serif;
-  --font-serif: "Noto Serif TC", "Noto Serif CJK TC", "Songti TC",
-                "PMingLiU", serif;
+  --font-sans:
+    'Noto Sans TC', 'Noto Sans CJK TC', 'PingFang TC', 'Microsoft JhengHei', system-ui, sans-serif;
+  --font-serif: 'Noto Serif TC', 'Noto Serif CJK TC', 'Songti TC', 'PMingLiU', serif;
 }
 
 /* ==========================================================================
@@ -143,4 +142,28 @@
   font-size: 12px;
   line-height: 1;
   font-weight: 400;
+}
+
+@utility type-dashboard-menu {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.2;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+@utility type-dashboard-menu-highlighted {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.2;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+@utility type-dashboard-subtitle {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  line-height: 1.2;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
 }
