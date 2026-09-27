@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="以 Northwind 練習 Spring Boot 4，從 Servlet 基礎走向 Java 後端工作。">
+  <title>IoC 與 DI：到底是誰在 new 物件？｜Northwind Spring Boot 教室</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要內容</a>
+<main id="main" class="site-shell">
+<a class="breadcrumb" href="index.html">← 回到學習地圖</a>
+<header class="lesson-header">
+<p class="eyebrow">單元 03 · NORTHWIND LAB</p>
+<h1>IoC 與 DI：到底是誰在 new 物件？</h1>
+<p class="hero-text">以 Northwind 商品目錄為例，從自己建立依賴、手動注入，到交給 Spring 管理。一次比較一個變化。</p>
+<div class="meta"><span>Spring Boot 4 主線</span><span>有差異再看 Boot 3</span><span>5 個閱讀步驟</span></div>
+</header>
+<nav class="lesson-toc" aria-label="本頁目錄">
+<strong>本頁閱讀路線</strong>
+<ol><li><a href="#step-1">01 · 原本：商品服務自己決定資料來源</a></li>
+<li><a href="#step-2">02 · 先不用 Spring，也能做到 DI</a></li>
+<li><a href="#step-3">03 · 加上 Spring：由容器負責組裝</a></li>
+<li><a href="#step-4">04 · 控制到底反轉了什麼？</a></li>
+<li><a href="#step-5">05 · 工作中會遇到的兩個問題</a></li>
+<li><a href="#step-6">延伸閱讀</a></li></ol>
+</nav>
+<article class="lesson">
+<section id="step-1"><h2>01 · 原本：商品服務自己決定資料來源</h2><p>IoC 是 Inversion of Control（控制反轉）；DI 是 Dependency Injection（依賴注入）。先不背定義，觀察下面的依賴是誰建立的。DAO 是 Data Access Object（資料存取物件）。</p><figure class="code-block"><figcaption>版本 A · 概念片段，省略資料庫連線細節</figcaption><pre tabindex="0"><code class="language-java"><span class="kd">class</span> <span class="nc">ProductService</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">SqlProductDao</span><span class="w"> </span><span class="n">dao</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">SqlProductDao</span><span class="p">();</span>
+
+<span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="nf">productName</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">dao</span><span class="p">.</span><span class="na">findName</span><span class="p">(</span><span class="n">id</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure><p>呼叫 productName 的人不必管 DAO，但 ProductService 被綁定到 SqlProductDao。想在測試時不用資料庫，就得改 Service 本身。問題是<strong>建立依賴與使用依賴綁在同一處</strong>，不是 new 這個關鍵字不好。</p></section>
+<section id="step-2"><h2>02 · 先不用 Spring，也能做到 DI</h2><figure class="code-block"><figcaption>版本 B · 建構子注入的最小例子</figcaption><pre tabindex="0"><code class="language-java"><span class="kd">interface</span> <span class="nc">ProductCatalog</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="nf">findName</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kd">class</span> <span class="nc">ProductService</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">ProductCatalog</span><span class="w"> </span><span class="n">catalog</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">ProductService</span><span class="p">(</span><span class="n">ProductCatalog</span><span class="w"> </span><span class="n">catalog</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="na">catalog</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">catalog</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="nf">productName</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">catalog</span><span class="p">.</span><span class="na">findName</span><span class="p">(</span><span class="n">id</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1">// 測試時由呼叫端提供替身，完全不連資料庫</span>
+<span class="n">ProductCatalog</span><span class="w"> </span><span class="n">fake</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="s">"Chai"</span><span class="p">;</span>
+<span class="n">ProductService</span><span class="w"> </span><span class="n">service</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ProductService</span><span class="p">(</span><span class="n">fake</span><span class="p">);</span>
+<span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">service</span><span class="p">.</span><span class="na">productName</span><span class="p">(</span><span class="mi">1</span><span class="p">));</span><span class="w"> </span><span class="o">//</span><span class="w"> </span><span class="n">Chai</span></code></pre></figure><p>建構子（Constructor）是建立物件時執行的方法。現在 Service 只要求「能查商品名稱的物件」，不再挑選具體實作。呼叫端負責把依賴交進來，這就已經是 DI。</p><p>id -&gt; "Chai" 是 Lambda（匿名函式），用簡短方式提供介面的實作。這裡是固定回應的測試替身，不是正式資料庫邏輯。</p></section>
+<section id="step-3"><h2>03 · 加上 Spring：由容器負責組裝</h2><figure class="code-block"><figcaption>版本 C · 每個 public 型別各放一個檔案；省略 imports</figcaption><pre tabindex="0"><code class="language-java"><span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">ProductCatalog</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="nf">findName</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="nd">@Component</span>
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">DemoProductCatalog</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">ProductCatalog</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nd">@Override</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="nf">findName</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="s">"Chai"</span><span class="p">;</span><span class="w"> </span><span class="c1">// 為了專注 IoC，暫時用固定值</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="nd">@Service</span>
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">ProductService</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">ProductCatalog</span><span class="w"> </span><span class="n">catalog</span><span class="p">;</span>
+
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="nf">ProductService</span><span class="p">(</span><span class="n">ProductCatalog</span><span class="w"> </span><span class="n">catalog</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="na">catalog</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">catalog</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="nf">productName</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">catalog</span><span class="p">.</span><span class="na">findName</span><span class="p">(</span><span class="n">id</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure><p>@Component 表示交由 Spring 管理的元件；@Service 表示服務層元件。這些 @ 開頭的標記叫 Annotation（註解），供框架辨認用途。它們的 imports 分別來自 org.springframework.stereotype。</p><p>啟動時，Spring 掃描這些類別、建立 DemoProductCatalog，再把它傳進 ProductService 的建構子。只有一個建構子時，不必額外加 @Autowired。Bean 是被 Spring 管理的物件；ApplicationContext 是 Spring 的物件管理容器。</p><aside class="note">上面 A、B、C 是三個替代版本，不要一起貼進同一專案。類別也必須位在啟動類別所在套件或其子套件，才會被預設掃描到。</aside></section>
+<section id="step-4"><h2>04 · 控制到底反轉了什麼？</h2><div class="table-wrap" tabindex="0"><table><thead><tr><th scope="col">問題</th><th scope="col">自己 new DAO</th><th scope="col">建構子 DI</th><th scope="col">Spring 管理</th></tr></thead><tbody><tr><td>誰使用依賴？</td><td>Service</td><td>Service</td><td>Service</td></tr><tr><td>誰選擇／組裝依賴？</td><td>Service 自己</td><td>呼叫端</td><td>Spring 容器依設定組裝</td></tr><tr><td>測試換成假資料</td><td>常需修改 Service</td><td>傳入替身即可</td><td>單元測試仍可直接 new Service(替身)</td></tr></tbody></table></div><p>控制反轉是把組裝責任交出去；依賴注入是實現這件事的方式之一。你學 Servlet 時也接觸過類似概念：由 Tomcat 建立 Servlet 並呼叫 doGet，不是你自己寫迴圈等待每個請求。</p><div class="checkpoint"><strong>停一下，自己想想</strong><p>Service 沒有 new DAO，為什麼仍然拿得到 DAO？</p><details><summary>看解釋</summary><p>它把依賴列在建構子參數，由建立 Service 的人提供；在 Spring 專案中，這個建立者通常是容器。</p></details></div></section>
+<section id="step-5"><h2>05 · 工作中會遇到的兩個問題</h2><p>如果同一介面有兩個 Bean，Spring 可能不知道要注入哪個。可以用 @Primary 指定預設候選，或用 @Qualifier 指定名稱。這是候選選擇問題，不代表 DI 失效。</p><figure class="code-block"><figcaption>概念片段 · 指定要注入哪個 Bean</figcaption><pre tabindex="0"><code class="language-java"><span class="kd">public</span><span class="w"> </span><span class="nf">ProductService</span><span class="p">(</span><span class="nd">@Qualifier</span><span class="p">(</span><span class="s">"demoProductCatalog"</span><span class="p">)</span><span class="w"> </span><span class="n">ProductCatalog</span><span class="w"> </span><span class="n">catalog</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">this</span><span class="p">.</span><span class="na">catalog</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">catalog</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure><p>Spring Bean 預設通常是 singleton（同一容器共用一個實例）。Service 不要用成員變數保存「這次請求的商品編號」；多位使用者同時呼叫時會互相干擾。用方法參數與區域變數承接每次請求。</p><p>第三方類別不能加 @Component 時，可在 @Configuration 設定類別中用 @Bean 方法建立它；物件仍由容器接手管理。</p></section>
+<section id="step-6"><h2>延伸閱讀</h2><p><a href="https://docs.spring.io/spring-framework/reference/core/beans/dependencies/factory-collaborators.html">Spring Framework：建構子依賴注入</a></p></section>
+</article>
+<nav class="page-nav" aria-label="單元導覽">
+<a href="unit-02-maven.html">← 單元 02</a>
+<a href="unit-04-spring-boot.html">下一頁 · 04 從 Servlet／JSP 走到 Spring Boot 4 →</a>
+</nav>
+</main>
+<footer class="site-footer">Northwind Spring Boot 教室 · Boot 4.1.1 / Java 21<br>程式碼為教學範例，由你逐步操作。版本查核：2026-09-22。</footer>
+</body>
+</html>

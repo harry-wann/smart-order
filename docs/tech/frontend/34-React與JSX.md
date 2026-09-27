@@ -55,12 +55,12 @@ React 會自動算出「資料變了之後畫面該長怎樣」，然後只改�
 function MenuItemRow({ name, price, soldOut }) {
   return (
     <div className="flex items-center gap-3 py-3">
-      <img src="/beef.jpg" alt={name} className="w-20 h-20 rounded-xl" />
+      <img src="/beef.jpg" alt={name} className="w-20 h-20 rounded-card" />
       <div>
-        <h3 className="text-lg font-bold">{name}</h3>
-        <p className="text-brand-600 text-xl font-bold">${price}</p>
+        <h3 className="type-h3">{name}</h3>
+        <p className="type-price text-brand-600">${price}</p>
       </div>
-      {soldOut && <span className="badge-soldout">售完</span>}
+      {soldOut && <span className="rounded-pill bg-danger px-2.5 py-0.5 type-caption text-white">售完</span>}
     </div>
   );
 }
@@ -71,6 +71,11 @@ function MenuItemRow({ name, price, soldOut }) {
 ```jsx
 <MenuItemRow name="美國牛五花" price={280} soldOut={false} />
 ```
+
+> **注意 class 用的是我們自己的 token**，不是 Tailwind 內建的：
+> `type-h3`／`type-price` 是字級（字體、大小、行高、字重一次套好）、`rounded-card` 是 12px 圓角。
+> 不要寫成 `text-lg font-bold`——那樣會漏掉字體，標題悄悄從明體變成黑體。
+> 完整清單見 [Tailwind](39-Tailwind.md) 與 [11-設計系統](../../ui/11-設計系統.md)。
 
 **規則：元件名稱一定要大寫開頭。** 小寫的 React 會當成一般 HTML 標籤。
 

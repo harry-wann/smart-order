@@ -2,6 +2,8 @@
 
 **難度** ★★★★☆　**用在哪些模組** M3、M5、M7　**哪幾週** 第 5 週
 
+> 本頁是未來火鍋店正式功能的整合測試規劃，示例中的 `MenuItem`、庫存服務與 migration 尚未在目前 Northwind 練習專案建立。目前 `backend/` 使用 MySQL 5.7，且 Flyway 暫停；不要直接複製下方測試到現有專案。
+
 ## 一句話
 
 Testcontainers 讓你的測試**用真的 MySQL 跑**，而不是拿一個假的資料庫來湊。
@@ -48,16 +50,15 @@ Testcontainers 的做法：**測試開始時自動用 Docker 起一個真的 MyS
 public abstract class IntegrationTestBase {
 
     @Container
-    @ServiceConnection                              // Spring Boot 3.1+ 自動接上連線設定
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0")
-            .withDatabaseName("smart_order_test")
-            .withReuse(true);                       // 重複使用容器，加快後續測試
+    @ServiceConnection                              // 讓 Spring 使用測試容器連線
+    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:5.7.44")
+            .withDatabaseName("smart_order_test");
 }
 ```
 
 **就這樣。** `@ServiceConnection` 會自動把 `spring.datasource.url` 之類的設定指向那個容器。
 
-[Flyway](../database/29-Flyway.md) 會在容器啟動後自動跑 migration，所以你的測試資料庫結構**跟正式環境一模一樣**。
+未來正式功能啟用 [Flyway](../database/29-Flyway.md) 並加入 migration 後，才能讓測試容器自動建立相同表結構。目前 Northwind 練習尚未啟用 Flyway，因此這段是規劃示例，不是可直接執行的測試基底類別。
 
 ## 真正值得寫的測試
 
@@ -127,7 +128,7 @@ class SimpleIntegrationTest {
 
     @Container
     @ServiceConnection
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0");
+    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:5.7.44");
 
     @Autowired MenuItemRepository repo;
 
@@ -162,8 +163,8 @@ class SimpleIntegrationTest {
 GitHub Actions 的 runner 有 Docker，可以跑，但會比較慢。
 → 可以在 CI 上只跑單元測試，整合測試本機跑。看時間決定。
 
-**④ 沒設 `withReuse(true)`**
-每個測試類別都重開一個容器，跑十個類別就開十次。
+**④ 每個測試類別都開一個新容器**
+先確認測試正確且資料互不干擾，再評估共用容器是否能節省時間。不要為了加速讓前一個測試的資料流到下一個測試。
 
 **⑤ 測試之間資料互相污染**
 上一個測試塞的資料還在。
@@ -190,7 +191,7 @@ GitHub Actions 的 runner 有 Docker，可以跑，但會比較慢。
 | 記憶體假資料庫 | H2 |
 | 測整條路 | 整合測試 |
 | 自動接上連線設定 | `@ServiceConnection` |
-| 重複使用容器 | `withReuse` |
+| 容器結束後清理 | 由 Testcontainers 管理容器生命週期 |
 
 ## 自我檢核
 

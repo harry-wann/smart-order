@@ -1,6 +1,8 @@
 # Docker 與 Docker Compose
 
-**難度** ★★★☆☆　**用在哪些模組** 全員（環境建置）　**哪幾週** 第 1 週（L0）
+**難度** ★★★☆☆　**用在哪些模組** 選用 Docker 的同學（環境建置）　**哪幾週** 第 1 週（L0）
+
+> Docker 是選用方案；Windows 使用 MAMP MySQL + IntelliJ IDEA 即可開發，不需安裝 Docker。本頁解釋 Docker 名詞；實際啟動請照 [後端環境建置](../../../README.md#啟動後端) 的順序操作。目前 `backend/compose.yaml` 只有 MySQL 5.7 與 phpMyAdmin，Redis 是之後的功能規劃。
 
 ## 一句話
 
@@ -31,32 +33,37 @@ Docker 就是**把整個環境裝進一個箱子**，箱子在誰的電腦上打
 
 ## Docker Compose 是什麼
 
-我們的專案需要好幾個箱子：MySQL、Redis，也許還有 RabbitMQ。
+選用 Compose 時，目前會啟動兩個容器：MySQL 和 phpMyAdmin。日後若加入 Redis 或 RabbitMQ，也可以寫在同一份 Compose 設定裡。
 
 如果每個都要自己打一長串指令很麻煩。**Docker Compose 就是一張清單**，寫好「我要哪幾個箱子、各自怎麼設定」，然後一個指令全部開起來。
 
-我們的 `docker-compose.yml` 大概長這樣：
+目前的設定檔叫 `backend/compose.yaml`。下面只節錄關鍵欄位，完整版本請看該檔案：
 
 ```yaml
 services:
   mysql:
-    image: mysql:8.0                    # 我要 MySQL 8.0 這個箱子
+    image: mysql:5.7.44                 # Compose 範例的 MySQL 版本
+    platform: linux/amd64
     environment:
-      MYSQL_ROOT_PASSWORD: root         # 密碼設成 root
-      MYSQL_DATABASE: smart_order       # 幫我建一個叫 smart_order 的資料庫
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
       - "3306:3306"                     # 箱子裡的 3306 接到我電腦的 3306
     volumes:
-      - mysql-data:/var/lib/mysql       # 資料存在外面，箱子關掉也不會不見
+      - mysql57_data:/var/lib/mysql     # 容器關掉後，資料仍留在 volume
 
-  redis:
-    image: redis:7
+  phpmyadmin:
+    image: phpmyadmin:5.2.3-apache
     ports:
-      - "6379:6379"
+      - "80:80"
 
 volumes:
-  mysql-data:
+  mysql57_data:
 ```
+
+`${...}` 表示 Compose 從 `backend/.env` 讀取值；第一次執行 `docker compose up` 前必須先建立並編輯 `.env`。`MYSQL_USER` 是 Spring Boot 使用的一般帳號，和 root 管理員分開。
 
 ## 你只需要會這四個指令
 
@@ -67,28 +74,28 @@ docker compose logs mysql   # 看 MySQL 說了什麼（出事時用）
 docker compose down         # 全部關掉
 ```
 
-**真的就這四個。** `docker-compose.yml` 屬於技術地基，由一個人寫好，其他人只要會 `up` 和 `down`。
+指令請在 `backend/` 執行，Compose 才能找到 `compose.yaml` 與 `.env`。`docker compose down` 會停止並移除容器，資料卷仍保留；不要加會刪除資料卷的選項。
 
 ## 在我們的專案裡
 
-第一天環境建置，每個人只要：
+選擇 Docker 方案的同學，第一次環境建置可執行：
 
 ```bash
-cd smart_order
-docker compose up -d        # MySQL 和 Redis 就跑起來了
+cd backend                  # 從 repository 根目錄進入
+cp .env.example .env        # 第一次才做；先編輯密碼
+docker compose up -d        # MySQL 和 phpMyAdmin 啟動
+docker compose ps           # 確認 mysql 顯示 healthy
 ```
 
-不用裝 MySQL、不用設定、不用擔心版本。這一步能省掉你們**至少半天**的集體卡關時間。
+Compose 會使用設定檔指定的 MySQL 映像檔；接著仍需匯入 Northwind 資料，並設定 Spring Boot 連線。
 
 ## 15 分鐘動手小練習
 
-1. 去官網裝 Docker Desktop
-2. 開一個空資料夾，建一個 `docker-compose.yml`，貼上上面 MySQL 那段
-3. 打 `docker compose up -d`
-4. 打 `docker compose ps`，看到 mysql 的狀態是 running
-5. 用 MySQL Workbench 或 DBeaver 連 `localhost:3306`，帳號 `root` 密碼 `root`
-6. 連上了就成功了
-7. 打 `docker compose down` 關掉
+1. 依 [後端環境建置](../../../README.md#啟動後端) 建立 `backend/.env`，換掉範例密碼。
+2. 在 `backend/` 執行 `docker compose up -d`、`docker compose ps`。
+3. 確認 `mysql` healthy，瀏覽 `http://localhost/` 打開 phpMyAdmin。
+4. 用 `.env` 中的 MySQL 帳號登入，確認 `northwind` 資料庫存在。
+5. 練習結束可執行 `docker compose down`；下次 `up -d` 時資料卷仍在。
 
 ## 你會遇到的坑
 
@@ -118,7 +125,7 @@ docker compose up -d        # MySQL 和 Redis 就跑起來了
 | `Cannot connect to the Docker daemon` | Docker 沒在跑 | 打開 Docker Desktop |
 | `port is already allocated` | 埠號被佔走了 | 改 ports 設定，或關掉佔用的程式 |
 | `no matching manifest for linux/arm64` | 這箱子沒有 M 晶片版本 | 加 `platform: linux/amd64` |
-| `Access denied for user 'root'` | 密碼錯 | 檢查 yml 的密碼跟程式的設定是否一致 |
+| `Access denied for user` | 帳密與已初始化的資料庫不一致 | 檢查 `.env` 與初始化時的設定；修改 `.env` 不會自動修改既有 MySQL 使用者密碼 |
 
 ## 術語對照表
 
@@ -145,7 +152,7 @@ docker compose up -d        # MySQL 和 Redis 就跑起來了
 | [Docker Container 基礎入門篇](https://azole.medium.com/docker-container-%E5%9F%BA%E7%A4%8E%E5%85%A5%E9%96%80%E7%AF%87-1-3cb8876f2b14) | 繁中 | 入門 | 30 分 |
 | [《Docker — 從入門到實踐》正體中文版](https://philipzheng.gitbook.io/docker_practice) | 繁中 | 入門～進階 | 查用 |
 
-> 除了負責技術地基的人，其他人**只要看完第一篇**就夠了。你們只需要會 `up` 和 `down`。
+> 選用 Docker 的同學可先讀第一篇，熟悉 `up`、`ps` 與 `down`；使用 MAMP 的同學可依後端環境建置文件直接開發。
 
 ## 相關頁面
 

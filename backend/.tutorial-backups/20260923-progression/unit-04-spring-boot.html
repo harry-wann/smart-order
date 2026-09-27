@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="以 Northwind 練習 Spring Boot 4，從 Servlet 基礎走向 Java 後端工作。">
+  <title>從 Servlet／JSP 走到 Spring Boot 4｜Northwind Spring Boot 教室</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要內容</a>
+<main id="main" class="site-shell">
+<a class="breadcrumb" href="index.html">← 回到學習地圖</a>
+<header class="lesson-header">
+<p class="eyebrow">單元 04 · NORTHWIND LAB</p>
+<h1>從 Servlet／JSP 走到 Spring Boot 4</h1>
+<p class="hero-text">沿用你已學過的 Jakarta、Tomcat、JSP 與 Servlet，把熟悉的職責一一對上 Spring Boot。</p>
+<div class="meta"><span>Spring Boot 4 主線</span><span>有差異再看 Boot 3</span><span>5 個閱讀步驟</span></div>
+</header>
+<nav class="lesson-toc" aria-label="本頁目錄">
+<strong>本頁閱讀路線</strong>
+<ol><li><a href="#step-1">01 · 先把名稱放回正確位置</a></li>
+<li><a href="#step-2">02 · 同一個請求，舊流程怎麼換？</a></li>
+<li><a href="#step-3">03 · JSP 與資料 API 的差別</a></li>
+<li><a href="#step-4">04 · 一個 main 方法如何啟動？</a></li>
+<li><a href="#step-5">05 · 主線 Boot 4／Boot 3 對照</a></li>
+<li><a href="#step-6">延伸閱讀</a></li></ol>
+</nav>
+<article class="lesson">
+<section id="step-1"><h2>01 · 先把名稱放回正確位置</h2><div class="table-wrap" tabindex="0"><table><thead><tr><th scope="col">名稱</th><th scope="col">角色</th><th scope="col">在本教材裡</th></tr></thead><tbody><tr><td>Jakarta EE（Jakarta Enterprise Edition，Jakarta 企業版）</td><td>一組企業 Java 規格</td><td>使用其中的 Servlet、Persistence、Validation 規格</td></tr><tr><td>Tomcat</td><td>實作 Servlet 等 Web 規格的容器，不是完整 Jakarta EE 平台</td><td>主線 Boot 4 使用 Tomcat 11</td></tr><tr><td>Servlet</td><td>處理請求／回應的 Java 規格</td><td>Spring MVC 的 DispatcherServlet 仍建立在它之上</td></tr><tr><td>JSP（JavaServer Pages；現稱 Jakarta Server Pages）</td><td>伺服器產生網頁的技術</td><td>本教材改回傳資料給前端；JSP 不是必要</td></tr><tr><td>Spring Framework</td><td>提供物件管理、Web 與交易等能力</td><td>Boot 3.5 使用 Framework 6.2；Boot 4 使用 Framework 7</td></tr><tr><td>Spring Boot</td><td>把相容套件、設定與啟動流程整合</td><td>主線 Boot 4.1.1，Java 21</td></tr></tbody></table></div><aside class="note">截至 2026-09-22 查閱的官方版本索引，沒有列出 Spring Boot 5。Spring Tools 5 是開發工具版本；它支援 Boot 4。Spring Framework 5 則是核心框架的舊版本，三者不可混為一談。</aside></section>
+<section id="step-2"><h2>02 · 同一個請求，舊流程怎麼換？</h2><figure class="code-block"><figcaption>熟悉的 Servlet · 概念片段，省略 imports</figcaption><pre tabindex="0"><code class="language-java"><span class="nd">@WebServlet</span><span class="p">(</span><span class="s">"/hello"</span><span class="p">)</span>
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">HelloServlet</span><span class="w"> </span><span class="kd">extends</span><span class="w"> </span><span class="n">HttpServlet</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nd">@Override</span>
+<span class="w">    </span><span class="kd">protected</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">doGet</span><span class="p">(</span><span class="n">HttpServletRequest</span><span class="w"> </span><span class="n">request</span><span class="p">,</span>
+<span class="w">                         </span><span class="n">HttpServletResponse</span><span class="w"> </span><span class="n">response</span><span class="p">)</span>
+<span class="w">            </span><span class="kd">throws</span><span class="w"> </span><span class="n">IOException</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">response</span><span class="p">.</span><span class="na">setContentType</span><span class="p">(</span><span class="s">"text/plain;charset=UTF-8"</span><span class="p">);</span>
+<span class="w">        </span><span class="n">response</span><span class="p">.</span><span class="na">getWriter</span><span class="p">().</span><span class="na">write</span><span class="p">(</span><span class="s">"Northwind"</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure><figure class="code-block"><figcaption>Spring MVC Controller · 同樣回傳文字</figcaption><pre tabindex="0"><code class="language-java"><span class="nd">@RestController</span>
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">HelloController</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nd">@GetMapping</span><span class="p">(</span><span class="s">"/hello"</span><span class="p">)</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="nf">hello</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="s">"Northwind"</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure><p>@GetMapping 把 GET 請求對應到方法；@RestController 讓回傳值寫到回應內容。DispatcherServlet 是統一接收請求、再分派到 Controller 的 Servlet；你的 Controller 本身不必繼承 HttpServlet。</p><p>請求順序：Tomcat → DispatcherServlet → Controller → Service。HTTP 是 Hypertext Transfer Protocol（超文字傳輸協定），就是這些請求與回應使用的通訊規則。</p></section>
+<section id="step-3"><h2>03 · JSP 與資料 API 的差別</h2><figure class="code-block"><figcaption>傳統 Servlet + JSP · 示意</figcaption><pre tabindex="0"><code class="language-java"><span class="n">request</span><span class="p">.</span><span class="na">setAttribute</span><span class="p">(</span><span class="s">"productName"</span><span class="p">,</span><span class="w"> </span><span class="s">"Chai"</span><span class="p">);</span>
+<span class="n">request</span><span class="p">.</span><span class="na">getRequestDispatcher</span><span class="p">(</span><span class="s">"/WEB-INF/products.jsp"</span><span class="p">)</span>
+<span class="w">       </span><span class="p">.</span><span class="na">forward</span><span class="p">(</span><span class="n">request</span><span class="p">,</span><span class="w"> </span><span class="n">response</span><span class="p">);</span></code></pre></figure><figure class="code-block"><figcaption>REST Controller · 回傳資料，省略 imports</figcaption><pre tabindex="0"><code class="language-java"><span class="nd">@RestController</span>
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">ProductPreviewController</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">record</span> <span class="nc">Preview</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="n">productName</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+
+<span class="w">    </span><span class="nd">@GetMapping</span><span class="p">(</span><span class="s">"/preview"</span><span class="p">)</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">Preview</span><span class="w"> </span><span class="nf">preview</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Preview</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="s">"Chai"</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure><p>record 是 Java 的簡潔資料型別，會自動提供建構子與讀取方法。回傳物件由 Jackson（物件與 JSON 互轉的套件）轉成資料。JSON 是 JavaScript Object Notation（JavaScript 物件表示法）；這裡的內容是 {"id":1,"productName":"Chai"}。</p><p>API 是 Application Programming Interface（應用程式介面）。JSP 路線由伺服器產生畫面；資料 API 路線由前端拿資料後決定怎麼顯示。Spring MVC 仍可回傳頁面，並不等於只能做 API。</p><aside class="note">Boot 搭配 JSP 有封裝限制：不要把傳統 JSP 專案直接當作可執行 JAR 使用。要沿用 JSP 時需確認 WAR 封裝與容器支援；本教材使用 JSON API。</aside></section>
+<section id="step-4"><h2>04 · 一個 main 方法如何啟動？</h2><figure class="code-block"><figcaption>啟動類別 · 此檔的套件位在其他類別上層</figcaption><pre tabindex="0"><code class="language-java"><span class="kn">package</span><span class="w"> </span><span class="nn">com.example.northwind</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.boot.SpringApplication</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.boot.autoconfigure.SpringBootApplication</span><span class="p">;</span>
+
+<span class="nd">@SpringBootApplication</span>
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">NorthwindApplication</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="o">[]</span><span class="w"> </span><span class="n">args</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">SpringApplication</span><span class="p">.</span><span class="na">run</span><span class="p">(</span><span class="n">NorthwindApplication</span><span class="p">.</span><span class="na">class</span><span class="p">,</span><span class="w"> </span><span class="n">args</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure><p>@SpringBootApplication 結合設定類別、自動設定與元件掃描。自動設定會依據依賴、設定值與既有 Bean 決定要提供哪些功能；你自行提供對應 Bean 時，部分預設設定會退讓。</p><p>同一次啟動會建立 Spring 容器、組裝 Bean 並啟動內嵌 Tomcat。開發時執行 main，部署時可以執行 java -jar；也能另外設定成傳統 WAR 部署。</p></section>
+<section id="step-5"><h2>05 · 主線 Boot 4／Boot 3 對照</h2><div class="table-wrap" tabindex="0"><table><thead><tr><th scope="col">項目</th><th scope="col">主線 Boot 4</th><th scope="col">對照 Boot 3.5</th></tr></thead><tbody><tr><td>Web starter</td><td>spring-boot-starter-webmvc</td><td>spring-boot-starter-web</td></tr><tr><td>底層</td><td>Framework 7／Tomcat 11／Servlet 6.1</td><td>Framework 6.2／Tomcat 10.1／Servlet 6.0</td></tr><tr><td>JSON 工具</td><td>預設 Jackson 3；ObjectMapper 在 tools.jackson.databind</td><td>Jackson 2；ObjectMapper 在 com.fasterxml.jackson.databind</td></tr><tr><td>Persistence 與 Servlet imports</td><td>jakarta.persistence／jakarta.servlet</td><td>同樣是 jakarta.*，不改回 javax.*</td></tr></tbody></table></div><p>本教材讓 Spring 自動轉換 JSON，不需要自己建立 ObjectMapper。Jackson 的部分註解仍保留 com.fasterxml.jackson.annotation，不能盲目全域取代 package。</p></section>
+<section id="step-6"><h2>延伸閱讀</h2><p><a href="https://docs.spring.io/spring-boot/index.html">Spring Boot 版本索引</a> · <a href="https://docs.spring.io/spring-boot/reference/web/servlet.html">Boot 4 Servlet 與 JSP 限制</a> · <a href="https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-4.0-Migration-Guide">Boot 4 遷移指南</a></p></section>
+</article>
+<nav class="page-nav" aria-label="單元導覽">
+<a href="unit-03-spring-core.html">← 單元 03</a>
+<a href="unit-05-spring-mvc.html">下一頁 · 05 MVC 與三層分工：商品請求往哪裡走？ →</a>
+</nav>
+</main>
+<footer class="site-footer">Northwind Spring Boot 教室 · Boot 4.1.1 / Java 21<br>程式碼為教學範例，由你逐步操作。版本查核：2026-09-22。</footer>
+</body>
+</html>

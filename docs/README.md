@@ -3,6 +3,8 @@
 > 中高價位、多人共鍋的台式火鍋店線上點餐系統｜5 人協作｜開發期 6 週
 > 技術棧：Spring Boot + MySQL ／ React + Tailwind ／ WebSocket + 排程 + Redis
 
+> **安裝與啟動專案：請看 [根目錄 README](../README.md#環境建置)。** 前後端環境建置統一維護在那裡。
+
 ## 團隊與連結
 
 | 項目 | 內容 |
@@ -17,8 +19,9 @@
 |---|---|---|
 | **規格文件** | 7 | 架構分層、專案總覽、需求、資料庫、API、開發流程、圖表 |
 | **模組規格** | 8 | 八大模組各一頁：功能、技術、問題思考、六週切分 |
-| **UI 文件** | 4 | 頁面與流程、設計系統、AI UI 工具與提示詞、Figma 畫框註解 |
+| **UI 文件** | 5 | 頁面與流程、設計系統、設計流程、Figma 畫框註解、色彩 Token |
 | **技術教學** | 50 | 用到的每一項技術一頁，白話寫法 + 中文學習資源 |
+| **Spring Boot 實作教材** | 1 組 | 後端團隊規範與循序漸進的 HTML API 教學 |
 
 ---
 
@@ -63,7 +66,7 @@
 |---|---|
 | [10-UI-UX規格](ui/10-UI-UX規格.md) | 顧客端 25 張 + 店家端 18 張的畫面結構、基礎／進階分界、關鍵流程圖、RWD 與無障礙檢查表 |
 | [11-設計系統](ui/11-設計系統.md) | 色票、字體、間距、10 個共用元件、**「避免 AI 感」十一項檢查表** |
-| [12-AI-UI工具與提示詞](ui/12-AI-UI工具與提示詞.md) | 工具比較、Figma Make 使用流程、**7 段可直接複製的提示詞** |
+| [12-UI設計流程](ui/12-UI設計流程.md) | 從需求、畫框到實作交接的順序與檢查項目 |
 | [13-畫框註解](ui/13-畫框註解.md) | Figma 上每個畫框右邊那張「規格說明／注意事項」卡片的唯一來源 |
 | [14-色彩Token](ui/14-色彩Token.md) | 顏色在 React 專案裡的落地：共用 token、單頁專用色、對比度實測、舊變數對照表 |
 
@@ -87,11 +90,21 @@
 | [進階](tech/00-技術總表.md#g-進階2) | 2 | RabbitMQ、**區間重疊演算法** |
 | [品質與部署](tech/00-技術總表.md#h-品質與部署4) | 4 | 單元測試、Testcontainers、CI、部署 |
 
+## Spring Boot 學習路線
+
+| 需求 | 從這裡開始 | 接下來 |
+|---|---|---|
+| 第一次碰後端，想先理解名詞 | [技術總表](tech/00-技術總表.md) 的 Java、Maven、Spring Boot、JPA 等短篇 | [Spring Boot 課程](spring-boot/tutorial/index.html) 的 02～09 單元，用 Northwind 看物件與 HTTP 請求如何流動 |
+| 要在本機啟動專案 | [後端環境與啟動步驟](../README.md#啟動後端) | [單元 10](spring-boot/tutorial/unit-10-api.html) 對照現有 `backend/` 程式碼，再做 10D 的 API 練習 |
+| 要做火鍋店正式功能 | [專案規格](spec/00-架構分層與技術選型.md) 與 [API 規格](spec/04-API規格.md) | 參考 `backend/` 的分層寫法，但以火鍋店規格的資料表、端點與權限為準 |
+
+技術短篇使用火鍋店情境；Spring Boot 課程使用 Northwind 練習資料庫。兩者講同一套觀念，例子與資料表名稱不同，請不要把 `Products` 直接當作正式菜單表。
+
 ---
 
 ## HTML 版（給人看）
 
-`docs/` 下的 `.md` 是給 AI 與純文字工具閱讀的原始檔。同一份內容另有排版過的靜態網頁版：
+環境建置以根目錄 `README.md` 為原始檔，產生 `docs/site/setup.html`；規格、UI 與技術短篇以 `docs/` 下的 `.md` 為原始檔，產生靜態網頁版。Spring Boot 課程則直接維護在 `docs/spring-boot/tutorial/` 的 HTML 檔案中。
 
 **用瀏覽器打開 `docs/site/index.html`**（不需要架伺服器）
 
@@ -107,7 +120,7 @@ pip3 install markdown      # 只需第一次
 python3 docs/build_site.py
 ```
 
-> **改文件請編輯 `.md`，不要直接改 `docs/site/` 下的 HTML**——那些檔案每次重建都會被覆寫。
+> **改規格與技術短篇請編輯 `.md`，不要直接改 `docs/site/` 下的 HTML**——那些檔案每次重建都會被覆寫。Spring Boot 課程請編輯 `docs/spring-boot/tutorial/` 原始 HTML。
 > 新增技術頁時記得更新 `docs/tech/glossary.json`，自動連結才會生效。
 > `docs/site/vendor/mermaid.min.js` 是離線渲染圖表用的，已隨專案附上。
 

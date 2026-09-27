@@ -27,7 +27,7 @@
 
   /* 例外 1：卡片內距 20px（§1.1 中高價位定位，留白放大一級）
      16 太擠、24 在 375px 的卡片上太空。用法 p-card */
-  --spacing-card: 20px;
+  --spacing-card: 16px;
 
   /* 列表列（MenuItemRow 等）維持 16px。
      ★ 這個值跟 --spacing-card 一樣要分開寫（§4.1 明文要求）：

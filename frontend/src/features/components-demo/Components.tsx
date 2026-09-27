@@ -66,7 +66,6 @@ export default function Components() {
           </Link>
         ))}
       </section>
-
     </main>
   );
 }

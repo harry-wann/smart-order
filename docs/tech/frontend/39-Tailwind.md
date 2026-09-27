@@ -133,26 +133,30 @@ Tailwind 是**把每個 CSS 屬性都變成一個小 class**，你直接在 HTML
 
 所以你寫 `bg-brand-600`、`text-ink-900`、`shadow-card` 就好——**全隊用同一組顏色，不會有人手打 `#C8442D`**。
 
-圓角不用自訂，Tailwind 內建的剛好對得上我們的規範：**按鈕 8px = `rounded-lg`、卡片 12px = `rounded-xl`**。
-
 > **要加新顏色前先看 [14-色彩Token](../../ui/14-色彩Token.md) §3 的三條規則**，尤其是「只有一個畫面用得到的顏色不要加進共用檔」。
 
-## 響應式：手機優先
+## 響應式：★ 這個專案不用
+
+Tailwind 可以用 `sm:` `md:` `lg:` 這種前綴，讓同一個元素在不同螢幕寬度用不同樣式：
 
 ```html
-<div class="p-4 md:p-6 lg:p-8">
+<div class="p-4 md:p-6 lg:p-8">   <!-- 預設 16px，≥768px 時 24px，≥1024px 時 32px -->
 ```
 
-意思是：**預設 16px，螢幕 ≥768px 時 24px，≥1024px 時 32px**。
+**但我們的開發規範是固定尺寸，不做 RWD**（[11-設計系統](../../ui/11-設計系統.md)）：
 
-**沒有前綴的是手機版**，這叫「手機優先」。我們顧客端主要就寫沒前綴的。
+| 哪一端 | 畫框 | 斷點 |
+|---|---|---|
+| 顧客端 | 375 × 812（手機直式） | 不用 |
+| 店家端 | 1280 × 800（平板／桌機橫式） | 不用 |
+| S-04 出菜看板 | 1920 × 1080 | 不用 |
 
-| 前綴 | 從幾 px 開始 |
-|---|---|
-| （無） | 0 |
-| `sm:` | 640 |
-| `md:` | 768 |
-| `lg:` | 1024 |
+因為設計稿就是照這三個尺寸畫的，加斷點等於自己發明一套設計稿上沒有的版面。
+
+**所以 `sm:` `md:` `lg:` 原則上不該出現在你的 class 裡。** 網路上的 Tailwind 教學幾乎每個例子都會加，
+那是給「同一個網站要同時支援手機和桌機」的情境用的，照抄會讓你的畫面跟 Figma 對不起來。
+
+（認得它們仍然有用——讀別人的程式碼時會遇到。斷點是 `sm:` 640、`md:` 768、`lg:` 1024。）
 
 ## 狀態變化
 
@@ -194,8 +198,8 @@ Tailwind 和色票在 `frontend/` 已經裝好設定好了，`npm run dev` 就�
 export default function App() {
   return (
     <div className="min-h-screen bg-paper p-4">
-      <div className="flex items-center gap-3 bg-surface rounded-xl border border-line p-4 shadow-card">
-        <div className="w-20 h-20 rounded-xl bg-surface-2 shrink-0" />
+      <div className="flex items-center gap-3 bg-surface rounded-card border border-line p-row shadow-card">
+        <div className="w-20 h-20 rounded-card bg-surface-2 shrink-0" />
         <div className="flex-1">
           <h3 className="text-lg font-bold text-ink-900">美國牛五花</h3>
           <p className="text-sm text-ink-600 mt-0.5">厚切 3mm，涮 8 秒最好吃</p>

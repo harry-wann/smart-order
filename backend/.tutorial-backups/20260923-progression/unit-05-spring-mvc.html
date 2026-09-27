@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="以 Northwind 練習 Spring Boot 4，從 Servlet 基礎走向 Java 後端工作。">
+  <title>MVC 與三層分工：商品請求往哪裡走？｜Northwind Spring Boot 教室</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要內容</a>
+<main id="main" class="site-shell">
+<a class="breadcrumb" href="index.html">← 回到學習地圖</a>
+<header class="lesson-header">
+<p class="eyebrow">單元 05 · NORTHWIND LAB</p>
+<h1>MVC 與三層分工：商品請求往哪裡走？</h1>
+<p class="hero-text">把查商品拆成接收請求、處理規則、讀取資料三個責任，再看資料怎麼回到前端。</p>
+<div class="meta"><span>Spring Boot 4 主線</span><span>有差異再看 Boot 3</span><span>4 個閱讀步驟</span></div>
+</header>
+<nav class="lesson-toc" aria-label="本頁目錄">
+<strong>本頁閱讀路線</strong>
+<ol><li><a href="#step-1">01 · MVC 不是 Controller／Service／Repository</a></li>
+<li><a href="#step-2">02 · Controller 先把參數接好</a></li>
+<li><a href="#step-3">03 · Service 與 Repository 接手</a></li>
+<li><a href="#step-4">04 · DTO 是 API 的合約</a></li>
+<li><a href="#step-5">延伸閱讀</a></li></ol>
+</nav>
+<article class="lesson">
+<section id="step-1"><h2>01 · MVC 不是 Controller／Service／Repository</h2><p>MVC 是 Model–View–Controller（模型、視圖、控制器）。Model 是畫面要用的資料；View 是顯示方式，例如 JSP；Controller 協調請求與回應。Controller／Service／Repository 是另一種分層安排，<strong>不要把它們當成 MVC 三個字母的對應</strong>。</p><div class="table-wrap" tabindex="0"><table><thead><tr><th scope="col">角色</th><th scope="col">Northwind 商品情境</th></tr></thead><tbody><tr><td>Controller（控制器）</td><td>接收 /api/products/1，取得編號 1</td></tr><tr><td>Service（服務層）</td><td>決定商品不存在時怎麼處理</td></tr><tr><td>Repository（資料存取層）</td><td>依 ProductID 查詢 Products</td></tr><tr><td>DTO（Data Transfer Object，資料傳輸物件）</td><td>只提供對外需要的欄位</td></tr></tbody></table></div><p>DTO 用來固定對外資料格式；Entity（實體）用來對應資料庫。分開後，資料庫增加欄位不會自動改變 API。</p></section>
+<section id="step-2"><h2>02 · Controller 先把參數接好</h2><figure class="code-block"><figcaption>概念片段 · ProductService 與 ProductView 見實作單元</figcaption><pre tabindex="0"><code class="language-java"><span class="nd">@RestController</span>
+<span class="nd">@RequestMapping</span><span class="p">(</span><span class="s">"/api/products"</span><span class="p">)</span>
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">ProductController</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">ProductService</span><span class="w"> </span><span class="n">service</span><span class="p">;</span>
+
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="nf">ProductController</span><span class="p">(</span><span class="n">ProductService</span><span class="w"> </span><span class="n">service</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="na">service</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">service</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="nd">@GetMapping</span><span class="p">(</span><span class="s">"/{id}"</span><span class="p">)</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">ProductView</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="nd">@PathVariable</span><span class="p">(</span><span class="s">"id"</span><span class="p">)</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">service</span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="n">id</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure><p>@RequestMapping 設定共同路徑；@PathVariable 從路徑取出 id。整數格式不合法時，由框架回傳輸入錯誤。Controller 不需要自己寫 request.getParameter 再轉型。</p></section>
+<section id="step-3"><h2>03 · Service 與 Repository 接手</h2><figure class="code-block"><figcaption>概念片段 · 分別放在 Service 與 Repository</figcaption><pre tabindex="0"><code class="language-java"><span class="c1">// Service 方法</span>
+<span class="nd">@Transactional</span><span class="p">(</span><span class="n">readOnly</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
+<span class="kd">public</span><span class="w"> </span><span class="n">ProductView</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">Product</span><span class="w"> </span><span class="n">product</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">products</span><span class="p">.</span><span class="na">findById</span><span class="p">(</span><span class="n">id</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="na">orElseThrow</span><span class="p">(()</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ProductNotFound</span><span class="p">(</span><span class="n">id</span><span class="p">));</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">ProductView</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="n">product</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// Repository 介面</span>
+<span class="kd">public</span><span class="w"> </span><span class="kd">interface</span> <span class="nc">ProductRepository</span>
+<span class="w">        </span><span class="kd">extends</span><span class="w"> </span><span class="n">JpaRepository</span><span class="o">&lt;</span><span class="n">Product</span><span class="p">,</span><span class="w"> </span><span class="n">Integer</span><span class="o">&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="p">}</span></code></pre></figure><p>JpaRepository 提供基本資料操作；Integer 表示主鍵型別。Optional 是可能有值、也可能沒有值的容器，orElseThrow 表示找不到就丟出例外。@Transactional 是宣告交易範圍，readOnly 表示這段以讀取為主；它不是資料庫權限限制。</p></section>
+<section id="step-4"><h2>04 · DTO 是 API 的合約</h2><figure class="code-block"><figcaption>資料傳輸物件 · 示意</figcaption><pre tabindex="0"><code class="language-java"><span class="kd">public</span><span class="w"> </span><span class="kd">record</span> <span class="nc">ProductView</span><span class="p">(</span>
+<span class="w">    </span><span class="n">Integer</span><span class="w"> </span><span class="n">id</span><span class="p">,</span>
+<span class="w">    </span><span class="n">String</span><span class="w"> </span><span class="n">productName</span><span class="p">,</span>
+<span class="w">    </span><span class="n">BigDecimal</span><span class="w"> </span><span class="n">unitPrice</span>
+<span class="p">)</span><span class="w"> </span><span class="p">{}</span></code></pre></figure><p>BigDecimal 是精確十進位數，適合金額。避免用 double 存商品價格，因為二進位浮點數可能有捨入差異。上例只說明資料形狀；最後實作頁會提供包含 from 方法的完整版本。</p><div class="checkpoint"><strong>停一下，自己想想</strong><p>商品停產後不准下單，規則應放在哪裡？</p><details><summary>看解釋</summary><p>放在訂單 Service。Controller 處理輸入；Repository 處理資料查詢。排程或其他入口也能重用同一條業務規則。</p></details></div></section>
+<section id="step-5"><h2>延伸閱讀</h2><p><a href="https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-requestmapping.html">Spring MVC 請求映射</a></p></section>
+</article>
+<nav class="page-nav" aria-label="單元導覽">
+<a href="unit-04-spring-boot.html">← 單元 04</a>
+<a href="unit-06-rest-api.html">下一頁 · 06 RESTful API：先定義合約，再寫方法 →</a>
+</nav>
+</main>
+<footer class="site-footer">Northwind Spring Boot 教室 · Boot 4.1.1 / Java 21<br>程式碼為教學範例，由你逐步操作。版本查核：2026-09-22。</footer>
+</body>
+</html>

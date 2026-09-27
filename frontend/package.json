@@ -5,18 +5,23 @@
   "type": "module",
   "packageManager": "npm@11.19.0",
   "engines": {
-    "node": ">=24.21.0 <25"
+    "node": ">=24.0.0 <25"
   },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
+    "lucide-react": "^1.47.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "react-router": "^8.4.0",
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
@@ -24,6 +29,9 @@
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
     "oxlint": "^1.81.0",
+    "prettier": "^3.9.8",
+    "prettier-plugin-tailwindcss": "^0.8.1",
+    "typescript": "^7.0.2",
     "vite": "^8.3.0"
   }
 }

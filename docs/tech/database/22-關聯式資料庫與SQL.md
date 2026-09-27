@@ -100,7 +100,7 @@ WHERE member_id IS NULL     ✅
 
 ## 15 分鐘動手小練習
 
-用 Docker 起一個 MySQL（見 [Docker](../team/05-Docker與Compose.md)），用 MySQL Workbench 或 DBeaver 連上，然後：
+準備一個 MySQL（MAMP、自行安裝或 Docker 擇一，見 [後端環境建置](../../../README.md#啟動後端)），用 MySQL Workbench 或 DBeaver 連上，然後：
 
 ```sql
 CREATE TABLE 練習_品項 (

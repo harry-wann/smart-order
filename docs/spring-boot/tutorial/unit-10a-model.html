@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="從 Northwind 資料表開始，理解 Entity、DTO 與 Repository。">
+  <title>實作一：Entity、DTO、Repository｜Northwind Spring Boot 教室</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要內容</a>
+<main id="main" class="site-shell">
+<a class="breadcrumb" href="unit-10-api.html">← 回到單元 10</a>
+<header class="lesson-header">
+<p class="eyebrow">單元 10A · MODEL</p>
+<h1>實作一：Entity、DTO、Repository</h1>
+<p class="hero-text">先把「資料長什麼樣子」處理好。這一頁不處理 HTTP，也不把業務規則塞進 Entity。</p>
+<div class="meta"><span>先完成資料模型</span><span>對應 Products / Categories</span><span>下一頁才進 Service</span></div>
+</header>
+<aside class="learning-goal"><p><strong>讀完能做到：</strong>看懂一個欄位如何從 MySQL 進到 Java，再從 Java 變成 JSON。</p></aside>
+<nav class="lesson-toc" aria-label="本頁目錄"><strong>本頁閱讀路線</strong><ol>
+<li><a href="#step-1">01 · 先看資料表</a></li><li><a href="#step-2">02 · Entity 對應資料表</a></li><li><a href="#step-3">03 · DTO 保護 API 合約</a></li><li><a href="#step-4">04 · Repository 交給 Spring Data</a></li>
+</ol></nav>
+<article class="lesson">
+<section id="step-1"><h2>01 · 先看資料表</h2>
+<p>Northwind 的 <code>Products</code> 有很多欄位，但本次 API 先練習六個：主鍵、商品名稱、單價、庫存、是否停售、分類編號。不要一開始就把整張表所有欄位都搬進程式。</p>
+<div class="table-wrap" tabindex="0"><table><thead><tr><th>MySQL 欄位</th><th>Java 欄位</th><th>用途</th></tr></thead><tbody>
+<tr><td><code>ProductID</code></td><td><code>Integer id</code></td><td>資料庫產生的商品編號。</td></tr><tr><td><code>ProductName</code></td><td><code>String productName</code></td><td>商品名稱。</td></tr><tr><td><code>UnitPrice</code></td><td><code>BigDecimal unitPrice</code></td><td>金額不要用 <code>double</code>，避免小數誤差。</td></tr><tr><td><code>UnitsInStock</code></td><td><code>Integer unitsInStock</code></td><td>庫存數量。</td></tr><tr><td><code>Discontinued</code></td><td><code>Boolean discontinued</code></td><td>是否停售。</td></tr><tr><td><code>CategoryID</code></td><td><code>Integer categoryId</code></td><td>關聯的分類編號。</td></tr>
+</tbody></table></div>
+<p>JPA（Java Persistence API，Java 持久化 API）會依照 Entity 上的註解，把 Java 類別與資料表連起來；Hibernate 是背後真正執行映射與 SQL 的實作工具。</p>
+<p>如果不熟主鍵和外鍵，先讀 <a href="../../site/tech/database/22-關聯式資料庫與SQL.html">SQL 入門</a>；要看火鍋店品項的對照例子，讀 <a href="../../site/tech/backend/17-Entity與DTO.html">Entity 與 DTO</a>。本單元只針對 Northwind 的實際欄位，兩份例子的表名不能直接互換。</p>
+</section>
+<section id="step-2"><h2>02 · Entity 對應資料表</h2>
+<p>請開啟 <code>backend/src/main/java/tw/ispan/smartorder/entity/Product.java</code>。下面是最重要的部分：</p>
+<figure class="code-block"><figcaption>Product.java · 重點片段</figcaption><pre tabindex="0"><code class="language-java"><span class="nd">@Entity</span>
+<span class="nd">@Table</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">"Products"</span><span class="p">)</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">Product</span> <span class="p">{</span>
+    <span class="nd">@Id</span>
+    <span class="nd">@GeneratedValue</span><span class="p">(</span><span class="n">strategy</span> <span class="o">=</span> <span class="n">GenerationType</span><span class="p">.</span><span class="na">IDENTITY</span><span class="p">)</span>
+    <span class="nd">@Column</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">"ProductID"</span><span class="p">)</span>
+    <span class="kd">private</span> <span class="n">Integer</span> <span class="n">id</span><span class="p">;</span>
+
+    <span class="nd">@Column</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">"ProductName"</span><span class="p">)</span>
+    <span class="kd">private</span> <span class="n">String</span> <span class="n">productName</span><span class="p">;</span>
+
+    <span class="nd">@Column</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s">"UnitPrice"</span><span class="p">)</span>
+    <span class="kd">private</span> <span class="n">BigDecimal</span> <span class="n">unitPrice</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+<p><code>@Entity</code> 告訴 JPA 這是資料實體；<code>@Table</code> 指定表名；<code>@Id</code> 指定主鍵；<code>@GeneratedValue</code> 表示新增時由 MySQL 自動產生編號；<code>@Column</code> 將 Java 欄位對到實際欄位。完整欄位請直接看專案中的檔案。</p>
+<p><code>CategoryID</code> 在目前練習程式中先存成 <code>Integer categoryId</code>，Service 另用 <code>CategoryRepository</code> 檢查分類是否存在。這是先練習 ID 與外鍵的簡化寫法；未來要改成 <code>@ManyToOne</code>，再讀 <a href="../../site/tech/database/26-JPA關聯對應.html">JPA 關聯對應</a>。上面的 Java 是節錄，缺少 import、無參數建構子和其餘欄位，請不要覆蓋現有檔案。</p>
+</section>
+<section id="step-3"><h2>03 · DTO 保護 API 合約</h2>
+<p>DTO 是 Data Transfer Object（資料傳輸物件）。Entity 是資料庫模型，DTO 是 API 允許前端傳入或收到的格式，兩者不要混在一起。</p>
+<figure class="code-block"><figcaption>ProductCreateRequest.java · POST 的輸入規則</figcaption><pre tabindex="0"><code class="language-java"><span class="kd">public</span> <span class="kd">record</span> <span class="nc">ProductCreateRequest</span><span class="p">(</span>
+    <span class="nd">@NotBlank</span> <span class="nd">@Size</span><span class="p">(</span><span class="n">max</span> <span class="o">=</span> <span class="mi">40</span><span class="p">)</span> <span class="n">String</span> <span class="n">productName</span><span class="p">,</span>
+    <span class="nd">@NotNull</span> <span class="nd">@DecimalMin</span><span class="p">(</span><span class="s">"0.0"</span><span class="p">)</span> <span class="n">BigDecimal</span> <span class="n">unitPrice</span><span class="p">,</span>
+    <span class="nd">@NotNull</span> <span class="nd">@PositiveOrZero</span> <span class="n">Integer</span> <span class="n">unitsInStock</span><span class="p">,</span>
+    <span class="nd">@NotNull</span> <span class="n">Boolean</span> <span class="n">discontinued</span><span class="p">,</span>
+    <span class="nd">@NotNull</span> <span class="n">Integer</span> <span class="n">categoryId</span>
+<span class="p">) {}</span></code></pre></figure>
+<p>Validation（驗證）註解會在 Controller 用 <code>@Valid @RequestBody</code> 接收 JSON 時執行。<code>ProductUpdateRequest</code> 用於 PUT，欄位全部必填；<code>ProductPatchRequest</code> 用於 PATCH，只提供想更新的欄位，至少要有一個非 <code>null</code> 欄位。這就是 PUT 與 PATCH 在本例的差別。<code>ProductResponse.from(product)</code> 則把 Entity 轉成回應 DTO，讓 JSON 欄位與內部資料模型分開。</p>
+</section>
+<section id="step-4"><h2>04 · Repository 交給 Spring Data</h2>
+<figure class="code-block"><figcaption>ProductRepository.java</figcaption><pre tabindex="0"><code class="language-java"><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">ProductRepository</span>
+        <span class="kd">extends</span> <span class="n">JpaRepository</span><span class="o">&lt;</span><span class="n">Product</span><span class="p">,</span> <span class="n">Integer</span><span class="o">&gt;</span> <span class="p">{</span>
+<span class="p">}</span></code></pre></figure>
+<p>extends 是「繼承」。繼承 <code>JpaRepository</code> 後，Spring Data 會提供 <code>findById</code>、<code>findAll</code>、<code>save</code>、<code>delete</code> 等常用方法。你不需要先自己寫一大段 JDBC（Java Database Connectivity，Java 資料庫連線 API）。</p>
+<p>尖括號中的 <code>Product</code> 指操作哪種 Entity；<code>Integer</code> 是它的主鍵型別。<code>ProductRepository</code> 負責商品，<code>CategoryRepository</code> 負責確認分類。到這裡先不用自己寫 SQL，等 10B 再看誰呼叫這兩個介面。</p>
+<div class="checkpoint"><strong>停一下，想一想</strong><p>為什麼 POST 不直接接收 <code>Product</code>？</p><details><summary>看答案</summary><p>因為 Entity 裡可能有主鍵、內部狀態或未來新增的欄位。用 DTO 可以明確限制「前端現在能寫哪些欄位」，避免 API 意外修改資料庫不該被修改的欄位。</p></details></div>
+</section>
+</article>
+<nav class="page-nav" aria-label="單元導覽"><a href="unit-10-api.html">← 單元 10 · API 實作總覽</a><a href="unit-10b-service.html">單元 10B · Service →</a></nav>
+</main>
+<footer class="site-footer">Northwind Spring Boot 教室 · 單元 10A</footer>
+</body>
+</html>

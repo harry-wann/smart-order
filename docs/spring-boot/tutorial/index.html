@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="以 Northwind 循序漸進學 Spring Boot 4：從 new、建構子注入，到容器、Bean 與實際商品 API。">
+  <title>學習地圖｜Northwind Spring Boot 教室</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要內容</a>
+<main id="main" class="site-shell">
+<header class="hero"><p class="eyebrow">JAVA BACKEND · NORTHWIND LAB</p><h1>從熟悉的 Java，<br>一步步走進 Spring Boot 4。</h1><p class="hero-text">先理解物件如何合作，再接上你學過的 Servlet 與 Tomcat；最後對照現有 backend/ 程式碼，用 MySQL 練習資料親手呼叫商品 API。</p><div class="meta"><span>Java 21</span><span>Spring Boot 4.1.1</span><span>MySQL 5.7 Northwind</span></div></header>
+<section class="intro-card"><h2>一次只多一個觀念，不用先背名詞</h2>
+<p>若已學過 Servlet 與 Tomcat，可以對照舊經驗；還沒學過也能先讀 <a href="../../site/tech/web/07-HTTP請求與回應.html">HTTP 請求與回應</a>、<a href="../../site/tech/backend/12-Java與JDK.html">Java 與 JDK</a>。教材從第 2 單元開始；每個主題各有一頁，長範例可以展開。「選讀」第一次可以跳過。</p>
+<p>每頁先交代已知的觀念與這次的任務，再看程式改哪裡、結果差在哪裡。看到新的專有名詞，會在對應內容中解釋用途與英文全名。</p>
+<p><strong>第三單元分成三步：</strong>03 先把物件傳進建構子；03A 換資料來源、比較輸出；03B 才讓 Spring 接手組裝，認識容器與 Bean。若你還感受不到差別，先停在 03A，不要急著背後面的註解。</p>
+<p>前段「概念片段」不用拼成同一個專案；03A 另附獨立 Java 小練習。第 10 單元會使用 repository 的 <code>backend</code> 專案，依 10A～10D 逐層閱讀與驗收。</p>
+<p class="note"><strong>版本固定：</strong>以 Spring Boot 4 教學；有差異才補充 Boot 3。Spring Tools 5 是開發工具，不是 Boot 5。最後一頁整理 Boot 4 的實用新增能力。</p>
+</section>
+<section class="path-stage"><div class="section-heading"><p class="eyebrow">循序漸進</p><h2>第一階段 · 從普通 Java，看懂 Spring 組裝物件</h2></div><div class="unit-grid"><a class="unit-card" href="unit-02-maven.html"><span>單元 02</span><h3>Maven：先認識專案怎麼取得套件與啟動</h3><p>先把開發工具的位置弄清楚。這一頁只處理套件、目錄與建置，Spring 如何管理物件留到下一頁。</p><small>開始閱讀 →</small></a>
+<a class="unit-card" href="unit-03-spring-core.html"><span>單元 03</span><h3>從 new 開始：一個物件為什麼需要另一個？</h3><p>先用普通 Java 印出 Northwind 商品標籤。這一頁只觀察物件如何合作，以及把依賴傳進去的意思。</p><small>開始閱讀 →</small></a>
+<a class="unit-card" href="unit-03a-dependency.html"><span>單元 03A</span><h3>換一個資料來源：親眼看見依賴注入的用途</h3><p>沿用上一頁的商品標籤。這次讓相同的 ProductLabel 分別印出 Chai 與測試茶，不修改組字邏輯。</p><small>開始閱讀 →</small></a>
+<a class="unit-card" href="unit-03b-container.html"><span>單元 03B</span><h3>交給 Spring 組裝：現在才認識容器與 Bean</h3><p>前兩頁已經會手動注入。這一頁只換「誰負責組裝」，一步一步對上 IoC、容器與 Bean 的意思。</p><small>開始閱讀 →</small></a>
+<a class="unit-card" href="unit-04-spring-boot.html"><span>單元 04</span><h3>Spring Boot：把物件管理接上 Tomcat</h3><p>你已經知道容器怎麼組裝物件。現在沿用 Servlet 課的觀念，看看整個應用如何啟動、接到請求。</p><small>開始閱讀 →</small></a></div></section>
+<section class="path-stage"><div class="section-heading"><p class="eyebrow">循序漸進</p><h2>第二階段 · 先走通請求，再設計資料介面</h2></div><div class="unit-grid"><a class="unit-card" href="unit-05-spring-mvc.html"><span>單元 05</span><h3>先走通一個請求，再學三層分工</h3><p>先用一筆已知的 Northwind 商品資料，把 Controller、Service、Repository 串起來。這頁不加入資料庫查詢或交易。</p><small>開始閱讀 →</small></a>
+<a class="unit-card" href="unit-06-rest-api.html"><span>單元 06</span><h3>RESTful API：先定義合約，再寫方法</h3><p>用 Northwind 商品資源理解各種 HTTP 方法，尤其是 PUT 與 PATCH 的不同。</p><small>開始閱讀 →</small></a></div></section>
+<section class="path-stage"><div class="section-heading"><p class="eyebrow">循序漸進</p><h2>第三階段 · 先查資料，再學交易與修改</h2></div><div class="unit-grid"><a class="unit-card" href="unit-07-jpa.html"><span>單元 07</span><h3>JPA 與 JPQL：用 Northwind 學資料查詢</h3><p>先對上 Products 的表格與欄位，認識 Repository；07B 再比較 JPQL、HQL 與原生 SQL。</p><small>開始閱讀 →</small></a>
+<a class="unit-card" href="unit-07a-hibernate.html"><span>單元 07A</span><h3>Hibernate：Java 物件如何真的寫進資料庫</h3><p>理解受管理物件、交易與欄位變更，就能看懂「沒有呼叫 save，為什麼資料還是變了」。</p><small>開始閱讀 →</small></a>
+<a class="unit-card" href="unit-07b-hql.html"><span>單元 07B</span><h3>JPQL、HQL 與原生 SQL</h3><p>沿用 Product 的 Java 映射，分辨查 Entity 與查資料表，再理解批次修改的交易要求。</p><small>開始閱讀 →</small></a></div></section>
+<section class="path-stage"><div class="section-heading"><p class="eyebrow">循序漸進</p><h2>第四階段 · 品質與安全，先理解再整合</h2></div><div class="unit-grid"><a class="unit-card" href="unit-08-quality.html"><span>單元 08</span><h3>驗證、例外與測試：讓錯誤也有規格</h3><p>沿用 Northwind 商品 API，從負價格、查不到商品，到可重複執行的測試。</p><small>開始閱讀 →</small></a>
+<a class="unit-card" href="unit-09-security.html"><span>單元 09</span><h3>Spring Security：辨認身分，再檢查權限</h3><p>延續你熟悉的 Servlet Filter 與 Session，理解商品查詢公開、修改只允許管理員的設計。</p><small>開始閱讀 →</small></a></div></section>
+<section class="path-stage"><div class="section-heading"><p class="eyebrow">循序漸進</p><h2>第五階段 · 親手做，再看版本差異</h2></div><div class="unit-grid"><a class="unit-card" href="unit-10-api.html"><span>單元 10</span><h3>實際應用：Northwind 商品 RESTful API</h3><p>對照目前 backend 中已建立的程式碼，準備 MySQL 練習資料，再用 curl 驗收五種 HTTP 方法。</p><small>開始閱讀 →</small></a>
+<a class="unit-card" href="unit-11-versions.html"><span>單元 11</span><h3>結語：Boot 4 多了什麼，Boot 3 怎麼做？</h3><p>把真的省下工作量的新能力與單純的套件改名分開。下面的進階範例是延伸，不要一次加入第 10 單元。</p><small>開始閱讀 →</small></a></div></section><section class="intro-card"><h2>第 10 單元的操作順序</h2><ol class="lab-links">
+<li><a href="unit-10-api.html">10 · 實際應用：Northwind 商品 RESTful API</a></li>
+<li><a href="unit-10a-model.html">10A · 實作一：商品實體與資料合約</a></li>
+<li><a href="unit-10b-service.html">10B · 實作二：Service 與交易邊界</a></li>
+<li><a href="unit-10c-controller.html">10C · 實作三：清單、單筆與寫入端點</a></li>
+<li><a href="unit-10d-verify.html">10D · 實作四：從新增到刪除，逐步驗收</a></li>
+</ol><p>第 10 單元的程式碼已放在 backend/。依序對照每一層的責任，最後照 10D 的命令驗收；第一次啟動先看 <a href="../../site/setup.html#啟動後端">後端環境建置</a>。</p>
+<p>API 是 Application Programming Interface（應用程式介面）；REST 是 Representational State Transfer（表述性狀態轉移）。Hibernate 是物件與資料表映射工具，HQL 是 Hibernate Query Language（Hibernate 查詢語言）。首頁的名稱是路線預告，詳細觀念依單元順序解釋。</p></section>
+</main>
+<footer class="site-footer">Northwind Spring Boot 教室 · Boot 4.1.1 / Java 21<br>程式碼為教學範例，由你逐步操作。版本查核：2026-09-22；閱讀順序修訂：2026-09-23。</footer>
+</body>
+</html>

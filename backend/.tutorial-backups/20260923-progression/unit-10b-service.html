@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="以 Northwind 練習 Spring Boot 4，從 Servlet 基礎走向 Java 後端工作。">
+  <title>實作二：Service 與交易邊界｜Northwind Spring Boot 教室</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要內容</a>
+<main id="main" class="site-shell">
+<a class="breadcrumb" href="index.html">← 回到學習地圖</a>
+<header class="lesson-header">
+<p class="eyebrow">單元 10B · NORTHWIND LAB</p>
+<h1>實作二：Service 與交易邊界</h1>
+<p class="hero-text">先看一個更新方法，再展開完整 Service。讀懂它，Controller 幾乎只剩參數轉接。</p>
+<div class="meta"><span>Spring Boot 4 主線</span><span>有差異再看 Boot 3</span><span>4 個閱讀步驟</span></div>
+</header>
+<nav class="lesson-toc" aria-label="本頁目錄">
+<strong>本頁閱讀路線</strong>
+<ol><li><a href="#step-1">01 · 查不到商品，和輸入錯誤不同</a></li>
+<li><a href="#step-2">02 · 更新沒有 save，回想單元 07A</a></li>
+<li><a href="#step-3">03 · 完整 Service</a></li>
+<li><a href="#step-4">04 · Northwind 的業務限制</a></li></ol>
+</nav>
+<article class="lesson">
+<section id="step-1"><h2>01 · 查不到商品，和輸入錯誤不同</h2><figure class="code-block"><figcaption>ProductNotFound.java</figcaption><pre tabindex="0"><code class="language-java"><span class="kn">package</span><span class="w"> </span><span class="nn">com.example.northwind</span><span class="p">;</span>
+
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">ProductNotFound</span><span class="w"> </span><span class="kd">extends</span><span class="w"> </span><span class="n">RuntimeException</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="nf">ProductNotFound</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">super</span><span class="p">(</span><span class="s">"商品不存在："</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">id</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure><figure class="code-block"><figcaption>InvalidInput.java</figcaption><pre tabindex="0"><code class="language-java"><span class="kn">package</span><span class="w"> </span><span class="nn">com.example.northwind</span><span class="p">;</span>
+
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">InvalidInput</span><span class="w"> </span><span class="kd">extends</span><span class="w"> </span><span class="n">RuntimeException</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="nf">InvalidInput</span><span class="p">(</span><span class="n">String</span><span class="w"> </span><span class="n">message</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kd">super</span><span class="p">(</span><span class="n">message</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure><p>RuntimeException 是執行期例外。稍後集中把 ProductNotFound 轉成 404、InvalidInput 轉成 400；這裡不處理 HTTP 回應，讓業務邏輯與傳輸方式分開。</p></section>
+<section id="step-2"><h2>02 · 更新沒有 save，回想單元 07A</h2><figure class="code-block"><figcaption>先看 ProductService 裡這一段</figcaption><pre tabindex="0"><code class="language-java"><span class="nd">@Transactional</span>
+<span class="kd">public</span><span class="w"> </span><span class="n">ProductView</span><span class="w"> </span><span class="nf">replace</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">ProductWrite</span><span class="w"> </span><span class="n">input</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">Product</span><span class="w"> </span><span class="n">product</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">required</span><span class="p">(</span><span class="n">id</span><span class="p">);</span>
+<span class="w">    </span><span class="n">apply</span><span class="p">(</span><span class="n">product</span><span class="p">,</span><span class="w"> </span><span class="n">input</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">ProductView</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="n">product</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure><p>required 查找受管理的實體；apply 查分類並更新五個欄位；在交易內轉成回應。Hibernate 在交易提交時同步修改，所以這裡不必再呼叫 save。找不到商品就回 404，本課 PUT 不做「不存在就新增」。</p></section>
+<section id="step-3"><h2>03 · 完整 Service</h2><details class="code-details"><summary>展開完整範例 · ProductService.java</summary><figure class="code-block"><figcaption>ProductService.java</figcaption><pre tabindex="0"><code class="language-java"><span class="kn">package</span><span class="w"> </span><span class="nn">com.example.northwind</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.data.domain.PageRequest</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.data.domain.Sort</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.stereotype.Service</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">org.springframework.transaction.annotation.Transactional</span><span class="p">;</span>
+
+<span class="nd">@Service</span>
+<span class="nd">@Transactional</span><span class="p">(</span><span class="n">readOnly</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span><span class="p">)</span>
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">ProductService</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">ProductRepository</span><span class="w"> </span><span class="n">products</span><span class="p">;</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">CategoryRepository</span><span class="w"> </span><span class="n">categories</span><span class="p">;</span>
+
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="nf">ProductService</span><span class="p">(</span><span class="n">ProductRepository</span><span class="w"> </span><span class="n">products</span><span class="p">,</span><span class="w"> </span><span class="n">CategoryRepository</span><span class="w"> </span><span class="n">categories</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="na">products</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">products</span><span class="p">;</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="na">categories</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">categories</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">ProductPage</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">page</span><span class="p">,</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">size</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">page</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">size</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="n">size</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">100</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">InvalidInput</span><span class="p">(</span><span class="s">"page 必須 &gt;= 0；size 必須為 1～100"</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="kd">var</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">products</span><span class="p">.</span><span class="na">findAll</span><span class="p">(</span>
+<span class="w">            </span><span class="n">PageRequest</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="n">page</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="n">Sort</span><span class="p">.</span><span class="na">by</span><span class="p">(</span><span class="s">"id"</span><span class="p">).</span><span class="na">ascending</span><span class="p">()));</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ProductPage</span><span class="p">(</span>
+<span class="w">            </span><span class="n">result</span><span class="p">.</span><span class="na">getContent</span><span class="p">().</span><span class="na">stream</span><span class="p">().</span><span class="na">map</span><span class="p">(</span><span class="n">ProductView</span><span class="p">::</span><span class="n">from</span><span class="p">).</span><span class="na">toList</span><span class="p">(),</span>
+<span class="w">            </span><span class="n">page</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="p">,</span><span class="w"> </span><span class="n">result</span><span class="p">.</span><span class="na">getTotalElements</span><span class="p">());</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">ProductView</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">ProductView</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="n">required</span><span class="p">(</span><span class="n">id</span><span class="p">));</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="nd">@Transactional</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">ProductView</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span><span class="n">ProductWrite</span><span class="w"> </span><span class="n">input</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">Product</span><span class="w"> </span><span class="n">product</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">Product</span><span class="p">();</span>
+<span class="w">        </span><span class="n">apply</span><span class="p">(</span><span class="n">product</span><span class="p">,</span><span class="w"> </span><span class="n">input</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">ProductView</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="n">products</span><span class="p">.</span><span class="na">save</span><span class="p">(</span><span class="n">product</span><span class="p">));</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="nd">@Transactional</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">ProductView</span><span class="w"> </span><span class="nf">replace</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">ProductWrite</span><span class="w"> </span><span class="n">input</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">Product</span><span class="w"> </span><span class="n">product</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">required</span><span class="p">(</span><span class="n">id</span><span class="p">);</span>
+<span class="w">        </span><span class="n">apply</span><span class="p">(</span><span class="n">product</span><span class="p">,</span><span class="w"> </span><span class="n">input</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">ProductView</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="n">product</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="nd">@Transactional</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">ProductView</span><span class="w"> </span><span class="nf">patchPrice</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">PricePatch</span><span class="w"> </span><span class="n">input</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">Product</span><span class="w"> </span><span class="n">product</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">required</span><span class="p">(</span><span class="n">id</span><span class="p">);</span>
+<span class="w">        </span><span class="n">product</span><span class="p">.</span><span class="na">changePrice</span><span class="p">(</span><span class="n">input</span><span class="p">.</span><span class="na">unitPrice</span><span class="p">());</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">ProductView</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="n">product</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="nd">@Transactional</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">delete</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">products</span><span class="p">.</span><span class="na">delete</span><span class="p">(</span><span class="n">required</span><span class="p">(</span><span class="n">id</span><span class="p">));</span>
+<span class="w">        </span><span class="n">products</span><span class="p">.</span><span class="na">flush</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">Product</span><span class="w"> </span><span class="nf">required</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">id</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">id</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="k">throw</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">InvalidInput</span><span class="p">(</span><span class="s">"商品編號必須大於 0"</span><span class="p">);</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">products</span><span class="p">.</span><span class="na">findById</span><span class="p">(</span><span class="n">id</span><span class="p">)</span>
+<span class="w">            </span><span class="p">.</span><span class="na">orElseThrow</span><span class="p">(()</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ProductNotFound</span><span class="p">(</span><span class="n">id</span><span class="p">));</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="n">Product</span><span class="w"> </span><span class="n">product</span><span class="p">,</span><span class="w"> </span><span class="n">ProductWrite</span><span class="w"> </span><span class="n">input</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">Category</span><span class="w"> </span><span class="n">category</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">categories</span><span class="p">.</span><span class="na">findById</span><span class="p">(</span><span class="n">input</span><span class="p">.</span><span class="na">categoryId</span><span class="p">())</span>
+<span class="w">            </span><span class="p">.</span><span class="na">orElseThrow</span><span class="p">(()</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">InvalidInput</span><span class="p">(</span><span class="s">"分類不存在"</span><span class="p">));</span>
+<span class="w">        </span><span class="n">product</span><span class="p">.</span><span class="na">replace</span><span class="p">(</span><span class="n">input</span><span class="p">.</span><span class="na">productName</span><span class="p">().</span><span class="na">strip</span><span class="p">(),</span><span class="w"> </span><span class="n">input</span><span class="p">.</span><span class="na">unitPrice</span><span class="p">(),</span>
+<span class="w">            </span><span class="n">input</span><span class="p">.</span><span class="na">unitsInStock</span><span class="p">().</span><span class="na">shortValue</span><span class="p">(),</span><span class="w"> </span><span class="n">input</span><span class="p">.</span><span class="na">discontinued</span><span class="p">(),</span><span class="w"> </span><span class="n">category</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span></code></pre></figure></details><p>類別預設 readOnly=true，寫入方法再用 @Transactional 改為寫入交易。stream().map(...).toList() 是把每筆 Product 轉成 ProductView 的 Java 集合處理方式。</p><p>list 先限制 size 最大 100，再固定按 id 排序，避免不受限的大量查詢；page 從 0 開始。超出最後一頁回空清單，不是 404。這種分頁在資料同時新增／刪除時仍可能位移，進階需求再考慮游標分頁。</p></section>
+<section id="step-4"><h2>04 · Northwind 的業務限制</h2><p>新增／完整更新先確認分類存在；資料庫外鍵則提供最後保障。刪除時 flush 讓外鍵違反能在方法執行期間浮現，交給全域例外處理回 409。不要為了刪除商品而連帶清空歷史訂單明細。</p><p>本課的庫存欄位是管理者設定存量，不是扣庫存系統。如果要實作多人同時下單，需加入條件式更新或鎖定，避免兩個請求覆蓋彼此；不能把這份 replace 當成已完成併發庫存控制。</p><p>Optimistic Locking（樂觀鎖）常用版本欄位偵測並行修改，但經典 Northwind 沒有對應欄位，不能只加 @Version 就期待能用。需要先規劃資料庫結構變更，這列為後續延伸。</p><div class="checkpoint"><strong>停一下，自己想想</strong><p>為什麼不能先刪分類，再讓商品自己變成沒有分類？</p><details><summary>看解釋</summary><p>目前外鍵沒有定義這種行為，且分類可能被許多商品共用。應依業務規則先處理關聯，不把資料完整性當成可忽略的錯誤。</p></details></div></section>
+</article>
+<nav class="page-nav" aria-label="單元導覽">
+<a href="unit-10a-model.html">← 單元 10A</a>
+<a href="unit-10c-controller.html">下一頁 · 10C 實作三：六個端點與錯誤回應 →</a>
+</nav>
+</main>
+<footer class="site-footer">Northwind Spring Boot 教室 · Boot 4.1.1 / Java 21<br>程式碼為教學範例，由你逐步操作。版本查核：2026-09-22。</footer>
+</body>
+</html>

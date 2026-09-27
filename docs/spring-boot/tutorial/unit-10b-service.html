@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="理解 Spring Boot Service 層、IoC、@Autowired 欄位注入與交易。">
+  <title>實作二：Service 與業務規則｜Northwind Spring Boot 教室</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要內容</a>
+<main id="main" class="site-shell">
+<a class="breadcrumb" href="unit-10-api.html">← 回到單元 10</a>
+<header class="lesson-header">
+<p class="eyebrow">單元 10B · SERVICE</p>
+<h1>實作二：Service 與業務規則</h1>
+<p class="hero-text">Controller 不應該自己查資料庫。這一頁把「商品是否存在、分類是否存在、更新怎麼做」集中在 Service。</p>
+<div class="meta"><span>IoC / DI 實際感受</span><span>交易邊界</span><span>不讓 Controller 變胖</span></div>
+</header>
+<aside class="learning-goal"><p><strong>讀完能做到：</strong>知道 Controller 為什麼只呼叫 Service，以及 Spring 如何用 @Autowired 把 Repository 注入 Service 欄位。</p></aside>
+<nav class="lesson-toc" aria-label="本頁目錄"><strong>本頁閱讀路線</strong><ol>
+<li><a href="#step-1">01 · IoC 在這個專案做了什麼</a></li><li><a href="#step-2">02 · @Autowired 欄位注入</a></li><li><a href="#step-3">03 · 五種操作的業務規則</a></li><li><a href="#step-4">04 · Transaction 是什麼</a></li>
+</ol></nav>
+<article class="lesson">
+<section id="step-1"><h2>01 · IoC 在這個專案做了什麼</h2>
+<p>IoC 是 Inversion of Control（控制反轉）：物件要用誰，不自己決定建立，而是交給 Spring 容器管理。DI 是 Dependency Injection（依賴注入）：Spring 將需要的物件傳進來。</p>
+<div class="table-wrap" tabindex="0"><table><thead><tr><th>沒有 Spring 時</th><th>有 Spring IoC 時</th></tr></thead><tbody>
+<tr><td>Controller 自己 <code>new ProductService()</code>。</td><td>Spring 建立 ProductService，Controller 只宣告需要它。</td></tr>
+<tr><td>Service 自己建立資料存取物件，也要自己決定怎麼換成測試替身。</td><td>Spring 把真正的 Repository 注入；測試時可以換成 mock。</td></tr>
+<tr><td>每個類別都知道如何建立下一層，彼此黏死。</td><td>每個類別只描述「我需要什麼」，建立與組裝交給容器。</td></tr>
+</tbody></table></div>
+<p>所以 IoC 的差別不是「少打幾個 <code>new</code>」而已，而是把組裝責任集中到 Spring。這讓分層清楚，也讓單元測試可以替換依賴。</p>
+</section>
+<section id="step-2"><h2>02 · @Autowired 欄位注入</h2>
+<p>請開啟 <code>service/ProductService.java</code>，先看這段：</p>
+<figure class="code-block"><figcaption>Spring 注入兩個 Repository</figcaption><pre tabindex="0"><code class="language-java"><span class="nd">@Service</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">ProductService</span> <span class="p">{</span>
+    <span class="nd">@Autowired</span>
+    <span class="kd">private</span> <span class="n">ProductRepository</span> <span class="n">products</span><span class="p">;</span>
+
+    <span class="nd">@Autowired</span>
+    <span class="kd">private</span> <span class="n">CategoryRepository</span> <span class="n">categories</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+<p>這兩個 <code>@Autowired</code> 欄位是目前程式採用的 DI 寫法。Spring 啟動時看到 <code>@Service</code>，就建立 ProductService，並在建立後把兩個 Repository Bean（由 Spring 容器管理的物件）注入欄位。Controller 不需要知道資料庫如何連線。欄位注入不能搭配未初始化的 <code>final</code>；自行 <code>new ProductService()</code> 也不會觸發 Spring 注入。</p>
+<p>你在 <a href="unit-03-spring-core.html">03</a> 學的是建構子注入；兩種寫法都屬於 DI。團隊的 <a href="../../site/tech/backend/15-依賴注入.html">依賴注入短篇</a>以建構子注入作為新程式碼的示例，這裡保留既有欄位注入，好讓你能一行一行對照現有 <code>ProductService.java</code>。</p>
+</section>
+<section id="step-3"><h2>03 · 五種操作的業務規則</h2>
+<div class="table-wrap" tabindex="0"><table><thead><tr><th>HTTP 方法</th><th>Service 做什麼</th><th>成功結果</th></tr></thead><tbody>
+<tr><td>GET</td><td>找商品；清單使用 Spring Data 的分頁。</td><td>回傳商品 DTO。</td></tr><tr><td>POST</td><td>先確認 categoryId 存在，再建立新 Entity。</td><td>資料庫產生新 id。</td></tr><tr><td>PUT</td><td>先找原商品，再用完整輸入替換可寫欄位。</td><td>找不到不偷偷新增。</td></tr><tr><td>PATCH</td><td>只套用 JSON 中有傳入的欄位。</td><td>沒有傳的欄位保持原值。</td></tr><tr><td>DELETE</td><td>先確認商品存在，再刪除。</td><td>成功回傳 204。</td></tr>
+</tbody></table></div>
+<figure class="code-block"><figcaption>PATCH 的重點 · 只修改有傳入的欄位</figcaption><pre tabindex="0"><code class="language-java"><span class="k">if</span> <span class="p">(</span><span class="n">request</span><span class="p">.</span><span class="na">unitPrice</span><span class="p">() </span><span class="o">!=</span> <span class="kc">null</span><span class="p">) {</span>
+    <span class="n">product</span><span class="p">.</span><span class="na">setUnitPrice</span><span class="p">(</span><span class="n">request</span><span class="p">.</span><span class="na">unitPrice</span><span class="p">());</span>
+<span class="p">}</span></code></pre></figure>
+<p>Service 還會把找不到商品轉成 <code>ProductNotFoundException</code>，把不存在的分類轉成 <code>CategoryNotFoundException</code>。<code>ApiExceptionHandler</code> 再把它們轉成 404 或 400。注意 PATCH 的 <code>null</code> 在目前程式代表「不修改」，所以它不能用來把欄位清成 <code>null</code>；空物件 <code>{}</code> 會回 400。</p>
+</section>
+<section id="step-4"><h2>04 · Transaction 是什麼</h2>
+<p>Transaction（交易）是一組「要嘛全部成功、要嘛全部取消」的資料庫操作。<code>@Transactional</code> 放在新增、更新、刪除方法上，讓讀寫在正確的資料庫交易中完成。</p>
+<figure class="code-block"><figcaption>ProductService.java · 交易邊界</figcaption><pre tabindex="0"><code class="language-java"><span class="nd">@Transactional</span>
+<span class="kd">public</span> <span class="n">ProductResponse</span> <span class="nf">replace</span><span class="p">(</span><span class="n">Integer</span> <span class="n">id</span><span class="p">,</span> <span class="n">ProductUpdateRequest</span> <span class="n">request</span><span class="p">) {</span>
+    <span class="n">Product</span> <span class="n">product</span> <span class="o">=</span> <span class="na">required</span><span class="p">(</span><span class="n">id</span><span class="p">);</span>
+    <span class="na">requireCategory</span><span class="p">(</span><span class="n">request</span><span class="p">.</span><span class="na">categoryId</span><span class="p">());</span>
+    <span class="c1">// 套用欄位後，交易結束時由 JPA flush 寫回資料庫。</span>
+    <span class="k">return</span> <span class="n">ProductResponse</span><span class="p">.</span><span class="na">from</span><span class="p">(</span><span class="n">product</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+<p>這裡的 <code>save</code> 不是每次更新都必須手動呼叫：查出的 Entity 在交易中受到 JPA 管理，欄位改變後會在提交前同步。現有 Service 類別先標 <code>@Transactional(readOnly = true)</code>，只有 create、replace、patch、delete 方法另標 <code>@Transactional</code> 開啟寫入交易。若查不到商品，先丟例外；若分類不存在，寫入不會完成。</p>
+</section>
+</article>
+<nav class="page-nav" aria-label="單元導覽"><a href="unit-10a-model.html">← 單元 10A · Entity、DTO、Repository</a><a href="unit-10c-controller.html">單元 10C · Controller →</a></nav>
+</main>
+<footer class="site-footer">Northwind Spring Boot 教室 · 單元 10B</footer>
+</body>
+</html>
