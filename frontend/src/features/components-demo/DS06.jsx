@@ -1,11 +1,15 @@
 import DemoPage from './DemoPage'
 import MenuItemRow from '@/components/order/MenuItemRow'
 import SoldOutStamp from '@/assets/ic_sold_out_stamp.svg'
+import { useState } from 'react'
+import DropdownNotification from '@/components/DropdownNotification/DropdownNotification'
+import DropdownNotificationHost from '@/components/DropdownNotification/DropdownNofificationHost'
 import ToastItem, { ToastType } from '@/components/toast/ToastItem.tsx'
 import { useToast } from '@/components/toast/ToastManager'
 
 export default function DS06() {
   const { showToast } = useToast()
+  const [incoming, setIncoming] = useState(null)
 
   return (
     <DemoPage
@@ -55,6 +59,44 @@ export default function DS06() {
           >
             顯示底部浮動 Toast
           </button>
+
+          <DropdownNotification
+            type="add"
+            title="已加入購物車"
+            desc="安格斯霜降牛五花 ×1・全份"
+            onClick={() => {
+              console.log('跳轉到購物車')
+              setIncoming({
+                id: Date.now(),
+                type: 'add',
+                title: '已加入購物車',
+                desc: '安格斯霜降牛五花 ×1・全份',
+                onClick: () => {},
+              })
+            }}
+          />
+
+          <DropdownNotification
+            type="send"
+            title="已送出訂單"
+            desc="共 5 項，NT$ 2,000"
+            onClick={() => {
+              console.log('跳轉到點餐紀錄')
+
+              setIncoming({
+                id: Date.now(),
+                type: 'send',
+                title: '已送出訂單',
+                desc: '共 5 項，NT$ 2,000',
+                onClick: () => {},
+              })
+            }}
+          />
+
+          <div className="relative min-h-dvh w-full">
+            <DropdownNotificationHost incoming={incoming} />
+            {/* <Outlet /> */}
+          </div>
         </div>
       </div>
     </DemoPage>
