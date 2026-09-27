@@ -1,4 +1,11 @@
-export default function SOButton({ text = null, content = null, type = 'default', ...props }) {
+export default function SOButton({
+  text = null,
+  content = null,
+  variant = 'default',
+  disabled = false,
+  type = 'button',
+  ...props
+}) {
   const justifyClass = Array.isArray(text) && text.length > 1 ? 'justify-between' : 'justify-center'
   const contentClass =
     Array.isArray(content) && content.length > 1 ? 'justify-between' : 'justify-center'
@@ -13,7 +20,9 @@ export default function SOButton({ text = null, content = null, type = 'default'
 
   return (
     <button
-      className={`flex w-full items-center rounded-[var(--radius-btn)] type-button sm:h-[36px] sm:px-3.5 md:h-[44px] md:px-5 lg:h-[52px] lg:px-6 ${themeClass[type]} transition-all duration-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40`}
+      type={type}
+      disabled={disabled}
+      className={`flex w-full items-center rounded-[var(--radius-btn)] type-button sm:h-[36px] sm:px-3.5 md:h-[44px] md:px-5 lg:h-[52px] lg:px-6 ${themeClass[variant]} transition-all duration-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100`}
       {...props}
     >
       {text !== null ? (
