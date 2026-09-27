@@ -1,0 +1,101 @@
+{
+  // ═══════════════════════════════════════════════════════════
+  // smart_order 根目錄的 VS Code 設定
+  //
+  // 這份檔案是給「以 smart_order 整個專案開啟」時用的，把
+  // frontend/.vscode 和 backend/.vscode 兩邊的設定合在一起。
+  //
+  // frontend/ 或 backend/ 單獨開啟時，走的是各自資料夾底下的
+  // .vscode/settings.json，這份不會生效，兩邊互不影響。
+  //
+  // 最重要的差別：根目錄底下同時有 JS 和 Java，所以凡是「只該
+  // 套用在某一邊」的設定（例如 Prettier 存檔自動格式化），一律
+  // 用 [語言] 區塊圈起來，不能像子資料夾那樣寫成全域。
+  // ═══════════════════════════════════════════════════════════
+
+  // ── 縮排（全域預設走前端慣例，Java / Kotlin 另外覆蓋）────────
+  // JS / React 慣例是 2 格，JSX 巢狀深，4 格很快撞到行寬
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  // 不要從檔案現有內容猜縮排，一律以這裡的設定為準
+  "editor.detectIndentation": false,
+
+  // ── Tailwind ──────────────────────────────────────────────
+  // class 寫在 className="..." 的字串裡，VS Code 預設不在字串內跳自動完成
+  // 沒有這行，Tailwind IntelliSense 看起來像壞掉
+  "editor.quickSuggestions": { "strings": "on" },
+
+  // @theme / @utility 是 Tailwind v4 的語法，不是標準 CSS，
+  // VS Code 內建的 CSS 檢查器不認得，會報 "Unknown at rule"。那不是錯誤，build 正常
+  "css.lint.unknownAtRules": "ignore",
+
+  // Tailwind v4 把設定寫在 CSS 裡（@theme），不再有 tailwind.config.js。
+  // 從根目錄開啟時，外掛找不到那個 CSS 入口，要明講在哪
+  "tailwindCSS.experimental.configFile": "frontend/src/style.css",
+
+  // ── JSX ───────────────────────────────────────────────────
+  // 改開頭標籤，結尾標籤自動跟著改
+  "editor.linkedEditing": true,
+
+  // 在 .jsx 裡用 Emmet：打 div.flex.items-center 按 Tab
+  // → <div className="flex items-center"></div>（知道要用 className 不是 class）
+  "emmet.includeLanguages": { "javascript": "javascriptreact" },
+
+  // ── 前端：存檔用 Prettier 格式化 ────────────────────────────
+  // 逐語言指定，不寫成全域的 editor.defaultFormatter。
+  // 全域會讓 Prettier 連 pom.xml 之類的後端檔案一起接管
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  // 注意：Markdown 刻意不列進來。docs/ 底下有大量 .md，
+  // 掛上存檔自動格式化會讓不相干的文件跟著被改動，diff 變得難看
+
+  // ── 後端：Java / Kotlin ────────────────────────────────────
+  "[java]": {
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.defaultFormatter": "redhat.java",
+    "editor.formatOnSave": false
+  },
+  "[kotlin]": {
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.defaultFormatter": "JetBrains.kotlin-server",
+    "editor.formatOnSave": false
+  },
+
+  // Java 格式化設定檔。從根目錄開啟時 ${workspaceFolder} 指向 smart_order，
+  // 所以路徑要多帶一層 backend/（backend/.vscode/settings.json 裡沒有這一層）
+  "java.format.enabled": true,
+  "java.format.settings.url": "${workspaceFolder}/backend/.vscode/eclipse-formatter.xml",
+  "java.format.settings.profile": "SmartOrder"
+}
