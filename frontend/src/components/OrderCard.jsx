@@ -2,10 +2,12 @@ import '../features/admin/kds/kds.colors.css'
 import time from '../assets/ic_cart_time.svg'
 import check from '../assets/ic_card_check.svg'
 import SOButton from './SOButton'
+import Badge from '../components/Badge'
 
 export default function OrderCard({
   tableNo,
   sequenceNo,
+  isPreorder,
   placedAt,
   orderItems,
   onToggle,
@@ -28,11 +30,19 @@ export default function OrderCard({
 
   const isAllServed = orderItems?.length > 0 && orderItems.every((item) => item.status === 'SERVED')
 
+  const isPreorderTheme = isPreorder == true ? 'border border-(--color-accent-500)' : ''
   return (
     <div className="kds">
-      <div className="flex flex-col gap-4 rounded-(--radius-card) bg-(--kds-card) p-5">
+      <div
+        className={`flex flex-col gap-4 rounded-(--radius-card) ${isPreorderTheme} bg-(--kds-card) p-5`}
+      >
         <div className="flex flex-col gap-3">
-          <h1 className="type-kds-table">{tableNo}</h1>
+          <div className="flex items-center justify-between">
+            <h1 className="type-kds-table">{tableNo}</h1>
+            <div className="origin-right scale-55">
+              {isPreorderTheme && <Badge text="預約優先" col="pri" />}
+            </div>
+          </div>
 
           <div className="flex items-center justify-between text-(--kds-ink-2)">
             <p>第{sequenceNo}單</p>

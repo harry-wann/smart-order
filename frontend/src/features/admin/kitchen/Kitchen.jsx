@@ -232,6 +232,7 @@ export default function Kitchen() {
               <OrderCard
                 tableNo={ticket.tableNo}
                 sequenceNo={ticket.sequenceNo}
+                isPreorder={ticket.isPreorder}
                 placedAt={ticket.placedAt}
                 orderItems={ticket.orderItems}
 
