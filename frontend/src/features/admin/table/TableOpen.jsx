@@ -1,6 +1,7 @@
 import { Link,useParams } from 'react-router'
 import { useState } from 'react'
 import bellIcon from '../../../assets/ic_tableOverview_bell.svg'
+ import SOButton from '../../../components/SOButton'
 
 
 
@@ -69,7 +70,7 @@ function TableOpen() {
 
      
       <section className="rounded-b-card border border-t-0 border-line bg-surface p-6">
-        {activeTab === 'walkin' && <p>現場內容（S-02b，先等等）</p>}
+           {activeTab === 'walkin' && <SOButton text="開桌" onClick={() => alert('只是測試')} />}
         {activeTab === 'waitlist' && <p>候位內容（S-02c）</p>}
         {activeTab === 'reservation' && <p>預約內容（再等等）</p>}
       </section>
