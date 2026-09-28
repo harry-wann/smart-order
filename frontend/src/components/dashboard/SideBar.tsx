@@ -9,7 +9,7 @@ function SideBar({ shopTitle }: Props) {
   return (
     <div className="flex h-full w-52 shrink-0 flex-col border-r border-r-line bg-surface-2 px-3 py-4">
       <span className="px-3 type-price font-black text-ink-900">{shopTitle}</span>
-      <span className="px-3 type-dashboard-subtitle text-ink-400">SMART ORDER</span>
+      <span className="type-dashboard-menu-subtitle px-3 text-ink-400">SMART ORDER</span>
 
       {menuGroups.map((menu) => (
         <SideBarSection key={menu.title} menu={menu} />

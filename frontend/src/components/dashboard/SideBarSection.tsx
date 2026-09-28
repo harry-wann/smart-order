@@ -19,7 +19,7 @@ export type Props = {
 function SideBarSection({ menu }: Props) {
   return (
     <div className="mt-4 flex flex-col gap-1">
-      <span className="mb-1 px-3 type-dashboard-subtitle text-ink-400">{menu.title}</span>
+      <span className="type-dashboard-menu-subtitle mb-1 px-3 text-ink-400">{menu.title}</span>
       {menu.items.map((item) => (
         <SideBarItem key={item.path} {...item} />
       ))}

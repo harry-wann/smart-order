@@ -160,10 +160,18 @@
   font-variant-numeric: tabular-nums;
 }
 
-@utility type-dashboard-subtitle {
+@utility type-dashboard-menu-subtitle {
   font-family: var(--font-sans);
   font-size: 11px;
   line-height: 1.2;
   font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+@utility type-dashboard-top-bar-tag {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
