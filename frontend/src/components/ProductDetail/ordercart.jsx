@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import Counter from '../steper/counter'
-import graytrash from '../../assets/graytrash.svg'
+import graytrash from '../../assets/ic_ordercart_graytrash.svg'
+import lessthan from '../../assets/ic_ordercart_lessthan.svg'
+import person from '../../assets/ic_ordercart_person.svg'
+import people from '../../assets/ic_ordercart_people.svg'
 
 export default function OrderCart() {
   // 購物車假資料
@@ -77,7 +80,7 @@ export default function OrderCart() {
           className="flex h-10 w-8 shrink-0 items-center justify-start text-2xl text-ink-900"
           aria-label="返回"
         >
-          ‹
+          <img src={lessthan} />
         </button>
 
         <div className="ml-2">
@@ -90,7 +93,9 @@ export default function OrderCart() {
       {/* 共用購物車提示：375 × 39 */}
       <div className="flex h-9.75 shrink-0 items-center gap-2 bg-info-bg px-4">
         {/* 人物 icon */}
-        <span className="type-caption text-info-ink">♙</span>
+        <span className="type-caption text-info-ink">
+          <img src={people} />
+        </span>
 
         <p className="type-caption text-info-ink">這是整桌共用的購物車，同桌誰都可以改</p>
       </div>
@@ -119,7 +124,10 @@ export default function OrderCart() {
                     <h2 className="type-h2-base font-bold text-ink-900">{item.name}</h2>
 
                     {/* 加入商品的人 */}
-                    <p className="mt-1 type-caption text-ink-400">♙ {item.people}</p>
+                    <div className="mt-1 flex items-center gap-1">
+                      <img src={person} />
+                      <p className="type-caption text-ink-400">{item.people}</p>
+                    </div>
                   </div>
 
                   {/* 商品金額 */}
@@ -143,7 +151,7 @@ export default function OrderCart() {
                     type="button"
                     onClick={() => handleDelete(item.id)}
                     className="flex h-8 w-8 items-center justify-center"
-                    aria-label={`刪除 ${item.name}`}
+                    aria-label={` ${item.name}`}
                   >
                     <img src={graytrash} className="h-5 w-5" />
                   </button>

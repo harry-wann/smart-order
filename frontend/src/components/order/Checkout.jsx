@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import blackpeople from '../../assets/ic_Checkout_blackpeople.svg'
 
 export default function Checkout() {
   const [phone, setPhone] = useState('0912345678')
@@ -32,7 +33,7 @@ export default function Checkout() {
 
       {/* ==================== 合計 ==================== */}
       <div className="flex items-center justify-between">
-        <span className="type-body font-semibold">合計</span>
+        <span className="type-body font-bold">合計</span>
 
         <span className="type-h2 text-brand-600">NT$ 1,562</span>
       </div>
@@ -40,7 +41,9 @@ export default function Checkout() {
       {/* ==================== 人數 ==================== */}
       <div className="mt-4 flex h-9 items-center justify-between rounded-btn bg-surface-2 px-3">
         <div className="flex items-center gap-2 type-body-sm text-ink-600">
-          <span>♙</span>
+          <span>
+            <img src={blackpeople} />
+          </span>
           <span>2 大 1 小</span>
         </div>
 
@@ -75,14 +78,14 @@ export default function Checkout() {
 
           <button
             type="button"
-            className="h-10.5 w-17.5 rounded-btn border border-brand-600 type-body font-medium text-brand-600"
+            className="h-10.5 w-17.5 rounded-btn border border-brand-600 type-body text-brand-600"
           >
             查詢
           </button>
         </div>
 
         {/* 會員資料 */}
-        <div className="mt-2 rounded-lg bg-surface p-3">
+        <div className="mt-2 rounded-btn bg-surface p-3">
           <div className="flex items-center justify-between">
             <p className="type-h3 font-semibold">陳小美・1998/04/21</p>
 
@@ -92,7 +95,7 @@ export default function Checkout() {
           <div className="mt-2 flex items-center gap-3">
             <button
               type="button"
-              className="h-9 flex-1 rounded-btn border border-brand-600 bg-white type-body-sm font-medium text-brand-600"
+              className="h-9 flex-1 rounded-btn border border-brand-600 bg-white type-body-sm text-brand-600"
             >
               確認是本人
             </button>
@@ -128,7 +131,7 @@ function PaymentButton({ children }) {
   return (
     <button
       type="button"
-      className="h-12.5 rounded-btn bg-brand-600 type-h3 text-surface transition hover:bg-brand-600"
+      className="h-12.5 rounded-btn bg-brand-600 type-button text-surface hover:bg-brand-600"
     >
       {children}
     </button>
