@@ -1,10 +1,23 @@
 import { Link,useParams } from 'react-router'
+import { useState } from 'react'
 import bellIcon from '../../../assets/ic_tableOverview_bell.svg'
+
+
+
+
 
 function TableOpen() {
   const { tableNo } = useParams()
 
   const tableInfo = { capacity: 6, area: '走道區' }
+
+  const [activeTab, setActiveTab] = useState('walkin')
+
+  const tabs = [
+    { key: 'walkin', label: '現場' },
+    { key: 'waitlist', label: '候位', count: 3 },
+    { key: 'reservation', label: '預約', count: 2 },
+  ]
 
 
 
@@ -33,6 +46,40 @@ function TableOpen() {
         <span className="absolute top-1.75 right-1.75 size-2.25 rounded-full bg-brand-600" />
       </button>
     </header>
+
+
+    <main className="mx-auto w-full max-w-205 p-6">
+      
+      <div className="flex gap-6 rounded-t-card border-b border-line bg-surface px-4">
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`type-body -mb-px border-b-2 py-3 ${
+              activeTab === tab.key
+                ? 'border-brand-600 font-bold text-brand-600'
+                : 'border-transparent text-ink-600 hover:text-ink-900'
+            }`}
+          >
+            {tab.label}
+            {tab.count !== undefined && ` ${tab.count}`}
+          </button>
+        ))}
+      </div>
+
+     
+      <section className="rounded-b-card border border-t-0 border-line bg-surface p-6">
+        {activeTab === 'walkin' && <p>現場內容（S-02b，先等等）</p>}
+        {activeTab === 'waitlist' && <p>候位內容（S-02c）</p>}
+        {activeTab === 'reservation' && <p>預約內容（再等等）</p>}
+      </section>
+    </main>
+
+
+
+
+
+
   </div>
 )
 }
