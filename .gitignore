@@ -56,8 +56,18 @@ pnpm-debug.log*
 .settings/
 .project
 .classpath
-!.vscode/settings.json
-!.vscode/extensions.json
+# 根目錄 .vscode：以 smart_order 整包開啟時，團隊共用的設定。
+#
+# 寫法的坑：上面的 .vscode/ 是「擋掉整個資料夾」，git 之後就不會再
+# 往裡面看，所以單寫 !.vscode/settings.json 完全無效（檔案照樣被擋）。
+# 正確作法是先把資料夾本身放回來，再擋掉裡面的內容，最後逐一放行。
+# 開頭的 / 代表只指根目錄那一個，不會影響 frontend/ 和 backend/ 底下的。
+!/.vscode/
+/.vscode/*
+!/.vscode/settings.json
+!/.vscode/extensions.json
+!/.vscode/launch.json
+
 !backend/.vscode/
 backend/.vscode/*
 !backend/.vscode/settings.json

@@ -1,0 +1,15 @@
+{
+  // 以 smart_order 開啟時建議安裝的外掛。
+  // 這裡列的每一個，都是根目錄 settings.json 真的有用到的：
+  // 少裝其中一個，對應的設定就是空轉。
+  "recommendations": [
+    // 前端
+    "esbenp.prettier-vscode", // [javascript] 等區塊指定的格式化器
+    "bradlc.vscode-tailwindcss", // Tailwind class 自動完成，搭配 tailwindCSS.experimental.configFile
+    "oxc.oxc-vscode", // 專案用 oxlint（見 frontend/.oxlintrc.json），不是 ESLint
+
+    // 後端
+    "vscjava.vscode-java-pack", // 內含 redhat.java，[java] 區塊的格式化器與 Spring Boot 偵錯
+    "JetBrains.kotlin-server" // [kotlin] 區塊的格式化器
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // 從根目錄開啟時，${workspaceFolder} 是 smart_order，
+      // 所以 cwd 和 envFile 都要自己補上 backend/。
+      // backend/.vscode/launch.json 裡不用補，因為那時 workspaceFolder 就是 backend
+      "type": "java",
+      "name": "Spring Boot - SmartOrderApplication",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/backend",
+      "mainClass": "tw.ispan.smartorder.SmartOrderApplication",
+      "projectName": "smart-order",
+      "args": "",
+      "envFile": "${workspaceFolder}/backend/.env"
+    },
+    {
+      // 前端開發伺服器。等 Vite 印出網址後用瀏覽器開，
+      // 或改用終端機跑 npm run dev --prefix frontend 也一樣
+      "type": "node",
+      "name": "Vite Dev Server (frontend)",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ],
+  "compounds": [
+    {
+      // 一次把前後端都叫起來
+      "name": "全端（後端 + 前端）",
+      "configurations": [
+        "Spring Boot - SmartOrderApplication",
+        "Vite Dev Server (frontend)"
+      ]
+    }
+  ]
+}
