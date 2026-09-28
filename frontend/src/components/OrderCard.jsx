@@ -1,32 +1,44 @@
 import '../features/admin/kds/kds.colors.css'
 import time from '../assets/ic_cart_time.svg'
+import check from '../assets/ic_card_check.svg'
 import SOButton from './SOButton'
+
 export default function OrderCard({
-  tableName,
-  whichorder,
-  waitingTime,
-  demand,
+  tableNo,
+  sequenceNo,
+  placedAt,
+  orderItems,
   onToggle,
   onComplete,
 }) {
   const handleCompleteClick = (e) => {
     console.log(e)
-
-    onComplete()?.(tableName, whichorder, waitingTime, demand)
+    onComplete?.(tableNo, sequenceNo, placedAt, orderItems)
   }
-  // console.log('demand', demand)
+
+  const getWaitingMinutes = () => {
+    if (!placedAt) return 0
+    const diff = Date.now() - new Date(placedAt).getTime()
+    console.log(diff)
+
+    return Math.max(0, Math.floor(diff / 60000))
+  }
+
+  const waitingMinutes = getWaitingMinutes()
+
+  const isAllServed = orderItems?.length > 0 && orderItems.every((item) => item.status === 'SERVED')
 
   return (
     <div className="kds">
       <div className="flex flex-col gap-4 rounded-(--radius-card) bg-(--kds-card) p-5">
         <div className="flex flex-col gap-3">
-          <h1 className="type-kds-table">{tableName}</h1>
+          <h1 className="type-kds-table">{tableNo}</h1>
 
           <div className="flex items-center justify-between text-(--kds-ink-2)">
-            <p>第{whichorder}單</p>
+            <p>第{sequenceNo}單</p>
             <p className="flex items-center gap-1">
-              <img src={time} />
-              <span>{waitingTime} 分</span>
+              <img src={time} alt="time icon" />
+              <span>{waitingMinutes} 分</span>
             </p>
           </div>
         </div>
@@ -34,28 +46,29 @@ export default function OrderCard({
         <hr className="text-(--kds-ink-3) opacity-30" />
 
         <div className="mb-2 flex flex-col gap-1">
-          {Array.isArray(demand) &&
-            demand.map((value) => (
-              <label key={value.id} className="flex cursor-pointer items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={value.isCompleted}
-                  onChange={() => onToggle(value.id)}
-                />
-                <div className={`type-h3 ${value.isCompleted ? 'text-gray-400 line-through' : ''}`}>
-                  <p className="type-h3">{value.demand}</p>
-                  <p className="type-body-sm">{value.customized}</p>
-                </div>
-              </label>
-            ))}
+          {Array.isArray(orderItems) &&
+            orderItems.map((item) => {
+              const isCompleted = item.status === 'SERVED'
+
+              return (
+                <label key={item.id} className="flex cursor-pointer items-center gap-2">
+                  <input type="checkbox" checked={isCompleted} onChange={() => onToggle(item.id)} />
+                  <div className={`type-h3 ${isCompleted ? 'text-gray-400 line-through' : ''}`}>
+                    <p className="type-h3">
+                      {item.itemNameSnapshot} ×{item.quantity}
+                    </p>
+                    <p className="type-body-sm">{item.optionsSummary}</p>
+                  </div>
+                </label>
+              )
+            })}
         </div>
 
         <SOButton
-          // disabled="true"
-          onClick={(e) => handleCompleteClick(e)}
+          disabled={!isAllServed}
           content={[
             <div key="btn-content" className="flex items-center justify-center gap-2">
-              <img alt="" />
+              <img src={check} />
               <span>整單出完</span>
             </div>,
           ]}
