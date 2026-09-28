@@ -1,3 +1,6 @@
+import ok from '../../assets/ic_OrderRecord_ok.svg'
+import wait from '../../assets/ic_OrderRecord_wait.svg'
+
 const orders = [
   {
     id: 2,
@@ -66,7 +69,7 @@ function OrderCard({ order }) {
       {/* 訂單 Header */}
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold">第 {order.id} 單</h3>
+          <h3>第 {order.id} 單</h3>
 
           <span className="rounded-pill border border-warning-line bg-accent-100 px-2 py-1 text-[10px] text-hold-ink">
             {order.status}
@@ -76,7 +79,7 @@ function OrderCard({ order }) {
         <div className="flex items-center gap-3">
           <span className="type-caption text-ink-600">{order.time} 送出</span>
 
-          <span className="type-body font-semibold">NT$ {order.total.toLocaleString()}</span>
+          <span className="type-body">NT$ {order.total.toLocaleString()}</span>
         </div>
       </div>
 
@@ -89,27 +92,21 @@ function OrderCard({ order }) {
               index !== 0 ? 'border-t border-line' : ''
             }`}
           >
-            <div className="flex min-w-0 items-start gap-3">
-              {/* 狀態圓圈 */}
-              {/* <span
-                className={`mt-1 flex h-4 w-4 items-center justify-center rounded-pill border type-caption ${
-                  item.status === '已出餐'
-                    ? 'border-success text-success'
-                    : 'border-warning-line text-hold-ink'
-                }`}
-              >
-                {item.status === '已出餐' ? '✓' : '○'}
-              </span> */}
+            <div>
+              {/* icon + 商品名稱 */}
+              <div className="flex items-center gap-2">
+                <img src={item.status === '已出餐' ? ok : wait} />
 
-              <div>
                 <p className="type-body font-medium">
                   {item.name} × {item.quantity}
                 </p>
-
-                {item.note && <p className="mt-1 type-caption text-ink-600">{item.note}</p>}
               </div>
+
+              {/* 備註 */}
+              {item.note && <p className="mt-1 ml-8 type-caption text-ink-600">{item.note}</p>}
             </div>
 
+            {/* 出餐狀態 */}
             <StatusBadge status={item.status} />
           </div>
         ))}
@@ -127,7 +124,7 @@ export default function OrderRecord() {
 
         <button
           type="button"
-          className="h-10 rounded-btn border border-brand-600 px-5 type-body font-medium text-brand-600 hover:bg-surface"
+          className="h-10 rounded-btn border border-brand-600 px-5 type-body font-bold text-brand-600 hover:bg-surface"
         >
           代客加點
         </button>

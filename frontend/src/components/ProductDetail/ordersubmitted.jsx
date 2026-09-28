@@ -101,7 +101,7 @@ export default function OrderSubmitted() {
         {/* 繼續點餐 */}
         <button
           type="button"
-          className="flex h-12 w-full items-center justify-center rounded-btn bg-brand-600 type-caption font-bold text-surface"
+          className="flex h-12 w-full items-center justify-center rounded-btn bg-brand-600 type-button text-surface"
         >
           繼續點餐
         </button>
@@ -109,7 +109,7 @@ export default function OrderSubmitted() {
         {/* 查看本桌訂單 */}
         <button
           type="button"
-          className="mt-3 flex h-12 w-full items-center justify-center rounded-btn border border-brand-600 bg-surface type-caption font-bold text-brand-600"
+          className="mt-3 flex h-12 w-full items-center justify-center rounded-btn border border-brand-600 bg-surface type-button text-brand-600"
         >
           查看本桌訂單
         </button>
