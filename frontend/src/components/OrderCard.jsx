@@ -52,7 +52,20 @@ export default function OrderCard({
 
               return (
                 <label key={item.id} className="flex cursor-pointer items-center gap-2">
-                  <input type="checkbox" checked={isCompleted} onChange={() => onToggle(item.id)} />
+                  <div className="relative mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center">
+                    <input
+                      type="checkbox"
+                      className="peer sr-only"
+                      checked={isCompleted}
+                      onChange={() => onToggle(item.id)}
+                    />
+                    <div className="absolute inset-0 rounded-(--radius-check) border-2 border-(--kds-ink-3) bg-transparent transition-colors peer-checked:border-(--kds-boxok) peer-checked:bg-(--kds-boxok)"></div>
+                    <img
+                      src={check}
+                      alt="check"
+                      className="relative z-10 h-3.5 w-3.5 opacity-0 transition-opacity peer-checked:opacity-100"
+                    />
+                  </div>
                   <div className={`type-h3 ${isCompleted ? 'text-gray-400 line-through' : ''}`}>
                     <p className="type-h3">
                       {item.itemNameSnapshot} ×{item.quantity}

@@ -1,6 +1,6 @@
 import '../kds/kds.colors.css'
 import OrderCard from '../../../components/OrderCard'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 export default function Kitchen() {
   const [orderTickets, setOrderTickets] = useState([
     {
@@ -148,6 +148,15 @@ export default function Kitchen() {
       ],
     },
   ])
+  const [now, setNow] = useState(new Date())
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(new Date())
+    }, 60000)
+
+    return () => clearInterval(timer)
+  }, [])
 
   const handleToggle = (itemId) => {
     setOrderTickets((prevTickets) =>
@@ -188,7 +197,7 @@ export default function Kitchen() {
 
   const activeOrdersCount = orderTickets.length
   const { minutes: maxMinutes, tableNo: maxTableNo } = getMaxWaitMinutes()
-  const currentTime = new Date().toTimeString().slice(0, 5)
+  const currentTime = now.toTimeString().slice(0, 5)
 
   return (
     <main className="kds flex min-h-screen w-full flex-col">
