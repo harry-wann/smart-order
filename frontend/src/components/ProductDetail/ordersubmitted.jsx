@@ -1,8 +1,5 @@
 export default function OrderSubmitted() {
-  // =========================
-  // 訂單假資料
-  // 之後串後端 API 時可以換掉
-  // =========================
+  // 訂單假資料，之後串後端 API 時可以換掉
   const orderItems = [
     {
       id: 1,
@@ -23,19 +20,15 @@ export default function OrderSubmitted() {
   ]
 
   return (
-    <div className="mx-auto flex min-h-[812px] w-full max-w-[375px] flex-col bg-[#F8F4EC]">
-      {/* ======================================== */}
+    <div className="mx-auto flex min-h-203 w-full max-w-93.75 flex-col bg-surface-2">
       {/* 上方成功內容區：375 × 659 */}
-      {/* ======================================== */}
-      <main className="flex min-h-[659px] flex-1 flex-col items-center px-6 pt-[105px]">
-        {/* ====================================== */}
+      <main className="flex min-h-164.75 flex-1 flex-col items-center px-6 pt-26.25">
         {/* 成功圖示 */}
-        {/* ====================================== */}
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#E2EFE8]">
+        <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-info-bg">
           <svg
             viewBox="0 0 24 24"
             fill="none"
-            className="h-7 w-7"
+            className="h-14 w-14"
             stroke="#43815C"
             strokeWidth="2"
             strokeLinecap="round"
@@ -45,52 +38,42 @@ export default function OrderSubmitted() {
           </svg>
         </div>
 
-        {/* ====================================== */}
         {/* 標題 */}
-        {/* ====================================== */}
-        <h1 className="mt-7 text-xl font-bold text-[#2B211C]">第 2 單已送出</h1>
+        <h1 className="mt-7 type-h1 font-bold text-ink-900">第 2 單已送出</h1>
 
-        {/* ====================================== */}
         {/* 說明文字 */}
-        {/* ====================================== */}
-        <div className="mt-2 text-center text-xs leading-5 text-[#756A63]">
+        <div className="mt-2 text-center type-body-sm text-ink-600">
           <p>廚房已經收到，請稍候。</p>
-
           <p>同桌其他人的手機也會看到這張單。</p>
         </div>
 
-        {/* ====================================== */}
         {/* 這一單的內容 */}
-        {/* ====================================== */}
-        <div className="mt-7 w-full rounded-xl border border-[#E6DED2] bg-white px-4 py-3 shadow-sm">
+
+        <div className="mt-7 w-full rounded-btn border border-line bg-surface px-4 py-3 shadow-sm">
           {/* 卡片標題 */}
-          <p className="mb-1 text-xs text-[#756A63]">這一單的內容</p>
+          <p className="mb-1 type-caption text-ink-600">這一單的內容</p>
 
           {/* 訂單商品 */}
           {orderItems.map((item, index) => (
             <div key={item.id}>
               <div className="flex items-start gap-3 py-2">
-                {/* ============================== */}
                 {/* 製作狀態 */}
-                {/* ============================== */}
-                <span className="shrink-0 rounded-full border border-[#E6A54A] bg-[#FFF4DF] px-2 py-1 text-[10px] leading-3 text-[#B7771C]">
+                <span className="rounded-pill border border-warning-line bg-warning-bg px-2 py-1 text-[10px] text-hold-ink">
                   {item.status}
                 </span>
 
-                {/* ============================== */}
                 {/* 商品資訊 */}
-                {/* ============================== */}
                 <div className="min-w-0 flex-1">
                   {/* 商品名稱 + 數量 */}
                   <div className="flex items-center gap-1">
-                    <p className="text-sm font-medium text-[#2B211C]">{item.name}</p>
+                    <p className="type-body font-medium text-ink-900">{item.name}</p>
 
-                    <span className="text-sm text-[#2B211C]">× {item.quantity}</span>
+                    <span className="type-body text-ink-900">× {item.quantity}</span>
                   </div>
 
                   {/* 商品選項 */}
                   {item.options.length > 0 && (
-                    <p className="mt-1 text-xs text-[#756A63]">
+                    <p className="mt-1 type-caption text-ink-600">
                       {item.options.join(' · ')}
                       {item.note && ` · 備註：${item.note}`}
                     </p>
@@ -98,35 +81,27 @@ export default function OrderSubmitted() {
 
                   {/* 沒有 options，但是有 note */}
                   {item.options.length === 0 && item.note && (
-                    <p className="mt-1 text-xs text-[#756A63]">{item.note}</p>
+                    <p className="mt-1 type-caption text-ink-600">{item.note}</p>
                   )}
                 </div>
               </div>
 
-              {/* ============================== */}
               {/* 商品分隔線 */}
-              {/* ============================== */}
-              {index !== orderItems.length - 1 && (
-                <div className="ml-[58px] border-b border-[#E6DED2]" />
-              )}
+              {index !== orderItems.length - 1 && <div className="ml-14.5 border-b border-line" />}
             </div>
           ))}
         </div>
 
-        {/* ====================================== */}
         {/* 自動跳轉提示 */}
-        {/* ====================================== */}
-        <p className="mt-5 text-xs text-[#756A63]">2 秒後自動帶你去看出菜進度</p>
+        <p className="mt-5 type-caption text-ink-600">2 秒後自動帶你去看出菜進度</p>
       </main>
 
-      {/* ======================================== */}
       {/* 底部按鈕區：375 × 153 */}
-      {/* ======================================== */}
-      <footer className="flex h-[153px] shrink-0 flex-col border-t border-[#E6DED2] bg-white px-4 py-4">
+      <footer className="flex h-38.25 shrink-0 flex-col border-t border-line bg-surface px-4 py-4">
         {/* 繼續點餐 */}
         <button
           type="button"
-          className="flex h-12 w-full shrink-0 items-center justify-center rounded-lg bg-[#D74432] text-base font-bold text-white"
+          className="flex h-12 w-full items-center justify-center rounded-btn bg-brand-600 type-caption font-bold text-surface"
         >
           繼續點餐
         </button>
@@ -134,7 +109,7 @@ export default function OrderSubmitted() {
         {/* 查看本桌訂單 */}
         <button
           type="button"
-          className="mt-3 flex h-12 w-full shrink-0 items-center justify-center rounded-lg border border-[#D74432] bg-white text-base font-bold text-[#D74432]"
+          className="mt-3 flex h-12 w-full items-center justify-center rounded-btn border border-brand-600 bg-surface type-caption font-bold text-brand-600"
         >
           查看本桌訂單
         </button>

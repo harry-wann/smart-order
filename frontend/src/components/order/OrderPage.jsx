@@ -5,7 +5,7 @@ import Checkout from './Checkout'
 
 export default function OrderPage() {
   return (
-    <div className="flex min-h-screen bg-[#F8F5EF] text-[#2B211C]">
+    <div className="flex min-h-screen bg-surface text-ink-900">
       {/* 左側選單 */}
       <Sidebar />
 
@@ -22,7 +22,7 @@ export default function OrderPage() {
           </section>
 
           {/* 右邊結帳 */}
-          <aside className="w-[360px] shrink-0">
+          <aside className="w-90">
             <Checkout />
           </aside>
         </main>
