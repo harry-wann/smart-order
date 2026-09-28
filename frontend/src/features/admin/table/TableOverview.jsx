@@ -1,4 +1,4 @@
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { useState } from 'react'
 import bellIcon from '../../../assets/ic_tableOverview_bell.svg'
 import SOButton from '../../../components/SOButton'
@@ -87,8 +87,17 @@ function TableCard({ table }) {
   const style = statusStyles[table.status]
   const isOvertime = table.status === 'occupied' && table.minutes > 100
 
+  const navigate = useNavigate()
+
+  function handleClick() {
+    if (table.status === 'available') {
+      navigate(`/admin/tables/${table.id}/open`)
+    }
+  }
+
   return (
     <div
+      onClick={handleClick}
       className={`flex min-h-26.5 flex-col gap-1 rounded-card px-4 py-3 ${style.cardClass} ${
         isOvertime ? 'shadow-[inset_0_0_0_3px_var(--color-danger)]' : ''
       }`}
