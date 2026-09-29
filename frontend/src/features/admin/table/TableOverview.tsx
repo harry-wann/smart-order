@@ -1,5 +1,12 @@
+import TopBar from '@/components/dashboard/TopBar'
+
 function TableOverview() {
-  return <div>Table overview</div>
+  return (
+    <>
+      <TopBar />
+      <div>Table overview</div>
+    </>
+  )
 }
 
 export default TableOverview

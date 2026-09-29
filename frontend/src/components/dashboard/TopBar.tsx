@@ -1,16 +1,17 @@
 import type { ReactNode } from 'react'
-import { Link } from 'react-router'
+import { Link, useLocation } from 'react-router'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 
 export type Props = {
-  back?: string
-  title: string
   tag?: string
   childrenLeft?: ReactNode
   childrenRight?: ReactNode
 }
 
-function TopBar({ back, title, tag, childrenLeft, childrenRight }: Props) {
+function TopBar({ tag, childrenLeft, childrenRight }: Props) {
+  const { pathname } = useLocation()
+  const { back, title } = topBarConfigByPath[pathname] ?? { title: '管理後台' }
+
   return (
     <header className="flex h-15 w-full shrink-0 flex-row items-center justify-between border-b border-line bg-surface px-6 py-3">
       <div className="flex flex-row items-center gap-4">
@@ -33,3 +34,18 @@ function TopBar({ back, title, tag, childrenLeft, childrenRight }: Props) {
 }
 
 export default TopBar
+
+type TopBarConfig = {
+  back?: string
+  title: string
+}
+
+const topBarConfigByPath: Record<string, TopBarConfig> = {
+  '/admin/table_overview': { title: '桌況總覽' },
+  '/admin/kitchen': { title: '出菜看板' },
+  '/admin/reservations': { title: '預約管理' },
+  '/admin/queue': { title: '候位管理' },
+  '/admin/menu': { title: '菜單管理' },
+  '/admin/options': { title: '選項群組' },
+  '/admin/seats': { title: '座位管理' },
+}
