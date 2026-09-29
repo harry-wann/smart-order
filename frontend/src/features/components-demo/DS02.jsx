@@ -4,55 +4,53 @@ import IcShoppingCart from '../../assets/ic_order_shopping_cart.svg'
 
 export default function DS02() {
   return (
-    <DemoPage code="DS-02" title="按鈕" description="放置主要操作、次要操作與不同互動狀態的按鈕。">
+    <DemoPage
+      code="DS-02"
+      title="按鈕"
+      description="放置主要操作、次要操作與不同互動狀態的按鈕。"
+    >
       <div className="flex w-full flex-col gap-2">
         <SOButton
-          type="danger"
+          variant="danger"
           content={[
-            <div key="param-1" className="flex">
-              <img src={IcShoppingCart}></img>
+            <div key="param-1" className="flex items-center gap-1">
+              <img src={IcShoppingCart} alt="" />
               <span>參數一</span>
             </div>,
-            <div key="param-2" className="flex">
+            <div key="param-2" className="flex items-center gap-1">
               <span>參數二</span>
-              <img src={IcShoppingCart}></img>
+              <img src={IcShoppingCart} alt="" />
             </div>,
           ]}
         />
         <SOButton
-          type="ghost"
+          variant="ghost"
           content={[
-            <div key="param-1" className="flex">
-              <img src={IcShoppingCart}></img>
+            <div key="param-1" className="flex items-center gap-1">
+              <img src={IcShoppingCart} alt="" />
               <span>參數一</span>
             </div>,
-            <div key="param-2" className="flex">
+            <div key="param-2" className="flex items-center gap-1">
               <span>參數二</span>
-              <img src={IcShoppingCart}></img>
+              <img src={IcShoppingCart} alt="" />
             </div>,
           ]}
         />
         <SOButton
-          type="secondary"
+          variant="secondary"
           content={[
-            <div key="param-1" className="flex">
-              <img src={IcShoppingCart}></img>
+            <div key="param-1" className="flex items-center gap-1">
+              <img src={IcShoppingCart} alt="" />
               <span>參數一</span>
             </div>,
-            <div key="param-2" className="flex">
+            <div key="param-2" className="flex items-center gap-1">
               <span>參數二</span>
-              <img src={IcShoppingCart}></img>
+              <img src={IcShoppingCart} alt="" />
             </div>,
           ]}
         />
         <SOButton text={['純文字1', '純文字2']} />
-        <SOButton
-          text="開始點餐"
-          disabled={true}
-          onClick={() => {
-            console.log('TEST')
-          }}
-        />
+        <SOButton type="button" text="開始點餐" disabled />
       </div>
     </DemoPage>
   )
