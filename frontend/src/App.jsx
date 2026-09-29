@@ -9,7 +9,7 @@ import DS07 from './features/components-demo/DS07'
 
 import OrderCart from './components/ProductDetail/ordercart'
 import OrderSubmitted from './components/ProductDetail/ordersubmitted'
-import OrderPage from './components/order/orderpage'
+import OrderPage from './components/order/OrderPage'
 import PaymentProcessing from './components/order/PaymentProcessing'
 
 import { ToastManager } from './components/toast/ToastManager'
