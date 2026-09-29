@@ -6,6 +6,7 @@ import DS04 from './features/components-demo/DS04'
 import DS05 from './features/components-demo/DS05'
 import DS06 from './features/components-demo/DS06'
 import DS07 from './features/components-demo/DS07'
+import OrderSubmitted from './components/ProductDetail/ordersubmitted'
 import { ToastManager } from './components/toast/ToastManager'
 
 export default function App() {
@@ -25,6 +26,7 @@ export default function App() {
         }
       />
       <Route path="/components/ds-07" element={<DS07 />} />
+      <Route path="/order-submitted" element={<OrderSubmitted />} />
     </Routes>
   )
 }
