@@ -23,6 +23,7 @@ type verificationTimeProps = {
 
 type InfoBoxProps = {
   icon?: IconTypeProps;
+  outicon?:String;
   col?: InfoColorProps;
   text?: TextTypeProps;
   verify?: string;
@@ -34,6 +35,7 @@ type InfoBoxProps = {
 
 const InfoBox = ({
   icon,
+  outicon,
   col = "ok",
   text = "A",
   verify = "",
@@ -84,13 +86,13 @@ const InfoBox = ({
 
   const a = tests[text](verify, verificationTime, destine, custimtext);
 
-  const Icon = icon ? icons[icon] : null;
+  const Icon =outicon??( icon ? icons[icon] : null);
 
   return (
     <>
       <div
-        className={`w-full h-[47.8px] pl-[16px] flex items-center 
-             text-left text-[14px] gap-[16px] rounded-[8px] px-[16px] 
+        className={`w-full  flex items-center 
+             text-left text-[14px] gap-[16px] rounded-[8px] p-page 
              ${cols[col]} ${classname}`}
       >
         {Icon && (

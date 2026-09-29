@@ -22,7 +22,8 @@ export default function SOButton({
     <button
       type={type}
       disabled={disabled}
-      className={`flex w-full items-center rounded-[var(--radius-btn)] type-button sm:h-[36px] sm:px-3.5 md:h-[44px] md:px-5 lg:h-[52px] lg:px-6 ${themeClass[variant]} transition-all duration-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100`}
+      className={`flex w-full items-center rounded-btn 
+        type-button h-[36px] sm:px-3.5 md:h-[44px] md:px-5 lg:h-[52px] lg:px-6 ${themeClass[variant]} transition-all duration-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100`}
       {...props}
     >
       {text !== null ? (

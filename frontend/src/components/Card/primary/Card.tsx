@@ -27,6 +27,7 @@ export type RowProps = {
 export type CardProps = {
     data?: RowProps[];
     border?: borderProps;
+    col?:ColorProps;
 };
 
 const p: Record<rowProps, string> = {
@@ -35,11 +36,20 @@ const p: Record<rowProps, string> = {
     end: "justify-end",
     between: "justify-between",
 };
+type ColorProps =
+  | "primary"
+  | "dark";
 
 const Card = ({
     data = [],
+    col='primary',
     border = "primary",
 }: CardProps) => {
+
+    const cols: Record<ColorProps, string> = {
+    primary: "border-line bg-surface",
+    dark : "border-line bg-surface-2",
+    };
 
     const borders: Record<borderProps, string> = {
         primary: 'shadow-card p-card',
@@ -69,7 +79,7 @@ const Card = ({
 
     return (
         <div className={`
-            border border-line bg-surface rounded-card w-full
+            border ${cols[col]}  rounded-card w-full
             flex flex-col gap-row ${borders[border]}`}>
             {rows}
         </div>

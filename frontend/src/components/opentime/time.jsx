@@ -14,7 +14,7 @@ export default function TimeSlot({ timeSlots = [], defaultValue = '', onChange }
 
   return (
     <div className="max-w-140 p-2">
-      <p className="text-text-secondary mb-4 text-sm">時段</p>
+      {/* <p className="text-text-secondary mb-4 text-sm">時段</p> */}
 
       <div className="grid grid-cols-3 gap-2">
         {timeSlots.map((slot) => {

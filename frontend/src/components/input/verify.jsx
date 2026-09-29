@@ -57,9 +57,9 @@ export default function Verify({ length = 6, defaultValue = '', onChange }) {
   }
 
   return (
-    <div className="w-full max-w-140 bg-white">
+    <div className="w-full max-w-140">
       <div className="p-2">
-        <p className="mb-4 text-sm text-[#8c8177]">驗證碼</p>
+        {/* <p className="mb-4 text-sm text-[#8c8177]">驗證碼</p> */}
 
         <div
           className="grid gap-2"

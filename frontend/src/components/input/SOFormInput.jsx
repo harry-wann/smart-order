@@ -3,6 +3,7 @@ import { useState } from 'react'
 export const SOFormInputType = {
   NORMAL: 'normal',
   PHONE: 'phone',
+  PASSWORD: 'password',
 }
 
 export default function SOFormInput({
@@ -15,6 +16,8 @@ export default function SOFormInput({
   const [content, setContent] = useState(defaultValue)
 
   const isPhone = type === SOFormInputType.PHONE
+  const isPassword = type === SOFormInputType.PASSWORD
+
 
   const handleChange = (e) => {
     if (isPhone) {
@@ -36,7 +39,7 @@ export default function SOFormInput({
       {icon && <img src={icon} alt="" className="mr-3 h-5 w-5" />}
 
       <input
-        type={isPhone ? 'tel' : 'text'}
+        type={isPhone ? 'tel' : isPassword ? 'password' : 'text'}
         placeholder={placeholder}
         value={content}
         onChange={handleChange}
