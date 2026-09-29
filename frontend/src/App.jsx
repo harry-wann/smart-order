@@ -7,6 +7,7 @@ import DS05 from './features/components-demo/DS05'
 import DS06 from './features/components-demo/DS06'
 import DS07 from './features/components-demo/DS07'
 import OrderPage from './components/order/OrderPage'
+import PaymentProcessing from './components/order/PaymentProcessing'
 import { ToastManager } from './components/toast/ToastManager'
 import DashboardLayout from './layouts/admin/DashboardLayout'
 import TableOverview from './features/admin/table/TableOverview'
@@ -38,6 +39,7 @@ export default function App() {
       />
       <Route path="/components/ds-07" element={<DS07 />} />
       <Route path="/orderpage" element={<OrderPage />} />
+      <Route path="/payment-processing" element={<PaymentProcessing />} />
     </Routes>
   )
 }
