@@ -97,5 +97,6 @@
   // 所以路徑要多帶一層 backend/（backend/.vscode/settings.json 裡沒有這一層）
   "java.format.enabled": true,
   "java.format.settings.url": "${workspaceFolder}/backend/.vscode/eclipse-formatter.xml",
-  "java.format.settings.profile": "SmartOrder"
+  "java.format.settings.profile": "SmartOrder",
+  "java.compile.nullAnalysis.mode": "automatic"
 }
