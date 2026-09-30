@@ -8,12 +8,16 @@
     "node": ">=24.0.0 <25"
   },
   "scripts": {
+    "generate:icons": "node scripts/generate-icon-map.mjs",
+    "predev": "npm run generate:icons",
     "dev": "vite",
+    "prebuild": "npm run generate:icons",
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "pretypecheck": "npm run generate:icons",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
