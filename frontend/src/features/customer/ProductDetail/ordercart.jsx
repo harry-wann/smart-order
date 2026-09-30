@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import Counter from '../../../components/steper/counter'
-import graytrash from '../../assets/ic_ordercart_graytrash.svg'
-import lessthan from '../../assets/ic_ordercart_lessthan.svg'
-import person from '../../assets/ic_ordercart_person.svg'
-import people from '../../assets/ic_ordercart_people.svg'
+import graytrash from '../../../assets/ic_ordercart_graytrash.svg'
+import lessthan from '../../../assets/ic_ordercart_lessthan.svg'
+import person from '../../../assets/ic_ordercart_person.svg'
+import people from '../../../assets/ic_ordercart_people.svg'
+import SOButton from '../../../components/SOButton'
 
 export default function OrderCart({ tableNumber }) {
   // 購物車假資料
@@ -182,12 +183,16 @@ export default function OrderCart({ tableNumber }) {
           </p>
 
           {/* 送出按鈕 */}
-          <button
+          <div className="mt-3">
+            <SOButton type="button" text="送出整桌點餐" />
+          </div>
+
+          {/* <button
             type="button"
             className="mt-3 flex h-10.75 w-full items-center justify-center rounded-btn bg-brand-600 text-base font-bold text-surface"
           >
             送出整桌點餐
-          </button>
+          </button> */}
         </footer>
       )}
     </div>
