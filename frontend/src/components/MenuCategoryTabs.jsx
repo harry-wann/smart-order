@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 
-export default function MenuCategoryTabs({ category, onClick, className }) {
+export default function MenuCategoryTabs({ category, onClick }) {
   const buttonRef = useRef([])
 
   const [activeTab, setActiveTab] = useState(category[0])
@@ -25,14 +25,14 @@ export default function MenuCategoryTabs({ category, onClick, className }) {
                   buttonRef.current[index] = elem
                 }}
                 className={`flex flex-1 cursor-pointer justify-center text-lg transition-colors ${
-                  isActive ? 'font-bold text-brand-600' : 'text-gray-500'
+                  isActive ? 'font-bold text-brand-600' : 'text-ink-600'
                 }`}
               >
                 <span
                   className={`relative pb-3 ${
                     isActive
                       ? 'after:absolute after:bottom-0 after:left-0 after:h-1 after:w-full after:bg-brand-600 after:content-[""]'
-                      : ''
+                      : 'text-ink-600'
                   }`}
                 >
                   {item}
