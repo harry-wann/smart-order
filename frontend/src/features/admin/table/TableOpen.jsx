@@ -194,7 +194,7 @@ function TableOpen() {
   // 115 分鐘內的訂位（沒有就是 null）
   const conflict = { time: '19:30', name: '陳小姐', people: 4 }
   // 現在是否在預約保留時段（沒有就是 null）
-  const reservedHold = nulls
+  const reservedHold = null
   const reservationCount = 2
   // ===== 假資料結束 =====
 
