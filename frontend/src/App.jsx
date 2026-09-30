@@ -10,6 +10,7 @@ import OrderCart from './components/ProductDetail/ordercart'
 import { ToastManager } from './components/toast/ToastManager'
 
 export default function App() {
+  const tableNumber = 'A03'
   return (
     <Routes>
       <Route path="/components" element={<Components />} />
@@ -26,7 +27,7 @@ export default function App() {
         }
       />
       <Route path="/components/ds-07" element={<DS07 />} />
-      <Route path="/product-detail" element={<OrderCart />} />
+      <Route path="/product-detail" element={<OrderCart tableNumber={tableNumber} />} />
     </Routes>
   )
 }
