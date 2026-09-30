@@ -1,9 +1,7 @@
-import { Link, useNavigate } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { useState } from 'react'
 import bellIcon from '../../../assets/ic_tableOverview_bell.svg'
 import SOButton from '../../../components/SOButton'
-
-
 
 // 把後臺狀態的英文轉成中文顯示、根據桌位狀態決定顏色、根據狀態決定標籤底色
 const statusStyles = {
@@ -29,7 +27,6 @@ const statusStyles = {
   },
 }
 
-
 // 桌況總覽的桌位資料
 const tables = [
   { id: 'A01', status: 'available' },
@@ -46,14 +43,12 @@ const tables = [
   { id: 'C01', status: 'occupied', adults: 6, kids: 2, minutes: 64, amount: 5120 },
 ]
 
-
 // 底部候位中的顯示
 const waitinglist = [
   { id: 'A13', name: '李', people: 4, called: true },
   { id: 'A12', name: '王', people: 3, waitMinutes: 18 },
   { id: 'A14', name: '張', people: 6, waitMinutes: 4 },
 ]
-
 
 //右側畫面的服務鈴
 const initialBellCalls = [
@@ -62,10 +57,7 @@ const initialBellCalls = [
   { id: 3, tableId: 'C01', request: '換鍋撈渣', minutesAgo: 4 },
 ]
 
-
-
-
-//--------------------------
+//---------------------------------------------------//
 
 //上方條狀> 桌狀的統整
 function StatItem({ count, label, swatchClass, countClass = 'text-ink-900' }) {
@@ -73,17 +65,16 @@ function StatItem({ count, label, swatchClass, countClass = 'text-ink-900' }) {
     <div className="flex items-baseline gap-2 whitespace-nowrap">
       <span className={`type-h1 font-black tabular-nums ${countClass}`}>{count}</span>
       <span className="type-caption text-ink-600">
-        {swatchClass && (
-          <i className={`mr-1 inline-block size-2.5 rounded-[3px] ${swatchClass}`} />
-        )}
-        {label}</span>
+        {swatchClass && <i className={`mr-1 inline-block size-2.5 rounded-[3px] ${swatchClass}`} />}
+        {label}
+      </span>
     </div>
   )
 }
 
 //正中間 > 12格桌卡
 //用餐中(isOvertime)而且時間超過100minutes、加上紅色外框
-function TableCard({ table }) {
+function TableCard({ table, onCleanClick }) {
   const style = statusStyles[table.status]
   const isOvertime = table.status === 'occupied' && table.minutes > 100
 
@@ -92,49 +83,76 @@ function TableCard({ table }) {
   function handleClick() {
     if (table.status === 'available') {
       navigate(`/admin/tables/${table.id}/open`)
+    } else if (table.status === 'cleaning') {
+      onCleanClick(table)
     }
   }
 
   return (
     <div
       onClick={handleClick}
-      className={`flex min-h-26.5 flex-col gap-1 rounded-card px-4 py-3 ${style.cardClass} ${
+      className={`flex min-h-26.5 cursor-pointer flex-col gap-1 rounded-card px-4 py-3 ${style.cardClass} ${
         isOvertime ? 'shadow-[inset_0_0_0_3px_var(--color-danger)]' : ''
       }`}
     >
-    
       <span
-        className={`type-caption mb-1 self-start rounded-pill px-2.5 py-0.5 text-ink-900 ${style.labelClass}`}
+        className={`mb-1 self-start rounded-pill px-2.5 py-0.5 type-caption text-ink-900 ${style.labelClass}`}
       >
         {style.name}
       </span>
 
-     
       <h3 className="type-h2 tabular-nums">{table.id}</h3>
 
-     
       {table.status === 'occupied' && (
         <>
           <p className="type-caption tabular-nums">
             {table.adults} 大 {table.kids} 小・{table.minutes} 分
           </p>
-          <p className="type-caption font-bold tabular-nums">
-            NT$ {table.amount.toLocaleString()}
-          </p>
+          <p className="type-caption font-bold tabular-nums">NT$ {table.amount.toLocaleString()}</p>
         </>
       )}
 
-     
       {table.status === 'cleaning' && (
         <p className="type-caption tabular-nums">{table.paidAt} 結清</p>
       )}
 
-     
       {table.status === 'reserved' && <p className="type-caption">{table.reservation}</p>}
     </div>
   )
 }
 
+function CleanConfirmDialog({ table, onConfirm, onCancel }) {
+  return (
+    // 半透明背景：點背景 = 取消
+    <div
+      onClick={onCancel}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40"
+    >
+      {/* stopPropagation：點白色框裡面時，不要讓點擊傳到背景而被關掉 */}
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-110 rounded-card bg-surface px-8 py-7 text-center shadow-pop"
+      >
+        <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-accent-100">
+          {/* 這裡放鍋子 icon，跟設計要 svg，用法同 bellIcon */}
+        </div>
+        <h2 className="type-h2 text-ink-900">{table.id} 清潔完成了嗎？</h2>
+        <p className="mt-2 type-caption text-ink-600">
+          確定後這張桌會變回<b className="text-ink-900">空桌</b>，可以帶客人入座。
+        </p>
+        <button
+          onClick={onConfirm}
+          className="mt-6 h-11 w-full rounded-btn bg-brand-600 font-bold text-white hover:opacity-90"
+        >
+          清潔完成
+        </button>
+        <button onClick={onCancel} className="mt-2 h-10 w-full text-ink-600 hover:text-ink-900">
+          還沒
+        </button>
+      </div>
+    </div>
+  )
+}
 
 // 候位區的單組候位
 function WaitingChip({ waiting }) {
@@ -144,75 +162,87 @@ function WaitingChip({ waiting }) {
         waiting.called ? 'bg-warning-bg' : 'bg-surface-2'
       }`}
     >
-      <b className="tabular-nums text-ink-900">{waiting.id}</b>
+      <b className="text-ink-900 tabular-nums">{waiting.id}</b>
       <span className="type-body-sm text-ink-900">
         {waiting.name}・{waiting.people} 位
       </span>
 
       {waiting.called ? (
-        <span className="type-caption rounded-pill bg-warning-bg px-2.5 py-0.5 text-hold-ink shadow-[inset_0_0_0_1px_var(--color-warning-line)]">
+        <span className="rounded-pill bg-warning-bg px-2.5 py-0.5 type-caption text-hold-ink shadow-[inset_0_0_0_1px_var(--color-warning-line)]">
           已叫號
         </span>
       ) : (
-        <span className="type-caption tabular-nums text-ink-600">{waiting.waitMinutes} 分</span>
+        <span className="type-caption text-ink-600 tabular-nums">{waiting.waitMinutes} 分</span>
       )}
     </div>
   )
 }
 
-
 function BellCall({ call, onDone }) {
   return (
     <div className="flex items-center gap-3 px-4 py-3">
-      <span className="type-body w-11 shrink-0 font-bold tabular-nums text-ink-900">
+      <span className="w-11 shrink-0 type-body font-bold text-ink-900 tabular-nums">
         {call.tableId}
       </span>
 
       <div className="flex-1">
         <p className="type-body-sm font-bold text-ink-900">{call.request}</p>
-        <p className="type-caption tabular-nums text-ink-600">{call.minutesAgo} 分鐘前</p>
+        <p className="type-caption text-ink-600 tabular-nums">{call.minutesAgo} 分鐘前</p>
       </div>
 
-      <button onClick={() => onDone(call.id)} className="type-body-sm inline-flex h-9 items-center rounded-btn bg-surface px-3.5 font-medium text-brand-600 
-      shadow-[inset_0_0_0_1.5px_var(--color-brand-600)] hover:bg-brand-100">
-              已處理
+      <button
+        onClick={() => onDone(call.id)}
+        className="inline-flex h-9 items-center rounded-btn bg-surface px-3.5 type-body-sm font-medium text-brand-600 shadow-[inset_0_0_0_1.5px_var(--color-brand-600)] hover:bg-brand-100"
+      >
+        已處理
       </button>
     </div>
   )
 }
 
-
-
-//
+//---------------------------------------------------//
 function TableOverview() {
-  
+  const [tableList, setTableList] = useState(tables)
   const [calls, setCalls] = useState(initialBellCalls)
   const [doneCount, setDoneCount] = useState(14)
+  const [cleaningTable, setCleaningTable] = useState(null)
+  const availableCount = tableList.filter((table) => table.status === 'available').length
+  const occupiedCount = tableList.filter((table) => table.status === 'occupied').length
+  const cleaningCount = tableList.filter((table) => table.status === 'cleaning').length
+  const reservedCount = tableList.filter((table) => table.status === 'reserved').length
 
-  const availableCount = tables.filter((table) => table.status === 'available').length
-  const occupiedCount = tables.filter((table) => table.status === 'occupied').length
-  const cleaningCount = tables.filter((table) => table.status === 'cleaning').length
-  const reservedCount = tables.filter((table) => table.status === 'reserved').length
+  const [searchParams] = useSearchParams()
+  // 暫時用網址切換：/admin/tables?state=loading | error | empty
+  // 之後接後端：改成由 fetch 的結果去 setViewState
+  const [viewState, setViewState] = useState(searchParams.get('state') ?? 'ready')
 
+  function handleDone(id) {
+    setCalls(calls.filter((call) => call.id !== id))
+    setDoneCount(doneCount + 1)
+  }
 
-       
-        function handleDone(id) {
-        setCalls(calls.filter((call) => call.id !== id))
-        setDoneCount(doneCount + 1)
-         }
+  function handleConfirmClean() {
+    // 之後接後端：先送 POST /api/admin/tables/{id}/clean，成功才執行下面
+    setTableList(
+      tableList.map((table) =>
+        table.id === cleaningTable.id ? { id: table.id, status: 'available' } : table,
+      ),
+    )
+    setCleaningTable(null)
+  }
 
   return (
     <div className="flex flex-col">
       {/* 這裡的header只是暫時的 到時候換成Harry的ish */}
       <header className="flex h-15 items-center gap-4 border-b border-line bg-surface px-6">
         <h1 className="type-h2 text-ink-900">桌況總覽</h1>
-        <span className="type-caption rounded-pill bg-surface-2 px-2.5 py-0.5 text-ink-600">
+        <span className="rounded-pill bg-surface-2 px-2.5 py-0.5 type-caption text-ink-600">
           今天 9/13（日）
         </span>
 
         <div className="flex-1" />
 
-        <div className="type-caption flex h-9 items-center gap-2 rounded-btn border border-line bg-success-bg px-3 text-success">
+        <div className="flex h-9 items-center gap-2 rounded-btn border border-line bg-success-bg px-3 type-caption text-success">
           <span className="size-2 rounded-full bg-success" />
           即時同步中
         </div>
@@ -223,12 +253,8 @@ function TableOverview() {
         </button>
       </header>
 
-
-     
       <div className="flex items-start gap-6 p-6">
-        
         <main className="flex min-w-0 flex-1 flex-col gap-4">
-         
           <div className="flex items-center gap-6 rounded-card border border-line bg-surface px-5 py-4">
             <StatItem count={availableCount} label="空桌" swatchClass="bg-table-available" />
             <StatItem
@@ -254,19 +280,16 @@ function TableOverview() {
             <StatItem count={waitinglist.length} label="組候位中" />
           </div>
 
-
-         
           <div className="grid grid-cols-4 gap-card-gap">
-            {tables.map((table) => (
-              <TableCard key={table.id} table={table} />
+            {tableList.map((table) => (
+              <TableCard key={table.id} table={table} onCleanClick={setCleaningTable} />
             ))}
           </div>
 
-         
           <section className="rounded-card border border-line bg-surface p-4">
             <div className="flex items-center gap-2">
               <h2 className="type-h3 text-ink-900">候位中</h2>
-              <span className="type-caption rounded-pill bg-surface-2 px-2.5 py-0.5 text-ink-600 shadow-[inset_0_0_0_1px_var(--color-line)]">
+              <span className="rounded-pill bg-surface-2 px-2.5 py-0.5 type-caption text-ink-600 shadow-[inset_0_0_0_1px_var(--color-line)]">
                 {waitinglist.length} 組
               </span>
               <span className="type-caption text-ink-600">平均等 22 分</span>
@@ -275,13 +298,11 @@ function TableOverview() {
 
               <Link
                 to="/admin/waitlist"
-                className="type-body-sm inline-flex h-9 items-center rounded-btn bg-surface px-3.5 font-medium text-brand-600 
-                shadow-[inset_0_0_0_1.5px_var(--color-brand-600)] hover:bg-brand-100"
+                className="inline-flex h-9 items-center rounded-btn bg-surface px-3.5 type-body-sm font-medium text-brand-600 shadow-[inset_0_0_0_1.5px_var(--color-brand-600)] hover:bg-brand-100"
               >
                 去候位管理
               </Link>
             </div>
-
 
             <div className="mt-3 flex flex-wrap gap-3">
               {waitinglist.map((waiting) => (
@@ -291,54 +312,37 @@ function TableOverview() {
           </section>
         </main>
 
-        
+        <aside className="w-75 shrink-0">
+          <section className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-pop">
+            <div className="flex items-center gap-2 bg-surface-2 px-4 py-3 type-body-sm font-bold text-ink-900">
+              <img src={bellIcon} alt="" className="size-4.5" />
+              服務鈴
+              <div className="flex-1" />
+              <span className="rounded-pill bg-danger px-2.5 py-0.5 type-caption text-white">
+                {calls.length}
+              </span>
+            </div>
 
-    
-    
-    <aside className="w-75 shrink-0">
-      <section className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface 
-       shadow-pop">
-      
-      <div className="type-body-sm flex items-center gap-2 bg-surface-2 px-4 py-3 font-bold text-ink-900">
-        <img src={bellIcon} alt="" className="size-4.5" />
-        服務鈴
-        <div className="flex-1" />
-        <span className="type-caption rounded-pill bg-danger px-2.5 py-0.5 text-white">
-          {calls.length}
-        </span>
+            {calls.map((call) => (
+              <BellCall key={call.id} call={call} onDone={handleDone} />
+            ))}
+
+            <p className="px-4 py-3 text-center type-caption text-ink-600">
+              今天已處理 {doneCount} 則
+            </p>
+          </section>
+        </aside>
       </div>
 
-      
-      {calls.map((call) => (
-        <BellCall key={call.id} call={call} onDone={handleDone} />
-      ))}
-
-          <p className="type-caption px-4 py-3 text-center text-ink-600">今天已處理 {doneCount} 則</p>
-    </section>
-  </aside>
-
-        
-
-
-
-
-
-      </div>
+      {cleaningTable && (
+        <CleanConfirmDialog
+          table={cleaningTable}
+          onConfirm={handleConfirmClean}
+          onCancel={() => setCleaningTable(null)}
+        />
+      )}
     </div>
   )
 }
 
-
 export default TableOverview
-
-
-
-
-
-
-
-
-    
-      
-
-      
