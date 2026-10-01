@@ -9,6 +9,7 @@ import DS07 from './features/components-demo/DS07'
 import { ToastManager } from './components/toast/ToastManager'
 import DashboardLayout from './layouts/admin/DashboardLayout'
 import TableOverview from './features/admin/table/TableOverview'
+import Menu from './features/customer/order/Menu'
 
 export default function App() {
   return (
@@ -35,6 +36,7 @@ export default function App() {
           </ToastManager>
         }
       />
+      <Route path="/components/Menu" element={<Menu />} />
       <Route path="/components/ds-07" element={<DS07 />} />
     </Routes>
   )
