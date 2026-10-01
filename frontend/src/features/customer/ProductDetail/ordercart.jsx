@@ -184,7 +184,15 @@ export default function OrderCart({ tableNumber }) {
 
           {/* 送出按鈕 */}
           <div className="mt-3">
-            <SOButton type="button" text="送出整桌點餐" />
+            <SOButton
+              height="h-9"
+              variant="danger"
+              content={[
+                <div key="param-1" className="flex items-center gap-1">
+                  <span>送出整桌點餐</span>
+                </div>,
+              ]}
+            />
           </div>
         </footer>
       )}
