@@ -61,10 +61,16 @@ export default function Checkout({ onCreditCard, onCash }) {
         </div>
 
         <div className="grid grid-cols-3 gap-2">
-          <SOButton onClick={onCash} type="button" text="現金" />
-          <SOButton onClick={onCreditCard} type="button" text="信用卡" />
+          <SOButton variant="danger" height="h-9" onClick={onCash} type="button" text="現金" />
+          <SOButton
+            variant="danger"
+            height="h-9"
+            onClick={onCreditCard}
+            type="button"
+            text="信用卡"
+          />
 
-          <SOButton type="button" text="條碼" />
+          <SOButton variant="danger" height="h-9" type="button" text="條碼" />
         </div>
       </div>
     </div>
