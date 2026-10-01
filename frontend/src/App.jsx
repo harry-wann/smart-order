@@ -22,6 +22,8 @@ export default function App() {
       <Route path="/admin" element={<DashboardLayout />}>
         <Route index element={<Navigate to="/admin/table_overview" replace />} />
         <Route path="table_overview" element={<TableOverview />} />
+        <Route path="order" element={<OrderPage />} />
+        <Route path="payment-processing" element={<PaymentProcessing />} />
       </Route>
 
       <Route path="/components" element={<Components />} />
@@ -38,8 +40,6 @@ export default function App() {
         }
       />
       <Route path="/components/ds-07" element={<DS07 />} />
-      <Route path="/orderpage" element={<OrderPage />} />
-      <Route path="/payment-processing" element={<PaymentProcessing />} />
     </Routes>
   )
 }

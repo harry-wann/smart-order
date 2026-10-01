@@ -1,5 +1,6 @@
 import ok from '../../assets/ic_OrderRecord_ok.svg'
 import wait from '../../assets/ic_OrderRecord_wait.svg'
+import SOButton from '../SOButton'
 
 const orders = [
   {
@@ -52,7 +53,7 @@ function StatusBadge({ status }) {
 
   return (
     <span
-      className={`rounded-full px-3 py-1 text-[10px] ${
+      className={`rounded-pill px-3 py-1 text-[10px] ${
         isFinished
           ? 'bg-success text-white'
           : 'border border-warning-line bg-accent-100 text-hold-ink'
@@ -65,7 +66,7 @@ function StatusBadge({ status }) {
 
 function OrderCard({ order }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-line bg-surface shadow-sm">
+    <div className="overflow-hidden rounded-btn border border-line bg-surface shadow-sm">
       {/* 訂單 Header */}
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2">
@@ -121,13 +122,16 @@ export default function OrderRecord() {
       {/* 上方 */}
       <div className="mb-3 flex items-center justify-between">
         <h2 className="type-h3 font-semibold">點餐紀錄 {orders.length} 張單</h2>
-
-        <button
-          type="button"
-          className="h-10 rounded-btn border border-brand-600 px-5 type-body font-bold text-brand-600 hover:bg-surface"
-        >
-          代客加點
-        </button>
+        <div className="w-26.2">
+          <SOButton
+            variant="secondary"
+            content={[
+              <div key="param-2" className="flex w-full items-center gap-1">
+                <span className="type-body font-bold">代客加點</span>
+              </div>,
+            ]}
+          />
+        </div>
       </div>
 
       {/* 訂單列表 */}
@@ -135,28 +139,6 @@ export default function OrderRecord() {
         {orders.map((order) => (
           <OrderCard key={order.id} order={order} />
         ))}
-      </div>
-
-      {/* 最下面 */}
-      <div className="mt-auto flex items-center justify-between rounded-btn border border-line bg-surface px-4 py-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <p className="type-body font-semibold">客人沒點餐就離開</p>
-
-            <span className="rounded-pill border border-line bg-surface-2 px-2 py-1 type-caption text-ink-600">
-              僅店長
-            </span>
-          </div>
-
-          <p className="mt-1 type-caption text-ink-600">這桌已經送出過點餐，不能取消，請改用結帳</p>
-        </div>
-
-        <button
-          type="button"
-          className="rounded-btn border border-brand-600 px-4 py-2 text-xs text-brand-600"
-        >
-          取消該次用餐
-        </button>
       </div>
     </div>
   )
