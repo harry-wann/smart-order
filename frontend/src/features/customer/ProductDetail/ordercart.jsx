@@ -186,13 +186,6 @@ export default function OrderCart({ tableNumber }) {
           <div className="mt-3">
             <SOButton type="button" text="送出整桌點餐" />
           </div>
-
-          {/* <button
-            type="button"
-            className="mt-3 flex h-10.75 w-full items-center justify-center rounded-btn bg-brand-600 text-base font-bold text-surface"
-          >
-            送出整桌點餐
-          </button> */}
         </footer>
       )}
     </div>
