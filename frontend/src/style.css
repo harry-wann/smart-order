@@ -14,11 +14,21 @@
    由該畫面自己 import（例如 features/admin/kds/kds.colors.css）。
    ========================================================================== */
 
-@import "tailwindcss";
+@import 'tailwindcss';
 
-@import "./styles/tokens.colors.css";
-@import "./styles/tokens.type.css";
-@import "./styles/tokens.space.css";
-@import "./styles/tokens.anim.css";
+@import './styles/tokens.colors.css';
+@import './styles/tokens.type.css';
+@import './styles/tokens.space.css';
+@import './styles/tokens.anim.css';
 
-@import "./styles/base.css";
+@import './styles/base.css';
+
+.svg-icon [stroke]:not([stroke='none']),
+.svg-icon[stroke]:not([stroke='none']) {
+  @apply stroke-current;
+}
+
+.svg-icon [fill]:not([fill='none']),
+.svg-icon[fill]:not([fill='none']) {
+  @apply fill-current;
+}
