@@ -6,7 +6,7 @@ import DS04 from './features/components-demo/DS04'
 import DS05 from './features/components-demo/DS05'
 import DS06 from './features/components-demo/DS06'
 import DS07 from './features/components-demo/DS07'
-import OrderCart from './features/customer/ProductDetail/ordercart'
+import OrderCart from '../src/features/customer/ProductDetail/ordercart'
 import { ToastManager } from './components/toast/ToastManager'
 
 export default function App() {
