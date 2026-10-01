@@ -4,13 +4,10 @@ import IcShoppingCart from '../../assets/ic_order_shopping_cart.svg'
 
 export default function DS02() {
   return (
-    <DemoPage
-      code="DS-02"
-      title="按鈕"
-      description="放置主要操作、次要操作與不同互動狀態的按鈕。"
-    >
+    <DemoPage code="DS-02" title="按鈕" description="放置主要操作、次要操作與不同互動狀態的按鈕。">
       <div className="flex w-full flex-col gap-2">
         <SOButton
+          height="h-9"
           variant="danger"
           content={[
             <div key="param-1" className="flex items-center gap-1">

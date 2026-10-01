@@ -5,6 +5,7 @@
  * 執行 dev、build、typecheck 前會自動產生；dev 時新增或刪除 SVG 也會更新。
  * 直接修改本檔會在下次產生時被覆蓋。
  */
+import CardCheckIcon from "./ic_card_check.svg?react";
 import CartTimeIcon from "./ic_cart_time.svg?react";
 import CheckoutBlackpeopleIcon from "./ic_Checkout_blackpeople.svg?react";
 import CounterMinusIcon from "./ic_counter_minus.svg?react";
@@ -39,6 +40,9 @@ import ToastCheckIcon from "./ic_toast_check.svg?react";
 import ToastInfoIcon from "./ic_toast_info.svg?react";
 
 export const SvgIconMap = {
+  // card
+  CardCheck: CardCheckIcon,
+
   // cart
   CartTime: CartTimeIcon,
 
