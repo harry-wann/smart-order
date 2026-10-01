@@ -1,3 +1,4 @@
+import SOButton from '../../components/SOButton'
 export default function OrderSubmitted() {
   // 訂單假資料，之後串後端 API 時可以換掉
   const orderItems = [
@@ -99,20 +100,24 @@ export default function OrderSubmitted() {
       {/* 底部按鈕區：375 × 153 */}
       <footer className="flex h-38.25 shrink-0 flex-col border-t border-line bg-surface px-4 py-4">
         {/* 繼續點餐 */}
-        <button
-          type="button"
-          className="flex h-12 w-full items-center justify-center rounded-btn bg-brand-600 type-button text-surface"
-        >
-          繼續點餐
-        </button>
+        <div>
+          <SOButton type="button" text="繼續點餐"></SOButton>
+        </div>
 
         {/* 查看本桌訂單 */}
-        <button
-          type="button"
-          className="mt-3 flex h-12 w-full items-center justify-center rounded-btn border border-brand-600 bg-surface type-button text-brand-600"
-        >
-          查看本桌訂單
-        </button>
+        <div className="mt-3">
+          <SOButton
+            variant="secondary"
+            content={[
+              <div key="param-1" className="flex items-center gap-1">
+                <span>查看本桌訂單</span>
+              </div>,
+            ]}
+          />{' '}
+        </div>
+        {/* 
+          <SOButton type="button" text="查看本桌訂單"></SOButton>
+        */}
       </footer>
     </div>
   )
