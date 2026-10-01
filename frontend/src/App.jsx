@@ -21,7 +21,7 @@ export default function App() {
       <Route path="/admin" element={<DashboardLayout />}>
         <Route index element={<Navigate to="/admin/table_overview" replace />} />
         <Route path="table_overview" element={<TableOverview />} />
-        <Route path="seat_management" element={<SeatManagement />} />
+        <Route path="seats" element={<SeatManagement />} />
       </Route>
       <Route path="/components" element={<Components />} />
       <Route path="/components/ds-02" element={<DS02 />} />
