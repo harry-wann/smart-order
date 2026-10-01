@@ -11,6 +11,7 @@ import DashboardLayout from './layouts/admin/DashboardLayout'
 import TableOverview from './features/admin/table/TableOverview'
 import ItemDetails from './components/ItemDetails'
 import KitchenOverview from './features/admin/kitchen/KitchenOverview'
+import WaitlistManagement from './features/admin/waitlist/WaitlistManagement'
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
         <Route index element={<Navigate to="/admin/table_overview" replace />} />
         <Route path="table_overview" element={<TableOverview />} />
         <Route path="kitchen" element={<KitchenOverview />} />
+        <Route path="queue" element={<WaitlistManagement />} />
       </Route>
       <Route path="/components" element={<Components />} />
       <Route path="/components/ds-02" element={<DS02 />} />
