@@ -38,7 +38,7 @@ export default function App() {
         }
       />
       <Route path="/components/ds-07" element={<DS07 />} />
-      <Route path="/product-detail" element={<OrderCart />} />
+      <Route path="/product-detail" element={<OrderCart tableNumber={tableNumber} />} />
     </Routes>
   )
 }
