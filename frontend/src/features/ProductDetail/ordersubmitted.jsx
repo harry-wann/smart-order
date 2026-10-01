@@ -100,24 +100,30 @@ export default function OrderSubmitted() {
       {/* 底部按鈕區：375 × 153 */}
       <footer className="flex h-38.25 shrink-0 flex-col border-t border-line bg-surface px-4 py-4">
         {/* 繼續點餐 */}
-        <div>
-          <SOButton type="button" text="繼續點餐"></SOButton>
+        <div className="mt-3">
+          <SOButton
+            variant="danger"
+            height="h-9"
+            content={[
+              <div key="param-1" className="flex items-center gap-1">
+                <span>繼續點餐</span>
+              </div>,
+            ]}
+          />
         </div>
 
         {/* 查看本桌訂單 */}
         <div className="mt-3">
           <SOButton
             variant="secondary"
+            height="h-9"
             content={[
               <div key="param-1" className="flex items-center gap-1">
                 <span>查看本桌訂單</span>
               </div>,
             ]}
-          />{' '}
+          />
         </div>
-        {/* 
-          <SOButton type="button" text="查看本桌訂單"></SOButton>
-        */}
       </footer>
     </div>
   )

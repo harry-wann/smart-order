@@ -10,7 +10,7 @@ import OrderSubmitted from './features/ProductDetail/ordersubmitted'
 import { ToastManager } from './components/toast/ToastManager'
 import DashboardLayout from './layouts/admin/DashboardLayout'
 import TableOverview from './features/admin/table/TableOverview'
-import ItemDetails from './components/ItemDetails'
+// import ItemDetails from './components/ItemDetails'
 import KitchenOverview from './features/admin/kitchen/KitchenOverview'
 
 export default function App() {
