@@ -1,5 +1,5 @@
 import DemoPage from './DemoPage'
-import Kitchen from '../admin/kitchen/Kitchen'
+import SOButton from '../../components/SOButton'
 import IcShoppingCart from '../../assets/ic_order_shopping_cart.svg'
 
 export default function DS02() {
