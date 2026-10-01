@@ -41,25 +41,55 @@
   // → <div className="flex items-center"></div>（知道要用 className 不是 class）
   "emmet.includeLanguages": { "javascript": "javascriptreact" },
 
-  // ── 前端：存檔用 Prettier 格式化 ────────────────────────────
+  // ── 前端：JS / TS 存檔格式化 ───────────────────────────────
+  // JS / TS 不用 Prettier：它會把自己打的換行、空行、註解對齊用的空白清掉（沒有選項可關）。
+  // 改成存檔時由 oxlint 套用 frontend/oxlint.format.config.ts 的格式規則，一樣是存檔自動排版，
+  // 只是沒列在規則裡的東西（換行、空行、行尾空白）不會被動到
+  "[javascript][javascriptreact][typescript][typescriptreact]": {
+    "editor.formatOnSave": false,
+    "editor.codeActionsOnSave": { "source.fixAll.oxc": "explicit" }
+  },
+
+  // 編輯器讀 lint + 格式化合併後的設定；npm run lint 與 CI 仍讀 frontend/.oxlintrc.json。
+  // 從根目錄開啟時 ${workspaceFolder} 是 smart_order，所以路徑要多帶一層 frontend/
+  "oxc.configPath": "frontend/oxlint.editor.config.ts",
+
+  // 格式問題存檔就會自動修掉，不需要整片黃色波浪線。
+  // 降成 hint 後只剩不顯眼的提示，也不會出現在「問題」面板（存檔自動修正不受影響）。
+  // oxlint.format.config.ts 新增規則時，這裡要跟著加一行，否則那條會顯示成警告
+  "oxc.lint.customization": {
+    "@stylistic/indent": { "severity": "hint" },
+    "@stylistic/jsx-indent-props": { "severity": "hint" },
+    "@stylistic/quotes": { "severity": "hint" },
+    "@stylistic/jsx-quotes": { "severity": "hint" },
+    "@stylistic/semi": { "severity": "hint" },
+    "@stylistic/comma-dangle": { "severity": "hint" },
+    "@stylistic/arrow-parens": { "severity": "hint" },
+    "@stylistic/no-multi-spaces": { "severity": "hint" },
+    "@stylistic/object-curly-spacing": { "severity": "hint" },
+    "@stylistic/array-bracket-spacing": { "severity": "hint" },
+    "@stylistic/comma-spacing": { "severity": "hint" },
+    "@stylistic/key-spacing": { "severity": "hint" },
+    "@stylistic/keyword-spacing": { "severity": "hint" },
+    "@stylistic/space-before-blocks": { "severity": "hint" },
+    "@stylistic/space-infix-ops": { "severity": "hint" },
+    "@stylistic/arrow-spacing": { "severity": "hint" },
+    "@stylistic/space-in-parens": { "severity": "hint" },
+    "@stylistic/space-before-function-paren": { "severity": "hint" },
+    "@stylistic/block-spacing": { "severity": "hint" },
+    "@stylistic/semi-spacing": { "severity": "hint" },
+    "@stylistic/template-curly-spacing": { "severity": "hint" },
+    "@stylistic/type-annotation-spacing": { "severity": "hint" },
+    "@stylistic/jsx-tag-spacing": { "severity": "hint" },
+    "@stylistic/jsx-curly-spacing": { "severity": "hint" },
+    "@stylistic/jsx-equals-spacing": { "severity": "hint" },
+    "@stylistic/eol-last": { "severity": "hint" },
+    "better-tailwindcss/enforce-consistent-class-order": { "severity": "hint" }
+  },
+
+  // ── 前端：CSS / HTML / JSON 存檔用 Prettier 格式化 ───────────
   // 逐語言指定，不寫成全域的 editor.defaultFormatter。
   // 全域會讓 Prettier 連 pom.xml 之類的後端檔案一起接管
-  "[javascript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true
-  },
-  "[javascriptreact]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true
-  },
-  "[typescript]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true
-  },
-  "[typescriptreact]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.formatOnSave": true
-  },
   "[css]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true
