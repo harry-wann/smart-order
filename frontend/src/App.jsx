@@ -21,6 +21,7 @@ import MenuOptions from './features/admin/menuOptions/MenuOptions'
 import AdminMenu from './features/admin/adminMenu/AdminMenu'
 
 import Menu from './features/customer/order/Menu'
+import Ticket from './components/Ticket'
 
 export default function App() {
   return (
@@ -73,6 +74,9 @@ export default function App() {
       <Route path="/components/Menu" element={<Menu />} />
       <Route path="/components/ds-07" element={<DS07 />} />
       <Route path="/order-submitted" element={<OrderSubmitted />} />
+      <Route path="/components/ItemDetails" element={<ItemDetails />} />
+      <Route path="/components/ticket" element={<Ticket />} />
+      <Route path="/components/ds-07" element={<DS07 />} />
     </Routes>
   )
 }
