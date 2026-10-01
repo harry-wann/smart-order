@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import SOButton from '../../../components/SOButton'
-
 import TopBar from '@/components/dashboard/TopBar'
+import qrIcon from '@/assets/ic_dashboard_qrcode.svg'
+import editIcon from '@/assets/ic_dashboard_edit.svg'
+import plusIcon from '@/assets/ic_dashboard_plus.svg'
 
 // 假資料：後端 API 好了之後換成 fetch 回來的資料
 const INITIAL_TABLES = [
@@ -54,10 +56,27 @@ function SeatManagement() {
           <>
             {/* SOButton 預設 w-full，包一層 flex-none 讓它只跟文字一樣寬 */}
             <div className="flex-none">
-              <SOButton variant="secondary" height="h-11" text="列印全部 QR" />
+              <SOButton
+                variant="secondary"
+                height="h-11"
+                content={
+                  <span className="flex items-center gap-1.5">
+                    <Icon src={qrIcon} />
+                    列印全部 QR
+                  </span>
+                }
+              />
             </div>
             <div className="flex-none">
-              <SOButton height="h-11" text="＋ 新增桌位" />
+              <SOButton
+                height="h-11"
+                content={
+                  <span className="flex items-center gap-1.5">
+                    <Icon src={plusIcon} />
+                    新增桌位
+                  </span>
+                }
+              />
             </div>
           </>
         }
@@ -120,15 +139,11 @@ function SeatManagement() {
                         <span className="type-caption text-ink-600 tabular-nums">
                           /t/{t.tableNo}
                         </span>
-                        <div className="flex-none">
-                          <SOButton variant="ghost" height="h-9" text="印 QR" />
-                        </div>
+                        <TextButton icon={qrIcon}>印 QR</TextButton>
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="w-fit">
-                        <SOButton variant="ghost" height="h-9" text="編輯" />
-                      </div>
+                      <TextButton icon={editIcon}>編輯</TextButton>
                     </td>
                   </tr>
                 )
@@ -184,6 +199,40 @@ function Switch({ checked, onChange, label }) {
         }`}
       />
     </button>
+  )
+}
+
+// 表格內的小文字按鈕（對應設計稿的 .btn-ghost.btn-sm）
+function TextButton({ icon, children, ...props }) {
+  return (
+    <button
+      type="button"
+      className="inline-flex h-9 flex-none items-center gap-1.5 rounded-btn px-3.5 text-sm font-medium text-ink-600 transition-colors hover:text-brand-600"
+      {...props}
+    >
+      {icon && <Icon src={icon} />}
+      {children}
+    </button>
+  )
+}
+
+// 圖示：用 SVG 當遮罩，顏色跟著文字色（currentColor）走
+function Icon({ src }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="inline-block size-4 flex-none bg-current"
+      style={{
+        maskImage: `url("${src}")`,
+        WebkitMaskImage: `url("${src}")`,
+        maskSize: 'contain',
+        WebkitMaskSize: 'contain',
+        maskRepeat: 'no-repeat',
+        WebkitMaskRepeat: 'no-repeat',
+        maskPosition: 'center',
+        WebkitMaskPosition: 'center',
+      }}
+    />
   )
 }
 
