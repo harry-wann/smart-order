@@ -17,6 +17,7 @@ import OrderIndex from './features/customer/order/OrderIndex'
 import OrderPage from './features/order-checkbill/OrderPage'
 import PaymentProcessing from './features/order-checkbill/PaymentProcessing'
 import MenuOptions from './features/admin/menuOptions/MenuOptions'
+import AdminMenu from './features/admin/adminMenu/AdminMenu'
 
 export default function App() {
   return (
@@ -44,6 +45,10 @@ export default function App() {
         <Route path="payment-processing" element={<PaymentProcessing />} />
         <Route path="options" element={<MenuOptions />} />
         
+
+
+        
+        <Route path="menu" element={<AdminMenu />} />
       </Route>
 
       
