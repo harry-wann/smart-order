@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import icPlus from  '../../assets/ic_adminmenu_redplus.svg'
 
 export interface Category {
   id: string;
@@ -7,98 +6,119 @@ export interface Category {
   count: number;
 }
 
-interface CategorySidebarProps {
+interface Props {
   categories: Category[];
   activeCategory: string;
-  onSelectCategory: (categoryName: string) => void;
-  onAddCategory: (newCategoryName: string) => void;
+  onSelectCategory: (name: string) => void;
+  onAddCategory: (name: string) => void;
+  onDeleteCategory?: (categoryId: string, categoryName: string) => void;
 }
 
-export default function CategorySidebar({ 
-  categories, 
-  activeCategory, 
+export default function CategorySidebar({
+  categories,
+  activeCategory,
   onSelectCategory,
-  onAddCategory 
-}: CategorySidebarProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [categoryName, setCategoryName] = useState('');
+  onAddCategory,
+  onDeleteCategory
+}: Props) {
+  const [isAdding, setIsAdding] = useState(false);
+  const [newCategory, setNewCategory] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!categoryName.trim()) return;
-    onAddCategory(categoryName.trim());
-    setCategoryName('');
-    setIsModalOpen(false);
+  const handleAdd = () => {
+    if (newCategory.trim()) {
+      onAddCategory(newCategory.trim());
+      setNewCategory('');
+      setIsAdding(false);
+    }
   };
 
   return (
-    <div className="w-64 space-y-1 relative">
-      <h2 className="text-sm font-bold text-ink-600 px-3 mb-4">分類</h2>
-      {categories.map(cat => {
-        const isActive = activeCategory === cat.name;
-        return (
-          <button
-            key={cat.id}
-            type="button"
-            onClick={() => onSelectCategory(cat.name)}
-            className={`w-full flex justify-between items-center px-3 py-2.5 rounded-lg text-sm transition-colors ${
-              isActive 
-                ? 'bg-brand-100 text-ink-900 font-medium' 
-                : 'text-ink-600 hover:bg-surface-300'
-            }`}
-          >
-            <span>{cat.name}</span>
-            <span className="text-xs text-ink-400">{cat.count}</span>
-          </button>
-        );
-      })}
+    <div className="w-[180px] shrink-0">
+      {/* 標題 */}
+      <div className="text-sm text-ink-400 font-medium px-4 mb-4">分類</div>
+      
+      {/* 分類列表 */}
+      <div className="flex flex-col gap-1">
+        {categories.map((cat) => {
+          const isActive = activeCategory === cat.name;
+          
+          return (
+            <div
+              key={cat.id}
+              onClick={() => onSelectCategory(cat.name)}
+              className={`group flex items-center justify-between px-4 py-3 rounded-lg cursor-pointer transition-colors relative
+                ${isActive 
+                  ? 'bg-brand-50 text-brand-700 font-bold' // 命中狀態（如圖片中的「肉品」樣式）
+                  : 'text-ink-600 hover:bg-surface-200'    // 未命中狀態
+                }`}
+            >
+              <span className="truncate">{cat.name}</span>
+              
+              {/* 預設顯示數量，滑鼠懸停時隱藏 */}
+              <span className={`text-sm ${isActive ? 'text-brand-700' : 'text-ink-600'} group-hover:hidden`}>
+                {cat.count}
+              </span>
 
-      <div className="pt-2 px-3">
-        <button 
-          type="button"
-          onClick={() => setIsModalOpen(true)}
-          className="text-brand-600 text-sm font-medium flex items-center gap-1 hover:opacity-80 cursor-pointer"
-        >
-          <img src={icPlus} alt="新增分類"/>
-          <span>新增分類</span>
-        </button>
+              {/* 刪除按鈕，僅在滑鼠懸停時顯示（取代數量顯示的位置） */}
+              {cat.id !== 'all' && onDeleteCategory ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation(); // 防止觸發外層的 onClick (切換分類)
+                    onDeleteCategory(cat.id, cat.name);
+                  }}
+                  className="hidden group-hover:block text-xs text-danger hover:text-red-700 transition-colors"
+                >
+                  刪除
+                </button>
+              ) : (
+                /* 如果是「全部」分類（不可刪除），hover 時依然顯示數量 */
+                <span className="hidden group-hover:block text-sm text-ink-600">
+                  {cat.count}
+                </span>
+              )}
+            </div>
+          );
+        })}
       </div>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-ink-900/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-surface rounded-xl p-6 w-full max-w-md shadow-(--shadow-pop) border border-line space-y-4">
-            <h3 className="text-lg font-bold text-ink-900">新增分類</h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs text-ink-600 mb-1">分類名稱</label>
-                <input 
-                  type="text" 
-                  value={categoryName}
-                  onChange={e => setCategoryName(e.target.value)}
-                  placeholder="例如：特選小菜"
-                  required
-                  className="w-full px-3 py-2 text-sm border border-line rounded-lg focus:outline-none focus:border-brand-600 bg-surface"
-                />
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
+      <div className="mt-6 px-4">
+        {isAdding ? (
+           <div className="flex flex-col gap-2">
+             <input 
+               autoFocus
+               type="text" 
+               value={newCategory}
+               onChange={e => setNewCategory(e.target.value)}
+               onKeyDown={e => e.key === 'Enter' && handleAdd()}
+               placeholder="輸入分類名稱"
+               className="w-full px-3 py-2 text-sm border border-line rounded-lg focus:outline-none focus:border-brand-600 bg-surface text-ink-900"
+             />
+             <div className="flex justify-end gap-2">
                 <button 
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-xs border border-line rounded-lg text-ink-600 hover:bg-surface-200 cursor-pointer"
+                  onClick={() => setIsAdding(false)} 
+                  className="text-xs text-ink-400 hover:text-ink-600 cursor-pointer"
                 >
                   取消
                 </button>
                 <button 
-                  type="submit"
-                  className="px-4 py-2 text-xs bg-brand-600 text-surface rounded-lg font-medium hover:opacity-90 cursor-pointer"
+                  onClick={handleAdd} 
+                  className="text-xs text-brand-600 hover:text-brand-700 font-medium cursor-pointer"
                 >
-                  新增
+                  確定
                 </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+             </div>
+           </div>
+        ) : (
+          <button 
+            onClick={() => setIsAdding(true)}
+            className="flex items-center gap-2 text-brand-600 hover:text-brand-700 transition-colors cursor-pointer"
+          >
+            <span className="text-xl font-light leading-none mb-0.5">+</span>
+            <span className="text-sm">新增分類</span>
+          </button>
+        )}
+      </div>
     </div>
   );
 }

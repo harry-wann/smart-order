@@ -2,107 +2,67 @@ import React, { useState } from 'react';
 import ToggleSwitch from '../../../components/adminMenu/ToggleSwitch';
 import CategorySidebar from '../../../components/adminMenu/CategorySidebar';
 import type { Category } from '../../../components/adminMenu/CategorySidebar';
-import icPlus from '../../../assets/ic_adminMenu_plus.svg'
+import icPlus from '../../../assets/ic_adminMenu_plus.svg';
 import SOButton from '@/components/SOButton';
+import TopBar from '@/components/dashboard/TopBar';
+import Badge from '@/components/Badge';
+import SOFormInput, { SOFormInputType } from '@/components/input/SOFormInput';
+import SearchIcon from '@/assets/ic_menu_search.svg';
+import ProductModal from '@/components/adminMenu/ProductModal';
 
-interface Badge {
+export interface BadgeItem {
   text: string;
   type: 'danger' | 'warning';
 }
 
-interface Product {
+export interface Product {
   id: number;
   name: string;
   category: string;
   price: number;
   stock: number;
   status: 'active' | 'inactive';
-  badge: Badge | null;
+  isPopular?: boolean; 
   imageText: string;
 }
 
 const INITIAL_CATEGORIES: Category[] = [
-  { id: 'all', name: '全部', count: 64 },
-  { id: 'soup', name: '鍋底', count: 4 },
-  { id: 'meat', name: '肉品', count: 12 },
-  { id: 'seafood', name: '海鮮', count: 9 },
-  { id: 'vegetable', name: '蔬菜', count: 10 },
-  { id: 'hotpot', name: '火鍋料', count: 11 },
-  { id: 'main', name: '主食', count: 6 },
-  { id: 'drink', name: '飲料', count: 8 },
-  { id: 'alcohol', name: '酒類', count: 4 },
+  { id: 'all', name: '全部', count: 0 }, 
+  { id: 'soup', name: '鍋底', count: 0 },
+  { id: 'meat', name: '肉品', count: 0 },
+  { id: 'seafood', name: '海鮮', count: 0 },
+  { id: 'vegetable', name: '蔬菜', count: 0 },
+  { id: 'hotpot', name: '火鍋料', count: 0 },
+  { id: 'main', name: '主食', count: 0 },
+  { id: 'drink', name: '飲料', count: 0 },
+  { id: 'alcohol', name: '酒類', count: 0 },
 ];
 
 const INITIAL_PRODUCTS: Product[] = [
-  {
-    id: 1,
-    name: '安格斯霜降牛五花',
-    category: '肉品',
-    price: 380,
-    stock: 18,
-    status: 'active',
-    badge: { text: '人氣', type: 'warning' },
-    imageText: '肉盤'
-  },
-  {
-    id: 2,
-    name: '伊比利豬梅花',
-    category: '肉品',
-    price: 320,
-    stock: 24,
-    status: 'active',
-    badge: null,
-    imageText: '豬肉盤'
-  },
-  {
-    id: 3,
-    name: '紐西蘭小羔羊肩',
-    category: '肉品',
-    price: 340,
-    stock: 0,
-    status: 'inactive',
-    badge: { text: '售完', type: 'danger' },
-    imageText: '羊肉盤'
-  },
-  {
-    id: 4,
-    name: '台灣松阪豬',
-    category: '肉品',
-    price: 300,
-    stock: 9,
-    status: 'active',
-    badge: null,
-    imageText: '豬肉盤'
-  },
-  {
-    id: 5,
-    name: '美國老饕牛小排',
-    category: '肉品',
-    price: 520,
-    stock: 6,
-    status: 'active',
-    badge: { text: '低量', type: 'warning' },
-    imageText: '肉盤'
-  },
-  {
-    id: 6,
-    name: '霜降牛舌',
-    category: '肉品',
-    price: 460,
-    stock: 12,
-    status: 'inactive',
-    badge: null,
-    imageText: '肉盤'
-  }
+  { id: 1, name: '安格斯霜降牛五花', category: '肉品', price: 380, stock: 18, status: 'active', isPopular: true, imageText: '牛五花' },
+  { id: 2, name: '伊比利豬梅花', category: '肉品', price: 320, stock: 24, status: 'active', isPopular: false, imageText: '豬梅花' },
+  { id: 3, name: '紐西蘭小羔羊肩', category: '肉品', price: 340, stock: 0, status: 'inactive', isPopular: false, imageText: '羊肉片' },
+  { id: 4, name: '台灣松阪豬', category: '肉品', price: 300, stock: 9, status: 'active', isPopular: false, imageText: '松阪豬' },
+  { id: 5, name: '美國老饕牛小排', category: '肉品', price: 520, stock: 3, status: 'active', isPopular: false, imageText: '牛小排' },
+  { id: 6, name: '霜降牛舌', category: '肉品', price: 460, stock: 12, status: 'inactive', isPopular: false, imageText: '牛舌' }
 ];
 
 export default function AdminMenu() {
-  const [activeCategory, setActiveCategory] = useState<string>('肉品');
+  const [activeCategory, setActiveCategory] = useState<string>('全部'); 
   const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
+  const [searchTerm, setSearchTerm] = useState<string>(''); 
 
   const [modalMode, setModalMode] = useState<'closed' | 'add' | 'edit'>('closed');
   const [currentProduct, setCurrentProduct] = useState<Partial<Product>>({});
+
+  // 動態計算分類數量
+  const displayCategories = categories.map(cat => ({
+    ...cat,
+    count: cat.id === 'all' 
+      ? products.length 
+      : products.filter(p => p.category === cat.name).length
+  }));
 
   const toggleStatus = (id: number) => {
     setProducts(prev => 
@@ -115,7 +75,18 @@ export default function AdminMenu() {
   };
 
   const handleOpenAdd = () => {
-    setCurrentProduct({ name: '', category: activeCategory === '全部' ? '肉品' : activeCategory, price: 0, stock: 0, status: 'active', imageText: '肉盤' });
+    // 動態抓取第一個非「全部」的有效分類名稱
+    const firstValidCategory = categories.find(c => c.id !== 'all')?.name || '';
+
+    setCurrentProduct({ 
+      name: '', 
+      category: activeCategory === '全部' ? firstValidCategory : activeCategory, 
+      price: 0, 
+      stock: 10, 
+      status: 'active', 
+      isPopular: false, 
+      imageText: '預設圖' 
+    });
     setModalMode('add');
   };
 
@@ -124,70 +95,135 @@ export default function AdminMenu() {
     setModalMode('edit');
   };
 
-  const handleSaveProduct = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!currentProduct.name) return;
+  const handleDeleteProduct = (id: number) => {
+    if (window.confirm('確定要刪除此商品嗎？')) {
+      setProducts(prev => prev.filter(item => item.id !== id));
+    }
+  };
 
+  const handleDeleteCategory = (categoryId: string, categoryName: string) => {
+    if (categoryId === 'all') return; 
+
+    const hasProducts = products.some(p => p.category === categoryName);
+    if (hasProducts) {
+      alert(`「${categoryName}」分類下尚有商品，請先將商品刪除或變更分類後再進行操作！`);
+      return;
+    }
+
+    if (window.confirm(`確定要刪除「${categoryName}」分類嗎？`)) {
+      setCategories(prev => prev.filter(c => c.id !== categoryId));
+      if (activeCategory === categoryName) {
+        setActiveCategory('全部');
+      }
+    }
+  };
+
+  const handleSaveProduct = (formData: Partial<Product>) => {
+    if (!formData.name) return;
+
+    const stockVal = Number(formData.stock) || 0;
+    
     if (modalMode === 'add') {
+      const firstValidCategory = categories.find(c => c.id !== 'all')?.name || '';
+      
       const newProduct: Product = {
         id: Date.now(),
-        name: currentProduct.name,
-        category: currentProduct.category || '肉品',
-        price: Number(currentProduct.price) || 0,
-        stock: Number(currentProduct.stock) || 0,
-        status: (currentProduct.status as 'active' | 'inactive') || 'active',
-        badge: null,
-        imageText: currentProduct.imageText || '肉盤'
+        name: formData.name,
+        category: formData.category || firstValidCategory, 
+        price: Number(formData.price) || 0,
+        stock: stockVal,
+        status: (formData.status as 'active' | 'inactive') || 'active',
+        isPopular: formData.isPopular || false,
+        imageText: formData.imageText || '預設圖'
       };
       setProducts([newProduct, ...products]);
-    } else if (modalMode === 'edit' && currentProduct.id) {
+    } else if (modalMode === 'edit' && formData.id) {
       setProducts(prev => 
-        prev.map(item => item.id === currentProduct.id ? (currentProduct as Product) : item)
+        prev.map(item => 
+          item.id === formData.id 
+            ? { 
+                ...(formData as Product), 
+                stock: stockVal,
+                price: Number(formData.price) 
+              } 
+            : item
+        )
       );
     }
     setModalMode('closed');
   };
 
   const handleAddCategory = (newCategoryName: string) => {
+    if (categories.some(c => c.name === newCategoryName)) {
+      alert('分類名稱已存在！');
+      return;
+    }
     const newCat: Category = {
       id: Date.now().toString(),
       name: newCategoryName,
-      count: 0
+      count: 0 
     };
     setCategories([...categories, newCat]);
   };
 
-  const filteredProducts = activeCategory === '全部' 
-    ? products 
-    : products.filter(item => item.category === activeCategory);
+  const getProductBadge = (product: Product): BadgeItem | null => {
+    if (product.stock === 0) return { text: '售完', type: 'danger' };
+    if (product.stock <= 5) return { text: '低量', type: 'warning' };
+    if (product.isPopular) return { text: '人氣', type: 'warning' };
+    return null;
+  };
+
+  const filteredProducts = products.filter(item => {
+    const matchCategory = activeCategory === '全部' || item.category === activeCategory;
+    const matchSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchCategory && matchSearch;
+  });
 
   return (
+  <>
+    <TopBar 
+      childrenLeft={<div className='flex scale-80'><Badge text={`${products.length} 個品項・${categories.length} 個分類`} col="plain" /></div>} 
+      childrenRight={
+        <div className="flex items-center gap-3">
+          <div className="w-64">
+            <SOFormInput
+              type={SOFormInputType.NORMAL}
+              icon={SearchIcon as any}
+              defaultValue=""
+              placeholder="搜尋菜色"
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <SOButton 
+            type="button"
+            onClick={handleOpenAdd} 
+            height='h-[44px]' 
+            content={[
+              <div key="param-2" className="flex items-center gap-1">
+                <span>新增商品</span>
+                <img src={icPlus} alt="" />
+              </div>
+            ]}
+          />
+        </div>
+      }
+    />
     <div className="bg-paper text-ink-900 p-6 min-h-screen font-sans relative">
       <div className="flex max-w-7xl mx-auto gap-8">
         
         <CategorySidebar 
-          categories={categories}
+          categories={displayCategories} 
           activeCategory={activeCategory}
           onSelectCategory={setActiveCategory}
           onAddCategory={handleAddCategory}
+          onDeleteCategory={handleDeleteCategory}
         />
 
         <div className="flex-1 bg-surface rounded-xl shadow-(--shadow-card) border border-line overflow-hidden flex flex-col justify-between">
           <div>
             <div className="p-4 border-b border-line flex justify-between items-center bg-surface-200">
               <span className="text-sm font-bold text-ink-600">當前分類：{activeCategory}</span>
-              <div>
-              <SOButton 
-              type="button"
-              onClick={handleOpenAdd} 
-              height='h-[44px]' 
-              content={[<div key="param-2" className="flex items-center gap-1">
-                <span>新增商品</span>
-                <img src={icPlus} alt="" />
-              </div>]}
-              />
             </div>
-          </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -206,52 +242,39 @@ export default function AdminMenu() {
                   {filteredProducts.length > 0 ? (
                     filteredProducts.map(product => {
                       const isActive = product.status === 'active';
+                      const currentBadge = getProductBadge(product);
                       return (
                         <tr key={product.id} className="hover:bg-surface-200 transition-colors">
                           <td className="p-4">
-                            <div className="w-16 h-16 bg-surface-200 rounded-lg flex flex-col items-center justify-center text-[10px] text-ink-400 border border-line leading-tight">
+                            <div className="w-16 h-16 bg-surface-200 rounded-lg flex flex-col items-center justify-center text-[10px] text-ink-400 border border-line leading-tight text-center break-all px-1">
                               <span>{product.imageText}</span>
                             </div>
                           </td>
                           <td className="p-4">
                             <div className="flex items-center gap-2">
                               <span className="font-bold text-ink-900">{product.name}</span>
-                              {product.badge && (
-                                <span className={`px-2 py-0.5 text-xs rounded-full ${
-                                  product.badge.type === 'danger' 
-                                    ? 'bg-danger-bg text-danger-ink' 
-                                    : 'bg-warning-bg text-warning-ink'
-                                }`}>
-                                  {product.badge.text}
-                                </span>
+                              {currentBadge && (
+                                <div className="flex scale-80">
+                                  <Badge text={currentBadge.text} col={currentBadge.type === 'danger' ? 'sold' : 'hot'} />
+                                </div>
                               )}
                             </div>
                             <div className="text-xs text-ink-400 mt-1">份量・加點配料</div>
                           </td>
                           <td className="p-4 text-ink-600">{product.category}</td>
-                          <td className="p-4 font-medium text-ink-900">{product.price}</td>
-                          <td className={`p-4 font-medium ${product.stock === 0 ? 'text-danger' : 'text-ink-600'}`}>
-                            {product.stock}
-                          </td>
+                          <td className="p-4 font-medium text-ink-900">${product.price}</td>
+                          <td className={`p-4 font-medium ${product.stock === 0 ? 'text-danger' : 'text-ink-600'}`}>{product.stock}</td>
                           <td className="p-4">
                             <div className="flex items-center gap-2">
-                              <ToggleSwitch 
-                                active={isActive} 
-                                onToggle={() => toggleStatus(product.id)} 
-                              />
-                              <span className="text-xs text-ink-600">
-                                {isActive ? '上架中' : '已下架'}
-                              </span>
+                              <ToggleSwitch active={isActive} onToggle={() => toggleStatus(product.id)} />
+                              <span className="text-xs text-ink-600">{isActive ? '上架中' : '已下架'}</span>
                             </div>
                           </td>
                           <td className="p-4">
-                            <button 
-                              type="button"
-                              onClick={() => handleOpenEdit(product)}
-                              className="text-ink-600 hover:text-ink-900 text-xs border border-line px-3 py-1.5 rounded-lg bg-surface shadow-sm hover:bg-surface-200 transition-colors cursor-pointer"
-                            >
-                              編輯
-                            </button>
+                            <div className="flex gap-2">
+                              <button type="button" onClick={() => handleOpenEdit(product)} className="text-ink-600 hover:text-ink-900 text-xs border border-line px-3 py-1.5 rounded-lg bg-surface shadow-sm hover:bg-surface-200 transition-colors cursor-pointer">編輯</button>
+                              <button type="button" onClick={() => handleDeleteProduct(product.id)} className="text-danger hover:text-red-700 text-xs border border-line px-3 py-1.5 rounded-lg bg-surface shadow-sm hover:bg-red-50 transition-colors cursor-pointer">刪除</button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -259,7 +282,7 @@ export default function AdminMenu() {
                   ) : (
                     <tr>
                       <td colSpan={7} className="p-8 text-center text-ink-400">
-                        此分類目前沒有商品
+                        {searchTerm ? '找不到符合的商品' : '此分類目前沒有商品'}
                       </td>
                     </tr>
                   )}
@@ -267,73 +290,18 @@ export default function AdminMenu() {
               </table>
             </div>
           </div>
-
-          <div className="p-4 text-xs text-ink-400 bg-surface-200 border-t border-line">
-            快速下架開關直接放在列上 — 這是店家最常做的一件事，不用點進去。
-          </div>
         </div>
-
       </div>
 
-      {modalMode !== 'closed' && (
-        <div className="fixed inset-0 bg-ink-900/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-surface rounded-xl p-6 w-full max-w-md shadow-(--shadow-pop) border border-line space-y-4">
-            <h3 className="text-lg font-bold text-ink-900">
-              {modalMode === 'add' ? '新增商品' : '編輯商品'}
-            </h3>
-
-            <form onSubmit={handleSaveProduct} className="space-y-4">
-              <div>
-                <label className="block text-xs text-ink-600 mb-1">品項名稱</label>
-                <input 
-                  type="text" 
-                  value={currentProduct.name || ''}
-                  onChange={e => setCurrentProduct({ ...currentProduct, name: e.target.value })}
-                  required
-                  className="w-full px-3 py-2 text-sm border border-line rounded-lg focus:outline-none focus:border-brand-600 bg-surface"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs text-ink-600 mb-1">價格</label>
-                  <input 
-                    type="number" 
-                    value={currentProduct.price || 0}
-                    onChange={e => setCurrentProduct({ ...currentProduct, price: Number(e.target.value) })}
-                    required
-                    className="w-full px-3 py-2 text-sm border border-line rounded-lg focus:outline-none focus:border-brand-600 bg-surface"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-ink-600 mb-1">庫存</label>
-                  <input 
-                    type="number" 
-                    value={currentProduct.stock || 0}
-                    onChange={e => setCurrentProduct({ ...currentProduct, stock: Number(e.target.value) })}
-                    required
-                    className="w-full px-3 py-2 text-sm border border-line rounded-lg focus:outline-none focus:border-brand-600 bg-surface"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <button 
-                  type="button"
-                  onClick={() => setModalMode('closed')}
-                  className="px-4 py-2 text-xs border border-line rounded-lg text-ink-600 hover:bg-surface-200 cursor-pointer"
-                >
-                  取消
-                </button>
-                <button 
-                  type="submit"
-                  className="px-4 py-2 text-xs bg-brand-600 text-surface rounded-lg font-medium hover:opacity-90 cursor-pointer"
-                >
-                  確認儲存
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <ProductModal 
+        isOpen={modalMode !== 'closed'}
+        mode={modalMode === 'add' ? 'add' : 'edit'}
+        initialData={currentProduct}
+        categories={categories}
+        onClose={() => setModalMode('closed')}
+        onSave={handleSaveProduct}
+      />
     </div>
+  </>
   );
 }
