@@ -1,26 +1,26 @@
-package tw.ispan.smartorder.service;
+package tw.ispan.smartorder.service.northwind;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tw.ispan.smartorder.dto.ProductCreateRequest;
-import tw.ispan.smartorder.dto.ProductPageResponse;
-import tw.ispan.smartorder.dto.ProductPatchRequest;
-import tw.ispan.smartorder.dto.ProductResponse;
-import tw.ispan.smartorder.dto.ProductUpdateRequest;
-import tw.ispan.smartorder.entity.Product;
+import tw.ispan.smartorder.dto.northwind.ProductCreateRequest;
+import tw.ispan.smartorder.dto.northwind.ProductPageResponse;
+import tw.ispan.smartorder.dto.northwind.ProductPatchRequest;
+import tw.ispan.smartorder.dto.northwind.ProductResponse;
+import tw.ispan.smartorder.dto.northwind.ProductUpdateRequest;
+import tw.ispan.smartorder.entity.northwind.Product;
 import tw.ispan.smartorder.exception.CategoryNotFoundException;
 import tw.ispan.smartorder.exception.ProductNotFoundException;
-import tw.ispan.smartorder.repository.CategoryRepository;
-import tw.ispan.smartorder.repository.ProductRepository;
+import tw.ispan.smartorder.repository.northwind.CategoryRepository;
+import tw.ispan.smartorder.repository.northwind.ProductRepository;
 
 /**
  * Service（服務層）放業務規則與交易邊界，不讓 Controller 直接操作資料庫。
  */
 @Service
-@Transactional(readOnly = true)
+@Transactional(transactionManager = "northwindTransactionManager", readOnly = true)
 public class ProductService {
 
     @Autowired

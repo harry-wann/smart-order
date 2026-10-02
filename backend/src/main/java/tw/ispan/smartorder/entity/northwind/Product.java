@@ -1,4 +1,4 @@
-package tw.ispan.smartorder.entity;
+package tw.ispan.smartorder.entity.northwind;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

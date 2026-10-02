@@ -1,6 +1,6 @@
-package tw.ispan.smartorder.dto;
+package tw.ispan.smartorder.dto.northwind;
 
-import tw.ispan.smartorder.entity.Product;
+import tw.ispan.smartorder.entity.northwind.Product;
 
 import java.math.BigDecimal;
 

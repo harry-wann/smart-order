@@ -1,4 +1,4 @@
-package tw.ispan.smartorder.dto;
+package tw.ispan.smartorder.dto.northwind;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;

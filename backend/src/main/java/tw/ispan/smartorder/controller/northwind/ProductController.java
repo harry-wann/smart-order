@@ -1,4 +1,4 @@
-package tw.ispan.smartorder.controller;
+package tw.ispan.smartorder.controller.northwind;
 
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,12 +16,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
-import tw.ispan.smartorder.dto.ProductCreateRequest;
-import tw.ispan.smartorder.dto.ProductPageResponse;
-import tw.ispan.smartorder.dto.ProductPatchRequest;
-import tw.ispan.smartorder.dto.ProductResponse;
-import tw.ispan.smartorder.dto.ProductUpdateRequest;
-import tw.ispan.smartorder.service.ProductService;
+import tw.ispan.smartorder.dto.northwind.ProductCreateRequest;
+import tw.ispan.smartorder.dto.northwind.ProductPageResponse;
+import tw.ispan.smartorder.dto.northwind.ProductPatchRequest;
+import tw.ispan.smartorder.dto.northwind.ProductResponse;
+import tw.ispan.smartorder.dto.northwind.ProductUpdateRequest;
+import tw.ispan.smartorder.service.northwind.ProductService;
 
 import java.net.URI;
 
