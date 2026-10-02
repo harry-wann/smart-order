@@ -175,3 +175,17 @@
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
+
+@utility type-customer-top-bar-title {
+  font-family: var(--font-serif);
+  font-size: 17px;
+  line-height: 1.1;
+  font-weight: 700;
+}
+
+@utility type-customer-top-bar-sub-title {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.7;
+  font-weight: 400;
+}
