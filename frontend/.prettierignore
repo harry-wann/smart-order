@@ -1,0 +1,8 @@
+# JS / TS 改由 oxlint + @stylistic 格式化（見 oxlint.format.config.ts）。
+# Prettier 會把自己打的換行、空行與對齊用的空白清掉，所以不讓它碰這些檔案。
+# CSS / HTML / JSON 仍由 Prettier 處理
+*.js
+*.jsx
+*.mjs
+*.ts
+*.tsx

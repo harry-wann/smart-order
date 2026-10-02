@@ -42,3 +42,9 @@
     font-variant-numeric: tabular-nums;
   }
 }
+
+@layer utilities {
+  .no-scrollbar {
+    scrollbar-width: none; /* 針對 Firefox */
+  }
+}

@@ -1,3 +1,14 @@
+import React from 'react';
+
+interface SOButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'content'> {
+  text?: React.ReactNode | React.ReactNode[];
+  content?: React.ReactNode | React.ReactNode[];
+  variant?: 'default' | 'danger' | 'ghost' | 'secondary';
+  disabled?: boolean;
+  type?: 'button' | 'submit' | 'reset';
+  height?: string;
+}
+
 export default function SOButton({
   text = null,
   content = null,
@@ -6,24 +17,22 @@ export default function SOButton({
   type = 'button',
   height = '',
   ...props
-}) {
-  const justifyClass = Array.isArray(text) && text.length > 1 ? 'justify-between' : 'justify-center'
-  const contentClass =
-    Array.isArray(content) && content.length > 1 ? 'justify-between' : 'justify-center'
+}: SOButtonProps) {
+  const justifyClass = Array.isArray(text) && text.length > 1 ? 'justify-between' : 'justify-center';
+  const contentClass = Array.isArray(content) && content.length > 1 ? 'justify-between' : 'justify-center';
 
-  const themeClass = {
+  const themeClass: Record<string, string> = {
     danger: 'bg-danger text-surface hover:bg-[color-mix(in_srgb,var(--color-danger),black_8%)]',
     ghost: 'bg-transparent border border-transparent text-ink-600',
     secondary: 'bg-surface border border-brand-600 text-brand-600',
-    default:
-      'bg-brand-600 text-surface hover:bg-[color-mix(in_srgb,var(--color-brand-600),black_8%)]',
-  }
+    default: 'bg-brand-600 text-surface hover:bg-[color-mix(in_srgb,var(--color-brand-600),black_8%)]',
+  };
 
   return (
     <button
       type={type}
       disabled={disabled}
-      className={`flex ${height} w-full items-center rounded-(--radius-btn) type-button sm:px-3.5 md:px-5 lg:px-6 ${themeClass[variant]} transition-all duration-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100`}
+      className={`flex ${height} w-full items-center rounded-(--radius-btn) type-button sm:px-3.5 md:px-5 lg:px-6 ${themeClass[variant] || themeClass.default} transition-all duration-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100`}
       {...props}
     >
       {text !== null ? (
@@ -52,5 +61,5 @@ export default function SOButton({
         </div>
       )}
     </button>
-  )
+  );
 }
