@@ -1,9 +1,9 @@
-import { Link, useNavigate, useSearchParams } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import { useState } from 'react'
-import SOButton from '../../../components/SOButton'
-import bellIcon from '../../../assets/ic_tableOverview_bell.svg'
-import emptyIcon from '../../../assets/ic_tableOverview_empty.svg'
-import errorIcon from '../../../assets/ic_tableOverview_error.svg'
+import SOButton from '@/components/SOButton'
+import TopBar from '@/components/dashboard/TopBar'
+import { SvgIconMap } from '@/assets/SvgIconMap'
+import BellButtonPlaceholder from './BellButtonPlaceholder'
 
 // 把後臺狀態的英文轉成中文顯示、根據桌位狀態決定顏色、根據狀態決定標籤底色
 const statusStyles = {
@@ -86,7 +86,7 @@ function TableCard({ table, onCleanClick }) {
 
   function handleClick() {
     if (table.status === 'available') {
-      navigate(`/admin/tables/${table.id}/open`)
+            navigate(`/admin/table_overview/${table.id}/open`)
     } else if (table.status === 'cleaning') {
       onCleanClick(table)
     }
@@ -138,21 +138,18 @@ function CleanConfirmDialog({ table, onConfirm, onCancel }) {
         className="w-110 rounded-card bg-surface px-8 py-7 text-center shadow-pop"
       >
         <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-accent-100">
-          {/* 這裡放鍋子 icon，跟設計要 svg，用法同 bellIcon */}
+          <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-accent-100">
+  <SvgIconMap.TableOverviewPot className="size-7" />
+</div>
         </div>
         <h2 className="type-h2 text-ink-900">{table.id} 清潔完成了嗎？</h2>
         <p className="mt-2 type-caption text-ink-600">
           確定後這張桌會變回<b className="text-ink-900">空桌</b>，可以帶客人入座。
         </p>
-        <button
-          onClick={onConfirm}
-          className="mt-6 h-11 w-full rounded-btn bg-brand-600 font-bold text-white hover:opacity-90"
-        >
-          清潔完成
-        </button>
-        <button onClick={onCancel} className="mt-2 h-10 w-full text-ink-600 hover:text-ink-900">
-          還沒
-        </button>
+                <div className="mt-6 flex flex-col gap-2">
+          <SOButton text="清潔完成" height="h-11" onClick={onConfirm} />
+          <SOButton text="還沒" variant="ghost" height="h-11" onClick={onCancel} />
+        </div>
       </div>
     </div>
   )
@@ -226,7 +223,7 @@ function LoadingSkeleton({ count }) {
       <aside className="w-75 shrink-0">
         <section className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-pop">
           <div className="flex items-center gap-2 bg-surface-2 px-4 py-3 type-body-sm font-bold text-ink-900">
-            <img src={bellIcon} alt="" className="size-4.5" />
+            <SvgIconMap.TableOverviewBell className="size-4.5" />
             服務鈴
           </div>
           <div className="px-4 py-3">
@@ -243,9 +240,10 @@ function LoadingSkeleton({ count }) {
 
 // 空資料：還沒建立座位（不是錯誤，所以不用紅字）開班時會看到的畫面
 function EmptyState() {
+  const navigate = useNavigate()
   return (
     <div className="flex flex-col items-center gap-3 py-32 text-center">
-      <img src={emptyIcon} alt="" className="mb-2 size-23" />
+      <SvgIconMap.TableOverviewEmpty className="mb-2 size-23" />
 
       <h2 className="type-h3 text-ink-900">還沒有建立座位</h2>
       <p className="type-body-sm text-ink-600">
@@ -254,12 +252,9 @@ function EmptyState() {
         這裡才會出現桌況色塊，桌上的 QR code 也才印得出來。
       </p>
 
-      <Link
-        to="/admin/seats"
-        className="mt-2 inline-flex h-10 items-center rounded-btn bg-brand-600 px-5 type-body-sm font-bold text-white hover:opacity-90"
-      >
-        去座位管理
-      </Link>
+            <div className="mt-2 w-40">
+        <SOButton text="去座位管理" height="h-11" onClick={() => navigate('/admin/seats')} />
+      </div>
     </div>
   )
 }
@@ -279,7 +274,7 @@ function ErrorState({ onRetry, onUseCache }) {
   return (
     <div className="flex flex-col items-center gap-3 py-28 text-center">
       {/* 警告 icon：從 Figma 匯出的 svg（80×80，含圓底） */}
-      <img src={errorIcon} alt="" className="mb-2 size-20" />
+      <SvgIconMap.TableOverviewError className="mb-2 size-20" />
 
       <h2 className="type-h3 text-ink-900">桌況讀不到</h2>
       <p className="type-body-sm text-ink-600">
@@ -289,25 +284,32 @@ function ErrorState({ onRetry, onUseCache }) {
       </p>
 
       <div className="mt-2 flex gap-3">
-        <button
-          onClick={onRetry}
-          className="inline-flex h-10 items-center rounded-btn bg-brand-600 px-5 type-body-sm font-bold text-white hover:opacity-90"
-        >
-          重試
-        </button>
-        <button
-          onClick={onUseCache}
-          className="inline-flex h-10 items-center rounded-btn bg-surface px-5 type-body-sm font-medium text-brand-600 shadow-[inset_0_0_0_1.5px_var(--color-brand-600)] hover:bg-brand-100"
-        >
-          改用離線快取
-        </button>
+                <div className="w-32">
+          <SOButton text="重試" height="h-11" onClick={onRetry} />
+        </div>
+        <div className="w-40">
+          <SOButton text="改用離線快取" variant="secondary" height="h-11" onClick={onUseCache} />
+        </div>
       </div>
     </div>
   )
 }
 
+// 右上角「即時同步中」。之後接 WebSocket 再依連線狀態切換
+function SyncIndicator() {
+  return (
+    <div className="flex h-9 items-center gap-2 rounded-btn border border-line bg-success-bg px-3 type-caption text-success">
+      <span className="size-2 rounded-full bg-success" />
+      即時同步中
+    </div>
+  )
+}
+
+
+
 //------------------------------主元件TableOverview()-------------------------------//
 function TableOverview() {
+  const navigate = useNavigate()
   const [tableList, setTableList] = useState(tables)
   const [calls, setCalls] = useState(initialBellCalls)
   const [doneCount, setDoneCount] = useState(14)
@@ -318,7 +320,7 @@ function TableOverview() {
   const reservedCount = tableList.filter((table) => table.status === 'reserved').length
 
   const [searchParams] = useSearchParams()
-  // 暫時用網址切換：/admin/tables?state=loading | error | empty
+  // 暫時用網址切換：/admin/table_overview?state=loading | error | empty
   // 之後接後端：改成由 fetch 的結果去 setViewState
   const [viewState, setViewState] = useState(searchParams.get('state') ?? 'ready')
 
@@ -353,26 +355,19 @@ function TableOverview() {
   }
 
   return (
-    <div className="flex flex-col">
-      {/* 這裡的header只是暫時的 到時候換成Harry的ish */}
-      <header className="flex h-15 items-center gap-4 border-b border-line bg-surface px-6">
-        <h1 className="type-h2 text-ink-900">桌況總覽</h1>
-        <span className="rounded-pill bg-surface-2 px-2.5 py-0.5 type-caption text-ink-600">
-          今天 9/13（日）
-        </span>
+      <>
+      <TopBar
+        tag="今天 9/13（日）"
+        childrenRight={
+          <>
+            <SyncIndicator />
+            <BellButtonPlaceholder />
+          </>
+        }
+      />
 
-        <div className="flex-1" />
-
-        <div className="flex h-9 items-center gap-2 rounded-btn border border-line bg-success-bg px-3 type-caption text-success">
-          <span className="size-2 rounded-full bg-success" />
-          即時同步中
-        </div>
-
-        <button className="relative flex size-11 items-center justify-center rounded-full hover:bg-surface-2">
-          <img src={bellIcon} alt="服務鈴" className="size-5.5" />
-          <span className="absolute top-1.75 right-1.75 size-2.25 rounded-full bg-brand-600" />
-        </button>
-      </header>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+  
 
       {/* 載入中 */}
       {viewState === 'loading' && <LoadingSkeleton count={tableList.length} />}
@@ -431,12 +426,14 @@ function TableOverview() {
 
                 <div className="flex-1" />
 
-                <Link
-                  to="/admin/waitlist"
-                  className="inline-flex h-9 items-center rounded-btn bg-surface px-3.5 type-body-sm font-medium text-brand-600 shadow-[inset_0_0_0_1.5px_var(--color-brand-600)] hover:bg-brand-100"
-                >
-                  去候位管理
-                </Link>
+                                  <div className="w-28">
+                    <SOButton
+                      text="去候位管理"
+                      variant="secondary"
+                      height="h-9"
+                      onClick={() => navigate('/admin/queue')}
+                    />
+                  </div>
               </div>
 
               <div className="mt-3 flex flex-wrap gap-3">
@@ -450,7 +447,7 @@ function TableOverview() {
           <aside className="w-75 shrink-0">
             <section className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-pop">
               <div className="flex items-center gap-2 bg-surface-2 px-4 py-3 type-body-sm font-bold text-ink-900">
-                <img src={bellIcon} alt="" className="size-4.5" />
+                <SvgIconMap.TableOverviewBell className="size-4.5" />
                 服務鈴
                 <div className="flex-1" />
                 <span className="rounded-pill bg-danger px-2.5 py-0.5 type-caption text-white">
@@ -469,7 +466,7 @@ function TableOverview() {
           </aside>
         </div>
       )}
-
+</div>
       {cleaningTable && (
         <CleanConfirmDialog
           table={cleaningTable}
@@ -477,7 +474,7 @@ function TableOverview() {
           onCancel={() => setCleaningTable(null)}
         />
       )}
-    </div>
+    </>
   )
 }
 
