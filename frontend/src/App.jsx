@@ -19,6 +19,8 @@ import PaymentProcessing from './features/order-checkbill/PaymentProcessing'
 import MenuOptions from './features/admin/menuOptions/MenuOptions'
 import AdminMenu from './features/admin/adminMenu/AdminMenu'
 
+import Menu from './features/customer/order/Menu'
+
 export default function App() {
   return (
     <Routes>
@@ -66,6 +68,8 @@ export default function App() {
           </ToastManager>
         }
       />
+
+      <Route path="/components/Menu" element={<Menu />} />
       <Route path="/components/ds-07" element={<DS07 />} />
       <Route path="/order-submitted" element={<OrderSubmitted />} />
     </Routes>
