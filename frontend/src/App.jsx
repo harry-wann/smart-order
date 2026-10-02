@@ -14,7 +14,6 @@ import TableOverview from './features/admin/table/TableOverview'
 import KitchenOverview from './features/admin/kitchen/KitchenOverview'
 import CustomerLayout from './layouts/customer/CustomerLayout'
 import OrderIndex from './features/customer/order/OrderIndex'
-
 import TableOpen from './features/admin/table/TableOpen'
 
 function App() {
@@ -40,6 +39,7 @@ function App() {
         <Route path="table_overview" element={<TableOverview />} />
         <Route path="order" element={<OrderPage />} />
         <Route path="payment-processing" element={<PaymentProcessing />} />
+        <Route path="table_overview/:tableNo/open" element={<TableOpen />} />
       </Route>
 
       
@@ -58,10 +58,6 @@ function App() {
         }
       />
       <Route path="/components/ds-07" element={<DS07 />} />
-
-      <Route path="/" element={<TableOverview />} />
-      <Route path="/admin/tables" element={<TableOverview />} />
-      <Route path="/admin/tables/:tableNo/open" element={<TableOpen />} />
       <Route path="/order-submitted" element={<OrderSubmitted />} />
     </Routes>
   )
