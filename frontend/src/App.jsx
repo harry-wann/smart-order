@@ -22,7 +22,8 @@ export default function App() {
       <Route path="/admin" element={<DashboardLayout />}>
         <Route index element={<Navigate to="/admin/table_overview" replace />} />
         <Route path="table_overview" element={<TableOverview />} />
-        <Route path="kitchen" element={<KitchenOverview />} />
+        <Route path="order" element={<OrderPage />} />
+        <Route path="payment-processing" element={<PaymentProcessing />} />
       </Route>
       <Route path="/components" element={<Components />} />
       <Route path="/components/ds-02" element={<DS02 />} />
