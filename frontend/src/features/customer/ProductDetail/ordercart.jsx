@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import Counter from '../steper/counter'
-import graytrash from '../../assets/ic_ordercart_graytrash.svg'
-import lessthan from '../../assets/ic_ordercart_lessthan.svg'
-import person from '../../assets/ic_ordercart_person.svg'
-import people from '../../assets/ic_ordercart_people.svg'
+import Counter from '../../../components/steper/counter'
+import graytrash from '../../../assets/ic_ordercart_graytrash.svg'
+import lessthan from '../../../assets/ic_ordercart_lessthan.svg'
+import person from '../../../assets/ic_ordercart_person.svg'
+import people from '../../../assets/ic_ordercart_people.svg'
+import SOButton from '../../../components/SOButton'
 
-export default function OrderCart() {
+export default function OrderCart({ tableNumber }) {
   // 購物車假資料
   const [cartItems, setCartItems] = useState([
     {
@@ -74,24 +75,20 @@ export default function OrderCart() {
   return (
     <div className="mx-auto flex h-screen w-full max-w-93.75 flex-col bg-surface-2">
       {/* Header：375 × 56 */}
-      <header className="flex h-14 shrink-0 items-center border-b border-line bg-surface px-4">
-        <button
-          type="button"
-          className="flex h-10 w-8 shrink-0 items-center justify-start text-2xl text-ink-900"
-          aria-label="返回"
-        >
+      <header className="flex h-14 items-center border-b border-line bg-surface px-4">
+        <button type="button" className="flex h-10 w-8 items-center justify-start text-ink-900">
           <img src={lessthan} />
         </button>
 
         <div className="ml-2">
-          <h1 className="text-base leading-5 font-bold text-ink-900">購物車</h1>
+          <h1 className="type-h3 text-ink-900">購物車</h1>
 
-          <p className="text-xs leading-4 text-ink-400">A03 桌整桌共用</p>
+          <p className="notification-time leading-4 text-ink-400">{tableNumber} 桌整桌共用</p>
         </div>
       </header>
 
       {/* 共用購物車提示：375 × 39 */}
-      <div className="flex h-9.75 shrink-0 items-center gap-2 bg-info-bg px-4">
+      <div className="flex h-9.75 items-center gap-2 bg-info-bg px-4">
         {/* 人物 icon */}
         <span className="type-caption text-info-ink">
           <img src={people} />
@@ -121,7 +118,7 @@ export default function OrderCart() {
                 {/* 商品名稱 + 價格 */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <h2 className="type-h2-base font-bold text-ink-900">{item.name}</h2>
+                    <h2 className="type-body font-bold text-ink-900">{item.name}</h2>
 
                     {/* 加入商品的人 */}
                     <div className="mt-1 flex items-center gap-1">
@@ -131,7 +128,7 @@ export default function OrderCart() {
                   </div>
 
                   {/* 商品金額 */}
-                  <p className="type-price font-bold whitespace-nowrap text-brand-600">
+                  <p className="type-price font-bold text-brand-600">
                     NT$ {(item.price * item.quantity).toLocaleString()}
                   </p>
                 </div>
@@ -153,7 +150,7 @@ export default function OrderCart() {
                     className="flex h-8 w-8 items-center justify-center"
                     aria-label={` ${item.name}`}
                   >
-                    <img src={graytrash} className="h-5 w-5" />
+                    <img src={graytrash} />
                   </button>
 
                   {/* 數量 */}
@@ -186,12 +183,17 @@ export default function OrderCart() {
           </p>
 
           {/* 送出按鈕 */}
-          <button
-            type="button"
-            className="mt-3 flex h-10.75 w-full items-center justify-center rounded-btn bg-brand-600 text-base font-bold text-surface"
-          >
-            送出整桌點餐
-          </button>
+          <div className="mt-3">
+            <SOButton
+              height="h-9"
+              variant="danger"
+              content={[
+                <div key="param-1" className="flex items-center gap-1">
+                  <span>送出整桌點餐</span>
+                </div>,
+              ]}
+            />
+          </div>
         </footer>
       )}
     </div>

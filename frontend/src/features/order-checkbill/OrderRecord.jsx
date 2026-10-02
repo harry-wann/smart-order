@@ -1,6 +1,6 @@
 import ok from '../../assets/ic_OrderRecord_ok.svg'
 import wait from '../../assets/ic_OrderRecord_wait.svg'
-import SOButton from '../SOButton'
+import SOButton from '../../components/SOButton'
 
 const orders = [
   {

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import OrderRecord from './OrderRecord'
 import Checkout from './Checkout'
 import PaymentProcessing from './PaymentProcessing'
-import TopBar from '../dashboard/TopBar'
+import TopBar from '../../components/dashboard/TopBar'
 
 export default function OrderPage() {
   // null = 沒有付款

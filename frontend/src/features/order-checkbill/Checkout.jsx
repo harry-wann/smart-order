@@ -1,5 +1,5 @@
 import blackpeople from '../../assets/ic_Checkout_blackpeople.svg'
-import SOButton from '../SOButton'
+import SOButton from '../../components/SOButton'
 
 export default function Checkout({ onCreditCard, onCash }) {
   return (
