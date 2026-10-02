@@ -1,6 +1,6 @@
 import React from 'react'
 import Bell from '../assets/ic_OrderHeader_bell.svg'
-import ic_toast_check from '../assets/ic_toast_check.svg'
+import time from '@/assets/ic_ticket_time.svg'
 import ic_cart_time from '../assets/ic_cart_time.svg'
 import Badge from '../components/Badge'
 import SOButton from './SOButton'
@@ -134,7 +134,11 @@ export default function Ticket() {
             <div className="flex items-center justify-between border-b border-line pb-3">
               <div className="flex items-center gap-2">
                 <h2 className="type-h3 text-ink-900">{order.orderTitle}</h2>
-                {order.badgeText && <Badge text={order.badgeText} col={order.badgeCol} />}
+                {order.badgeText && (
+                  <div className="flex scale-70">
+                    <Badge text={order.badgeText} col={order.badgeCol} />
+                  </div>
+                )}
               </div>
               <span className="type-caption text-ink-600">{order.submitTime} 送出</span>
             </div>
@@ -146,7 +150,7 @@ export default function Ticket() {
 
                   <div className="flex gap-2 py-3">
                     <img
-                      src={item.iconType === 'check' ? ic_cart_time : ic_toast_check}
+                      src={item.iconType === 'check' ? ic_cart_time : time}
                       alt={item.statusText}
                       className="mt-0.5 h-5 w-5 shrink-0"
                     />
@@ -155,7 +159,9 @@ export default function Ticket() {
                         <span className="type-h3 text-ink-900">
                           {item.name} × {item.quantity}
                         </span>
-                        <Badge text={item.statusText} col={item.statusCol} />
+                        <div className="flex scale-70">
+                          <Badge text={item.statusText} col={item.statusCol} />
+                        </div>
                       </div>
                       {item.specs && (
                         <span className="mt-1 type-body-sm text-ink-600">{item.specs}</span>
