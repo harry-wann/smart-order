@@ -12,19 +12,36 @@ import DashboardLayout from './layouts/admin/DashboardLayout'
 import TableOverview from './features/admin/table/TableOverview'
 // import ItemDetails from './components/ItemDetails'
 import KitchenOverview from './features/admin/kitchen/KitchenOverview'
+import CustomerLayout from './layouts/customer/CustomerLayout'
+import OrderIndex from './features/customer/order/OrderIndex'
 
 export default function App() {
   return (
     <Routes>
-      {/* <Route path="/customer" element={}>
+      {/* 顧客端 - 點餐 / 購物車 / 訂單 流程 頁面路徑 */}
+      <Route path="/order" element={<CustomerLayout />}>
+        <Route index element={<Navigate to="/order/index" replace />} />
+        <Route path="index" element={<OrderIndex />} />
+      </Route>
 
-      </Route> */}
+      {/* 顧客端 - 會員流程 頁面路徑  */}
+      <Route path="/member" element={<CustomerLayout />}>
+      </Route>
+
+      {/* 顧客端 - 預約 頁面路徑 */}
+      <Route path="/reserve" element={<CustomerLayout />}>
+      </Route>
+
+      {/* 店家端頁面路徑 */}
       <Route path="/admin" element={<DashboardLayout />}>
         <Route index element={<Navigate to="/admin/table_overview" replace />} />
         <Route path="table_overview" element={<TableOverview />} />
         <Route path="order" element={<OrderPage />} />
         <Route path="payment-processing" element={<PaymentProcessing />} />
       </Route>
+
+      
+      {/* Component demo 用 */}
       <Route path="/components" element={<Components />} />
       <Route path="/components/ds-02" element={<DS02 />} />
       <Route path="/components/ds-03" element={<DS03 />} />
