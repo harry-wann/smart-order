@@ -59,7 +59,7 @@ export default function InteractiveItemDetails() {
   const { images, product, optionGroups } = mockItemData
 
   const [selections, setSelections] = useState({
-    portion: ['p1'],
+    portion: [],
     addons: [],
   })
 
@@ -99,6 +99,13 @@ export default function InteractiveItemDetails() {
     })
     return product.basePrice + extraPrice
   }, [selections, optionGroups, product.basePrice])
+
+  // 尋找第一個尚未選擇的必選項群組
+  const missingRequiredGroup = useMemo(() => {
+    return optionGroups.find(
+      (group) => group.isRequired && (!selections[group.id] || selections[group.id].length === 0),
+    )
+  }, [optionGroups, selections])
 
   return (
     <div className="relative mx-auto min-h-screen max-w-md bg-paper pb-24 font-sans text-ink-900">
@@ -212,8 +219,17 @@ export default function InteractiveItemDetails() {
         )
       })}
 
-      <div className="fixed right-0 bottom-0 left-0 mx-auto flex max-w-md border-t border-line bg-paper p-4 pb-6">
-        <SOButton height="h-[52px]" type="button" text={`加入購物車 NT$ ${totalAmount}`} />
+      <div className="fixed right-0 bottom-0 left-0 mx-auto flex h-22.25 max-w-md border-t border-line bg-paper p-4 pb-6">
+        <SOButton
+          height="h-[52px]"
+          type="button"
+          text={
+            missingRequiredGroup
+              ? `請選擇${missingRequiredGroup.title}`
+              : ['加入購物車', `NT$ ${totalAmount}`]
+          }
+          disabled={!!missingRequiredGroup}
+        />
       </div>
     </div>
   )
