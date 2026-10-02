@@ -426,7 +426,7 @@ function TableOverview() {
 
                 <div className="flex-1" />
 
-                                  <div className="w-28">
+                                  <div className="w-36">
                     <SOButton
                       text="去候位管理"
                       variant="secondary"
