@@ -1,0 +1,61 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+    paths:
+      - 'backend/**'
+
+  workflow_dispatch:
+
+concurrency:
+  group: backend-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, Windows, X64]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+
+      - name: Build Backend
+        shell: powershell
+        working-directory: ./backend
+        run: |
+          .\mvnw.cmd clean package -DskipTests
+
+      - name: Deploy Backend
+        shell: powershell
+        run: |
+          $targetDir = "$env:GITHUB_WORKSPACE\backend\target"
+
+          $jar = Get-ChildItem "$targetDir\*.jar" |
+            Where-Object { $_.Name -notlike "*.original" } |
+            Select-Object -First 1
+
+          if (-not $jar) {
+            throw "找不到 build 完成的 jar"
+          }
+
+          Write-Host "Build JAR: $($jar.FullName)"
+
+          Stop-Service SpringBootServer
+
+          Copy-Item `
+            $jar.FullName `
+            "D:\springboot\app.jar" `
+            -Force
+
+          Start-Service SpringBootServer
