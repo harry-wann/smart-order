@@ -6,8 +6,10 @@ import SOButton from '@/components/SOButton'
 import CartIcon from '@/assets/ic_order_shopping_cart.svg'
 import RightIcon from '@/assets/ic_menu_right.svg'
 import Bell from '@/assets/ic_menu_bell.svg'
+
 export default function Menu() {
   const category = ['推薦', '鍋底', '肉品', '海鮮', '蔬菜', '火鍋料', '麵食']
+
   const items = [
     {
       id: '01',
@@ -42,10 +44,11 @@ export default function Menu() {
   ]
 
   const checkIsSoldOut = (item) => {
-    return !item.quantity || item.quantity <= 0
+    return Number(item.quantity || 0) <= 0
   }
+
   const checkIsPopular = (item) => {
-    return item.sell || item.sell > 15
+    return Number(item.sell || 0) > 15
   }
 
   return (
@@ -56,7 +59,7 @@ export default function Menu() {
           <div className="text-xs text-ink-600">2 大 1 小 18:32 入座</div>
         </div>
         <button type="button" className="-mr-2 cursor-pointer p-2 text-gray-600">
-          <img src={Bell} alt="服務鈴"></img>
+          <img src={Bell} alt="服務鈴" />
         </button>
       </header>
 
@@ -71,17 +74,15 @@ export default function Menu() {
       </div>
 
       <div className="border-b border-line bg-surface">
-        {category.length > 5 && (
-          <div className="no-scrollbar flex overflow-x-auto border-b border-line px-4 pt-2">
-            <MenuCategoryTabs category={category} />
-          </div>
-        )}
+        <div className="no-scrollbar flex overflow-x-auto border-b border-line px-4 pt-2">
+          <MenuCategoryTabs category={category} />
+        </div>
       </div>
 
       <main className="p-4">
         <div className="flex flex-col gap-4">
           {items.map((item) => (
-            <button key={item.id} className="cursor-pointer">
+            <button key={item.id} className="cursor-pointer text-left">
               <MenuItemRow
                 img={item.img_url}
                 title={item.title}
@@ -95,8 +96,9 @@ export default function Menu() {
         </div>
       </main>
 
-      <div className="fixed bottom-0 left-0 w-full border-t border-line bg-surface px-4 py-4">
+      <div className="fixed bottom-0 left-0 h-23.25 w-full border-t border-line bg-surface px-4 py-4">
         <SOButton
+          height="h-[56px]"
           content={[
             <div key="cart-info" className="flex items-center gap-2">
               <img src={CartIcon} alt="Cart" className="h-6 w-6" />
