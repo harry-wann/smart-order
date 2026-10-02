@@ -15,8 +15,9 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format": "prettier --write . && npm run format:js && npm run format:js",
+    "format:js": "oxlint -c oxlint.format.config.ts --fix --quiet",
+    "format:check": "prettier --check . && oxlint -c oxlint.format.config.ts --deny-warnings",
     "pretypecheck": "npm run generate:icons",
     "typecheck": "tsc --noEmit"
   },
@@ -29,9 +30,11 @@
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
+    "@stylistic/eslint-plugin": "^5.10.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
+    "eslint-plugin-better-tailwindcss": "^4.7.0",
     "oxlint": "^1.81.0",
     "prettier": "^3.9.8",
     "prettier-plugin-tailwindcss": "^0.8.1",

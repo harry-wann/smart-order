@@ -6,23 +6,58 @@ import DS04 from './features/components-demo/DS04'
 import DS05 from './features/components-demo/DS05'
 import DS06 from './features/components-demo/DS06'
 import DS07 from './features/components-demo/DS07'
+import OrderSubmitted from './features/ProductDetail/ordersubmitted'
 import { ToastManager } from './components/toast/ToastManager'
 import DashboardLayout from './layouts/admin/DashboardLayout'
 import TableOverview from './features/admin/table/TableOverview'
 import ItemDetails from './components/ItemDetails'
 import SeatManagement from './features/admin/table/SeatManagement'
 
+import KitchenOverview from './features/admin/kitchen/KitchenOverview'
+import CustomerLayout from './layouts/customer/CustomerLayout'
+import OrderIndex from './features/customer/order/OrderIndex'
+import OrderPage from './features/order-checkbill/OrderPage'
+import PaymentProcessing from './features/order-checkbill/PaymentProcessing'
+import MenuOptions from './features/admin/menuOptions/MenuOptions'
+import AdminMenu from './features/admin/adminMenu/AdminMenu'
+
+import Menu from './features/customer/order/Menu'
+
 export default function App() {
   return (
     <Routes>
-      {/* <Route path="/customer" element={}>
+      {/* 顧客端 - 點餐 / 購物車 / 訂單 流程 頁面路徑 */}
+      <Route path="/order" element={<CustomerLayout />}>
+        <Route index element={<Navigate to="/order/index" replace />} />
+        <Route path="index" element={<OrderIndex />} />
+      </Route>
 
-      </Route> */}
+      {/* 顧客端 - 會員流程 頁面路徑  */}
+      <Route path="/member" element={<CustomerLayout />}>
+      </Route>
+
+      {/* 顧客端 - 預約 頁面路徑 */}
+      <Route path="/reserve" element={<CustomerLayout />}>
+      </Route>
+
+      {/* 店家端頁面路徑 */}
       <Route path="/admin" element={<DashboardLayout />}>
         <Route index element={<Navigate to="/admin/table_overview" replace />} />
         <Route path="table_overview" element={<TableOverview />} />
         <Route path="seats" element={<SeatManagement />} />
+        <Route path="kitchen" element={<KitchenOverview />} />
+        <Route path="order" element={<OrderPage />} />
+        <Route path="payment-processing" element={<PaymentProcessing />} />
+        <Route path="options" element={<MenuOptions />} />
+        
+
+
+        
+        <Route path="menu" element={<AdminMenu />} />
       </Route>
+
+      
+      {/* Component demo 用 */}
       <Route path="/components" element={<Components />} />
       <Route path="/components/ds-02" element={<DS02 />} />
       <Route path="/components/ds-03" element={<DS03 />} />
@@ -36,8 +71,10 @@ export default function App() {
           </ToastManager>
         }
       />
-      <Route path="/components/ItemDetails" element={<ItemDetails />} />
+
+      <Route path="/components/Menu" element={<Menu />} />
       <Route path="/components/ds-07" element={<DS07 />} />
+      <Route path="/order-submitted" element={<OrderSubmitted />} />
     </Routes>
   )
 }
