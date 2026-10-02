@@ -6,6 +6,7 @@ import AssociatedProducts from '../../../components/MenuOptions/AssociatedProduc
 import GroupNameModal from '../../../components/MenuOptions/GroupNameModal';
 import EditItemModal from '../../../components/MenuOptions/EditItemModal';
 import SOButton from '@/components/SOButton';
+import Badge from '@/components/Badge';
 
 const INITIAL_OPTION_GROUPS = [
   {
@@ -103,13 +104,15 @@ export default function MenuOptions() {
 
   return (<><TopBar
         childrenLeft={
-         <></>
+          <div className='flex scale-70'>
+            <Badge text="5 個群組" col="plain" />
+          </div>
         }
         childrenRight={
           <SOButton height="h-[44px]"text="新增群組" />
         }
       />
-    <div className="flex h-screen bg-paper p-[var(--spacing-page)] gap-[var(--spacing-field)] text-ink-900 font-sans relative">
+    <div className="flex h-screen bg-paper p-(--spacing-page) gap-(--spacing-field) text-ink-900 font-sans relative">
       
       
       <OptionGroupSidebar 
@@ -118,7 +121,7 @@ export default function MenuOptions() {
         onSelectGroup={setSelectedGroupId} 
       />
 
-      <div className="flex-1 flex flex-col gap-[var(--spacing-field)]">
+      <div className="flex-1 flex flex-col gap-(--spacing-field)">
         <OptionGroupDetail 
           currentGroup={currentGroup}
           onOpenGroupNameModal={handleOpenGroupNameModal}
