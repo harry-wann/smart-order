@@ -15,6 +15,12 @@ import KitchenOverview from './features/admin/kitchen/KitchenOverview'
 import CustomerLayout from './layouts/customer/CustomerLayout'
 import OrderIndex from './features/customer/order/OrderIndex'
 import TableOpen from './features/admin/table/TableOpen'
+import OrderPage from './features/order-checkbill/OrderPage'
+import PaymentProcessing from './features/order-checkbill/PaymentProcessing'
+import MenuOptions from './features/admin/menuOptions/MenuOptions'
+import AdminMenu from './features/admin/adminMenu/AdminMenu'
+
+import Menu from './features/customer/order/Menu'
 
 function App() {
   return (
@@ -37,9 +43,16 @@ function App() {
       <Route path="/admin" element={<DashboardLayout />}>
         <Route index element={<Navigate to="/admin/table_overview" replace />} />
         <Route path="table_overview" element={<TableOverview />} />
+        <Route path="kitchen" element={<KitchenOverview />} />
         <Route path="order" element={<OrderPage />} />
         <Route path="payment-processing" element={<PaymentProcessing />} />
         <Route path="table_overview/:tableNo/open" element={<TableOpen />} />
+        <Route path="options" element={<MenuOptions />} />
+        
+
+
+        
+        <Route path="menu" element={<AdminMenu />} />
       </Route>
 
       
@@ -57,6 +70,8 @@ function App() {
           </ToastManager>
         }
       />
+
+      <Route path="/components/Menu" element={<Menu />} />
       <Route path="/components/ds-07" element={<DS07 />} />
       <Route path="/order-submitted" element={<OrderSubmitted />} />
     </Routes>
