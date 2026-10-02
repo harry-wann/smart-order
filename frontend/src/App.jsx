@@ -6,12 +6,12 @@ import DS04 from './features/components-demo/DS04'
 import DS05 from './features/components-demo/DS05'
 import DS06 from './features/components-demo/DS06'
 import DS07 from './features/components-demo/DS07'
-import OrderPage from './features/order-checkbill/OrderPage'
-import PaymentProcessing from './features/order-checkbill/PaymentProcessing'
+import OrderSubmitted from './features/ProductDetail/ordersubmitted'
 import { ToastManager } from './components/toast/ToastManager'
 import DashboardLayout from './layouts/admin/DashboardLayout'
 import TableOverview from './features/admin/table/TableOverview'
-import ItemDetails from './components/ItemDetails'
+// import ItemDetails from './components/ItemDetails'
+import KitchenOverview from './features/admin/kitchen/KitchenOverview'
 
 export default function App() {
   return (
@@ -38,8 +38,8 @@ export default function App() {
           </ToastManager>
         }
       />
-      <Route path="/components/ItemDetails" element={<ItemDetails />} />
-      <Route path="/components/ds-07" element={<DS07 />} />ㄗ
+      <Route path="/components/ds-07" element={<DS07 />} />
+      <Route path="/order-submitted" element={<OrderSubmitted />} />
     </Routes>
   )
 }
