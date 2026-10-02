@@ -6,15 +6,14 @@ import DS04 from './features/components-demo/DS04'
 import DS05 from './features/components-demo/DS05'
 import DS06 from './features/components-demo/DS06'
 import DS07 from './features/components-demo/DS07'
-import OrderCart from './features/customer/ProductDetail/ordercart'
+import OrderPage from './features/order-checkbill/OrderPage'
+import PaymentProcessing from './features/order-checkbill/PaymentProcessing'
 import { ToastManager } from './components/toast/ToastManager'
 import DashboardLayout from './layouts/admin/DashboardLayout'
 import TableOverview from './features/admin/table/TableOverview'
 import ItemDetails from './components/ItemDetails'
-import KitchenOverview from './features/admin/kitchen/KitchenOverview'
 
 export default function App() {
-  const tableNumber = 'BBB'
   return (
     <Routes>
       {/* <Route path="/customer" element={}>
@@ -23,7 +22,8 @@ export default function App() {
       <Route path="/admin" element={<DashboardLayout />}>
         <Route index element={<Navigate to="/admin/table_overview" replace />} />
         <Route path="table_overview" element={<TableOverview />} />
-        <Route path="kitchen" element={<KitchenOverview />} />
+        <Route path="order" element={<OrderPage />} />
+        <Route path="payment-processing" element={<PaymentProcessing />} />
       </Route>
       <Route path="/components" element={<Components />} />
       <Route path="/components/ds-02" element={<DS02 />} />
@@ -38,8 +38,8 @@ export default function App() {
           </ToastManager>
         }
       />
-      <Route path="/components/ds-07" element={<DS07 />} />
-      <Route path="/product-detail" element={<OrderCart tableNumber={tableNumber} />} />
+      <Route path="/components/ItemDetails" element={<ItemDetails />} />
+      <Route path="/components/ds-07" element={<DS07 />} />ㄗ
     </Routes>
   )
 }
