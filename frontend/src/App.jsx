@@ -14,6 +14,16 @@ import TableOverview from './features/admin/table/TableOverview'
 import KitchenOverview from './features/admin/kitchen/KitchenOverview'
 import CustomerLayout from './layouts/customer/CustomerLayout'
 import OrderIndex from './features/customer/order/OrderIndex'
+import Entrance from './features/customer/order/entrance'
+import { MemberLogin } from './features/customer/member/MemberLogin'
+import Opt from './features/customer/member/opt'
+import {Reservation} from './features/customer/reserve/reservation'
+import {MemberCenter} from './features/customer/member/MemberCenter'
+import {Guest} from './features/customer/reserve/guest'
+import callMenu from './features/customer/order/callmenu'
+import { Movein } from './features/customer/order/Movein'
+import { Login } from './features/admin/Login'
+
 
 export default function App() {
   return (
@@ -21,8 +31,15 @@ export default function App() {
       {/* 顧客端 - 點餐 / 購物車 / 訂單 流程 頁面路徑 */}
       <Route path="/order" element={<CustomerLayout />}>
         <Route index element={<Navigate to="/order/index" replace />} />
-        <Route path="index" element={<OrderIndex />} />
+        <Route path="index" element={<MemberLogin />} />
+        <Route path="opt" element={<Opt />} />
+        <Route path="reserve" element={<Reservation />} />
+        <Route path="membercenter" element={<MemberCenter />} />
+        <Route path="guest" element={<Guest />} />
       </Route>
+      <Route path="/entrance" element={<Entrance />}></Route>
+      <Route path="/callmenu" element={<callMenu />} />
+      <Route path="/movein" element={<Movein />} />
 
       {/* 顧客端 - 會員流程 頁面路徑  */}
       <Route path="/member" element={<CustomerLayout />}>
@@ -36,9 +53,10 @@ export default function App() {
       <Route path="/admin" element={<DashboardLayout />}>
         <Route index element={<Navigate to="/admin/table_overview" replace />} />
         <Route path="table_overview" element={<TableOverview />} />
-        <Route path="order" element={<OrderPage />} />
-        <Route path="payment-processing" element={<PaymentProcessing />} />
+        {/* <Route path="order" element={<OrderPage />} />
+        <Route path="payment-processing" element={<PaymentProcessing />} /> */}
       </Route>
+      <Route path="/login" element={<Login />} />
 
       
       {/* Component demo 用 */}
