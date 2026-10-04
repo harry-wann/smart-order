@@ -1,9 +1,7 @@
 import { useState } from 'react'
 import CustomerTopBar from '@/components/CustomerTopBar'
 import Counter from '../../../components/steper/counter'
-import graytrash from '../../../assets/ic_ordercart_graytrash.svg'
-import person from '../../../assets/ic_ordercart_person.svg'
-import people from '../../../assets/ic_ordercart_people.svg'
+import { SvgIconMap } from '@/assets/SvgIconMap'
 import SOButton from '../../../components/SOButton'
 
 // 原檔名 ordercart.jsx
@@ -83,7 +81,7 @@ export default function OrderCart({ tableNumber }) {
       <div className="flex h-9.75 items-center gap-2 bg-info-bg px-4">
         {/* 人物 icon */}
         <span className="type-caption text-info-ink">
-          <img src={people} />
+          <SvgIconMap.OrdercartPeople />
         </span>
 
         <p className="type-caption text-info-ink">這是整桌共用的購物車，同桌誰都可以改</p>
@@ -114,7 +112,7 @@ export default function OrderCart({ tableNumber }) {
 
                     {/* 加入商品的人 */}
                     <div className="mt-1 flex items-center gap-1">
-                      <img src={person} />
+                      <SvgIconMap.OrdercartPerson />
                       <p className="type-caption text-ink-400">{item.people}</p>
                     </div>
                   </div>
@@ -142,7 +140,7 @@ export default function OrderCart({ tableNumber }) {
                     className="flex h-8 w-8 items-center justify-center"
                     aria-label={` ${item.name}`}
                   >
-                    <img src={graytrash} />
+                    <SvgIconMap.OrdercartGraytrash />
                   </button>
 
                   {/* 數量 */}

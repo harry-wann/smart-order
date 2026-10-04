@@ -1,4 +1,4 @@
-import blackpeople from '../../../assets/ic_Checkout_blackpeople.svg'
+import { SvgIconMap } from '@/assets/SvgIconMap'
 import SOButton from '../../../components/SOButton'
 
 // 原路徑 src/features/order-checkbill
@@ -42,7 +42,7 @@ export default function Checkout({ onCreditCard, onCash }) {
       <div className="mt-4 flex h-9 items-center justify-between rounded-btn bg-surface-2 px-3">
         <div className="flex items-center gap-2 type-body-sm text-ink-600">
           <span>
-            <img src={blackpeople} />
+            <SvgIconMap.CheckoutBlackpeople />
           </span>
           <span>2 大 1 小</span>
         </div>

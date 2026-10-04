@@ -8,9 +8,7 @@ import CardLink from '../../../components/Card/CardLink'
 import Verify from '../../../components/input/verify'
 import Badge from '../../../components/Badge'
 
-import mem from '../../../assets/ic_order_member.svg'
-import check from '../../../assets/icons/ic_infobox_check.svg'
-import click from '../../../assets/ic_cart_time.svg'
+import { SvgIconMap } from '@/assets/SvgIconMap'
 
 // 原檔名 reservation.jsx
 
@@ -22,7 +20,7 @@ export function Reservation() {
         [
           'other',
           <div className="flex">
-            <img src={mem} />
+            <SvgIconMap.OrderMember />
             <h2 className="type-h2">用會員訂</h2>
           </div>,
         ],
@@ -35,13 +33,7 @@ export function Reservation() {
         [
           'other',
           <div className="flex">
-            <span
-              className="inline-block h-5 w-5 shrink-0 bg-brand-600 mask-contain mask-center mask-no-repeat"
-              style={{
-                maskImage: `url("${check}")`,
-                WebkitMaskImage: `url("${check}")`,
-              }}
-            />
+            <SvgIconMap.InfoboxCheck aria-hidden="true" className="svg-icon h-5 w-5 shrink-0 text-brand-600" />
             <h2 className="type-body-sm">姓名電話自動帶入，不用每次重填</h2>
           </div>,
         ],
@@ -53,13 +45,7 @@ export function Reservation() {
         [
           'other',
           <div className="flex">
-            <span
-              className="inline-block h-5 w-5 shrink-0 bg-brand-600 mask-contain mask-center mask-no-repeat"
-              style={{
-                maskImage: `url("${check}")`,
-                WebkitMaskImage: `url("${check}")`,
-              }}
-            />
+            <SvgIconMap.InfoboxCheck aria-hidden="true" className="svg-icon h-5 w-5 shrink-0 text-brand-600" />
             <h2 className="type-body-sm">換手機也找得到，隨時查看或取消</h2>
           </div>,
         ],
@@ -71,13 +57,7 @@ export function Reservation() {
         [
           'other',
           <div className="flex">
-            <span
-              className="inline-block h-5 w-5 shrink-0 bg-brand-600 mask-contain mask-center mask-no-repeat"
-              style={{
-                maskImage: `url("${check}")`,
-                WebkitMaskImage: `url("${check}")`,
-              }}
-            />
+            <SvgIconMap.InfoboxCheck aria-hidden="true" className="svg-icon h-5 w-5 shrink-0 text-brand-600" />
             <h2 className="type-body-sm">所有訂位在「我的預約」一次看完</h2>
           </div>,
         ],
@@ -106,7 +86,7 @@ export function Reservation() {
         [
           'other',
           <div className="flex">
-            <img src={click} />
+            <SvgIconMap.CartTime />
             <h2 className="type-h2">用會員訂</h2>
           </div>,
         ],

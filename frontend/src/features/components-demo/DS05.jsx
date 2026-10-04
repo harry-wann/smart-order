@@ -2,6 +2,7 @@ import DemoPage from "./DemoPage";
 import Badge from "../../components/Badge";
 import CardMap from "../../components/Card/CardMap";
 import check from "../../assets/icons/ic_infobox_check.svg";
+import { SvgIconMap } from "@/assets/SvgIconMap";
 import InfoBox from "../../components/InfoBox";
 import ProductImgMap from "../../components/ProductImg/ProductImgMap";
 
@@ -19,7 +20,7 @@ export default function DS05() {
         },
         {
           justify: "center",
-          tags: [["img", check]],
+          tags: [["other", <SvgIconMap.InfoboxCheck aria-hidden="true" />]],
         },
         {
           justify: "end",

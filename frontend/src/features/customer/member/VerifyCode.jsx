@@ -5,9 +5,7 @@ import SOFormInput, { SOFormInputType } from '../../../components/input/SOFormIn
 import SOButton from '../../../components/SOButton'
 import InfoBox from '../../../components/InfoBox'
 import CardMap from '../../../components/Card/CardMap'
-import check from '../../../assets/icons/ic_infobox_check.svg'
-import circle from '../../../assets/icons/ic_infobox_circle.svg'
-import phone from '../../../assets/ic_opt_phone.svg'
+import { SvgIconMap } from '@/assets/SvgIconMap'
 import Verify from '../../../components/input/verify'
 
 // 原檔名 opt.jsx
@@ -51,7 +49,7 @@ export default function VerifyCode() {
         </div>
         
         <div className='pt-section'>
-          <InfoBox outicon={phone} col="info" text="F" custimtext={
+          <InfoBox outicon={SvgIconMap.OptPhone} col="info" text="F" custimtext={
             <div>
               <p className='font-semibold'>教學專題・模擬簡訊</p>
               不串接真實簡訊閘道。驗證碼是{Data.VERIFY}，

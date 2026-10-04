@@ -5,18 +5,10 @@ import SOFormInput, { SOFormInputType } from '../../../components/input/SOFormIn
 import SOButton from '../../../components/SOButton'
 import InfoBox from '../../../components/InfoBox'
 import CardMap from '../../../components/Card/CardMap'
-import check from '../../../assets/ic_card_check.svg'
-import circle from '../../../assets/icons/ic_infobox_circle.svg'
+import { SvgIconMap } from '@/assets/SvgIconMap'
 
-const iconSvg=(iconSrc)=>{
-  return <span
-  className="inline-block mx-3 w-5 h-5 shrink-0 bg-brand-600
-             mask-no-repeat mask-center mask-contain"
-  style={{
-    maskImage: `url("${iconSrc}")`,
-    WebkitMaskImage: `url("${iconSrc}")`,
-  }}
-/>
+const iconSvg=(Icon)=>{
+  return <Icon aria-hidden="true" className="svg-icon mx-3 w-5 h-5 shrink-0 text-brand-600" />
 }
 
 
@@ -34,13 +26,13 @@ export function MemberLogin() {
         },
         {
           justify: "start",
-          tags: [["other",iconSvg(check) ],
+          tags: [["other",iconSvg(SvgIconMap.CardCheck) ],
         ["p", "訂位不用每次重填姓名電話"]],
         },
         {
           justify: "start",
           tags: [
-            ["other", iconSvg(check)],
+            ["other", iconSvg(SvgIconMap.CardCheck)],
             ["p", "換一支手機也查得到「我的預約」"],
           ],
         },

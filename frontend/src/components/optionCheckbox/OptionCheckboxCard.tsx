@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react'
+import { SvgIconMap } from '@/assets/SvgIconMap'
 
 export type OptionCheckboxCardProps = {
   name: string /** 同一組中的 checkbox 共用此 name。 */
@@ -50,7 +50,7 @@ const OptionCheckboxCard = ({
                 selected ? 'border-brand-600 bg-brand-600 text-surface' : 'border-line bg-surface'
               }`}
             >
-              {selected && <Check className="h-5 w-5" strokeWidth={3} />}
+              {selected && <SvgIconMap.CheckboxCheck />}
             </span>
 
             <span className="type-h3">{title}</span>

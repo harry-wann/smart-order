@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import SOButton from '@/components/SOButton'
 import TopBar from '@/components/dashboard/TopBar'
-import bellIcon from '@/assets/ic_OrderHeader_bell.svg'
-import infoIcon from '@/assets/ic_toast_info.svg'
+import { SvgIconMap } from '@/assets/SvgIconMap'
 import WaitlistSeatDialog from './WaitlistSeatDialog'
 
 // 叫號後幾分鐘沒報到會被排程標成過號（規格寫 10 分鐘）
@@ -202,7 +201,7 @@ function WaitlistManagement() {
               aria-label="通知"
               className="relative flex size-11 flex-none items-center justify-center rounded-full hover:bg-surface-2"
             >
-              <img src={bellIcon} alt="" className="size-5" />
+              <SvgIconMap.OrderHeaderBell aria-hidden="true" className="size-5" />
               <span className="absolute top-2 right-2 size-2 rounded-full bg-danger ring-2 ring-surface" />
             </button>
           </>
@@ -269,7 +268,7 @@ function WaitlistManagement() {
           </section>
 
           <div className="flex gap-2 rounded-btn bg-surface-2 px-4 py-3 text-sm leading-relaxed text-ink-600">
-            <img src={infoIcon} alt="" className="mt-0.5 size-4 flex-none" />
+            <SvgIconMap.ToastInfo aria-hidden="true" className="mt-0.5 size-4 flex-none" />
             <p>
               叫號後 {CALL_EXPIRE_MINUTES} 分鐘沒報到，排程自動標成過號。
               <br />

@@ -1,7 +1,6 @@
 import React from 'react';
 import SOButton from '@/components/SOButton'
-import edit from '@/assets/ic_options_edit.svg'
-import plus from '@/assets/ic_counter_plus.svg'
+import { SvgIconMap } from '@/assets/SvgIconMap'
 
 export default function OptionGroupDetail({ currentGroup, onOpenGroupNameModal, onOpenItemModal }) {
   return (
@@ -17,7 +16,7 @@ export default function OptionGroupDetail({ currentGroup, onOpenGroupNameModal, 
           onClick={onOpenGroupNameModal}
           className="flex items-center gap-1 type-body-sm text-ink-600 hover:text-ink-900 border border-line px-3.5 py-1.5 rounded-[var(--radius-btn)] transition-colors hover:bg-surface-2"
         >
-          <img src={edit}></img>
+          <SvgIconMap.OptionsEdit />
           改名
         </button>
       </div>
@@ -49,7 +48,7 @@ export default function OptionGroupDetail({ currentGroup, onOpenGroupNameModal, 
               variant="secondary" 
               content={[
                 <div key="add-btn" className="flex items-center gap-1.5">
-                  <img src={plus} alt="新增選項" />           
+                  <SvgIconMap.CounterPlus role="img" aria-label="新增選項" />           
                   <span>新增選項</span>
                 </div>
               ]}
@@ -88,7 +87,7 @@ export default function OptionGroupDetail({ currentGroup, onOpenGroupNameModal, 
                     onClick={() => onOpenItemModal(item)}
                     className="p-1.5 text-ink-400 hover:text-ink-900 rounded-[var(--radius-btn)] hover:bg-surface-2 transition-colors"
                   >
-<img src={edit}></img>                  </button>
+<SvgIconMap.OptionsEdit />                  </button>
                 </td>
               </tr>
             ))}

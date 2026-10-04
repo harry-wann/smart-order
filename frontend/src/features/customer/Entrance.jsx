@@ -1,9 +1,6 @@
 import React from "react";
 import {useNavigate} from "react-router";
-import order from "../../assets/ic_order_entrance.svg";
-import entranceIc from "../../assets/ic_order_check.svg";
-import mem from "../../assets/ic_order_member.svg";
-import qrcode from "../../assets/ic_order_qrcode.svg";
+import { SvgIconMap } from "@/assets/SvgIconMap";
 import CardLink from "../../components/Card/CardLink";
 import InfoBox from "../../components/InfoBox";
 
@@ -14,20 +11,20 @@ import InfoBox from "../../components/InfoBox";
 export default function Entrance() {
   const navigate=useNavigate();
   const card = {
-    icon: order,
+    icon: SvgIconMap.OrderEntrance,
     textH2: "線上訂位",
     textP: "先訂位，到店不用排",
     onclick:()=>navigate("/reserve")
   }
 
   const ent = {
-    icon: entranceIc,
+    icon: SvgIconMap.OrderCheck,
     textH2: "我的預約",
     textP: "查看或取消訂位",
     onclick:()=>navigate("/member")
   }
   const member = {
-    icon: mem,
+    icon: SvgIconMap.OrderMember,
     textH2: "會員登入",
     textP: "訂位免填資料、查我的預約",
     onclick:()=>navigate("/member")
@@ -50,7 +47,7 @@ export default function Entrance() {
         <CardLink data={member} />
       </div>
       <div onClick={()=>navigate("/reserve/guest")} className="px-4">
-        <InfoBox outicon={qrcode} col="quiet" text="F" custimtext={
+        <InfoBox outicon={SvgIconMap.OrderQrcode} col="quiet" text="F" custimtext={
             <>
               <p>
                 <span className="font-semibold">已經坐在店裡了？</span>

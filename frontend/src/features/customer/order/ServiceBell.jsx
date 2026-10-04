@@ -1,8 +1,6 @@
 import React from "react";
 import CardLink from "../../../components/Card/CardLink";
-import service from "../../../assets/ic_callmenu_service.svg"
-import soup from "../../../assets/ic_callmenu_soup.svg"
-import change from "../../../assets/ic_callmenu_change.svg"
+import { SvgIconMap } from "@/assets/SvgIconMap"
 
 // 原檔名 callmenu.jsx
 // 原 component 名 CallMenu
@@ -11,20 +9,20 @@ const ServiceBell = ({ open, onclick }) => {
   if (!open) return null;
 
   const card = {
-    icon: service,
+    icon: SvgIconMap.CallmenuService,
     textH2: "呼叫服務生",
     textP: "有事情要問",
     onclick:()=>navigate("/order/index")
   }
 
   const ent = {
-    icon: soup,
+    icon: SvgIconMap.CallmenuSoup,
     textH2: "加湯",
     textP: "湯底煮到剩一半了",
     onclick:()=>navigate("/member")
   }
   const member = {
-    icon: change,
+    icon: SvgIconMap.CallmenuChange,
     textH2: "換鍋撈渣",
     textP: "湯變濁了想換一鍋",
     onclick:()=>navigate("/member")

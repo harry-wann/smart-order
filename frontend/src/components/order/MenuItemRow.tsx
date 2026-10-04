@@ -1,4 +1,4 @@
-import soldOutImg from '@/assets/ic_sold_out_stamp.svg'; 
+import { SvgIconMap } from '@/assets/SvgIconMap';
 
 interface MenuItemRowProps {
   img?: string | null,
@@ -50,7 +50,7 @@ function Img({ src, isSoldOut }: { src: string, isSoldOut: boolean }) {
       className={`rounded-card object-cover ${isSoldOut ? 'grayscale opacity-55' : ''}`}
       src={src}
     />
-    { isSoldOut && <img className="absolute inset-0 m-auto" src={soldOutImg} /> }
+    { isSoldOut && <SvgIconMap.SoldOutStamp className="absolute inset-0 m-auto" /> }
   </div> 
 }
 

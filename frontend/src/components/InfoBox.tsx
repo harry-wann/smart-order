@@ -1,7 +1,5 @@
 import React from "react";
-import check from "../assets/icons/ic_infobox_check.svg";
-import circle from "../assets/icons/ic_infobox_circle.svg";
-import triangle from "../assets/icons/ic_infoxbox_triangle.svg";
+import { SvgIconMap, type SvgIconComponent } from "@/assets/SvgIconMap";
 
 type IconTypeProps = "check" | "circle" | "triangle";
 
@@ -23,7 +21,7 @@ type verificationTimeProps = {
 
 type InfoBoxProps = {
   icon?: IconTypeProps;
-  outicon?:String;
+  outicon?: SvgIconComponent;
   col?: InfoColorProps;
   text?: TextTypeProps;
   verify?: string;
@@ -52,10 +50,10 @@ const InfoBox = ({
   custimtext = "",
   classname = "",
 }: InfoBoxProps) => {
-  const icons: Record<IconTypeProps, string> = {
-    check: check,
-    circle: circle,
-    triangle: triangle,
+  const icons: Record<IconTypeProps, SvgIconComponent> = {
+    check: SvgIconMap.InfoboxCheck,
+    circle: SvgIconMap.InfoboxCircle,
+    triangle: SvgIconMap.InfoxboxTriangle,
   };
 
   const cols: Record<InfoColorProps, string> = {
@@ -95,15 +93,7 @@ const InfoBox = ({
              text-left text-[14px] gap-[16px] rounded-[8px] p-page 
              ${cols[col]} ${classname}`}
       >
-        {Icon && (
-          <span
-            className=" inline-block w-5 h-5 shrink-0 bg-current mask-no-repeat mask-center mask-contain "
-            style={{
-              maskImage: `url("${Icon}")`,
-              WebkitMaskImage: `url("${Icon}")`,
-            }}
-          />
-        )}
+        {Icon && <Icon aria-hidden="true" className="svg-icon inline-block w-5 h-5 shrink-0" />}
         {a}
       </div>
       <br />

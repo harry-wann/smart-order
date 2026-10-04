@@ -1,8 +1,6 @@
 import React from 'react'
 import CustomerTopBar from '@/components/CustomerTopBar'
-import Bell from '../../../assets/ic_OrderHeader_bell.svg'
-import time from '@/assets/ic_ticket_time.svg'
-import ic_cart_time from '../../../assets/ic_cart_time.svg'
+import { SvgIconMap } from '@/assets/SvgIconMap'
 import Badge from '../../../components/Badge'
 import SOButton from '../../../components/SOButton'
 
@@ -97,7 +95,7 @@ export default function OrderHistory() {
       <div className="sticky top-0 z-10 shadow-sm">
         <CustomerTopBar title="本桌訂單" showBackButton={false}>
           <button className="flex h-11 w-11 items-center justify-center active:opacity-70">
-            <img src={Bell} alt="通知鈴鐺" className="h-6 w-6" />
+            <SvgIconMap.OrderHeaderBell role="img" aria-label="通知鈴鐺" className="h-6 w-6" />
           </button>
         </CustomerTopBar>
       </div>
@@ -155,11 +153,19 @@ export default function OrderHistory() {
                   {index > 0 && <div className="my-1 border-b border-line/60"></div>}
 
                   <div className="flex gap-2 py-3">
-                    <img
-                      src={item.iconType === 'check' ? ic_cart_time : time}
-                      alt={item.statusText}
-                      className="mt-0.5 h-5 w-5 shrink-0"
-                    />
+                    {item.iconType === 'check' ? (
+                      <SvgIconMap.CartTime
+                        role="img"
+                        aria-label={item.statusText}
+                        className="mt-0.5 h-5 w-5 shrink-0"
+                      />
+                    ) : (
+                      <SvgIconMap.TicketTime
+                        role="img"
+                        aria-label={item.statusText}
+                        className="mt-0.5 h-5 w-5 shrink-0"
+                      />
+                    )}
                     <div className="flex flex-1 flex-col">
                       <div className="flex items-start justify-between gap-2">
                         <span className="type-h3 text-ink-900">

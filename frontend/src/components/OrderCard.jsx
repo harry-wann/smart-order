@@ -1,6 +1,5 @@
 import '../features/admin/kds/kds.colors.css'
-import time from '../assets/ic_cart_time.svg'
-import check from '../assets/ic_card_check.svg'
+import { SvgIconMap } from '@/assets/SvgIconMap'
 import SOButton from './SOButton'
 import Badge from '../components/Badge'
 
@@ -47,7 +46,7 @@ export default function OrderCard({
           <div className="flex items-center justify-between text-(--kds-ink-2)">
             <p>第{sequenceNo}單</p>
             <p className="flex items-center gap-1">
-              <img src={time} alt="time icon" />
+              <SvgIconMap.CartTime role="img" aria-label="time icon" />
               <span>{waitingMinutes} 分</span>
             </p>
           </div>
@@ -70,9 +69,9 @@ export default function OrderCard({
                       onChange={() => onToggle(item.id)}
                     />
                     <div className="absolute inset-0 rounded-(--radius-check) border-2 border-(--kds-ink-3) bg-transparent transition-colors peer-checked:border-(--kds-boxok) peer-checked:bg-(--kds-boxok)"></div>
-                    <img
-                      src={check}
-                      alt="check"
+                    <SvgIconMap.CardCheck
+                      role="img"
+                      aria-label="check"
                       className="relative z-10 h-3.5 w-3.5 opacity-0 transition-opacity peer-checked:opacity-100"
                     />
                   </div>
@@ -91,7 +90,7 @@ export default function OrderCard({
           disabled={!isAllServed}
           content={[
             <div key="btn-content" className="flex items-center justify-center gap-2">
-              <img src={check} />
+              <SvgIconMap.CardCheck />
               <span>整單出完</span>
             </div>,
           ]}

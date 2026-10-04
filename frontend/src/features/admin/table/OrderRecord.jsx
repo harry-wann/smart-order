@@ -1,5 +1,4 @@
-import ok from '../../../assets/ic_OrderRecord_ok.svg'
-import wait from '../../../assets/ic_OrderRecord_wait.svg'
+import { SvgIconMap } from '@/assets/SvgIconMap'
 import SOButton from '../../../components/SOButton'
 
 // 原路徑 src/features/order-checkbill
@@ -98,7 +97,7 @@ function OrderCard({ order }) {
             <div>
               {/* icon + 商品名稱 */}
               <div className="flex items-center gap-2">
-                <img src={item.status === '已出餐' ? ok : wait} />
+                {item.status === '已出餐' ? <SvgIconMap.OrderRecordOk /> : <SvgIconMap.OrderRecordWait />}
 
                 <p className="type-body font-medium">
                   {item.name} × {item.quantity}

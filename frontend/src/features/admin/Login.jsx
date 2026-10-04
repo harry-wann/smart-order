@@ -2,8 +2,7 @@ import React, { useState } from "react";
 import Card from "../../components/Card/primary/Card";
 import SOFormInput,{ SOFormInputType }  from "../../components/input/SOFormInput";
 import SOButton from "../../components/SOButton";
-import accountic from "../../assets/ic_login_account.svg"
-import passwd from "../../assets/ic_login_password.svg"
+import { SvgIconMap } from "@/assets/SvgIconMap"
 
 
 
@@ -28,7 +27,7 @@ export const Login=()=>{
         ["other",
         <div className="w-[334px]">
           <SOFormInput
-            icon={accountic}
+            icon={SvgIconMap.LoginAccount}
             placeholder="請輸入帳號"
             onChange={(val) => setAccount(val)} 
             />
@@ -48,7 +47,7 @@ export const Login=()=>{
           <div className="w-[334px]">
             <SOFormInput
              type={SOFormInputType.PASSWORD}
-            icon={passwd}
+            icon={SvgIconMap.LoginPassword}
             placeholder="請輸入密碼"
             onChange={(val) => setPassword(val)} 
             />

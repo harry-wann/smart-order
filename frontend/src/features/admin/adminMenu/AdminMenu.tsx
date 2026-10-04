@@ -2,12 +2,11 @@ import React, { useState } from 'react';
 import ToggleSwitch from '../../../components/adminMenu/ToggleSwitch';
 import CategorySidebar from '../../../components/adminMenu/CategorySidebar';
 import type { Category } from '../../../components/adminMenu/CategorySidebar';
-import icPlus from '../../../assets/ic_adminMenu_plus.svg';
 import SOButton from '@/components/SOButton';
 import TopBar from '@/components/dashboard/TopBar';
 import Badge from '@/components/Badge';
 import SOFormInput, { SOFormInputType } from '@/components/input/SOFormInput';
-import SearchIcon from '@/assets/ic_menu_search.svg';
+import { SvgIconMap } from '@/assets/SvgIconMap';
 import ProductModal from '@/components/adminMenu/ProductModal';
 
 export interface BadgeItem {
@@ -188,7 +187,7 @@ export default function AdminMenu() {
           <div className="w-64">
             <SOFormInput
               type={SOFormInputType.NORMAL}
-              icon={SearchIcon as any}
+              icon={SvgIconMap.MenuSearch}
               defaultValue=""
               placeholder="搜尋菜色"
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
@@ -201,7 +200,7 @@ export default function AdminMenu() {
             content={[
               <div key="param-2" className="flex items-center gap-1">
                 <span>新增商品</span>
-                <img src={icPlus} alt="" />
+                <SvgIconMap.AdminMenuPlus aria-hidden="true" />
               </div>
             ]}
           />

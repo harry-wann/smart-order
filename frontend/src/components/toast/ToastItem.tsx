@@ -1,5 +1,4 @@
-import IcInfo from '@/assets/ic_toast_info.svg?react'
-import IcCheck from '@/assets/ic_toast_check.svg?react'
+import { SvgIconMap, type SvgIconComponent } from '@/assets/SvgIconMap'
 
 export enum ToastType {
   INFO = 'INFO',
@@ -8,13 +7,13 @@ export enum ToastType {
 }
 
 const TOAST_CONFIG = {
-  [ToastType.INFO]: { Icon: IcInfo, backgroundColor: 'bg-success' },
-  [ToastType.ERROR]: { Icon: IcCheck, backgroundColor: 'bg-danger' },
-  [ToastType.SYSTEM]: { Icon: IcInfo, backgroundColor: 'bg-ink-900' },
+  [ToastType.INFO]: { Icon: SvgIconMap.ToastInfo, backgroundColor: 'bg-success' },
+  [ToastType.ERROR]: { Icon: SvgIconMap.ToastCheck, backgroundColor: 'bg-danger' },
+  [ToastType.SYSTEM]: { Icon: SvgIconMap.ToastInfo, backgroundColor: 'bg-ink-900' },
 } satisfies Record<
   ToastType,
   {
-    Icon: React.ComponentType
+    Icon: SvgIconComponent
     backgroundColor: string
   }
 >

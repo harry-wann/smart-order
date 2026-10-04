@@ -1,6 +1,5 @@
 import DemoPage from './DemoPage'
 import MenuItemRow from '@/components/order/MenuItemRow'
-import SoldOutStamp from '@/assets/ic_sold_out_stamp.svg'
 import { useState } from 'react'
 import DropdownNotification from '@/components/DropdownNotification/DropdownNotification'
 import DropdownNotificationHost from '@/components/DropdownNotification/DropdownNofificationHost'

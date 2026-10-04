@@ -1,12 +1,9 @@
 import SOFormInput, { SOFormInputType } from '../../../components/input/SOFormInput'
 import MenuCategoryTabs from '../../../components/MenuCategoryTabs'
 import MenuItemRow from '../../../components/order/MenuItemRow'
-import SearchIcon from '@/assets/ic_menu_search.svg'
+import { SvgIconMap } from '@/assets/SvgIconMap'
 import CustomerTopBar from '@/components/CustomerTopBar'
 import SOButton from '@/components/SOButton'
-import CartIcon from '@/assets/ic_order_shopping_cart.svg'
-import RightIcon from '@/assets/ic_menu_right.svg'
-import Bell from '@/assets/ic_menu_bell.svg'
 
 export default function Menu() {
   const category = ['推薦', '鍋底', '肉品', '海鮮', '蔬菜', '火鍋料', '麵食']
@@ -56,14 +53,14 @@ export default function Menu() {
     <div className="relative min-h-screen w-full self-start bg-surface-2 pb-24">
       <CustomerTopBar title="A03 桌" subTitle="2 大 1 小 18:32 入座" showBackButton={false}>
         <button type="button" className="cursor-pointer text-gray-600">
-          <img src={Bell} alt="服務鈴" />
+          <SvgIconMap.MenuBell role="img" aria-label="服務鈴" />
         </button>
       </CustomerTopBar>
 
       <div className="px-4 py-3">
         <SOFormInput
           type={SOFormInputType.NORMAL}
-          icon={SearchIcon}
+          icon={SvgIconMap.MenuSearch}
           defaultValue=""
           placeholder="搜尋菜色"
           onChange={(e) => console.log(e.target.value)}
@@ -98,12 +95,12 @@ export default function Menu() {
           height="h-[56px]"
           content={[
             <div key="cart-info" className="flex items-center gap-2">
-              <img src={CartIcon} alt="Cart" className="h-6 w-6" />
+              <SvgIconMap.OrderShoppingCart role="img" aria-label="Cart" className="h-6 w-6" />
               <span className="text-lg font-medium">購物車 6 項</span>
             </div>,
             <div key="cart-price" className="flex items-center gap-2">
               <span className="text-lg font-medium">NT$ 1,420</span>
-              <img src={RightIcon} alt="Right" className="h-5 w-5" />
+              <SvgIconMap.MenuRight role="img" aria-label="Right" className="h-5 w-5" />
             </div>,
           ]}
         />

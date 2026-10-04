@@ -8,12 +8,7 @@ import CardLink from '../../../components/Card/CardLink'
 import Verify from '../../../components/input/verify'
 import Badge from '../../../components/Badge'
 
-import order from "../../../assets/ic_order_entrance.svg"
-import mem from "../../../assets/ic_order_member.svg"
-import circle from '../../../assets/icons/ic_infobox_circle.svg'
-import points from '../../../assets/ic_member_points.svg'
-import logs from '../../../assets/ic_member_log.svg'
-import headicon from '../../../assets/ic_member_righticon.svg'
+import { SvgIconMap } from '@/assets/SvgIconMap'
 
 // 原檔名 MemberCenter.jsx
 // 原 component 名 MemberCenter
@@ -61,26 +56,26 @@ export function Center() {
     ]
 
   const reserve = {
-    icon: order,
+    icon: SvgIconMap.OrderEntrance,
     textH2: "我的預約",
     textP: `${datareserve.date}（${datareserve.day}）${datareserve.time}・${datareserve.people}`,
     onclick:()=>navigate("/member")
   }
 
   const personal = {
-    icon: mem,
+    icon: SvgIconMap.OrderMember,
     textH2: "個人資料",
     textP: "暱稱、生日、手機號碼",
     onclick:()=>navigate("/member")
   }
   const consumption = {
-    icon: logs,
+    icon: SvgIconMap.MemberLog,
     textH2: "消費紀錄",
     textP: "每一次來吃了什麼、花了多少",
     onclick:()=>navigate("/member")
   }
   const point = {
-    icon: points,
+    icon: SvgIconMap.MemberPoints,
     textH2: "點數與優惠券",
     textP: "1,248 點・1 張券可用",
     onclick:()=>navigate("/member")
@@ -89,7 +84,7 @@ export function Center() {
     <div className="flex h-full w-full flex-col">
     <CustomerTopBar
       title="會員中心"
-      children={<img src={headicon} alt="head icon" /> }
+      children={<SvgIconMap.MemberRighticon role="img" aria-label="head icon" /> }
       showBackButton={true}
     />
      

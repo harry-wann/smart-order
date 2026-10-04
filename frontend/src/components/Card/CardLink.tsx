@@ -1,10 +1,10 @@
 import React from 'react'
 import Card, { type RowProps } from './primary/Card'
-import link from '../../assets/ic_card_link.svg'
+import { SvgIconMap, type SvgIconComponent } from '@/assets/SvgIconMap'
 
 type CardLinkProps = {
   data: {
-    icon: string
+    icon: SvgIconComponent
     textH2: string
     textP: string
     iconSrc: string
@@ -15,6 +15,7 @@ type CardLinkProps = {
 const CardLink = ({ 
   data
 }: CardLinkProps) => {
+  const Icon = data.icon
   const cardData: RowProps[] = [
     {
       justify: 'between',
@@ -22,7 +23,7 @@ const CardLink = ({
         [
           'other',
           <div className="flex gap-3">
-            <img src={data.icon} />
+            <Icon />
             <ul>
               <li>
                 <h2 className='type-h2'>{data.textH2}</h2>
@@ -31,7 +32,7 @@ const CardLink = ({
             </ul>
           </div>,
         ],
-        ['img', link],
+        ['other', <SvgIconMap.CardLink aria-hidden="true" />],
       ],
     },
   ]

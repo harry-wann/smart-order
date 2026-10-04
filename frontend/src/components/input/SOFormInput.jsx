@@ -1,5 +1,7 @@
 import { useState } from 'react'
 
+/** @typedef {import('@/assets/SvgIconMap').SvgIconComponent} SvgIconComponent */
+
 export const SOFormInputType = {
   NORMAL: 'normal',
   PHONE: 'phone',
@@ -8,7 +10,7 @@ export const SOFormInputType = {
 
 export default function SOFormInput({
   type = SOFormInputType.NORMAL,
-  icon = null,
+  icon: Icon = /** @type {SvgIconComponent | null} */ (null),
   defaultValue = '',
   placeholder,
   onChange,
@@ -36,7 +38,7 @@ export default function SOFormInput({
   return (
     <div className="flex h-12 w-full items-center rounded-lg border border-line px-3 focus-within:border-brand-600">
       {/* 有傳 icon 才顯示 */}
-      {icon && <img src={icon} alt="" className="mr-3 h-5 w-5" />}
+      {Icon && <Icon className="mr-3 h-5 w-5" aria-hidden="true" />}
 
       <input
         type={isPhone ? 'tel' : isPassword ? 'password' : 'text'}

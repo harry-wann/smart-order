@@ -1,9 +1,5 @@
 import { useState } from 'react'
-import minus from '../../assets/ic_counter_minus.svg'
-import plus from '../../assets/ic_counter_plus.svg'
-import redplus from '../../assets/ic_counter_redplus.svg'
-import redtrash from '../../assets/ic_counter_redtrash.svg'
-import noplus from '../../assets/ic_counter_noplus.svg'
+import { SvgIconMap } from '@/assets/SvgIconMap'
 
 export default function Counter({ size = 'small', initialCount = 0, onChange, showTrash = true }) {
   const [count, setCount] = useState(initialCount)
@@ -46,6 +42,8 @@ export default function Counter({ size = 'small', initialCount = 0, onChange, sh
     onChange?.(0)
   }
 
+  const PlusIcon = count >= MAX_COUNT ? SvgIconMap.CounterNoplus : SvgIconMap.CounterPlus
+
   // 數量 = 0
   if (count === 0) {
     return (
@@ -54,7 +52,7 @@ export default function Counter({ size = 'small', initialCount = 0, onChange, sh
         onClick={increment}
         className="flex h-7 w-7 items-center justify-center"
       >
-        <img src={redplus} alt="增加" />
+        <SvgIconMap.CounterRedplus role="img" aria-label="增加" />
       </button>
     )
   }
@@ -72,7 +70,7 @@ export default function Counter({ size = 'small', initialCount = 0, onChange, sh
             onClick={remove}
             className="flex h-14 w-14 shrink-0 items-center justify-center"
           >
-            <img src={redtrash} alt="刪除" />
+            <SvgIconMap.CounterRedtrash role="img" aria-label="刪除" />
           </button>
         ) : (
           <button
@@ -80,7 +78,7 @@ export default function Counter({ size = 'small', initialCount = 0, onChange, sh
             onClick={decrement}
             className="flex h-14 w-14 shrink-0 items-center justify-center"
           >
-            <img src={minus} alt="減少" />
+            <SvgIconMap.CounterMinus role="img" aria-label="減少" />
           </button>
         )}
 
@@ -94,7 +92,7 @@ export default function Counter({ size = 'small', initialCount = 0, onChange, sh
           disabled={count >= MAX_COUNT}
           className="flex h-14 w-14 shrink-0 items-center justify-center disabled:cursor-not-allowed"
         >
-          <img src={count >= MAX_COUNT ? noplus : plus} alt="增加" />
+          <PlusIcon role="img" aria-label="增加" />
         </button>
       </div>
     )
@@ -112,7 +110,7 @@ export default function Counter({ size = 'small', initialCount = 0, onChange, sh
           onClick={remove}
           className="flex h-7.5 w-7.5 shrink-0 items-center justify-center"
         >
-          <img src={redtrash} alt="刪除" />
+          <SvgIconMap.CounterRedtrash role="img" aria-label="刪除" />
         </button>
       ) : (
         <button
@@ -120,7 +118,7 @@ export default function Counter({ size = 'small', initialCount = 0, onChange, sh
           onClick={decrement}
           className="flex h-7.5 w-7.5 shrink-0 items-center justify-center"
         >
-          <img src={minus} alt="減少" />
+          <SvgIconMap.CounterMinus role="img" aria-label="減少" />
         </button>
       )}
 
@@ -134,7 +132,7 @@ export default function Counter({ size = 'small', initialCount = 0, onChange, sh
         disabled={count >= MAX_COUNT}
         className="flex h-7.5 w-7.5 shrink-0 items-center justify-center disabled:cursor-not-allowed"
       >
-        <img src={count >= MAX_COUNT ? noplus : plus} alt="增加" />
+        <PlusIcon role="img" aria-label="增加" />
       </button>
     </div>
   )

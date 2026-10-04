@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react'
-import { ChevronLeft } from 'lucide-react'
 import SOButton from '../../../components/SOButton'
 import OptionRadioGroup from '../../../components/optionRadio/OptionRadioGroup'
 import OptionCheckboxGroup from '../../../components/optionCheckbox/OptionCheckboxGroup'

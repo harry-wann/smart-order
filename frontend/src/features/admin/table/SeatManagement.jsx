@@ -1,9 +1,7 @@
 import { useState } from 'react'
 import SOButton from '../../../components/SOButton'
 import TopBar from '@/components/dashboard/TopBar'
-import qrIcon from '@/assets/ic_dashboard_qrcode.svg'
-import editIcon from '@/assets/ic_dashboard_edit.svg'
-import plusIcon from '@/assets/ic_dashboard_plus.svg'
+import { SvgIconMap } from '@/assets/SvgIconMap'
 
 // 假資料：後端 API 好了之後換成 fetch 回來的資料
 const INITIAL_TABLES = [
@@ -61,7 +59,7 @@ function SeatManagement() {
                 height="h-11"
                 content={
                   <span className="flex items-center gap-1.5">
-                    <Icon src={qrIcon} />
+                    <Icon icon={SvgIconMap.DashboardQrcode} />
                     列印全部 QR
                   </span>
                 }
@@ -72,7 +70,7 @@ function SeatManagement() {
                 height="h-11"
                 content={
                   <span className="flex items-center gap-1.5">
-                    <Icon src={plusIcon} />
+                    <Icon icon={SvgIconMap.DashboardPlus} />
                     新增桌位
                   </span>
                 }
@@ -139,11 +137,11 @@ function SeatManagement() {
                         <span className="type-caption text-ink-600 tabular-nums">
                           /t/{t.tableNo}
                         </span>
-                        <TextButton icon={qrIcon}>印 QR</TextButton>
+                        <TextButton icon={SvgIconMap.DashboardQrcode}>印 QR</TextButton>
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <TextButton icon={editIcon}>編輯</TextButton>
+                      <TextButton icon={SvgIconMap.DashboardEdit}>編輯</TextButton>
                     </td>
                   </tr>
                 )
@@ -210,30 +208,15 @@ function TextButton({ icon, children, ...props }) {
       className="inline-flex h-9 flex-none items-center gap-1.5 rounded-btn px-3.5 text-sm font-medium text-ink-600 transition-colors hover:text-brand-600"
       {...props}
     >
-      {icon && <Icon src={icon} />}
+      {icon && <Icon icon={icon} />}
       {children}
     </button>
   )
 }
 
-// 圖示：用 SVG 當遮罩，顏色跟著文字色（currentColor）走
-function Icon({ src }) {
-  return (
-    <span
-      aria-hidden="true"
-      className="inline-block size-4 flex-none bg-current"
-      style={{
-        maskImage: `url("${src}")`,
-        WebkitMaskImage: `url("${src}")`,
-        maskSize: 'contain',
-        WebkitMaskSize: 'contain',
-        maskRepeat: 'no-repeat',
-        WebkitMaskRepeat: 'no-repeat',
-        maskPosition: 'center',
-        WebkitMaskPosition: 'center',
-      }}
-    />
-  )
+// 圖示：顏色跟著文字色（currentColor）走
+function Icon({ icon: IconComponent }) {
+  return <IconComponent aria-hidden="true" className="svg-icon size-4 flex-none" />
 }
 
 export default SeatManagement
