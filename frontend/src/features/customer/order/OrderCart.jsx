@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import CustomerTopBar from '@/components/CustomerTopBar'
-import Counter from '../../../components/steper/counter'
+import Counter from '../../../components/steper/Counter'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import SOButton from '../../../components/SOButton'
 

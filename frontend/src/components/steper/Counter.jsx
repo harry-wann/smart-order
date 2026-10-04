@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 
+// 原檔名 counter.jsx
+
 export default function Counter({ size = 'small', initialCount = 0, onChange, showTrash = true }) {
   const [count, setCount] = useState(initialCount)
 

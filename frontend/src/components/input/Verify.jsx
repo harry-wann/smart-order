@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react'
 
+// 原檔名 verify.jsx
+
 export default function Verify({ length = 6, defaultValue = '', onChange }) {
   // 將 defaultValue 轉成陣列
   // 例如 "48291" → ['4', '8', '2', '9', '1', '']

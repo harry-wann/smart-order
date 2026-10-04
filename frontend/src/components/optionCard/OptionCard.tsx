@@ -1,3 +1,5 @@
+// 原路徑 src/components/OptionCard
+
 type OptionCardProps = {
   label: string;
   selected?: boolean;

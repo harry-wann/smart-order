@@ -1,6 +1,8 @@
 import React from "react";
 import Card, { type borderProps, type RowProps } from "./primary/Card";
 
+// 原路徑 src/components/Card
+
 interface CardData {
   id: number;
   data: RowProps[];

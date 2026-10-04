@@ -1,5 +1,5 @@
 import React from "react";
-import CardLink from "../../../components/Card/CardLink";
+import CardLink from "../../../components/card/CardLink";
 import { SvgIconMap } from "@/assets/SvgIconMap"
 
 // 原檔名 callmenu.jsx

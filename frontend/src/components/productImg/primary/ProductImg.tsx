@@ -1,5 +1,7 @@
 import React from "react";
 
+// 原路徑 src/components/ProductImg/primary
+
 export type ProductArea = "A169" | "A11";
 
 export type ProductRow = "1" | "2" | "3";

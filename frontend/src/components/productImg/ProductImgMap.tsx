@@ -5,6 +5,8 @@ import ProductImg, {
   type TagItem,
 } from "./primary/ProductImg";
 
+// 原路徑 src/components/ProductImg
+
 export interface ProductImgData {
   id: number;
   tag?: TagItem[];

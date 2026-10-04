@@ -1,8 +1,8 @@
 import DemoPage from './DemoPage'
 import MenuItemRow from '@/components/order/MenuItemRow'
 import { useState } from 'react'
-import DropdownNotification from '@/components/DropdownNotification/DropdownNotification'
-import DropdownNotificationHost from '@/components/DropdownNotification/DropdownNofificationHost'
+import DropdownNotification from '@/components/dropdownNotification/DropdownNotification'
+import DropdownNotificationHost from '@/components/dropdownNotification/DropdownNofificationHost'
 import ToastItem, { ToastType } from '@/components/toast/ToastItem.tsx'
 import { useToast } from '@/components/toast/ToastManager'
 

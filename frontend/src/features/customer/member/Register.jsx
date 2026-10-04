@@ -3,9 +3,9 @@ import CustomerTopBar from '../../../components/CustomerTopBar'
 import SOFormInput, { SOFormInputType } from '../../../components/input/SOFormInput'
 import SOButton from '../../../components/SOButton'
 import InfoBox from '../../../components/InfoBox'
-import Card from '../../../components/Card/primary/Card'
-import Time from '../../../components/opentime/time'
-import Verify from '../../../components/input/verify'
+import Card from '../../../components/card/primary/Card'
+import Time from '../../../components/opentime/Time'
+import Verify from '../../../components/input/Verify'
 import Badge from '@/components/Badge'
 
 // 原檔名 register.jsx

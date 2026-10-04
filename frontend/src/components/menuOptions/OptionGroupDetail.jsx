@@ -2,6 +2,8 @@ import React from 'react';
 import SOButton from '@/components/SOButton'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 
+// 原路徑 src/components/MenuOptions
+
 export default function OptionGroupDetail({ currentGroup, onOpenGroupNameModal, onOpenItemModal }) {
   return (
     <div className="bg-surface p-[var(--spacing-card)] rounded-[var(--radius-card)] border border-line shadow-[var(--shadow-card)]">

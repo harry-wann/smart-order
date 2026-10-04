@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import TopBar from '@/components/dashboard/TopBar'
-import OptionGroupSidebar from '../../../components/MenuOptions/OptionGroupSidebar';
-import OptionGroupDetail from '../../../components/MenuOptions/OptionGroupDetail';
-import AssociatedProducts from '../../../components/MenuOptions/AssociatedProducts';
-import GroupNameModal from '../../../components/MenuOptions/GroupNameModal';
-import EditItemModal from '../../../components/MenuOptions/EditItemModal';
+import OptionGroupSidebar from '../../../components/menuOptions/OptionGroupSidebar';
+import OptionGroupDetail from '../../../components/menuOptions/OptionGroupDetail';
+import AssociatedProducts from '../../../components/menuOptions/AssociatedProducts';
+import GroupNameModal from '../../../components/menuOptions/GroupNameModal';
+import EditItemModal from '../../../components/menuOptions/EditItemModal';
 import SOButton from '@/components/SOButton';
 import Badge from '@/components/Badge';
 

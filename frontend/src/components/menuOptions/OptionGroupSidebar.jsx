@@ -1,5 +1,7 @@
 import React from 'react';
 
+// 原路徑 src/components/MenuOptions
+
 export default function OptionGroupSidebar({ groups, selectedGroupId, onSelectGroup }) {
   return (
     <div className="w-80 flex flex-col gap-3">

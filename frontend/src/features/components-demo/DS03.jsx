@@ -1,10 +1,10 @@
 import DemoPage from './DemoPage'
 // import SearchIcon from '../../assets/ic_verify_search.svg'
 
-import Verify from '../../components/input/verify'
-import Open from '../../components/opentime/open'
-import Time from '../../components/opentime/time'
-import Counter from '../../components/steper/counter'
+import Verify from '../../components/input/Verify'
+import Open from '../../components/opentime/Open'
+import Time from '../../components/opentime/Time'
+import Counter from '../../components/steper/Counter'
 import SOFormInput, { SOFormInputType } from '../../components/input/SOFormInput'
 import SOTextArea from '../../components/input/SOTextArea'
 

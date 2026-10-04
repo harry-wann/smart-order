@@ -1,5 +1,7 @@
 import React from 'react';
 
+// 原路徑 src/components/MenuOptions
+
 export default function AssociatedProducts({ associatedProducts }) {
   return (
     <div className="bg-surface p-[var(--spacing-card)] rounded-[var(--radius-card)] border border-line shadow-[var(--shadow-card)]">

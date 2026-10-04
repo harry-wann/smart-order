@@ -4,9 +4,9 @@ import CustomerTopBar from '@/components/CustomerTopBar'
 import SOFormInput, { SOFormInputType } from '../../../components/input/SOFormInput'
 import SOButton from '../../../components/SOButton'
 import InfoBox from '../../../components/InfoBox'
-import CardMap from '../../../components/Card/CardMap'
+import CardMap from '../../../components/card/CardMap'
 import { SvgIconMap } from '@/assets/SvgIconMap'
-import Verify from '../../../components/input/verify'
+import Verify from '../../../components/input/Verify'
 
 // 原檔名 opt.jsx
 // 原 component 名 Opt

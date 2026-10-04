@@ -1,5 +1,7 @@
 import { useState } from 'react'
 
+// 原檔名 open.jsx
+
 export default function Open({ defaultValue = true, onChange }) {
   // true = 開
   // false = 關

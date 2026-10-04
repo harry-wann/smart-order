@@ -1,7 +1,7 @@
 import React from "react";
 import {useNavigate} from "react-router";
 import { SvgIconMap } from "@/assets/SvgIconMap";
-import CardLink from "../../components/Card/CardLink";
+import CardLink from "../../components/card/CardLink";
 import InfoBox from "../../components/InfoBox";
 
 // 原檔名 entrance.jsx

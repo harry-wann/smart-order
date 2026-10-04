@@ -1,5 +1,7 @@
 import React from "react";
 
+// 原路徑 src/components/Card/primary
+
 export type borderProps =
     | "primary"
     | "CardTight"

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Card from "../../components/Card/primary/Card";
+import Card from "../../components/card/primary/Card";
 import SOFormInput,{ SOFormInputType }  from "../../components/input/SOFormInput";
 import SOButton from "../../components/SOButton";
 import { SvgIconMap } from "@/assets/SvgIconMap"

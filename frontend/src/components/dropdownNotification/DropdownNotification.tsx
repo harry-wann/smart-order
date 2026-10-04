@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 
+// 原路徑 src/components/DropdownNotification
+
 type Props = {
   type: NotificationType,
   title: string,

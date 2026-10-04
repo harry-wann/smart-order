@@ -2,6 +2,8 @@ import React from 'react'
 import Card, { type RowProps } from './primary/Card'
 import { SvgIconMap, type SvgIconComponent } from '@/assets/SvgIconMap'
 
+// 原路徑 src/components/Card
+
 type CardLinkProps = {
   data: {
     icon: SvgIconComponent

@@ -4,7 +4,7 @@ import CustomerTopBar from '@/components/CustomerTopBar'
 import SOFormInput, { SOFormInputType } from '../../../components/input/SOFormInput'
 import SOButton from '../../../components/SOButton'
 import InfoBox from '../../../components/InfoBox'
-import CardMap from '../../../components/Card/CardMap'
+import CardMap from '../../../components/card/CardMap'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 
 const iconSvg=(Icon)=>{

@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import DropdownNotification, { type NotificationType } from './DropdownNotification'
 
+// 原路徑 src/components/DropdownNotification
+
 const MAX = 3
 const STEP = 76
 
