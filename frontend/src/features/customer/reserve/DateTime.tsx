@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import CustomerTopBar from '@/components/CustomerTopBar'
 import SOButton from '@/components/SOButton'
+import { addDays, formatDateWithWeekday, startOfToday } from '@/utils/reservationDate'
 import type { ReservationContact, ReservationRouteState } from './reservation.types'
 
 function DateTime() {
@@ -231,21 +232,6 @@ function getTableLabel(people: number) {
   if (people <= 4) return '4 人桌・窗邊區'
   if (people <= 6) return '6 人桌・中央區'
   return '10 人包廂'
-}
-
-function startOfToday() {
-  const now = new Date()
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate())
-}
-
-function addDays(date: Date, days: number) {
-  const next = new Date(date)
-  next.setDate(next.getDate() + days)
-  return next
-}
-
-function formatDateWithWeekday(date: Date) {
-  return `${date.getMonth() + 1}/${date.getDate()}（${WEEKDAYS[date.getDay()]}）`
 }
 
 function getMonthLabel(today: Date) {

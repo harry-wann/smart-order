@@ -4,6 +4,15 @@ import { SvgIconMap } from '@/assets/SvgIconMap'
 import CustomerTopBar from '@/components/CustomerTopBar'
 import InfoBox from '@/components/InfoBox'
 import SOButton from '@/components/SOButton'
+import {
+  addDays,
+  formatDateCode,
+  formatDateWithWeekday,
+  formatShortDate,
+  getDayOffset,
+  parseLocalDate,
+  startOfToday,
+} from '@/utils/reservationDate'
 import type { ReservationRouteState } from '@/features/customer/reserve/reservation.types'
 
 function Reservations() {
@@ -93,7 +102,7 @@ function Reservations() {
 
       {cancelTarget && (
         <CancelSheet
-          date={formatShortDate(getReservationDate(cancelTarget.dayOffset))}
+          date={formatShortDate(addDays(startOfToday(), cancelTarget.dayOffset))}
           onConfirm={handleConfirmCancel}
           onClose={() => setCancelTarget(null)}
         />
@@ -111,7 +120,7 @@ type ReservationCardProps = {
 
 function ReservationCard({ reservation, onCancel }: ReservationCardProps) {
   const { serial, dayOffset, time, people, table, status, cancelDeadlinePassed } = reservation
-  const date = getReservationDate(dayOffset)
+  const date = addDays(startOfToday(), dayOffset)
   const note = getNote(status)
   const isUpcoming = status === 'CONFIRMED'
 
@@ -237,7 +246,6 @@ type Tab = {
   label: string
 }
 
-const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
 const CANCEL_BEFORE_MINUTES = 30
 
 const UPCOMING_NOTICE =
@@ -377,25 +385,9 @@ function getCancelDeadline(time: string) {
     .join(':')
 }
 
-function getReservationDate(dayOffset: number) {
-  const now = new Date()
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate() + dayOffset)
-}
-
-function formatShortDate(date: Date) {
-  return `${date.getMonth() + 1}/${date.getDate()}`
-}
-
-function formatDateWithWeekday(date: Date) {
-  return `${formatShortDate(date)}（${WEEKDAYS[date.getDay()]}）`
-}
-
 function formatCode(date: Date, serial: number, reservationNo?: string) {
   if (reservationNo) return reservationNo
-  const dateCode = [date.getFullYear() % 100, date.getMonth() + 1, date.getDate()]
-    .map((part) => String(part).padStart(2, '0'))
-    .join('')
-  return `R-${dateCode}-${String(serial).padStart(4, '0')}`
+  return `R-${formatDateCode(date)}-${String(serial).padStart(4, '0')}`
 }
 
 function createGuestReservation({
@@ -406,9 +398,7 @@ function createGuestReservation({
   tableNo,
 }: ReservationRouteState['reservation']): Reservation {
   const date = parseLocalDate(dateValue)
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const dayOffset = Math.round((date.getTime() - today.getTime()) / (24 * 60 * 60 * 1000))
+  const dayOffset = getDayOffset(date)
   const [hours, minutes] = time.split(':').map(Number)
   const startAt = new Date(date)
   startAt.setHours(hours, minutes, 0, 0)
@@ -423,9 +413,4 @@ function createGuestReservation({
     status: 'CONFIRMED',
     cancelDeadlinePassed: startAt.getTime() - Date.now() <= CANCEL_BEFORE_MINUTES * 60000,
   }
-}
-
-function parseLocalDate(value: string) {
-  const [year, month, day] = value.split('-').map(Number)
-  return new Date(year, month - 1, day)
 }
