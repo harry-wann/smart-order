@@ -11,6 +11,7 @@ import { ToastManager } from './components/toast/ToastManager'
 import DashboardLayout from './layouts/admin/DashboardLayout'
 import TableOverview from './features/admin/table/TableOverview'
 import ItemDetails from './components/ItemDetails'
+import SeatManagement from './features/admin/table/SeatManagement'
 
 import KitchenOverview from './features/admin/kitchen/KitchenOverview'
 import CustomerLayout from './layouts/customer/CustomerLayout'
@@ -45,6 +46,7 @@ function App() {
       <Route path="/admin" element={<DashboardLayout />}>
         <Route index element={<Navigate to="/admin/table_overview" replace />} />
         <Route path="table_overview" element={<TableOverview />} />
+        <Route path="seats" element={<SeatManagement />} />
         <Route path="kitchen" element={<KitchenOverview />} />
         <Route path="order" element={<OrderPage />} />
         <Route path="payment-processing" element={<PaymentProcessing />} />
