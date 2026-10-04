@@ -1,7 +1,7 @@
 import DemoPage from "./DemoPage";
 import Badge from "../../components/Badge";
 import CardMap from "../../components/Card/CardMap";
-import check from "../../assets/icons/ic_infobox_check.svg";
+import check from "../../assets/ic_infobox_check.svg";
 import { SvgIconMap } from "@/assets/SvgIconMap";
 import InfoBox from "../../components/InfoBox";
 import ProductImgMap from "../../components/ProductImg/ProductImgMap";
