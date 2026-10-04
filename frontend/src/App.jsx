@@ -15,6 +15,7 @@ import ItemDetails from './components/ItemDetails'
 import KitchenOverview from './features/admin/kitchen/KitchenOverview'
 import CustomerLayout from './layouts/customer/CustomerLayout'
 import OrderIndex from './features/customer/order/OrderIndex'
+import TableOpen from './features/admin/table/TableOpen'
 import OrderPage from './features/order-checkbill/OrderPage'
 import PaymentProcessing from './features/order-checkbill/PaymentProcessing'
 import MenuOptions from './features/admin/menuOptions/MenuOptions'
@@ -23,7 +24,7 @@ import AdminMenu from './features/admin/adminMenu/AdminMenu'
 import Menu from './features/customer/order/Menu'
 import Ticket from './components/Ticket'
 
-export default function App() {
+function App() {
   return (
     <Routes>
       {/* 顧客端 - 點餐 / 購物車 / 訂單 流程 頁面路徑 */}
@@ -47,6 +48,7 @@ export default function App() {
         <Route path="kitchen" element={<KitchenOverview />} />
         <Route path="order" element={<OrderPage />} />
         <Route path="payment-processing" element={<PaymentProcessing />} />
+        <Route path="table_overview/:tableNo/open" element={<TableOpen />} />
         <Route path="options" element={<MenuOptions />} />
         
 
@@ -80,3 +82,4 @@ export default function App() {
     </Routes>
   )
 }
+export default App
