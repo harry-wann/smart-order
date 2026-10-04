@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router'
 import SOButton from '@/components/SOButton'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import BellButtonPlaceholder from './BellButtonPlaceholder'
+import ReservationTab from './ReservationTab'
 
 // 假資料：已叫號、等著入座的組別（之後換成 API）
 const calledWaitlist = [
@@ -11,10 +12,32 @@ const calledWaitlist = [
   { id: 14, queueNo: 'A14', name: '張先生', people: 6, waitMinutes: 4 },
 ]
 
+// 假資料：現在可以報到的預約（之後換成 API）
+const checkinReservations = [
+  {
+    id: 21,
+    time: '18:30',
+    name: '陳怡君',
+    phone: '0933123210',
+    people: 4,
+    preorderCount: 4,
+    assignedTable: 'A08',
+  },
+  {
+    id: 22,
+    time: '18:45',
+    name: '林家豪',
+    phone: '0935123806',
+    people: 2,
+    preorderCount: 0,
+    assignedTable: 'B02',
+  },
+]
+
 // 開桌頁自己的頂列。
 // 不改共用的 TopBar.tsx；但這頁網址有桌號，TopBar 用網址查不到標題，
 // 所以這頁自己做，class 照抄 TopBar，外觀才會跟其他頁一致。
-function OpenPageHeader({ tableNo, tableInfo }) {
+function OpenPageHeader({ tableNo, tableInfo, isHeld }) {
   return (
     <header className="flex h-15 w-full shrink-0 flex-row items-center justify-between border-b border-line bg-surface px-6 py-3">
       <div className="flex flex-row items-center gap-4">
@@ -27,6 +50,12 @@ function OpenPageHeader({ tableNo, tableInfo }) {
             {tableInfo.capacity} 人桌・{tableInfo.area}
           </span>
         </div>
+        {isHeld && (
+          <span className="flex items-center gap-1 rounded-pill bg-warning-bg px-2 py-1 type-dashboard-top-bar-tag text-hold-ink">
+            <SvgIconMap.ReservationLock aria-hidden="true" className="svg-icon size-4" />
+            預約保留
+          </span>
+        )}
       </div>
 
       <div className="flex flex-row items-center gap-2">
@@ -207,7 +236,13 @@ function AlertBar({ tone, title, children }) {
 
   return (
     <div className={`mb-4 flex gap-3 rounded-card px-5 py-4 ${toneClass}`}>
-      <span className={tone === 'danger' ? 'text-danger' : 'text-hold-ink'}>⚠</span>
+      <span className={tone === 'danger' ? 'text-danger' : 'text-hold-ink'}>
+        {tone === 'danger' ? (
+          '⚠'
+        ) : (
+          <SvgIconMap.ReservationLock aria-hidden="true" className="svg-icon size-5" />
+        )}
+      </span>
       <div>
         <p className="type-body-sm font-bold text-ink-900">{title}</p>
         <p className="mt-1 type-caption text-ink-600">{children}</p>
@@ -240,14 +275,21 @@ function TableOpen() {
   const navigate = useNavigate()
 
   // ===== 假資料：之後換成 API 回傳的資料 =====
-  const tableInfo = { capacity: 6, area: '走道區' }
+  const tableInfo =
+    tableNo === 'A08'
+      ? { capacity: 4, area: '窗邊區' }
+      : tableNo === 'C02'
+        ? { capacity: 8, area: '包廂區' }
+        : { capacity: 6, area: '走道區' }
   // 115 分鐘內的訂位（沒有就是 null）
   const conflict = { time: '19:30', name: '陳小姐', people: 4 }
-  // 現在是否在預約保留時段（沒有就是 null）
-  const reservedHold = null
-  const reservationCount = 2
+  // 現在在預約保留時段的話，填保留這張桌的預約 id（沒有就是 null）
+  const reservedHoldId = tableNo === 'A08' ? 21 : null
   // ===== 假資料結束 =====
 
+  const [reservations, setReservations] = useState(checkinReservations)
+  const reservedHold = reservations.find((item) => item.id === reservedHoldId) ?? null
+  const reservationCount = reservations.length
   const openLabel = conflict ? '仍要開桌' : '開桌'
   const isHeld = reservedHold !== null
   const defaultTab =
@@ -267,7 +309,8 @@ function TableOpen() {
 
   // 有訂位衝突就先跳確認框，沒有就直接開桌
   function requestOpen(payload) {
-    if (conflict) {
+    const isReservedGuest = payload.type === 'reservation' && payload.reservationId === reservedHoldId
+    if (conflict && !isReservedGuest) {
       setPendingOpen(payload)
     } else {
       confirmOpen(payload)
@@ -280,9 +323,14 @@ function TableOpen() {
     navigate('/admin/table_overview')
   }
 
+  function cancelReservation(id) {
+    // 之後接後端：POST /api/admin/reservations/{id}/cancel
+    setReservations((list) => list.filter((item) => item.id !== id))
+  }
+
   return (
     <>
-      <OpenPageHeader tableNo={tableNo} tableInfo={tableInfo} />
+      <OpenPageHeader tableNo={tableNo} tableInfo={tableInfo} isHeld={isHeld} />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <main className="mx-auto w-full max-w-205 p-6">
@@ -291,7 +339,9 @@ function TableOpen() {
               tone="hold"
               title={`${tableNo} 預約保留中（${reservedHold.time} ${reservedHold.name} ${reservedHold.people} 位）`}
             >
-              保留時段內不能開桌。客人來電取消的話，請到預約管理取消訂位。
+              這張桌保留給 {reservedHold.name} {reservedHold.time}（{reservedHold.people} 位）。客人來電取消的話，直接按下面的「取消訂位」。
+              <br />
+              {reservedHold.name} 到了，直接在下面按「報到開桌」。
             </AlertBar>
           ) : (
             conflict && (
@@ -340,7 +390,17 @@ function TableOpen() {
                 onOpen={requestOpen}
               />
             )}
-            {activeTab === 'reservation' && <p>預約內容（S-02d，由 E 負責）</p>}
+            {activeTab === 'reservation' && (
+              <ReservationTab
+                list={reservations}
+                tableNo={tableNo}
+                seats={tableInfo.capacity}
+                holdId={isHeld ? reservedHold.id : null}
+                openLabel={openLabel}
+                onOpen={requestOpen}
+                onCancel={cancelReservation}
+              />
+            )}
           </section>
         </main>
       </div>
