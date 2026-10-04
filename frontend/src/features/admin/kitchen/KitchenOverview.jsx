@@ -1,4 +1,3 @@
-import '@/features/admin/kds/kds.colors.css'
 import TopBar from '@/components/dashboard/TopBar'
 import OrderCard from '@/components/OrderCard'
 import { useState, useEffect } from 'react'
@@ -201,15 +200,15 @@ function KitchenOverview() {
   const { minutes: maxMinutes, tableNo: maxTableNo } = getMaxWaitMinutes()
   const currentTime = now.toTimeString().slice(0, 5)
   return (
-    <>
+    <div className="flex h-full flex-col bg-paper text-ink-900">
       <TopBar
         childrenLeft={
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-4 text-sm font-medium">
-              <span className="rounded-full bg-ink-900 px-4 py-1 font-medium text-card">
+              <span className="rounded-full bg-ink-900 px-4 py-1 font-medium text-surface">
                 進行中 {activeOrdersCount} 單
               </span>
-              <span className="font-medium text-card2">最近完成 23</span>
+              <span className="font-medium text-ink-600">最近完成 23</span>
             </div>
           </div>
         }
@@ -220,14 +219,14 @@ function KitchenOverview() {
                 最久等待 {maxMinutes} 分 {maxTableNo}
               </span>
             ) : (
-              <span className="text-card2">目前無等待中訂單</span>
+              <span className="text-ink-600">目前無等待中訂單</span>
             )}
-            <span className="font-normal text-card3">鼎沸鍋物 廚房 1 號機</span>
-            <span className="text-2xl font-black tracking-wider text-card">{currentTime}</span>
+            <span className="font-normal text-ink-400">鼎沸鍋物 廚房 1 號機</span>
+            <span className="text-2xl font-black tracking-wider text-ink-900">{currentTime}</span>
           </div>
         }
       />
-      <main className="kds flex min-h-screen w-full flex-col">
+      <main className="min-h-0 flex-1 overflow-y-auto">
         <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] content-start gap-5 p-6">
           {orderTickets.map((ticket) => {
             return (
@@ -247,7 +246,7 @@ function KitchenOverview() {
           })}
         </div>
       </main>
-    </>
+    </div>
   )
 }
 

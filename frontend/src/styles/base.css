@@ -19,9 +19,8 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 
-    /* 顧客端 375×812、店家端 1280×800，都是亮色畫面。
-       宣告 only light 讓系統深色模式不要去反轉我們的色票。
-       全站唯一的深色畫面是 S-04 KDS，它自己帶 .kds（見 kds.colors.css）。 */
+    /* 顧客端 375×812、店家端 1280×800（含 S-04 出菜看板），都是亮色畫面。
+       宣告 only light 讓系統深色模式不要去反轉我們的色票。 */
     color-scheme: only light;
   }
 

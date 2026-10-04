@@ -11,7 +11,7 @@
      3. base          — @layer base，文件預設值（要用到上面的 token）
 
    只有一個畫面用得到的顏色不放這裡，放那個畫面旁邊的 *.colors.css，
-   由該畫面自己 import（例如 features/admin/kds/kds.colors.css）。
+   由該畫面自己 import（例如 features/customer/payment/payment.colors.css）。
    ========================================================================== */
 
 @import 'tailwindcss';
