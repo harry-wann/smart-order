@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import SOButton from '@/components/SOButton'
+import { addDays, formatDateWithWeekday, parseLocalDate, startOfToday } from '@/utils/reservationDate'
 import type { ReservationConfirmation, ReservationRouteState } from './reservation.types'
 
 function Done() {
@@ -96,11 +97,8 @@ function Done() {
 
 export default Done
 
-const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
-
 function createDemoReservation(): ReservationConfirmation {
-  const date = new Date()
-  date.setDate(date.getDate() + 6)
+  const date = addDays(startOfToday(), 6)
   const dateValue = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 
   return {
@@ -111,15 +109,6 @@ function createDemoReservation(): ReservationConfirmation {
     partySize: 4,
     tableNo: 'A08',
   }
-}
-
-function parseLocalDate(value: string) {
-  const [year, month, day] = value.split('-').map(Number)
-  return new Date(year, month - 1, day)
-}
-
-function formatDateWithWeekday(date: Date) {
-  return `${date.getMonth() + 1}/${date.getDate()}（${WEEKDAYS[date.getDay()]}）`
 }
 
 function formatTable(tableNo: string, partySize: number) {
