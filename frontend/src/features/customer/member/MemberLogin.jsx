@@ -1,5 +1,5 @@
 import React from 'react'
-import {useNavigate} from "react-router";
+import {useLocation, useNavigate} from "react-router";
 import CustomerTopBar from '@/components/CustomerTopBar'
 import SOFormInput, { SOFormInputType } from '../../../components/input/SOFormInput'
 import SOButton from '../../../components/SOButton'
@@ -41,6 +41,9 @@ export function MemberLogin() {
   ];
 
   const navigate=useNavigate();
+  const location=useLocation();
+  const returnTo=location.state?.returnTo;
+  const reservationType=location.state?.reservationType;
 
   
 
@@ -72,7 +75,7 @@ export function MemberLogin() {
             disabled={false}
             height="h-12"
             onClick={() => {
-              navigate("/member/verify");
+              navigate("/member/verify", { state: { returnTo, reservationType } });
             }}
           />
         </div >

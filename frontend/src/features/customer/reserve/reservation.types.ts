@@ -11,6 +11,8 @@ export type ReservationConfirmation = {
   time: string
   partySize: number
   tableNo: string
+  accessToken?: string
+  reservationType?: 'GUEST' | 'MEMBER'
   contact?: ReservationContact
 }
 

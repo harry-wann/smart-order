@@ -1,10 +1,8 @@
 import React,{useState} from 'react'
-import {useNavigate} from "react-router"
+import {useLocation, useNavigate} from "react-router"
 import CustomerTopBar from '@/components/CustomerTopBar'
-import SOFormInput, { SOFormInputType } from '../../../components/input/SOFormInput'
 import SOButton from '../../../components/SOButton'
 import InfoBox from '../../../components/InfoBox'
-import CardMap from '../../../components/card/CardMap'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import Verify from '../../../components/input/Verify'
 
@@ -15,6 +13,9 @@ export default function VerifyCode() {
   
 
   const navigate=useNavigate();
+  const location=useLocation();
+  const returnTo=location.state?.returnTo;
+  const reservationType=location.state?.reservationType;
 
   const Data={
     phone:"0912-345-678",
@@ -28,7 +29,19 @@ export default function VerifyCode() {
   const handleverifycode=()=>{
     if(code!==Data.VERIFY)return
 
-    navigate("/member/center")
+    if (!returnTo) {
+      navigate("/member/center")
+      return
+    }
+
+    navigate(returnTo, {
+      state: {
+        reservationType,
+        ...(reservationType === 'MEMBER'
+          ? { contact: { name: '陳小美', phone: Data.phone.replaceAll('-', '') } }
+          : {}),
+      },
+    })
   }
 
 

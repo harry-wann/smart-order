@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import SOButton from '@/components/SOButton'
 import { addDays, formatDateWithWeekday, parseLocalDate, startOfToday } from '@/utils/reservationDate'
 import type { ReservationConfirmation, ReservationRouteState } from './reservation.types'
+import { addReservation, loadReservations, saveReservations } from '@/utils/guestReservation'
 
 function Done() {
   const navigate = useNavigate()
@@ -17,6 +18,12 @@ function Done() {
     { label: '人數', value: `${reservation.partySize} 位` },
     { label: '桌號', value: formatTable(reservation.tableNo, reservation.partySize) },
   ]
+
+  useEffect(() => {
+    if (!reservation.contact) return
+    const type = reservation.reservationType ?? 'GUEST'
+    saveReservations(type, addReservation(loadReservations(type), reservation, type))
+  }, [reservation])
 
   async function handleCopy() {
     try {
@@ -88,7 +95,14 @@ function Done() {
           height="h-13"
           variant="secondary"
           text="查看我的預約"
-          onClick={() => navigate('/member/reservations', { state: { reservation } })}
+          onClick={() =>
+            navigate(
+              reservation.reservationType === 'MEMBER'
+                ? '/member/reservations?view=member'
+                : '/member/reservations',
+              { state: { reservation } },
+            )
+          }
         />
       </div>
     </div>

@@ -1,9 +1,17 @@
-import { useState } from 'react'
-import { useLocation, useNavigate } from 'react-router'
+import { useEffect, useState } from 'react'
+import { useLocation, useNavigate, useSearchParams } from 'react-router'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import CustomerTopBar from '@/components/CustomerTopBar'
 import InfoBox from '@/components/InfoBox'
 import SOButton from '@/components/SOButton'
+import {
+  addReservation,
+  loadReservations,
+  saveReservations,
+  type ReservationType,
+  type ReservationStatus,
+  type SavedReservation,
+} from '@/utils/guestReservation'
 import {
   addDays,
   formatDateCode,
@@ -18,24 +26,72 @@ import type { ReservationRouteState } from '@/features/customer/reserve/reservat
 function Reservations() {
   const navigate = useNavigate()
   const location = useLocation()
+  const [searchParams] = useSearchParams()
   const routeReservation = (location.state as ReservationRouteState | null)?.reservation
-  const isGuestReservation = Boolean(routeReservation?.contact)
-  const [reservations, setReservations] = useState(() =>
-    routeReservation?.contact ? [createGuestReservation(routeReservation)] : INITIAL_RESERVATIONS,
-  )
+  const routeReservationType: ReservationType | undefined =
+    routeReservation?.reservationType ?? (routeReservation?.contact ? 'GUEST' : undefined)
+  const isMemberView = searchParams.get('view') === 'member' || routeReservationType === 'MEMBER'
+  const [now, setNow] = useState(() => new Date())
+  const [guestRecords, setGuestRecords] = useState(() => {
+    const saved = loadReservations('GUEST')
+    return routeReservation?.contact && routeReservationType === 'GUEST'
+      ? addReservation(saved, routeReservation, 'GUEST')
+      : saved
+  })
+  const [memberRecords, setMemberRecords] = useState(() => {
+    const saved = loadReservations('MEMBER')
+    return routeReservation?.contact && routeReservationType === 'MEMBER'
+      ? addReservation(saved, routeReservation, 'MEMBER')
+      : saved
+  })
+  const isGuestReservationView = !isMemberView && guestRecords.length > 0
+  const [memberReservations, setMemberReservations] = useState(INITIAL_RESERVATIONS)
   const [activeTab, setActiveTab] = useState<TabKey>('upcoming')
   const [cancelTarget, setCancelTarget] = useState<Reservation | null>(null)
+  const reservations = isGuestReservationView
+    ? guestRecords.map(createSavedReservation)
+    : [...memberRecords.map(createSavedReservation), ...memberReservations]
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 30000)
+    return () => window.clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
+    saveReservations('GUEST', guestRecords)
+  }, [guestRecords])
+
+  useEffect(() => {
+    saveReservations('MEMBER', memberRecords)
+  }, [memberRecords])
 
   const getTabReservations = (tab: TabKey) =>
     reservations.filter(({ status }) => TAB_STATUSES[tab].includes(status))
-  const visibleReservations = isGuestReservation ? reservations : getTabReservations(activeTab)
+  const visibleReservations = isGuestReservationView
+    ? reservations
+    : getTabReservations(activeTab)
 
   const handleConfirmCancel = () => {
     if (!cancelTarget) return
-    setReservations((current) => [
-      { ...cancelTarget, status: 'CANCELLED', cancelSource: 'CUSTOMER' },
-      ...current.filter(({ serial }) => serial !== cancelTarget.serial),
-    ])
+    if (isCancellationDeadlinePassed(cancelTarget, new Date())) {
+      setNow(new Date())
+      setCancelTarget(null)
+      return
+    }
+    const reservationId = cancelTarget.id
+    if (reservationId && guestRecords.some(({ reservation }) => reservation.id === reservationId)) {
+      setGuestRecords((current) => updateSavedReservation(current, reservationId))
+    } else if (
+      reservationId &&
+      memberRecords.some(({ reservation }) => reservation.id === reservationId)
+    ) {
+      setMemberRecords((current) => updateSavedReservation(current, reservationId))
+    } else {
+      setMemberReservations((current) => [
+        { ...cancelTarget, status: 'CANCELLED', cancelSource: 'CUSTOMER' },
+        ...current.filter(({ serial }) => serial !== cancelTarget.serial),
+      ])
+    }
     setCancelTarget(null)
   }
 
@@ -43,7 +99,7 @@ function Reservations() {
     <div className="flex min-h-full w-full flex-col">
       <CustomerTopBar title="我的預約" showBackButton={true} />
 
-      {!isGuestReservation && (
+      {!isGuestReservationView && (
         <div role="tablist" className="flex gap-6 border-b border-line bg-surface px-page">
           {TABS.map(({ key, label }) => (
             <button
@@ -66,8 +122,9 @@ function Reservations() {
       )}
 
       <div className="flex flex-col gap-3 p-page pb-28">
-        {((isGuestReservation && visibleReservations.some(({ status }) => status === 'CONFIRMED')) ||
-          (!isGuestReservation && activeTab === 'upcoming')) && (
+        {((isGuestReservationView &&
+          visibleReservations.some(({ status }) => status === 'CONFIRMED')) ||
+          (!isGuestReservationView && activeTab === 'upcoming')) && (
           <div className="[&>br]:hidden">
             <InfoBox
               outicon={SvgIconMap.TicketTime}
@@ -84,9 +141,16 @@ function Reservations() {
 
         {visibleReservations.map((reservation) => (
           <ReservationCard
-            key={reservation.serial}
+            key={reservation.id ?? reservation.serial}
             reservation={reservation}
-            onCancel={() => setCancelTarget(reservation)}
+            now={now}
+            onCancel={() => {
+              if (!isCancellationDeadlinePassed(reservation, new Date())) {
+                setCancelTarget(reservation)
+              } else {
+                setNow(new Date())
+              }
+            }}
           />
         ))}
       </div>
@@ -102,7 +166,7 @@ function Reservations() {
 
       {cancelTarget && (
         <CancelSheet
-          date={formatShortDate(addDays(startOfToday(), cancelTarget.dayOffset))}
+          date={formatShortDate(getReservationDate(cancelTarget))}
           onConfirm={handleConfirmCancel}
           onClose={() => setCancelTarget(null)}
         />
@@ -115,19 +179,23 @@ export default Reservations
 
 type ReservationCardProps = {
   reservation: Reservation
+  now: Date
   onCancel: () => void
 }
 
-function ReservationCard({ reservation, onCancel }: ReservationCardProps) {
-  const { serial, dayOffset, time, people, table, status, cancelDeadlinePassed } = reservation
-  const date = addDays(startOfToday(), dayOffset)
+function ReservationCard({ reservation, now, onCancel }: ReservationCardProps) {
+  const { serial, time, people, table, status } = reservation
+  const date = getReservationDate(reservation)
+  const dayOffset = getDayOffset(date)
+  const cancelDeadlinePassed = isCancellationDeadlinePassed(reservation, now)
+  const reservationWithDeadline = { ...reservation, cancelDeadlinePassed }
   const note = getNote(status)
   const isUpcoming = status === 'CONFIRMED'
 
   return (
     <article className="rounded-card border border-line bg-surface p-card shadow-card">
       <div className="flex items-center gap-2">
-        {getPills(reservation).map(({ text, tone }) => (
+        {getPills(reservationWithDeadline).map(({ text, tone }) => (
           <StatusPill key={text} text={text} tone={tone} />
         ))}
         {isUpcoming && (
@@ -221,11 +289,12 @@ function CancelSheet({ date, onConfirm, onClose }: CancelSheetProps) {
 }
 
 type TabKey = 'upcoming' | 'completed' | 'cancelled'
-type ReservationStatus = 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW'
 type PillTone = 'confirmed' | 'warning' | 'plain' | 'danger'
 
 type Reservation = {
   serial: number
+  id?: string
+  date?: string
   reservationNo?: string
   dayOffset: number
   time: string
@@ -390,27 +459,38 @@ function formatCode(date: Date, serial: number, reservationNo?: string) {
   return `R-${formatDateCode(date)}-${String(serial).padStart(4, '0')}`
 }
 
-function createGuestReservation({
-  reservationNo,
-  date: dateValue,
-  time,
-  partySize,
-  tableNo,
-}: ReservationRouteState['reservation']): Reservation {
-  const date = parseLocalDate(dateValue)
+function createSavedReservation({ reservation, status, cancelSource }: SavedReservation): Reservation {
+  const date = parseLocalDate(reservation.date)
   const dayOffset = getDayOffset(date)
-  const [hours, minutes] = time.split(':').map(Number)
-  const startAt = new Date(date)
-  startAt.setHours(hours, minutes, 0, 0)
-
   return {
-    serial: Number(reservationNo.replace(/\D/g, '').slice(-4)) || 1,
-    reservationNo,
+    serial: Number(reservation.reservationNo.replace(/\D/g, '').slice(-4)) || 1,
+    id: reservation.id,
+    date: reservation.date,
+    reservationNo: reservation.reservationNo,
     dayOffset,
-    time,
-    people: partySize,
-    table: `${tableNo} ${partySize} 人桌`,
-    status: 'CONFIRMED',
-    cancelDeadlinePassed: startAt.getTime() - Date.now() <= CANCEL_BEFORE_MINUTES * 60000,
+    time: reservation.time,
+    people: reservation.partySize,
+    table: `${reservation.tableNo} ${reservation.partySize} 人桌`,
+    status,
+    cancelSource,
   }
+}
+
+function updateSavedReservation(current: SavedReservation[], id: string) {
+  return current.map((record) =>
+    record.reservation.id === id
+      ? { ...record, status: 'CANCELLED' as const, cancelSource: 'CUSTOMER' as const }
+      : record,
+  )
+}
+
+function getReservationDate({ date, dayOffset }: Reservation) {
+  return date ? parseLocalDate(date) : addDays(startOfToday(), dayOffset)
+}
+
+function isCancellationDeadlinePassed(reservation: Reservation, now: Date) {
+  const startAt = getReservationDate(reservation)
+  const [hours, minutes] = reservation.time.split(':').map(Number)
+  startAt.setHours(hours, minutes, 0, 0)
+  return now.getTime() >= startAt.getTime() - CANCEL_BEFORE_MINUTES * 60000
 }

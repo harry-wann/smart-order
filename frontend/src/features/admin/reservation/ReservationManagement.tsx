@@ -15,6 +15,7 @@ type Reservation = {
   isMember: boolean
   partySize: number
   tableNo?: string
+  seatedTableNo?: string
   preorder?: { itemCount: number; estimated: number }
   status: ReservationStatus
   cancelledBy?: string
@@ -59,7 +60,7 @@ function ReservationManagement() {
 
   function handleSeat(tableNo: string) {
     if (!seatingTarget) return
-    updateReservation(seatingTarget.id, { status: 'SEATED', tableNo })
+    updateReservation(seatingTarget.id, { status: 'SEATED', seatedTableNo: tableNo })
     setTables((prev) => prev.map((t) => (t.tableNo === tableNo ? { ...t, status: 'OCCUPIED' } : t)))
     setSeatingTarget(null)
   }
@@ -69,6 +70,7 @@ function ReservationManagement() {
     updateReservation(cancelTarget.id, {
       status: 'CANCELLED',
       tableNo: undefined,
+      seatedTableNo: undefined,
       preorder: undefined,
       cancelledBy: STAFF_NAME,
     })
@@ -423,7 +425,8 @@ function ReservationRow({
   onViewTable,
   onDetails,
 }: RowProps) {
-  const { startAt, name, phone, partySize, tableNo, preorder, cancelledBy } = reservation
+  const { startAt, name, phone, partySize, tableNo, seatedTableNo, preorder, cancelledBy } =
+    reservation
   const state = getRowState(reservation, now)
   const pill = STATE_PILL[state]
   const checkInOpensAt = new Date(startAt.getTime() - CHECK_IN_EARLY_MINUTES * MINUTE_MS)
@@ -439,7 +442,9 @@ function ReservationRow({
       </td>
       <td className="px-4 py-3 tabular-nums">{maskPhone(phone)}</td>
       <td className="px-4 py-3 tabular-nums">{partySize} 位</td>
-      <td className="px-4 py-3 font-bold tabular-nums">{tableNo ?? <EmptyMark />}</td>
+      <td className="px-4 py-3 font-bold tabular-nums">
+        {state === 'SEATED' ? seatedTableNo ?? tableNo ?? <EmptyMark /> : tableNo ?? <EmptyMark />}
+      </td>
       <td className="px-4 py-3">
         {preorder ? (
           <Pill tone="accent">
@@ -602,6 +607,12 @@ function ReservationDetailsDialog({ reservation, onClose }: ReservationDetailsDi
           <dd className="text-ink-900">{reservation.partySize} 位</dd>
           <dt className="text-ink-600">配桌</dt>
           <dd className="text-ink-900">{reservation.tableNo ?? '—'}</dd>
+          {reservation.seatedTableNo && (
+            <>
+              <dt className="text-ink-600">實際入座</dt>
+              <dd className="text-ink-900">{reservation.seatedTableNo}</dd>
+            </>
+          )}
           <dt className="text-ink-600">狀態</dt>
           <dd className="text-ink-900">
             {reservation.status === 'CANCELLED'
