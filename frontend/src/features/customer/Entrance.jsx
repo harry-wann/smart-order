@@ -1,0 +1,67 @@
+import React from "react";
+import {useNavigate} from "react-router";
+import order from "../../assets/ic_order_entrance.svg";
+import entranceIc from "../../assets/ic_order_check.svg";
+import mem from "../../assets/ic_order_member.svg";
+import qrcode from "../../assets/ic_order_qrcode.svg";
+import CardLink from "../../components/Card/CardLink";
+import InfoBox from "../../components/InfoBox";
+
+// 原檔名 entrance.jsx
+// 原路徑 src/features/customer/order
+
+
+export default function Entrance() {
+  const navigate=useNavigate();
+  const card = {
+    icon: order,
+    textH2: "線上訂位",
+    textP: "先訂位，到店不用排",
+    onclick:()=>navigate("/reserve")
+  }
+
+  const ent = {
+    icon: entranceIc,
+    textH2: "我的預約",
+    textP: "查看或取消訂位",
+    onclick:()=>navigate("/member")
+  }
+  const member = {
+    icon: mem,
+    textH2: "會員登入",
+    textP: "訂位免填資料、查我的預約",
+    onclick:()=>navigate("/member")
+  }
+
+
+  return (
+    <>
+      <div className="w-full h-[45vh] relative">
+        {/* TODO: 店家形象照尚未入庫（ic_test_page.png 已自 repo 移除），先用底色佔位 */}
+        <div className="w-full h-full bg-ink-900" />
+        <div className="absolute bottom-0 w-ful px-4">
+            <h2 className="type-h2 text-surface">鼎沸鍋物</h2>
+            <p className="type-caption text-surface">中山北路二段 共鍋 32 年</p>   
+        </div>
+      </div>
+      <div className="grid grid-cols-1 py-5 px-4 gap-3">
+        <CardLink data={card} />
+        <CardLink data={ent} />
+        <CardLink data={member} />
+      </div>
+      <div onClick={()=>navigate("/reserve/guest")} className="px-4">
+        <InfoBox outicon={qrcode} col="quiet" text="F" custimtext={
+            <>
+              <p>
+                <span className="font-semibold">已經坐在店裡了？</span>
+                掃桌上的 QR code 就直接
+                開始點餐，不用先登入或訂位。
+              </p>
+            </>} />
+      </div>
+      <div className="flex w-full bg-surface fixed bottom-0 justify-center type-caption pt-2 pb-8">
+          11:30–14:00 17:00–22:00 最後點餐 21:00
+      </div>
+    </>
+  );
+}
