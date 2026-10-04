@@ -28,6 +28,7 @@ import TableOpen from './features/admin/table/TableOpen'
 import SeatManagement from './features/admin/table/SeatManagement'
 import KitchenOverview from './features/admin/kitchen/KitchenOverview'
 import WaitlistManagement from './features/admin/waitlist/WaitlistManagement'
+import ReservationManagement from './features/admin/reservation/ReservationManagement'
 import TableDetail from './features/admin/table/TableDetail'
 import MenuOptions from './features/admin/menuOptions/MenuOptions'
 import AdminMenu from './features/admin/adminMenu/AdminMenu'
@@ -88,6 +89,7 @@ function App() {
         <Route path="table_overview" element={<TableOverview />} />
         <Route path="table_overview/:tableNo/open" element={<TableOpen />} />
         <Route path="table/detail" element={<TableDetail />} />
+        <Route path="reservations" element={<ReservationManagement />} />
         <Route path="seats" element={<SeatManagement />} />
         <Route path="kitchen" element={<KitchenOverview />} />
         <Route path="waitlist" element={<WaitlistManagement />} />
