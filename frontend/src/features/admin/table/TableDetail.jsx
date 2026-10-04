@@ -2,9 +2,13 @@ import { useState } from 'react'
 import OrderRecord from './OrderRecord'
 import Checkout from './Checkout'
 import PaymentProcessing from './PaymentProcessing'
-import TopBar from '../../components/dashboard/TopBar'
+import TopBar from '../../../components/dashboard/TopBar'
 
-export default function OrderPage() {
+// 原檔名 OrderPage.jsx
+// 原路徑 src/features/order-checkbill
+// 原 component 名 OrderPage
+
+export default function TableDetail() {
   // null = 沒有付款
   // credit = 信用卡
   // cash = 現金

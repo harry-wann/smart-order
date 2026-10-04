@@ -1,6 +1,8 @@
-import ok from '../../assets/ic_OrderRecord_ok.svg'
-import wait from '../../assets/ic_OrderRecord_wait.svg'
-import SOButton from '../../components/SOButton'
+import ok from '../../../assets/ic_OrderRecord_ok.svg'
+import wait from '../../../assets/ic_OrderRecord_wait.svg'
+import SOButton from '../../../components/SOButton'
+
+// 原路徑 src/features/order-checkbill
 
 const orders = [
   {

@@ -1,5 +1,7 @@
-import blackpeople from '../../assets/ic_Checkout_blackpeople.svg'
-import SOButton from '../../components/SOButton'
+import blackpeople from '../../../assets/ic_Checkout_blackpeople.svg'
+import SOButton from '../../../components/SOButton'
+
+// 原路徑 src/features/order-checkbill
 
 export default function Checkout({ onCreditCard, onCash }) {
   return (

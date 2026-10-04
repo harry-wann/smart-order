@@ -2,6 +2,7 @@ import SOFormInput, { SOFormInputType } from '../../../components/input/SOFormIn
 import MenuCategoryTabs from '../../../components/MenuCategoryTabs'
 import MenuItemRow from '../../../components/order/MenuItemRow'
 import SearchIcon from '@/assets/ic_menu_search.svg'
+import CustomerTopBar from '@/components/CustomerTopBar'
 import SOButton from '@/components/SOButton'
 import CartIcon from '@/assets/ic_order_shopping_cart.svg'
 import RightIcon from '@/assets/ic_menu_right.svg'
@@ -52,16 +53,12 @@ export default function Menu() {
   }
 
   return (
-    <div className="relative min-h-screen bg-surface-2 pb-24">
-      <header className="flex items-center justify-between border-b border-line bg-surface px-4">
-        <div className="flex flex-1 flex-col items-start px-2">
-          <div className="text-lg font-bold text-ink-900">A03 桌</div>
-          <div className="text-xs text-ink-600">2 大 1 小 18:32 入座</div>
-        </div>
-        <button type="button" className="-mr-2 cursor-pointer p-2 text-gray-600">
+    <div className="relative min-h-screen w-full self-start bg-surface-2 pb-24">
+      <CustomerTopBar title="A03 桌" subTitle="2 大 1 小 18:32 入座" showBackButton={false}>
+        <button type="button" className="cursor-pointer text-gray-600">
           <img src={Bell} alt="服務鈴" />
         </button>
-      </header>
+      </CustomerTopBar>
 
       <div className="px-4 py-3">
         <SOFormInput

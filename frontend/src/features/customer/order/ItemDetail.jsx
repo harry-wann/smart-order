@@ -1,8 +1,12 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react'
 import { ChevronLeft } from 'lucide-react'
-import SOButton from './SOButton'
-import OptionRadioGroup from './optionRadio/OptionRadioGroup'
-import OptionCheckboxGroup from './optionCheckbox/OptionCheckboxGroup'
+import SOButton from '../../../components/SOButton'
+import OptionRadioGroup from '../../../components/optionRadio/OptionRadioGroup'
+import OptionCheckboxGroup from '../../../components/optionCheckbox/OptionCheckboxGroup'
+
+// 原檔名 ItemDetails.jsx
+// 原路徑 src/components
+// 原 component 名 InteractiveItemDetails
 
 const mockItemData = {
   images: [
@@ -55,7 +59,7 @@ const mockItemData = {
   ],
 }
 
-export default function InteractiveItemDetails() {
+export default function ItemDetail() {
   const { images, product, optionGroups } = mockItemData
 
   const [selections, setSelections] = useState({
@@ -108,7 +112,7 @@ export default function InteractiveItemDetails() {
   }, [optionGroups, selections])
 
   return (
-    <div className="relative mx-auto min-h-screen max-w-md bg-paper pb-24 font-sans text-ink-900">
+    <div className="relative mx-auto min-h-screen w-full max-w-md self-start bg-paper pb-24 font-sans text-ink-900">
       <div className="relative h-64 w-full bg-surface-2">
         <div
           ref={scrollRef}

@@ -21,7 +21,7 @@ type BadgeProps = {
 
 const Badge = ({ text = "", col = "rec", p = "primary" }: BadgeProps) => {
   const cols: Record<BadgeColorProps, string> = {
-    rec: "bg-brand-500 text-ink-900",
+    rec: "bg-accent-500 text-ink-900",
     sold: "bg-danger text-surface",
     done: "bg-success text-surface",
     hot: "border border-danger bg-surface text-danger",

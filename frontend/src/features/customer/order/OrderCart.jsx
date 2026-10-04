@@ -1,10 +1,13 @@
 import { useState } from 'react'
+import CustomerTopBar from '@/components/CustomerTopBar'
 import Counter from '../../../components/steper/counter'
 import graytrash from '../../../assets/ic_ordercart_graytrash.svg'
-import lessthan from '../../../assets/ic_ordercart_lessthan.svg'
 import person from '../../../assets/ic_ordercart_person.svg'
 import people from '../../../assets/ic_ordercart_people.svg'
 import SOButton from '../../../components/SOButton'
+
+// 原檔名 ordercart.jsx
+// 原路徑 src/features/customer/ProductDetail
 
 export default function OrderCart({ tableNumber }) {
   // 購物車假資料
@@ -74,18 +77,7 @@ export default function OrderCart({ tableNumber }) {
 
   return (
     <div className="mx-auto flex h-screen w-full max-w-93.75 flex-col bg-surface-2">
-      {/* Header：375 × 56 */}
-      <header className="flex h-14 items-center border-b border-line bg-surface px-4">
-        <button type="button" className="flex h-10 w-8 items-center justify-start text-ink-900">
-          <img src={lessthan} />
-        </button>
-
-        <div className="ml-2">
-          <h1 className="type-h3 text-ink-900">購物車</h1>
-
-          <p className="notification-time leading-4 text-ink-400">{tableNumber} 桌整桌共用</p>
-        </div>
-      </header>
+      <CustomerTopBar title="購物車" subTitle={`${tableNumber ?? ''} 桌整桌共用`} showBackButton={true} />
 
       {/* 共用購物車提示：375 × 39 */}
       <div className="flex h-9.75 items-center gap-2 bg-info-bg px-4">

@@ -1,4 +1,8 @@
-import SOButton from '../../components/SOButton'
+import SOButton from '../../../components/SOButton'
+
+// 原檔名 ordersubmitted.jsx
+// 原路徑 src/features/ProductDetail
+
 export default function OrderSubmitted() {
   // 訂單假資料，之後串後端 API 時可以換掉
   const orderItems = [
@@ -21,7 +25,7 @@ export default function OrderSubmitted() {
   ]
 
   return (
-    <div className="mx-auto flex min-h-203 w-full max-w-93.75 flex-col bg-surface-2">
+    <div className="mx-auto flex min-h-203 w-full max-w-93.75 flex-col self-start bg-surface-2">
       {/* 上方成功內容區：375 × 659 */}
       <main className="flex min-h-164.75 flex-1 flex-col items-center px-6 pt-26.25">
         {/* 成功圖示 */}

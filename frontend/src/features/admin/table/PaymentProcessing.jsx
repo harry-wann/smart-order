@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 
+// 原路徑 src/features/order-checkbill
+
 export default function PaymentProcessing({
   paymentMethod,
   subtotal,

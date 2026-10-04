@@ -1,9 +1,14 @@
 import React from 'react'
-import Bell from '../assets/ic_OrderHeader_bell.svg'
+import CustomerTopBar from '@/components/CustomerTopBar'
+import Bell from '../../../assets/ic_OrderHeader_bell.svg'
 import time from '@/assets/ic_ticket_time.svg'
-import ic_cart_time from '../assets/ic_cart_time.svg'
-import Badge from '../components/Badge'
-import SOButton from './SOButton'
+import ic_cart_time from '../../../assets/ic_cart_time.svg'
+import Badge from '../../../components/Badge'
+import SOButton from '../../../components/SOButton'
+
+// 原檔名 Ticket.jsx
+// 原路徑 src/components
+// 原 component 名 Ticket
 
 const mockTableOrderData = {
   tableInfo: {
@@ -84,17 +89,18 @@ const mockTableOrderData = {
   ],
 }
 
-export default function Ticket() {
+export default function OrderHistory() {
   const { tableInfo, orders } = mockTableOrderData
 
   return (
-    <div className="relative mx-auto min-h-screen max-w-md bg-paper pb-32 font-sans text-ink-900">
-      <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-line bg-surface px-4 shadow-sm">
-        <h1 className="type-h3 text-ink-900">本桌訂單</h1>
-        <button className="flex h-10 w-10 items-center justify-center active:opacity-70">
-          <img src={Bell} alt="通知鈴鐺" className="h-6 w-6" />
-        </button>
-      </header>
+    <div className="relative mx-auto min-h-screen w-full max-w-md self-start bg-paper pb-32 font-sans text-ink-900">
+      <div className="sticky top-0 z-10 shadow-sm">
+        <CustomerTopBar title="本桌訂單" showBackButton={false}>
+          <button className="flex h-11 w-11 items-center justify-center active:opacity-70">
+            <img src={Bell} alt="通知鈴鐺" className="h-6 w-6" />
+          </button>
+        </CustomerTopBar>
+      </div>
 
       <div className="flex items-center gap-2 bg-success-bg px-4 py-2.5 text-sm font-medium text-success-ink">
         <div className="h-2 w-2 rounded-pill bg-success"></div>
