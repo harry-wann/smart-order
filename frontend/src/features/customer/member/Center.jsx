@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router'
 import CustomerTopBar from '../../../components/CustomerTopBar'
 import SOFormInput, { SOFormInputType } from '../../../components/input/SOFormInput'
 import SOButton from '../../../components/SOButton'
@@ -14,6 +15,7 @@ import { SvgIconMap } from '@/assets/SvgIconMap'
 // 原 component 名 MemberCenter
 
 export function Center() {
+  const navigate = useNavigate()
 
   const datareserve = {
       date:"9/16",
@@ -59,7 +61,7 @@ export function Center() {
     icon: SvgIconMap.OrderEntrance,
     textH2: "我的預約",
     textP: `${datareserve.date}（${datareserve.day}）${datareserve.time}・${datareserve.people}`,
-    onclick:()=>navigate("/member")
+    onclick:()=>navigate("/member/reservations?view=member")
   }
 
   const personal = {

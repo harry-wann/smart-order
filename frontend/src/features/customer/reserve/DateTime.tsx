@@ -18,7 +18,11 @@ function DateTime() {
   const summary = time
     ? `${formatDateWithWeekday(addDays(today, dayOffset))}${time}・${people} 位`
     : '請選擇時段'
-  const contact = (location.state as { contact?: ReservationContact } | null)?.contact
+  const routeState = location.state as
+    | { contact?: ReservationContact; reservationType?: 'GUEST' | 'MEMBER' }
+    | null
+  const contact = routeState?.contact
+  const reservationType = routeState?.reservationType ?? (contact ? 'GUEST' : undefined)
 
   const handleSelectDay = (offset: number) => {
     setDayOffset(offset)
@@ -29,15 +33,19 @@ function DateTime() {
     if (!time) return
     const selectedDate = addDays(today, dayOffset)
     const date = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`
-    const reservationNo = `RS${date.replaceAll('-', '')}${time.replace(':', '')}`
+    const id = crypto.randomUUID()
+    const accessToken = crypto.randomUUID()
+    const reservationNo = `RS${date.replaceAll('-', '')}${time.replace(':', '')}${id.slice(0, 8).toUpperCase()}`
 
     const reservation: ReservationRouteState['reservation'] = {
-      id: reservationNo,
+      id,
       reservationNo,
+      accessToken,
       date,
       time,
       partySize: people,
       tableNo: people <= 4 ? 'A08' : 'C02',
+      reservationType,
       contact,
     }
 
@@ -210,7 +218,7 @@ const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
 const BOOKABLE_DAYS = 30
 const DINING_MINUTES = 100
 const MIN_PEOPLE = 1
-const MAX_PEOPLE = 10
+const MAX_PEOPLE = 8
 const TIME_SLOTS = ['17:00', '17:30', '18:00', '18:30', '19:00']
 
 const FULL_SLOTS_BY_OFFSET: Record<number, string[]> = {
@@ -230,8 +238,7 @@ function getFullSlots(dayOffset: number) {
 function getTableLabel(people: number) {
   if (people <= 2) return '2 人桌・靠牆區'
   if (people <= 4) return '4 人桌・窗邊區'
-  if (people <= 6) return '6 人桌・中央區'
-  return '10 人包廂'
+  return '8 人包廂'
 }
 
 function getMonthLabel(today: Date) {
