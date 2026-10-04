@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router'
 
 // Layout
+import CustomerRootLayout from './layouts/customer/CustomerRootLayout'
 import CustomerLayout from './layouts/customer/CustomerLayout'
 import DashboardLayout from './layouts/admin/DashboardLayout'
 
@@ -44,35 +45,38 @@ import { ToastManager } from './components/toast/ToastManager'
 function App() {
   return (
     <Routes>
-      {/* 顧客端 - 入口頁 */}
-      <Route index element={<Entrance />} />
+      {/* 顧客端 - 全部包在手機寬度的 root layout 裡 */}
+      <Route element={<CustomerRootLayout />}>
+        {/* 顧客端 - 入口頁 */}
+        <Route index element={<Entrance />} />
 
-      {/* 顧客端 - 點餐 / 購物車 / 訂單 流程 頁面路徑 */}
-      <Route path="/order" element={<CustomerLayout />}>
-        <Route index element={<Navigate to="/order/index" replace />} />
-        <Route path="index" element={<OrderIndex />} />
-        <Route path="menu" element={<Menu />} />
-        <Route path="itemdetail" element={<ItemDetail />} />
-        <Route path="cart" element={<OrderCart />} />
-        <Route path="submitted" element={<OrderSubmitted />} />
-        <Route path="history" element={<OrderHistory />} />
-      </Route>
-      {/* 掃碼進入是整頁版面，不套 CustomerLayout */}
-      <Route path="/order/checkin" element={<CheckIn />} />
+        {/* 顧客端 - 點餐 / 購物車 / 訂單 流程 頁面路徑 */}
+        <Route path="/order" element={<CustomerLayout />}>
+          <Route index element={<Navigate to="/order/index" replace />} />
+          <Route path="index" element={<OrderIndex />} />
+          <Route path="menu" element={<Menu />} />
+          <Route path="itemdetail" element={<ItemDetail />} />
+          <Route path="cart" element={<OrderCart />} />
+          <Route path="submitted" element={<OrderSubmitted />} />
+          <Route path="history" element={<OrderHistory />} />
+        </Route>
+        {/* 掃碼進入是整頁版面，不套 CustomerLayout */}
+        <Route path="/order/checkin" element={<CheckIn />} />
 
-      {/* 顧客端 - 會員流程 頁面路徑  */}
-      <Route path="/member" element={<CustomerLayout />}>
-        <Route index element={<Navigate to="/member/login" replace />} />
-        <Route path="login" element={<MemberLogin />} />
-        <Route path="verify" element={<VerifyCode />} />
-        <Route path="register" element={<Register />} />
-        <Route path="center" element={<Center />} />
-      </Route>
+        {/* 顧客端 - 會員流程 頁面路徑  */}
+        <Route path="/member" element={<CustomerLayout />}>
+          <Route index element={<Navigate to="/member/login" replace />} />
+          <Route path="login" element={<MemberLogin />} />
+          <Route path="verify" element={<VerifyCode />} />
+          <Route path="register" element={<Register />} />
+          <Route path="center" element={<Center />} />
+        </Route>
 
-      {/* 顧客端 - 預約 頁面路徑 */}
-      <Route path="/reserve" element={<CustomerLayout />}>
-        <Route index element={<Reservation />} />
-        <Route path="guest" element={<Guest />} />
+        {/* 顧客端 - 預約 頁面路徑 */}
+        <Route path="/reserve" element={<CustomerLayout />}>
+          <Route index element={<Reservation />} />
+          <Route path="guest" element={<Guest />} />
+        </Route>
       </Route>
 
       {/* 店家端 - 員工登入是整頁版面，不套 DashboardLayout */}

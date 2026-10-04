@@ -74,7 +74,7 @@ export default function OrderCart({ tableNumber }) {
   const totalPrice = cartItems.reduce((total, item) => total + item.price * item.quantity, 0)
 
   return (
-    <div className="mx-auto flex h-screen w-full max-w-93.75 flex-col bg-surface-2">
+    <div className="flex h-screen w-full flex-col bg-surface-2">
       <CustomerTopBar title="購物車" subTitle={`${tableNumber ?? ''} 桌整桌共用`} showBackButton={true} />
 
       {/* 共用購物車提示：375 × 39 */}

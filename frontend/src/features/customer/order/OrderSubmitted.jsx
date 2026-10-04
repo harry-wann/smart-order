@@ -25,7 +25,7 @@ export default function OrderSubmitted() {
   ]
 
   return (
-    <div className="mx-auto flex min-h-203 w-full max-w-93.75 flex-col self-start bg-surface-2">
+    <div className="flex min-h-203 w-full flex-col bg-surface-2">
       {/* 上方成功內容區：375 × 659 */}
       <main className="flex min-h-164.75 flex-1 flex-col items-center px-6 pt-26.25">
         {/* 成功圖示 */}

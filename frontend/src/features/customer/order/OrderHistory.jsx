@@ -91,7 +91,7 @@ export default function OrderHistory() {
   const { tableInfo, orders } = mockTableOrderData
 
   return (
-    <div className="relative mx-auto min-h-screen w-full max-w-md self-start bg-paper pb-32 font-sans text-ink-900">
+    <div className="relative min-h-screen w-full self-start bg-paper pb-32 font-sans text-ink-900">
       <div className="sticky top-0 z-10 shadow-sm">
         <CustomerTopBar title="本桌訂單" showBackButton={false}>
           <button className="flex h-11 w-11 items-center justify-center active:opacity-70">
@@ -187,7 +187,7 @@ export default function OrderHistory() {
         ))}
       </div>
 
-      <div className="fixed right-0 bottom-0 left-0 mx-auto max-w-md border-t border-line bg-surface p-4 pb-6 shadow-[--shadow-pop]">
+      <div className="fixed right-0 bottom-0 left-0 border-t border-line bg-surface p-4 pb-6 shadow-[--shadow-pop]">
         <p className="mb-3 text-center type-caption text-ink-600">用餐完畢請到櫃檯結帳</p>
         <div className="flex gap-3">
           <SOButton type="button" height="h-[52px]" text="繼續加點" />

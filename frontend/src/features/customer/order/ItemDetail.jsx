@@ -111,7 +111,7 @@ export default function ItemDetail() {
   }, [optionGroups, selections])
 
   return (
-    <div className="relative mx-auto min-h-screen w-full max-w-md self-start bg-paper pb-24 font-sans text-ink-900">
+    <div className="relative min-h-screen w-full self-start bg-paper pb-24 font-sans text-ink-900">
       <div className="relative h-64 w-full bg-surface-2">
         <div
           ref={scrollRef}
@@ -222,7 +222,7 @@ export default function ItemDetail() {
         )
       })}
 
-      <div className="fixed right-0 bottom-0 left-0 mx-auto flex h-22.25 max-w-md border-t border-line bg-paper p-4 pb-6">
+      <div className="fixed right-0 bottom-0 left-0 flex h-22.25 border-t border-line bg-paper p-4 pb-6">
         <SOButton
           height="h-[52px]"
           type="button"
