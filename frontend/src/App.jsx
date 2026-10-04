@@ -21,6 +21,7 @@ import { Center } from './features/customer/member/Center'
 import { Reservation } from './features/customer/reserve/Reservation'
 import { Guest } from './features/customer/reserve/Guest'
 import DateTime from './features/customer/reserve/DateTime'
+import Done from './features/customer/reserve/Done'
 
 // 店家端
 import { Login } from './features/admin/Login'
@@ -79,6 +80,8 @@ function App() {
           <Route index element={<Reservation />} />
           <Route path="guest" element={<Guest />} />
           <Route path="datetime" element={<DateTime />} />
+          <Route path="done" element={<Done />} />
+          <Route path=":reservationId/done" element={<Done />} />
         </Route>
       </Route>
 
