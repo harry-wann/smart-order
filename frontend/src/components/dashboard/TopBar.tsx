@@ -44,7 +44,7 @@ const topBarConfigByPath: Record<string, TopBarConfig> = {
   '/admin/table_overview': { title: '桌況總覽' },
   '/admin/kitchen': { title: '出菜看板' },
   '/admin/reservations': { title: '預約管理' },
-  '/admin/queue': { title: '候位管理' },
+  '/admin/waitlist': { title: '候位管理' },
   '/admin/menu': { title: '菜單管理' },
   '/admin/options': { title: '選項群組' },
   '/admin/seats': { title: '座位管理' },

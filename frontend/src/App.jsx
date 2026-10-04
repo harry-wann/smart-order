@@ -14,6 +14,7 @@ import ItemDetails from './components/ItemDetails'
 import SeatManagement from './features/admin/table/SeatManagement'
 
 import KitchenOverview from './features/admin/kitchen/KitchenOverview'
+import WaitlistManagement from './features/admin/waitlist/WaitlistManagement'
 import CustomerLayout from './layouts/customer/CustomerLayout'
 import OrderIndex from './features/customer/order/OrderIndex'
 import TableOpen from './features/admin/table/TableOpen'
@@ -48,6 +49,7 @@ function App() {
         <Route path="table_overview" element={<TableOverview />} />
         <Route path="seats" element={<SeatManagement />} />
         <Route path="kitchen" element={<KitchenOverview />} />
+        <Route path="waitlist" element={<WaitlistManagement />} />
         <Route path="order" element={<OrderPage />} />
         <Route path="payment-processing" element={<PaymentProcessing />} />
         <Route path="table_overview/:tableNo/open" element={<TableOpen />} />

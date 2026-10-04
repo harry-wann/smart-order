@@ -42,7 +42,7 @@ const menuGroups: DashboardMenu[] = [
       {
         label: '候位管理',
         icon: SvgIconMap.DashboardList,
-        path: 'queue',
+        path: 'waitlist',
       },
     ],
   },
