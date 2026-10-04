@@ -18,6 +18,7 @@ import { MemberLogin } from './features/customer/member/MemberLogin'
 import VerifyCode from './features/customer/member/VerifyCode'
 import { Register } from './features/customer/member/Register'
 import { Center } from './features/customer/member/Center'
+import Reservations from './features/customer/member/Reservations'
 import { Reservation } from './features/customer/reserve/Reservation'
 import { Guest } from './features/customer/reserve/Guest'
 import DateTime from './features/customer/reserve/DateTime'
@@ -73,6 +74,7 @@ function App() {
           <Route path="verify" element={<VerifyCode />} />
           <Route path="register" element={<Register />} />
           <Route path="center" element={<Center />} />
+          <Route path="reservations" element={<Reservations />} />
         </Route>
 
         {/* 顧客端 - 預約 頁面路徑 */}

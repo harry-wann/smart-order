@@ -87,7 +87,7 @@ function Done() {
           height="h-13"
           variant="secondary"
           text="查看我的預約"
-          onClick={() => navigate('/member/reservations')}
+          onClick={() => navigate('/member/reservations', { state: { reservation } })}
         />
       </div>
     </div>
