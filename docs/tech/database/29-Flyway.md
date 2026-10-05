@@ -31,12 +31,11 @@ Flyway 的做法：**所有表結構的改動，都寫成一支帶編號的 SQL 
 backend/src/main/resources/db/migration/
 ├── V1__create_account_tables.sql
 ├── V2__create_menu_tables.sql
-├── V3__create_dining_tables.sql
-├── V4__create_inventory_tables.sql
-├── V5__create_payment_tables.sql
-├── V6__create_reservation_tables.sql
-├── V7__create_service_and_waitlist.sql
-└── V8__create_member_benefit_tables.sql    ← 進階 A6（點數與優惠券）
+├── V3__create_table_tables.sql
+├── V4__create_dining_tables.sql
+├── V5__create_inventory_tables.sql
+└── V6__create_payment_tables.sql
+                                            ← 進階功能做到時才接著加 V7、V8…
 ```
 
 （每一支建哪幾張表，見 [03-資料庫設計](../../spec/03-資料庫設計.md) 的「Flyway 檔案規劃」。）

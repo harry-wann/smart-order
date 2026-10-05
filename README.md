@@ -164,7 +164,7 @@ MAMP 不會讀取 `.env` 的 `MYSQL_*` 欄位，這些欄位可忽略。資料�
 <summary>替代方案：Docker Compose（使用 MAMP 可跳過）</summary>
 
 1. 安裝並啟動 Docker Desktop。
-2. 在 `backend/.env` 換掉 `MYSQL_ROOT_PASSWORD`、`MYSQL_PASSWORD` 的範例密碼；保持 `MYSQL_DATABASE=northwind`，`MYSQL_USER` 使用一般帳號，勿填 root。
+2. 在 `backend/.env` 換掉 `MYSQL_ROOT_PASSWORD`、`MYSQL_PASSWORD` 的範例密碼；`MYSQL_USER` 使用一般帳號，勿填 root。
 3. 將兩組 `*_DATASOURCE_USERNAME`／`*_DATASOURCE_PASSWORD` 都設為 `MYSQL_USER`／`MYSQL_PASSWORD` 的值；連線 URL 使用範例中的 `127.0.0.1:3306/smartorder` 與 `127.0.0.1:3306/northwind`。
 4. 在 **`backend/`** 執行：
 
@@ -173,9 +173,11 @@ docker compose up -d
 docker compose ps
 ```
 
-等 `mysql` 顯示 **healthy**，開啟 `http://localhost/` 使用 phpMyAdmin，再繼續第 3 步。首次初始化會建立 `northwind`、`smartorder` 兩個資料庫與應用程式帳號（`smartorder` 由 `backend/docker/mysql-init/` 建立）。
+等 `mysql` 顯示 **healthy**，開啟 `http://localhost/` 使用 phpMyAdmin，再繼續第 3 步。首次初始化會建立應用程式帳號，並由 `backend/docker/mysql-init/` 建立 `smartorder`、`northwind` 兩個資料庫、授權給這個帳號。
 
-> 以前就建立過資料卷的話，初始化腳本不會再執行，`smartorder` 不會自動出現：請用 phpMyAdmin 手動建立 `smartorder`，並授權給 `MYSQL_USER`。
+> 以前就建立過資料卷的話，初始化腳本不會再執行，缺的資料庫不會自動出現：請用 phpMyAdmin 手動建立 `smartorder`（或 `northwind`），並授權給 `MYSQL_USER`。
+>
+> 舊的 `.env` 若還有 `MYSQL_DATABASE`，可以刪掉，Compose 已經不讀這一項。
 
 Compose 使用 MySQL **5.7.44**，佔用主機的 **3306**（MySQL）與 **80**（phpMyAdmin）；請避免與 MAMP 或其他服務衝突。已有資料卷時，修改 `.env` 不會更新資料庫帳密。停止可用 `docker compose down`，保留資料卷供下次使用。
 
