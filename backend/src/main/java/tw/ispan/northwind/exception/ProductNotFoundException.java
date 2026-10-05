@@ -1,4 +1,6 @@
-package tw.ispan.smartorder.exception;
+package tw.ispan.northwind.exception;
+
+// 原路徑 tw.ispan.smartorder.exception
 
 public class ProductNotFoundException extends RuntimeException {
 

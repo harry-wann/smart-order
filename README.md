@@ -131,15 +131,23 @@ cp .env.example .env
 
 1. 開啟 MAMP、啟動 MySQL，在連接埠設定中確認 **MySQL port**。
 2. 從 MAMP 起始頁開啟 phpMyAdmin，使用本機 MySQL 管理員帳號登入。
-3. 建立 `northwind` 資料庫，字元集選 `utf8mb4`、定序選 `utf8mb4_unicode_ci`；已存在則沿用。
-4. 建立應用程式帳號（例如 `spring`），設定密碼、允許本機連線，並授予 `northwind` 權限。也可沿用已設定好的課程帳號。
-5. 編輯 `backend/.env` 的三個連線欄位，填入實際值：
+3. 建立兩個資料庫，字元集都選 `utf8mb4`、定序選 `utf8mb4_unicode_ci`；已存在則沿用：
+   - `smartorder`：專題本身的資料庫
+   - `northwind`：練習用的範例資料庫，只給 `/api/northwind/**` 的 demo API 使用
+4. 建立應用程式帳號（例如 `spring`），設定密碼、允許本機連線，並授予 **`smartorder` 與 `northwind` 兩個資料庫**的權限。也可沿用已設定好的課程帳號。
+5. 編輯 `backend/.env` 的兩組連線欄位，填入實際值：
 
 ```properties
-SPRING_DATASOURCE_URL=jdbc:mysql://127.0.0.1:8889/northwind?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Taipei&characterEncoding=utf8
-SPRING_DATASOURCE_USERNAME=spring
-SPRING_DATASOURCE_PASSWORD=your_actual_mysql_password
+SMARTORDER_DATASOURCE_URL=jdbc:mysql://127.0.0.1:8889/smartorder?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Taipei&characterEncoding=utf8
+SMARTORDER_DATASOURCE_USERNAME=spring
+SMARTORDER_DATASOURCE_PASSWORD=your_actual_mysql_password
+
+NORTHWIND_DATASOURCE_URL=jdbc:mysql://127.0.0.1:8889/northwind?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Taipei&characterEncoding=utf8
+NORTHWIND_DATASOURCE_USERNAME=spring
+NORTHWIND_DATASOURCE_PASSWORD=your_actual_mysql_password
 ```
+
+> 以前的 `.env` 只有一組 `SPRING_DATASOURCE_*`，現在改成上面兩組；舊的三行可以刪掉。
 
 > 上例假設 MySQL 使用 `8889`；若本機是 `3306`，請改成 `3306`。MySQL 埠與 Apache 網頁埠不同，可對照 [MAMP 連接埠說明](https://documentation.mamp.info/en/MAMP-Windows/Preferences/Ports/)。
 
@@ -157,7 +165,7 @@ MAMP 不會讀取 `.env` 的 `MYSQL_*` 欄位，這些欄位可忽略。資料�
 
 1. 安裝並啟動 Docker Desktop。
 2. 在 `backend/.env` 換掉 `MYSQL_ROOT_PASSWORD`、`MYSQL_PASSWORD` 的範例密碼；保持 `MYSQL_DATABASE=northwind`，`MYSQL_USER` 使用一般帳號，勿填 root。
-3. 將 `SPRING_DATASOURCE_USERNAME`／`SPRING_DATASOURCE_PASSWORD` 分別設為 `MYSQL_USER`／`MYSQL_PASSWORD` 的值；連線 URL 使用範例中的 `127.0.0.1:3306/northwind`。
+3. 將兩組 `*_DATASOURCE_USERNAME`／`*_DATASOURCE_PASSWORD` 都設為 `MYSQL_USER`／`MYSQL_PASSWORD` 的值；連線 URL 使用範例中的 `127.0.0.1:3306/smartorder` 與 `127.0.0.1:3306/northwind`。
 4. 在 **`backend/`** 執行：
 
 ```powershell
@@ -165,7 +173,9 @@ docker compose up -d
 docker compose ps
 ```
 
-等 `mysql` 顯示 **healthy**，開啟 `http://localhost/` 使用 phpMyAdmin，再繼續第 3 步。首次初始化會建立資料庫與應用程式帳號。
+等 `mysql` 顯示 **healthy**，開啟 `http://localhost/` 使用 phpMyAdmin，再繼續第 3 步。首次初始化會建立 `northwind`、`smartorder` 兩個資料庫與應用程式帳號（`smartorder` 由 `backend/docker/mysql-init/` 建立）。
+
+> 以前就建立過資料卷的話，初始化腳本不會再執行，`smartorder` 不會自動出現：請用 phpMyAdmin 手動建立 `smartorder`，並授權給 `MYSQL_USER`。
 
 Compose 使用 MySQL **5.7.44**，佔用主機的 **3306**（MySQL）與 **80**（phpMyAdmin）；請避免與 MAMP 或其他服務衝突。已有資料卷時，修改 `.env` 不會更新資料庫帳密。停止可用 `docker compose down`，保留資料卷供下次使用。
 
@@ -201,7 +211,7 @@ SELECT CategoryID, CategoryName FROM Categories WHERE CategoryID = 1;
 
 > **Working directory 務必指向 `backend/`。** Spring Boot 從執行目錄讀取 `.env`。若直接開啟 backend 專案可填 `$PROJECT_DIR$`；若開啟整個 repository，填 `$PROJECT_DIR$/backend`。
 
-**完成確認：** 出現 `Started SmartOrderApplication`，瀏覽 `http://localhost:8080/api/products` 可看到包含 `items` 的 JSON。
+**完成確認：** 出現 `Started SmartOrderApplication`，瀏覽 `http://localhost:8080/api/northwind/products` 可看到包含 `items` 的 JSON。
 
 <details markdown="1">
 <summary>替代方案：從終端機啟動／使用 VS Code</summary>
@@ -232,7 +242,7 @@ VS Code 可安裝 Extension Pack for Java、Spring Boot Extension Pack，開啟 
 | 檢查前端 | `frontend/` → `npm run lint`、`npm run typecheck`、`npm run build` |
 | 預覽前端建置 | `frontend/` → `npm run preview`（先 build） |
 | 啟動／除錯後端 | IntelliJ → Run／Debug |
-| 查看商品 API | `http://localhost:8080/api/products` |
+| 查看 Northwind 商品 API | `http://localhost:8080/api/northwind/products` |
 | 互動測試 API | `http://localhost:8080/swagger-ui/index.html` |
 
 <details markdown="1">
@@ -252,9 +262,9 @@ VS Code 可安裝 Extension Pack for Java、Spring Boot Extension Pack，開啟 
 | --- | --- |
 | `npm ci` 回報版本不符 | `node -v` 是否為 24.x；切換版本後重開終端機確認 |
 | MySQL 連線失敗 | MySQL 是否啟動；`.env` 的埠號是否與 MAMP／本機設定一致 |
-| `Access denied for user` | 帳號與密碼是否已在 MySQL 設定，並允許本機連線、存取 `northwind` |
-| `Unknown database`／找不到 `Products` | 是否在目前連線的 MySQL 建立 `northwind` 並匯入資料；核對表名大小寫 |
-| 找不到 `SPRING_DATASOURCE_URL` | Working directory 是否為 `backend/`；檔名是否誤存成 `.env.txt` |
+| `Access denied for user` | 帳號與密碼是否已在 MySQL 設定，並允許本機連線、存取 `smartorder` 與 `northwind` |
+| `Unknown database`／找不到 `Products` | 是否在目前連線的 MySQL 建立 `smartorder`、`northwind` 並在 `northwind` 匯入資料；核對表名大小寫 |
+| 找不到 `SMARTORDER_DATASOURCE_URL`／`NORTHWIND_DATASOURCE_URL` | Working directory 是否為 `backend/`；檔名是否誤存成 `.env.txt`；`.env` 是否已改成兩組連線欄位 |
 | Java 版本或編譯錯誤 | Project SDK、Maven 與執行設定是否都使用 JDK 21，再同步 Maven |
 | `8080` 已被使用 | 是否重複啟動後端；停止先前的程序再執行 |
 | API 回傳空清單 | 在 phpMyAdmin 執行上面的 SELECT，確認 `Products` 有資料 |

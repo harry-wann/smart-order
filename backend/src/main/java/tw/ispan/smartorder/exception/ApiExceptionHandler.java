@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.OffsetDateTime;
 import java.util.stream.Collectors;
+import tw.ispan.northwind.exception.CategoryNotFoundException;
+import tw.ispan.northwind.exception.ProductNotFoundException;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {

@@ -1,8 +1,10 @@
-package tw.ispan.smartorder.dto;
+package tw.ispan.northwind.dto;
 
 import org.springframework.data.domain.Page;
 
 import java.util.List;
+
+// 原路徑 tw.ispan.smartorder.dto
 
 /** GET 清單回應，讓呼叫端知道分頁資訊。 */
 public record ProductPageResponse(

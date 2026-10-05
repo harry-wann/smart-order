@@ -1,4 +1,4 @@
-package tw.ispan.smartorder.controller;
+package tw.ispan.northwind.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,20 +16,22 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
-import tw.ispan.smartorder.dto.ProductCreateRequest;
-import tw.ispan.smartorder.dto.ProductPageResponse;
-import tw.ispan.smartorder.dto.ProductPatchRequest;
-import tw.ispan.smartorder.dto.ProductResponse;
-import tw.ispan.smartorder.dto.ProductUpdateRequest;
-import tw.ispan.smartorder.service.ProductService;
+import tw.ispan.northwind.dto.ProductCreateRequest;
+import tw.ispan.northwind.dto.ProductPageResponse;
+import tw.ispan.northwind.dto.ProductPatchRequest;
+import tw.ispan.northwind.dto.ProductResponse;
+import tw.ispan.northwind.dto.ProductUpdateRequest;
+import tw.ispan.northwind.service.ProductService;
 
 import java.net.URI;
+
+// 原路徑 tw.ispan.smartorder.controller
 
 /**
  * Controller（控制器）只負責 HTTP：接收請求、呼叫 Service、回傳狀態碼與 JSON。
  */
 @RestController
-@RequestMapping("/api/products")
+@RequestMapping("/api/northwind/products")
 public class ProductController {
 
     @Autowired
@@ -51,7 +53,7 @@ public class ProductController {
         @Valid @RequestBody ProductCreateRequest request,
         UriComponentsBuilder uriBuilder) {
         ProductResponse response = productService.create(request);
-        URI location = uriBuilder.path("/api/products/{id}")
+        URI location = uriBuilder.path("/api/northwind/products/{id}")
             .buildAndExpand(response.id())
             .toUri();
         return ResponseEntity.created(location).body(response);

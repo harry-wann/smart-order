@@ -1,8 +1,10 @@
-package tw.ispan.smartorder.dto;
+package tw.ispan.northwind.dto;
 
-import tw.ispan.smartorder.entity.Product;
+import tw.ispan.northwind.entity.Product;
 
 import java.math.BigDecimal;
+
+// 原路徑 tw.ispan.smartorder.dto
 
 /** 回傳給前端的資料格式，不直接暴露 Entity。 */
 public record ProductResponse(

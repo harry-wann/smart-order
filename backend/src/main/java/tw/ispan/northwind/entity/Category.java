@@ -1,9 +1,11 @@
-package tw.ispan.smartorder.entity;
+package tw.ispan.northwind.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+
+// 原路徑 tw.ispan.smartorder.entity
 
 /**
  * 對應 Northwind 的 Categories 資料表。

@@ -1,4 +1,4 @@
-package tw.ispan.smartorder.dto;
+package tw.ispan.northwind.dto;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
@@ -7,6 +7,8 @@ import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
+
+// 原路徑 tw.ispan.smartorder.dto
 
 /** PATCH 使用的部分更新格式；只傳想修改的欄位。 */
 public record ProductPatchRequest(
