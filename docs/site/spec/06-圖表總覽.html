@@ -1118,7 +1118,7 @@ pre.mermaid svg{max-width:100%;height:auto}
     MENU_ITEM ||--o{ CART_ITEM : "被加進購物車"
     OPTION_VALUE ||--o{ CART_ITEM_OPTION : "被選"
     DINING_SESSION ||--o{ PAYMENT : "付款"
-    DINING_SESSION ||--o{ SERVICE_CALL : "服務鈴"
+    DINING_SESSION ||--o{ SERVICE_CALL : "服務鈴 進階"
     WAITLIST ||--o| DINING_SESSION : "報到後綁定"
     RESERVATION ||--o| DINING_SESSION : "報到開桌"
     RESERVATION ||--o{ RESERVATION_PREORDER_ITEM : "預先點餐 進階"
@@ -1131,8 +1131,8 @@ pre.mermaid svg{max-width:100%;height:auto}
     OPTION_GROUP ||--|{ OPTION_VALUE : "包含"
     MENU_ITEM ||--o{ ORDER_ITEM : "被點"
     MENU_ITEM ||--o| INVENTORY_ITEM : "庫存"
-    INVENTORY_ITEM ||--o{ INVENTORY_LOG : "異動"
-    STAFF ||--o{ SERVICE_CALL : "處理"
+    INVENTORY_ITEM ||--o{ INVENTORY_LOG : "異動 進階 A3"
+    STAFF ||--o{ SERVICE_CALL : "處理 進階"
     STAFF |o--o{ RESERVATION : "代客取消"
 
     MEMBER {
@@ -1188,7 +1188,7 @@ pre.mermaid svg{max-width:100%;height:auto}
         bigint submitted_by_guest_id FK "誰按的送出 可 NULL"
         int sequence_no "第幾單"
         varchar status
-        tinyint is_preorder "KDS 排最前"
+        tinyint is_preorder "進階 A2 KDS 排最前"
         datetime placed_at
     }
     ORDER_ITEM {
@@ -1210,7 +1210,7 @@ pre.mermaid svg{max-width:100%;height:auto}
     }
     SERVICE_CALL {
         bigint id PK
-        varchar type "SERVICE SOUP POT_CLEAN"
+        varchar type "進階 SERVICE SOUP POT_CLEAN"
         varchar status "PENDING ACKNOWLEDGED DONE"
         datetime created_at
     }
@@ -1250,7 +1250,7 @@ pre.mermaid svg{max-width:100%;height:auto}
         int party_size
         varchar status "四種 沒有 PENDING"
         varchar access_token "UK 匿名訂位的憑證"
-        datetime preorder_updated_at "NULL 表示沒預點"
+        datetime preorder_updated_at "進階 A2 NULL 表示沒預點"
         datetime cancelled_at "NULL 表示沒取消"
         bigint cancelled_by_staff_id FK "櫃檯代客取消的員工 客人取消為 NULL"
         varchar cancel_source "CUSTOMER 或 STAFF"

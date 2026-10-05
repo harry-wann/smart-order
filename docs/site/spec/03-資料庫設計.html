@@ -179,6 +179,11 @@ pre.mermaid svg{max-width:100%;height:auto}
 <p><a class="gloss" href="../tech/database/22-關聯式資料庫與SQL.html" title="看這個技術的白話說明">MySQL</a> 8.0 ／ <code>utf8mb4</code> ／ <code>utf8mb4_unicode_ci</code>
 ER 圖見 <a href="../spec/06-圖表總覽.html">06-圖表總覽</a>。本文件是欄位層級的定義，建表以此為準。
 <strong>所有建表與改表都透過 <a href="../tech/database/29-Flyway.html">Flyway</a></strong>，<code>ddl-auto</code> 設為 <code>validate</code>。</p>
+<p><strong>目前狀態（2026-10-05）</strong>：專題資料庫叫 <code>smartorder</code>（後端是 smartorder／northwind 雙資料庫）。<a class="gloss" href="../tech/database/29-Flyway.html" title="看這個技術的白話說明">Flyway</a> 還沒啟用，
+基礎版的建表 <a class="gloss" href="../tech/database/22-關聯式資料庫與SQL.html" title="看這個技術的白話說明">SQL</a> 與假資料先放在 <code>backend/db/</code>：<code>schema.sql</code>（建表）、<code>seed.sql</code>（假資料，由 <code>generate_seed.py</code> 產生），
+用法見 <code>backend/db/README.md</code>。啟用 Flyway 時，把 <code>schema.sql</code> 依下面的檔案規劃拆成 V1～V6。</p>
+<p><strong>MySQL 版本</strong>：規格寫 8.0，團隊的 <code>backend/compose.yaml</code> 目前是 5.7.44；兩份 SQL 在兩個版本都測過。
+差別只有 <code>CHECK</code> 限制：8.0 會檢查，5.7 會直接忽略。</p>
 </blockquote>
 <h2 id="0-通用約定">0. 通用約定</h2>
 <div class="tablewrap"><table>
@@ -224,19 +229,34 @@ ER 圖見 <a href="../spec/06-圖表總覽.html">06-圖表總覽</a>。本文件
 </tbody>
 </table></div>
 <h3 id="flyway-檔案規劃">Flyway 檔案規劃</h3>
+<p>基礎與進階分開：基礎的 migration 只建基礎功能用到的表與欄位，進階做到才加，版本號接在當時最新一支後面。
+進階最後沒做，資料庫裡也不會留一堆空表與用不到的欄位。</p>
 <pre><code>db/migration/
+基礎
 ├── V1__create_account_tables.sql       member, verification_code, staff
 ├── V2__create_menu_tables.sql          menu_category, menu_item, option_group, option_value, menu_item_option_group
-├── V3__create_dining_tables.sql        dining_table, dining_session, dining_session_guest, cart_item, cart_item_option,
+├── V3__create_table_tables.sql         dining_table, reservation, waitlist
+├── V4__create_dining_tables.sql        dining_session（建完補上 waitlist → dining_session 的外鍵）、
+│                                       dining_session_guest, cart_item, cart_item_option,
 │                                       order_ticket, order_item, order_item_option
-├── V4__create_inventory_tables.sql     inventory_item, inventory_log
-├── V5__create_payment_tables.sql       payment
-├── V6__create_reservation_tables.sql   reservation, reservation_preorder_item, reservation_preorder_option
-├── V7__create_service_and_waitlist.sql service_call, waitlist
-└── V8__create_member_benefit_tables.sql point_transaction, coupon, member_coupon   （進階 A6）
+├── V5__create_inventory_tables.sql     inventory_item
+└── V6__create_payment_tables.sql       payment
+進階（做到才建）
+├── V?__service_call.sql                service_call（服務鈴）
+├── V?__a2_preorder.sql                 reservation_preorder_item, reservation_preorder_option；
+│                                       order_ticket 加 is_preorder、reservation 加 preorder_updated_at
+├── V?__a3_inventory_admin.sql          inventory_log；inventory_item 加 unit
+└── V?__a6_member_benefits.sql          point_transaction, coupon, member_coupon；
+                                        member 加 points、dining_session 加 discount
 </code></pre>
+<blockquote>
+<p><strong>順序有外鍵的限制</strong>：<code>dining_session</code> 有外鍵指向 <code>reservation</code> 與 <code>waitlist</code>，這兩張要先建；
+<code>waitlist.dining_session_id</code> 反過來指向 <code>dining_session</code>，所以這個外鍵等 <code>dining_session</code> 建好後用 <code>ALTER TABLE</code> 補上（<code>schema.sql</code> 就是這樣寫的）。</p>
+<p>下面各表的欄位表裡，標「進階」的欄位都不在基礎的建表裡，要等對應的進階 migration 才加。
+服務鈴（C-21、S-11）已改列進階，<code>service_call</code> 一起移到進階。</p>
+</blockquote>
 <p><strong>migration 檔案要指定唯一負責人</strong>（工作分配定案後指派），其他人要改表就開 issue 請他加。
-<strong>已經合併進 <code>develop</code> 的檔案永遠不能修改</strong>——別人的資料庫已經跑過那一版了，改了 <a class="gloss" href="../tech/database/29-Flyway.html" title="看這個技術的白話說明">Flyway</a> 會拒絕啟動。要改就寫一支新的。</p>
+<strong>已經合併進 <code>develop</code> 的檔案永遠不能修改</strong>——別人的資料庫已經跑過那一版了，改了 Flyway 會拒絕啟動。要改就寫一支新的。</p>
 <hr />
 <h2 id="1-帳號與權限">1. 帳號與權限</h2>
 <h3 id="member-會員"><code>member</code> 會員</h3>
@@ -284,7 +304,7 @@ ER 圖見 <a href="../spec/06-圖表總覽.html">06-圖表總覽</a>。本文件
 <td>points</td>
 <td>INT</td>
 <td>DEFAULT 0</td>
-<td>點數餘額（快取欄位），<strong>進階 A6 才用</strong></td>
+<td>點數餘額（快取欄位）。<strong>進階 A6 才加這欄</strong>，基礎建表沒有</td>
 </tr>
 <tr>
 <td>profile_completed</td>
@@ -405,13 +425,13 @@ ER 圖見 <a href="../spec/06-圖表總覽.html">06-圖表總覽</a>。本文件
 </tbody>
 </table></div>
 <blockquote>
-<p>種子資料建三個帳號：<code>counter/1234</code>、<code>kitchen/1234</code>、<code>manager/1234</code>，<strong>並寫進 README</strong>，面試官才能登入看。</p>
+<p>種子資料建四個帳號：<code>manager</code>、<code>counter</code>、<code>kai</code>、<code>kitchen</code>，密碼都是 <code>1234</code>，<strong>並寫進 README</strong>，面試官才能登入看。</p>
 </blockquote>
 <hr />
 <h2 id="2-菜單">2. 菜單</h2>
 <h3 id="menu_category-分類"><code>menu_category</code> 分類</h3>
 <p>id、name、sort_order、active</p>
-<p>種子：鍋底／肉品／海鮮／蔬菜／火鍋料／主食／飲料／酒 共 8 類。</p>
+<p>種子：鍋底／肉品／海鮮／蔬菜／火鍋料／主食／飲料／酒類 共 8 類。</p>
 <h3 id="menu_item-品項"><code>menu_item</code> 品項</h3>
 <div class="tablewrap"><table>
 <thead>
@@ -603,7 +623,7 @@ ER 圖見 <a href="../spec/06-圖表總覽.html">06-圖表總覽</a>。本文件
 </tr>
 </tbody>
 </table></div>
-<p>種子：12 張桌（2 人 ×2、4 人 ×6、6 人 ×2、8 人 ×2），其中 8 張 <code>reservable = 1</code>。</p>
+<p>種子：18 張桌（2 人 ×4、4 人 ×10、6 人 ×2、8 人 ×2，共 76 座），其中 13 張 <code>reservable = 1</code>，對齊 Figma S-08。</p>
 <blockquote>
 <p><strong>桌位狀態只有三種，而且只反映現場當下。</strong> 這個欄位<strong>不存</strong>「預約保留」。</p>
 <p><strong>預約保留（M7 7.10）是查詢時算出來的顯示狀態。</strong> <code>AVAILABLE</code> 的桌如果有一筆訂位同時符合
@@ -695,7 +715,7 @@ SELECT * FROM reservation
 <tr>
 <td>discount</td>
 <td>DECIMAL(10,2) DEFAULT 0</td>
-<td>優惠券＋點數折抵合計（可以同時用），<strong>進階 A6 才用</strong>，基礎永遠是 0</td>
+<td>優惠券＋點數折抵合計（可以同時用）。<strong>進階 A6 才加這欄</strong>，基礎建表沒有，<code>total = subtotal + service_fee</code></td>
 </tr>
 <tr>
 <td>total</td>
@@ -725,7 +745,7 @@ SELECT * FROM reservation
 <p><strong>人數為什麼不參與金額計算？</strong>
 我們的計價是「一鍋一價 + 單點」、無低消。人數的用途是：座位安排、分帳均分的參考值、兒童友善推薦、客單價統計。
 <strong>這點一定要寫清楚</strong>，不然會有人自己加一個人頭費進去。</p>
-<p><strong>一張桌同時只能有一筆 <code>status = OPEN</code> 的 session。</strong> My<a class="gloss" href="../tech/database/22-關聯式資料庫與SQL.html" title="看這個技術的白話說明">SQL</a> 沒有部分唯一索引，這條規則在 Service 層用 <code>SELECT ... FOR UPDATE</code> 保證（見 <a href="../spec/modules/M2-桌位開桌與候位.html">M2 問題 2</a>）。</p>
+<p><strong>一張桌同時只能有一筆 <code>status = OPEN</code> 的 session。</strong> MySQL 沒有部分唯一索引，這條規則在 Service 層用 <code>SELECT ... FOR UPDATE</code> 保證（見 <a href="../spec/modules/M2-桌位開桌與候位.html">M2 問題 2</a>）。</p>
 <p><strong>為什麼沒有 <code>CHECKOUT_PENDING</code>？</strong> 舊版要求結帳時會把 session 鎖成「結帳中」、不能加點。
 現在基礎是客人到櫃檯結帳，改成<strong>金額比對 + 列鎖</strong>：送出點餐、櫃檯結清、（進階）線上付款
 三個地方都在交易裡 <code>SELECT ... FOR UPDATE</code> 這一列；結清／付款帶 <code>expectedTotal</code>，
@@ -896,9 +916,9 @@ session 進終態（<code>PAID</code> 或 <code>CANCELLED</code>）時，整桌�
 <td><code>PENDING</code>/<code>PREPARING</code>/<code>SERVED</code>/<code>CANCELLED</code></td>
 </tr>
 <tr>
-<td><strong>is_preorder</strong></td>
+<td>is_preorder</td>
 <td>TINYINT(1) DEFAULT 0</td>
-<td>訂位時先點的單，KDS 排最前</td>
+<td>訂位時先點的單，KDS 排最前。<strong>進階 A2 才加這欄</strong></td>
 </tr>
 <tr>
 <td>source</td>
@@ -913,7 +933,7 @@ session 進終態（<code>PAID</code> 或 <code>CANCELLED</code>）時，整桌�
 <tr>
 <td>placed_at</td>
 <td>DATETIME(3)</td>
-<td><strong>預約單用「開桌時間」而非「線上點餐時間」</strong></td>
+<td>送出時間；（進階 A2）預點轉來的單用「開桌時間」而非「線上點餐時間」</td>
 </tr>
 <tr>
 <td>cancel_reason</td>
@@ -1006,7 +1026,10 @@ session 進終態（<code>PAID</code> 或 <code>CANCELLED</code>）時，整桌�
 <blockquote>
 <p>選項也要存快照，否則刪掉一個選項後歷史訂單會顯示空白。</p>
 </blockquote>
-<h3 id="service_call-服務鈴-新增"><code>service_call</code> 服務鈴 ★新增</h3>
+<h3 id="service_call-服務鈴進階"><code>service_call</code> 服務鈴（進階）</h3>
+<blockquote>
+<p><strong>服務鈴已改列進階</strong>，基礎建表沒有這張表；做服務鈴時再用進階 migration 建。</p>
+</blockquote>
 <div class="tablewrap"><table>
 <thead>
 <tr>
@@ -1212,7 +1235,7 @@ session 進終態（<code>PAID</code> 或 <code>CANCELLED</code>）時，整桌�
 <tr>
 <td>preorder_updated_at</td>
 <td>DATETIME(3) NULL</td>
-<td>最後一次預點異動時間；<code>NULL</code> = 沒預點（進階）</td>
+<td>最後一次預點異動時間；<code>NULL</code> = 沒預點。<strong>進階 A2 才加這欄</strong></td>
 </tr>
 <tr>
 <td>created_at</td>
@@ -1316,13 +1339,8 @@ CREATE INDEX idx_reservation_phone ON reservation (contact_phone);
 </tr>
 <tr>
 <td>dining_session_id</td>
-<td>BIGINT FK NULL</td>
+<td>BIGINT FK NOT NULL</td>
 <td>用餐結帳（櫃檯結清或 A5 線上付款）</td>
-</tr>
-<tr>
-<td>reservation_id</td>
-<td>BIGINT FK NULL</td>
-<td>訂金（延伸 7.E7），<strong>這一版不會用到</strong></td>
 </tr>
 <tr>
 <td>method</td>
@@ -1341,7 +1359,7 @@ CREATE INDEX idx_reservation_phone ON reservation (contact_phone);
 </tr>
 <tr>
 <td>transaction_no</td>
-<td>VARCHAR(50)</td>
+<td>VARCHAR(50) <strong>UNIQUE</strong></td>
 <td><code>MOCK-20260913-000123</code></td>
 </tr>
 <tr>
@@ -1357,13 +1375,13 @@ CREATE INDEX idx_reservation_phone ON reservation (contact_phone);
 </tbody>
 </table></div>
 <blockquote>
-<p><code>dining_session_id</code> 與 <code>reservation_id</code> 恰有一個不為 NULL，在 Service 層檢查。
-<strong>所有付款都是模擬的，不串接任何真實金流 API。</strong>
+<p><strong>所有付款都是模擬的，不串接任何真實金流 API。</strong>
 櫃檯結清（<code>POST /api/admin/dining-sessions/{id}/settle</code>）也寫一筆 <code>status = SUCCESS</code> 的紀錄，
 報表才分得出現金、信用卡、條碼；櫃檯結清不做失敗機率，<code>PENDING</code>／<code>FAILED</code> 只有 A5 線上付款會出現。</p>
 <p><strong>訂位與預先點餐都不產生 payment。</strong> 餐點金額一律在到店結帳時才算，
-所以「調整預點」「取消訂位」沒有退款這回事。<code>reservation_id</code> 這欄先留著，
-是給之後可能要做的訂金功能用的。</p>
+所以「調整預點」「取消訂位」沒有退款這回事。
+原本留給訂金（延伸 7.E7）的 <code>payment.reservation_id</code> 已拿掉；真的要做訂金時再加回來，
+屆時 <code>dining_session_id</code> 改成可為 NULL，並在 Service 層檢查兩者恰有一個不為 NULL。</p>
 </blockquote>
 <h3 id="reservation_preorder_item-預先點餐品項進階"><code>reservation_preorder_item</code> 預先點餐品項（進階）</h3>
 <div class="tablewrap"><table>
@@ -1459,18 +1477,18 @@ CREATE INDEX idx_reservation_phone ON reservation (contact_phone);
 </tr>
 <tr>
 <td>quantity</td>
-<td>INT NOT NULL</td>
-<td><strong><a class="gloss" href="../tech/database/28-鎖與併發.html" title="看這個技術的白話說明">防超賣</a>的關鍵欄位</strong></td>
+<td>INT NOT NULL <code>CHECK (quantity &gt;= 0)</code></td>
+<td><strong><a class="gloss" href="../tech/database/28-鎖與併發.html" title="看這個技術的白話說明">防超賣</a>的關鍵欄位</strong>；CHECK 是資料庫層的最後保險（8.0 才會檢查，5.7 忽略），主要靠下面的條件式 <code>UPDATE</code></td>
 </tr>
 <tr>
 <td>unit</td>
 <td>VARCHAR(10)</td>
-<td>「份」「盤」「碗」</td>
+<td>「份」「盤」「碗」。<strong>進階 A3（S-09）才加這欄</strong></td>
 </tr>
 <tr>
 <td>low_threshold</td>
 <td>INT</td>
-<td>低於此值警示</td>
+<td>低於此值警示；S-05 的「低量」標示會用到，留在基礎</td>
 </tr>
 <tr>
 <td>updated_at</td>
@@ -1491,7 +1509,10 @@ CREATE INDEX idx_reservation_phone ON reservation (contact_phone);
 這是整個專案最能展現「有想過並行問題」的地方，<strong>每位成員都要會講</strong>。詳見 <a href="../tech/database/28-鎖與併發.html">鎖與併發</a>。</p>
 <p><strong><code>track_inventory = false</code> 的品項（免費續加）跳過這段</strong>，不扣也不會被標售完。</p>
 </blockquote>
-<h3 id="inventory_log"><code>inventory_log</code></h3>
+<h3 id="inventory_log進階-a3"><code>inventory_log</code>（進階 A3）</h3>
+<blockquote>
+<p>M5 5.8「異動紀錄」屬於進階 A3，基礎建表沒有這張表。基礎的 5.5「取消回補」只要把數量加回 <code>inventory_item</code>。</p>
+</blockquote>
 <p>id、inventory_item_id FK、<code>change_qty</code>（正負）、<code>quantity_after</code>、<code>reason</code>（<code>ORDER</code>/<code>RESTOCK</code>/<code>ADJUST</code>/<code>CANCEL</code>/<code>WASTE</code>）、<code>ref_id</code>、<code>operator</code>、<code>created_at</code></p>
 <blockquote>
 <p>「叫貨統計」（進階）＝ 這張表依 <code>reason='ORDER'</code> 依日期／品項 group by，不需要額外資料表。</p>
@@ -1576,7 +1597,7 @@ CREATE INDEX idx_reservation_phone ON reservation (contact_phone);
 <tr>
 <td>service_call</td>
 <td><code>(status, created_at)</code></td>
-<td>櫃檯未處理清單</td>
+<td>櫃檯未處理清單（進階）</td>
 </tr>
 <tr>
 <td>waitlist</td>
@@ -1606,20 +1627,28 @@ CREATE INDEX idx_reservation_phone ON reservation (contact_phone);
 <tr>
 <td>reservation_preorder_item</td>
 <td><code>(reservation_id)</code></td>
-<td>撈整份預點內容</td>
+<td>撈整份預點內容（進階）</td>
 </tr>
 <tr>
 <td>inventory_item</td>
 <td><code>UNIQUE(menu_item_id)</code></td>
 <td></td>
 </tr>
+<tr>
+<td>payment</td>
+<td><code>UNIQUE(transaction_no)</code></td>
+<td>交易編號不重複</td>
+</tr>
 </tbody>
 </table></div>
 <hr />
 <h2 id="10-種子資料策略-第-1-週必做">10. 種子資料策略 ★第 1 週必做</h2>
 <blockquote>
-<p><strong>最容易被忽略、但最容易在 demo 當天翻車的一件事。</strong> 推薦、報表、備貨預測在空資料庫上全是空白。</p>
+<p><strong>最容易被忽略、但最容易在 demo 當天翻車的一件事。</strong> 空資料庫上每一頁都是空白。</p>
 </blockquote>
+<p>基礎版的假資料已經做好：<code>backend/db/seed.sql</code>（由 <code>backend/db/generate_seed.py</code> 產生）。
+<strong>時間都以「執行當下的台灣時間」為準</strong>，哪一天匯入都看得到「現在正在用餐的桌」「30 分鐘內要到的訂位」。
+桌位、區域、品項數量對齊 Figma（S-08「18 桌・76 個座位・13 開放預約」、S-05「64 個品項・8 個分類」）。</p>
 <div class="tablewrap"><table>
 <thead>
 <tr>
@@ -1632,74 +1661,80 @@ CREATE INDEX idx_reservation_phone ON reservation (contact_phone);
 <tr>
 <td>分類</td>
 <td>8</td>
-<td>鍋底／肉品／海鮮／蔬菜／火鍋料／主食／飲料／酒</td>
+<td>鍋底／肉品／海鮮／蔬菜／火鍋料／主食／飲料／酒類</td>
 </tr>
 <tr>
 <td>品項</td>
-<td>約 60</td>
-<td>含 4 種鍋底（3 單味 + 1 鴛鴦）、3～4 個免費續加品</td>
+<td>64</td>
+<td>4 種鍋底（3 單味 + 1 鴛鴦）、3 個免費續加品（白飯、冬粉、酸梅湯）；售完 3 項、低量 1 項、下架 1 項</td>
 </tr>
 <tr>
 <td>選項群組</td>
-<td>6～7 組</td>
-<td>份量、辣度、熟度、加點配料、左鍋湯底、右鍋湯底、冰塊</td>
+<td>6 組</td>
+<td>份量、辣度、加點配料、左鍋湯底、右鍋湯底、冰塊</td>
 </tr>
 <tr>
 <td>桌位</td>
-<td>12 張</td>
-<td>2×2、4×6、6×2、8×2；其中 8 張 <code>reservable=1</code></td>
+<td>18 張</td>
+<td>2 人 ×4、4 人 ×10、6 人 ×2、8 人 ×2，共 76 座；區域 A 區・窗邊／A 區・走道／B 區／C 包廂；13 張 <code>reservable=1</code></td>
 </tr>
 <tr>
 <td>員工</td>
-<td>3</td>
-<td>counter / kitchen / manager</td>
+<td>4</td>
+<td>manager／counter（小美）／kai（阿凱）／kitchen，密碼都是 <code>1234</code></td>
 </tr>
 <tr>
 <td>會員</td>
-<td>40</td>
-<td><strong>性別各半、年齡分佈 20～65 歲</strong>（否則屬性推薦看不出效果）</td>
+<td>30</td>
+<td>陳小美 <code>0912345678</code> 的我的預約是「即將到來 3／已完成 8／已取消 2」；有幾位只留手機沒補資料</td>
+</tr>
+<tr>
+<td>今天的用餐</td>
+<td>5 桌用餐中、2 桌待清理</td>
+<td>A03 是示範桌（3 位同桌客人、購物車還有 3 項、第 2 單剛送出）；B01 已用餐 112 分鐘；B03 的單已等 16 分鐘（KDS 久候）；C01 有一張櫃檯代客加點</td>
 </tr>
 <tr>
 <td>歷史用餐</td>
-<td>約 400 場（過去 90 天）</td>
-<td>平日／假日量要有差異</td>
-</tr>
-<tr>
-<td>歷史點餐單</td>
-<td>約 1200 張</td>
-<td>平均每場 3 張</td>
-</tr>
-<tr>
-<td>歷史單品</td>
-<td>約 5000 筆</td>
-<td><strong>要有明顯的熱門／冷門差異</strong></td>
+<td>49 場（過去約 55 天）</td>
+<td>都已櫃檯結清，有付款紀錄</td>
 </tr>
 <tr>
 <td>庫存</td>
 <td>每品項 20～100</td>
-<td><strong>刻意留 2～3 個品項庫存 = 0</strong> 用來 demo 售完</td>
+<td>售完的 3 項庫存 = 0、<code>sold_out = 1</code></td>
+</tr>
+<tr>
+<td>今天的訂位</td>
+<td>11 筆</td>
+<td>A08、B02、B04 三筆 30 分鐘內要到（預約保留）；A06 約 1 小時後（<code>RESERVATION_TOO_EARLY</code>、開桌強烈提醒）；A01 已過 15 分鐘未到（<code>RESERVATION_EXPIRED</code>）；兩筆已報到在用餐；兩筆已取消（一筆櫃檯代客取消）；C02、A04 晚一點</td>
 </tr>
 <tr>
 <td>未來訂位</td>
-<td>未來 7 天約 20 筆</td>
-<td>另放今天幾筆（線上訂位只能訂明天以後，今天的這幾筆由種子直接寫進資料表，不走 <code>POST /api/reservations</code>）：三筆 30 分鐘內要到、配到不同桌（開桌頁看得到，配到的桌顯示「預約保留」；M7 demo 報到、原保留桌、櫃檯代客取消各用一筆；代客取消那筆也用來 demo 客人線上取消被 <code>CANCEL_DEADLINE_PASSED</code> 擋下）、一筆約 1 小時後（demo「18:00 起可報到」與 <code>RESERVATION_TOO_EARLY</code>；它配到的桌也用來 demo 開桌強烈提醒，因為落在 115 分鐘內）、一筆已過訂位時間 10 分鐘以上（demo 逾時與 <code>RESERVATION_EXPIRED</code>）</td>
+<td>明天起 30 筆（29 筆已確認、1 筆已取消）</td>
+<td>對齊 C-16c 的五個時段 17:00～19:00</td>
 </tr>
 <tr>
 <td>候位</td>
-<td>3～5 筆等待中</td>
-<td></td>
+<td>5 筆</td>
+<td>A10 過號、A11 已入座（B03）、A12／A13 已叫號、A14 等待中</td>
 </tr>
 </tbody>
 </table></div>
+<blockquote>
+<p>推薦、報表、消費紀錄用的大量歷史資料（原本規劃的 400 場、5000 筆）屬於進階，基礎先不做；
+進階要用時改 <code>generate_seed.py</code> 加量即可。</p>
+</blockquote>
 <h3 id="實作建議">實作建議</h3>
 <ul>
-<li>表結構用 <a href="../tech/database/29-Flyway.html">Flyway</a>（<code>V</code> 開頭）</li>
-<li><strong>種子資料用程式產生</strong>（<code>CommandLineRunner</code> + <code>@Profile("local")</code>），不要手寫 SQL——5000 筆手寫不完</li>
-<li>亂數要有規律：週五六人多、<strong>每桌必定至少一份鍋底</strong>、肉品機率高於甜點</li>
-<li>保留一組「乾淨的 demo 桌」（例如 A01）</li>
+<li>表結構之後改用 <a href="../tech/database/29-Flyway.html">Flyway</a>（<code>V</code> 開頭），見 §0 的檔案規劃</li>
+<li>假資料改 <code>generate_seed.py</code> 再重新產生 <code>seed.sql</code>，不要手改 <code>seed.sql</code></li>
+<li>亂數固定種子，重跑結果相同；<strong>每一場用餐必定至少一份鍋底</strong></li>
+<li>保留一組「乾淨的 demo 桌」（A01 沒有人在用餐，也沒有預約保留）</li>
 </ul>
 <h3 id="demo-前的重置腳本">Demo 前的重置腳本</h3>
-<p>準備 <code>reset-demo.sh</code>：清掉當日的 session 與 order，保留歷史資料與菜單。<strong>Demo 前 10 分鐘跑一次。</strong> 這個腳本救過很多組。</p><div class="pager"><a href="../spec/02-需求規格.html"><div class="k">← 上一篇</div><div class="n">02 需求規格：基礎與進階功能總表</div></a><a class="next" href="../spec/04-API規格.html"><div class="k">下一篇 →</div><div class="n">04 API 規格</div></a></div>
+<p><code>seed.sql</code> 本身就能重跑：開頭會清空所有資料表再寫入，時間又以執行當下為準，<strong>Demo 前重跑一次</strong>，桌況、訂位、候位就回到初始狀態。
+注意兩個會隨時間變化的地方：已叫號的候位（A12、A13）叫號 10 分鐘後會被過號排程標成 <code>EXPIRED</code>；
+三筆預約保留在訂位時間 +10 分鐘後解除。要 demo 這兩段，就在重跑後 5 分鐘內進行。</p><div class="pager"><a href="../spec/02-需求規格.html"><div class="k">← 上一篇</div><div class="n">02 需求規格：基礎與進階功能總表</div></a><a class="next" href="../spec/04-API規格.html"><div class="k">下一篇 →</div><div class="n">04 API 規格</div></a></div>
 </article>
 <aside class="toc"><div class="tt">本頁目錄</div><a href="#0-通用約定">0. 通用約定</a><a href="#1-帳號與權限">1. 帳號與權限</a><a href="#2-菜單">2. 菜單</a><a href="#3-桌位用餐與點餐">3. 桌位、用餐與點餐</a><a href="#4-候位-新增">4. 候位 ★新增</a><a href="#5-訂位">5. 訂位</a><a href="#6-付款">6. 付款</a><a href="#7-庫存">7. 庫存</a><a href="#8-會員權益進階-a6">8. 會員權益（進階 A6）</a><a href="#9-索引總表">9. 索引總表</a><a href="#10-種子資料策略-第-1-週必做">10. 種子資料策略 ★第 1 週必做</a></aside>
 </div></div>

@@ -486,7 +486,7 @@ void 十個人同時搶最後一份不應超賣() throws Exception {
 <tbody>
 <tr>
 <td><strong>W1</strong></td>
-<td><a class="gloss" href="../../tech/database/29-Flyway.html" title="看這個技術的白話說明">Flyway</a> 建好 <code>inventory_item</code> / <code>inventory_log</code>；種子資料（刻意留 2–3 個品項庫存為 0）</td>
+<td><a class="gloss" href="../../tech/database/29-Flyway.html" title="看這個技術的白話說明">Flyway</a> 建好 <code>inventory_item</code>（<code>inventory_log</code> 是進階 A3）；種子資料（刻意留 2–3 個品項庫存為 0）</td>
 </tr>
 <tr>
 <td><strong>W2</strong></td>
@@ -533,7 +533,7 @@ void 十個人同時搶最後一份不應超賣() throws Exception {
 </tr>
 <tr>
 <td><strong>取消後庫存沒回補</strong></td>
-<td>取消流程也要走 <code>inventory_log</code>，不要直接改數字</td>
+<td>取消時用條件式 <code>UPDATE</code> 把數量加回去；做了進階 A3 之後再一併寫 <code>inventory_log</code></td>
 </tr>
 <tr>
 <td><strong>白飯顯示售完</strong></td>

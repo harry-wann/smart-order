@@ -330,16 +330,17 @@ NORTHWIND_DATASOURCE_PASSWORD=your_actual_mysql_password
 <summary>替代方案：<a class="gloss" href="tech/team/05-Docker與Compose.html" title="看這個技術的白話說明">Docker Compose</a>（使用 MAMP 可跳過）</summary>
 <ol>
 <li>安裝並啟動 Docker Desktop。</li>
-<li>在 <code>backend/.env</code> 換掉 <code>MYSQL_ROOT_PASSWORD</code>、<code>MYSQL_PASSWORD</code> 的範例密碼；保持 <code>MYSQL_DATABASE=northwind</code>，<code>MYSQL_USER</code> 使用一般帳號，勿填 root。</li>
+<li>在 <code>backend/.env</code> 換掉 <code>MYSQL_ROOT_PASSWORD</code>、<code>MYSQL_PASSWORD</code> 的範例密碼；<code>MYSQL_USER</code> 使用一般帳號，勿填 root。</li>
 <li>將兩組 <code>*_DATASOURCE_USERNAME</code>／<code>*_DATASOURCE_PASSWORD</code> 都設為 <code>MYSQL_USER</code>／<code>MYSQL_PASSWORD</code> 的值；連線 URL 使用範例中的 <code>127.0.0.1:3306/smartorder</code> 與 <code>127.0.0.1:3306/northwind</code>。</li>
 <li>在 <strong><code>backend/</code></strong> 執行：</li>
 </ol>
 <pre><code class="language-powershell">docker compose up -d
 docker compose ps
 </code></pre>
-<p>等 <code>mysql</code> 顯示 <strong>healthy</strong>，開啟 <code>http://localhost/</code> 使用 phpMyAdmin，再繼續第 3 步。首次初始化會建立 <code>northwind</code>、<code>smartorder</code> 兩個資料庫與應用程式帳號（<code>smartorder</code> 由 <code>backend/docker/mysql-init/</code> 建立）。</p>
+<p>等 <code>mysql</code> 顯示 <strong>healthy</strong>，開啟 <code>http://localhost/</code> 使用 phpMyAdmin，再繼續第 3 步。首次初始化會建立應用程式帳號，並由 <code>backend/docker/mysql-init/</code> 建立 <code>smartorder</code>、<code>northwind</code> 兩個資料庫、授權給這個帳號。</p>
 <blockquote>
-<p>以前就建立過資料卷的話，初始化腳本不會再執行，<code>smartorder</code> 不會自動出現：請用 phpMyAdmin 手動建立 <code>smartorder</code>，並授權給 <code>MYSQL_USER</code>。</p>
+<p>以前就建立過資料卷的話，初始化腳本不會再執行，缺的資料庫不會自動出現：請用 phpMyAdmin 手動建立 <code>smartorder</code>（或 <code>northwind</code>），並授權給 <code>MYSQL_USER</code>。</p>
+<p>舊的 <code>.env</code> 若還有 <code>MYSQL_DATABASE</code>，可以刪掉，Compose 已經不讀這一項。</p>
 </blockquote>
 <p>Compose 使用 MySQL <strong>5.7.44</strong>，佔用主機的 <strong>3306</strong>（MySQL）與 <strong>80</strong>（phpMyAdmin）；請避免與 MAMP 或其他服務衝突。已有資料卷時，修改 <code>.env</code> 不會更新資料庫帳密。停止可用 <code>docker compose down</code>，保留資料卷供下次使用。</p>
 </details>
