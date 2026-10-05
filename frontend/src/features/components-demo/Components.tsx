@@ -37,6 +37,12 @@ const componentDemos = [
     description: '尚未分類的共用元件與互動模式。',
     path: '/components/ds-07',
   },
+  {
+    code: 'API',
+    title: 'API 範例',
+    description: '串接 Northwind 商品 API：純 Axios 與 TanStack Query 兩種寫法對照。',
+    path: '/demo',
+  },
 ];
 
 export default function Components() {
