@@ -9,6 +9,10 @@
   "Git": "tech/team/02-Git是什麼",
   "命令列": "tech/team/01-命令列",
 
+  "TanStack Query": "tech/frontend/52-TanStackQuery",
+  "React Query": "tech/frontend/52-TanStackQuery",
+  "Axios": "tech/frontend/51-Axios",
+
   "HTTP 狀態碼": "tech/web/08-HTTP狀態碼",
   "狀態碼": "tech/web/08-HTTP狀態碼",
   "REST API": "tech/web/10-REST-API設計",
