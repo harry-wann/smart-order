@@ -1,0 +1,84 @@
+# smartorder 資料表與假資料
+
+基礎版用到的資料表與一套可以直接 demo 的假資料。欄位定義以 [`docs/spec/03-資料庫設計.md`](../../docs/spec/03-資料庫設計.md) 為準。
+
+| 檔案 | 內容 |
+|---|---|
+| `schema.sql` | 建 20 張資料表（**會先刪掉同名的表**） |
+| `seed.sql` | 假資料（**會先清空所有表**再寫入） |
+| `generate_seed.py` | 產生 `seed.sql` 的程式；要改假資料改這支，再重新產生 |
+
+進階功能（服務鈴、庫存異動紀錄、預先點餐、點數與優惠券）的表與欄位不在這裡，做到時再加。
+
+## 匯入
+
+先建好資料庫 `smartorder`（`utf8mb4`），**依序**執行 `schema.sql`、`seed.sql`。MySQL 8.0 與 5.7（團隊 compose 用的版本）都測過。
+
+**命令列**
+
+```bash
+mysql -h 127.0.0.1 -P 3306 -u <帳號> -p --default-character-set=utf8mb4 smartorder < backend/db/schema.sql
+mysql -h 127.0.0.1 -P 3306 -u <帳號> -p --default-character-set=utf8mb4 smartorder < backend/db/seed.sql
+```
+
+**Docker Compose（`backend/compose.yaml` 起的 MySQL）**
+
+```bash
+docker compose -f backend/compose.yaml exec -T mysql mysql -u<帳號> -p<密碼> --default-character-set=utf8mb4 smartorder < backend/db/schema.sql
+docker compose -f backend/compose.yaml exec -T mysql mysql -u<帳號> -p<密碼> --default-character-set=utf8mb4 smartorder < backend/db/seed.sql
+```
+
+**phpMyAdmin**：左側點 `smartorder` → 上方「匯入」→ 選 `schema.sql` 執行，再選 `seed.sql` 執行。
+
+## 重置成初始狀態
+
+`seed.sql` 可以單獨重跑：會清空所有表再寫入，時間又以執行當下為準。
+**demo 前重跑一次**，桌況、訂位、候位就回到初始狀態。表結構有改才需要重跑 `schema.sql`。
+
+會隨時間變化的兩段：已叫號的候位（A12、A13）叫號 10 分鐘後會被過號排程標成過號；
+三筆預約保留過了訂位時間 10 分鐘就解除。要 demo 這兩段，重跑後 5 分鐘內進行。
+
+## 假資料裡有什麼
+
+時間都以「執行 `seed.sql` 當下的台灣時間」為準（不受資料庫伺服器時區影響），所以哪一天匯入都有「現在」的狀況可以看。
+
+**帳號**
+
+| 帳號 | 密碼 | 角色 | 顯示名稱 |
+|---|---|---|---|
+| `manager` | `1234` | MANAGER | 王店長 |
+| `counter` | `1234` | COUNTER | 小美 |
+| `kai` | `1234` | COUNTER | 阿凱 |
+| `kitchen` | `1234` | KITCHEN | 廚房 1 號機 |
+
+會員用手機登入，示範帳號是陳小美 `0912345678`（我的預約：即將到來 3、已完成 8、已取消 2）。
+
+**菜單**：8 個分類、64 個品項（4 種鍋底含鴛鴦、3 個免費續加品）、6 個選項群組。
+紐西蘭小羔羊肩、澳洲和牛 M9、北海道干貝售完；美國老饕牛小排低量；霜降牛舌下架。
+
+**桌位**：18 張、76 個座位、13 張開放線上訂位，區域 A 區・窗邊／A 區・走道／B 區／C 包廂。
+
+**現在的店裡**
+
+| 桌 | 狀況 |
+|---|---|
+| A03 | 用餐中 47 分鐘，示範桌：3 位同桌客人（陳小美、客人 2、王大明）、購物車還有 3 項、第 2 單剛送出 |
+| A02 | 用餐中，由訂位報到 |
+| B01 | 用餐中 112 分鐘（超過 100 分鐘），有一道退掉的菜 |
+| B03 | 用餐中，由候位 A11 報到；第 1 單已等 16 分鐘（出菜看板久候） |
+| C01 | 用餐中，由訂位報到；有一張櫃檯代客加點 |
+| A05、A07 | 剛結帳，待清理 |
+| A08、B02、B04 | 30 分鐘內有訂位，顯示預約保留 |
+| A06 | 約 1 小時後有訂位（開桌會跳強烈提醒） |
+| A01 | 有一筆過了訂位時間 15 分鐘還沒來的訂位 |
+
+**訂位**：今天 11 筆（含兩筆已取消，其中一筆是櫃檯代客取消）、明天起 30 筆、過去約 55 天的已完成／逾時未到／已取消紀錄。
+**候位**：A10 過號、A11 已入座、A12／A13 已叫號、A14 等待中。
+
+## 改假資料
+
+```bash
+python3 backend/db/generate_seed.py   # 重新產生 seed.sql
+```
+
+亂數固定種子，重跑結果相同。不要直接改 `seed.sql`，下次產生會被蓋掉。
