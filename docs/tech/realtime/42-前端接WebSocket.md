@@ -38,10 +38,11 @@ npm install @stomp/stompjs
 
 ```js
 import { Client } from '@stomp/stompjs';
+import { customerTokens } from '../services/client/tokenStore';
 
 const client = new Client({
   brokerURL: 'ws://localhost:8080/ws',
-  connectHeaders: { 'X-Session-Token': localStorage.getItem('sessionToken') },
+  connectHeaders: { 'X-Session-Token': customerTokens.session.get() },
   reconnectDelay: 3000,                      // 斷線 3 秒後自動重連
 });
 
@@ -63,16 +64,21 @@ client.activate();
 // src/hooks/useStomp.js
 import { useEffect, useRef } from 'react';
 import { Client } from '@stomp/stompjs';
+import { customerTokens, employeeToken } from '../services/client/tokenStore';
 
-// 顧客手機帶用餐權杖；KDS、櫃檯帶員工 JWT（後端攔截器兩種都認）
-function wsAuthHeaders() {
-  const sessionToken = localStorage.getItem('sessionToken');
-  if (sessionToken) return { 'X-Session-Token': sessionToken };
-  const jwt = localStorage.getItem('jwt');
-  return jwt ? { Authorization: `Bearer ${jwt}` } : {};
+// 顧客手機帶用餐權杖；KDS、櫃檯帶員工 JWT（後端攔截器兩種都認）。
+// 兩種 token 分開存放（見 tech/frontend/51-Axios），由呼叫端用 scope 指定，不要用「有哪個就帶哪個」來猜
+function wsAuthHeaders(scope) {
+  if (scope === 'employee') {
+    const token = employeeToken.get();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+  const sessionToken = customerTokens.session.get();
+  return sessionToken ? { 'X-Session-Token': sessionToken } : {};
 }
 
-export function useStomp({ topics, onEvent, onReconnect, enabled = true }) {
+// 顧客端頁面不用傳 scope；KDS、櫃檯傳 scope: 'employee'
+export function useStomp({ scope = 'customer', topics, onEvent, onReconnect, enabled = true }) {
   const clientRef = useRef(null);
 
   useEffect(() => {
@@ -80,7 +86,7 @@ export function useStomp({ topics, onEvent, onReconnect, enabled = true }) {
 
     const client = new Client({
       brokerURL: import.meta.env.VITE_WS_URL,
-      connectHeaders: wsAuthHeaders(),
+      connectHeaders: wsAuthHeaders(scope),
       reconnectDelay: 3000,
       onConnect: () => {
         topics.forEach(topic => {
@@ -106,7 +112,7 @@ export function useStomp({ topics, onEvent, onReconnect, enabled = true }) {
 ```jsx
 // 這桌收場了（SESSION_CLOSED）：兩種 reason，兩種畫面
 function handleSessionClosed(payload, { navigate, setClosed }) {
-  localStorage.removeItem('sessionToken');
+  leaveTable();                         // services/client/auth：清掉用餐權杖和這桌的快取
   if (payload.reason === 'CANCELLED') {
     navigate('/', { replace: true });   // 店長取消這次用餐：不顯示任何面板，直接回 C-00
   } else {

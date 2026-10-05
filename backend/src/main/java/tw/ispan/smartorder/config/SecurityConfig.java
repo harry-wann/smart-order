@@ -1,9 +1,15 @@
 package tw.ispan.smartorder.config;
 
+import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 /**
  * 教學階段先讓本機 API 可直接測試；正式環境要改成登入與權限規則。
@@ -14,6 +20,7 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain apiSecurity(HttpSecurity http) throws Exception {
         http
+                .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
@@ -26,5 +33,29 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 );
         return http.build();
+    }
+
+    /**
+     * 前端 dev server（http://localhost:5173）和後端（:8080）不同來源，瀏覽器要後端明確放行才會送出請求。
+     * 允許的標頭要包含前端共用層會帶的 X-Session-Token、X-Reservation-Token、X-Device-Id。
+     */
+    @Bean
+    CorsConfigurationSource corsConfigurationSource(
+            @Value("${app.cors.allowed-origins}") List<String> allowedOrigins) {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(allowedOrigins);
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of(
+                "Authorization",
+                "Content-Type",
+                "X-Session-Token",
+                "X-Reservation-Token",
+                "X-Device-Id"
+        ));
+        configuration.setExposedHeaders(List.of("Location"));
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/**", configuration);
+        return source;
     }
 }

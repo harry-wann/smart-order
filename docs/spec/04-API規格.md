@@ -1124,7 +1124,7 @@ GET /api/admin/kitchen/tickets
 
 ## 5. 前端呼叫封裝
 
-**不要讓每個頁面各自寫 `fetch`。** 統一封裝在 `src/services/api/client.js`，見 [fetch 串接後端 API](../tech/frontend/40-fetch串接API.md)。
+**不要讓每個頁面各自打 API。** 共用的 client 在 `src/services/client/`，各模組的 API 函式在 `src/services/api/`，見 [Axios 串接後端 API](../tech/frontend/51-Axios.md)。
 
 錯誤處理靠 `err.code` 分流：
 
@@ -1135,12 +1135,11 @@ catch (err) {
     case 'SOUP_BASE_REQUIRED':  toast.error('這桌還沒點鍋底，共鍋至少要一份'); setCategory('soup-base'); break;
     case 'CART_EMPTY':          toast.info('購物車是空的，可能同桌已經送出了'); refetchCartAndOrders(); break;
     case 'SESSION_CLOSED':                                                // reason 跟 WebSocket 的 SESSION_CLOSED 一樣
-      if (err.reason === 'CANCELLED') { localStorage.removeItem('sessionToken'); navigate('/'); }  // 取消用餐：直接回 C-00
+      if (err.reason === 'CANCELLED') { leaveTable(); navigate('/'); }  // 取消用餐：直接回 C-00（leaveTable 清掉用餐權杖）
       else showClosedState();                                             // 已結帳：C-04 面板，清掉權杖；按「回到首頁」到 C-00
       break;
     case 'BILL_CHANGED':        setBill(err.bill); toast.error('金額有變動，請重新確認'); break;
-    case 'INVALID_SESSION_TOKEN':
-      localStorage.removeItem('sessionToken');
+    case 'INVALID_SESSION_TOKEN':                                          // customerClient 已經清掉用餐權杖
       navigate('/');                                                      // C-00 首頁
       break;
     default: toast.error(err.message);

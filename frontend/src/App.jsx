@@ -44,6 +44,9 @@ import DS04 from './features/components-demo/DS04'
 import DS05 from './features/components-demo/DS05'
 import DS06 from './features/components-demo/DS06'
 import DS07 from './features/components-demo/DS07'
+import DemoIndex from './features/demo/DemoIndex'
+import AxiosRestDemo from './features/demo/northwind/AxiosRestDemo'
+import TanStackRestDemo from './features/demo/northwind/TanStackRestDemo'
 import { ToastManager } from './components/toast/ToastManager'
 
 function App() {
@@ -119,6 +122,11 @@ function App() {
         }
       />
       <Route path="/components/ds-07" element={<DS07 />} />
+
+      {/* API 範例 */}
+      <Route path="/demo" element={<DemoIndex />} />
+      <Route path="/demo/northwind/axios" element={<AxiosRestDemo />} />
+      <Route path="/demo/northwind/tanstack" element={<TanStackRestDemo />} />
     </Routes>
   )
 }

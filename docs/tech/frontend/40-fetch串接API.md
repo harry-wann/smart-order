@@ -46,6 +46,9 @@ const res = await fetch('/api/dining-sessions/me/cart/items', {
 
 ## 我們專案的統一封裝
 
+> **專案實際的共用層已經改用 Axios + TanStack Query**，顧客與員工的 token 也分開存放，見 [Axios 串接後端 API](51-Axios.md) 與 [TanStack Query](52-TanStackQuery.md)。
+> 下面保留 `fetch` 版本，讓你看懂共用層底下在做什麼。
+
 ### 檔案放哪裡
 
 **所有跟後端 HTTP 溝通的程式碼都放在 `src/services/api/`**，元件裡不准出現 `fetch`。
@@ -353,4 +356,4 @@ console.log(await post.json());
 
 ## 相關頁面
 
-[非同步與 async/await](31-非同步與async.md)　[useEffect](37-useEffect.md)　[CORS 跨來源問題](../web/11-CORS跨來源.md)　[JWT 與登入狀態](../backend/21-JWT.md)
+[Axios 串接後端 API](51-Axios.md)　[TanStack Query](52-TanStackQuery.md)　[非同步與 async/await](31-非同步與async.md)　[useEffect](37-useEffect.md)　[CORS 跨來源問題](../web/11-CORS跨來源.md)　[JWT 與登入狀態](../backend/21-JWT.md)

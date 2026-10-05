@@ -101,20 +101,20 @@ public class JwtService {
 
 ## 前端怎麼用
 
-```js
+**會員和員工的 JWT 分開存放**，各自由自己的 Axios client 帶出去，不會互相覆蓋（細節見 [Axios 串接後端 API](../frontend/51-Axios.md)）：
+
+```ts
+import { signInEmployee, signInMember } from '@/services/client/auth'
+
 // 登入成功後存起來
-localStorage.setItem('jwt', data.token);
+signInMember(data.token)             // C-12b 會員驗證碼通過
+signInEmployee(data.token)           // S-01 員工登入
 
-// 每次請求帶上（統一封裝在 api/client.js，不要每頁自己寫）
-const headers = { 'Content-Type': 'application/json' };
-const token = localStorage.getItem('jwt');
-if (token) headers['Authorization'] = `Bearer ${token}`;
+// 每次請求帶上：會員 API 寫 customerAuth: ['member']，店家 API 用 employeeClient 會自動帶
+await customerClient.get('/members/me', { customerAuth: ['member'] })
+await employeeClient.get('/admin/tables')
 
-// 收到 401 就導回登入頁
-if (res.status === 401) {
-  localStorage.removeItem('jwt');
-  navigate('/auth');                 // C-12 會員登入
-}
+// 收到 401：client 已經清掉失效的 token；員工頁會自動回 /admin/login，顧客頁自己決定要不要導去登入
 ```
 
 ## Refresh Token 是什麼
