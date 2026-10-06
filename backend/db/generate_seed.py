@@ -724,7 +724,7 @@ add_reservation(day(3, '19:00'), None, 4, 'CANCELLED', mid=10, created=day(-3, '
 
 # ── 輸出 ─────────────────────────────────────────────────────────────────────
 
-TRUNCATE_ORDER = ['payment', 'inventory_item', 'order_item_option', 'order_item', 'order_ticket', 'cart_item_option',
+DELETE_ORDER = ['payment', 'inventory_item', 'order_item_option', 'order_item', 'order_ticket', 'cart_item_option',
                   'cart_item', 'dining_session_guest', 'dining_session', 'waitlist', 'reservation', 'dining_table',
                   'menu_item_option_group', 'option_value', 'option_group', 'menu_item', 'menu_category', 'staff',
                   'verification_code', 'member']
@@ -747,8 +747,11 @@ parts = [f"""-- ================================================================
 -- ============================================================================
 
 SET NAMES utf8mb4;
-SET FOREIGN_KEY_CHECKS = 0;
-""" + ''.join(f'TRUNCATE TABLE {t};\n' for t in TRUNCATE_ORDER) + """SET FOREIGN_KEY_CHECKS = 1;
+
+-- 清空舊資料：依外鍵順序從子表刪到父表，不靠關閉外鍵檢查
+-- （phpMyAdmin 匯入預設開著外鍵檢查，TRUNCATE 與 SET FOREIGN_KEY_CHECKS = 0 都會失敗）
+UPDATE waitlist SET dining_session_id = NULL;
+""" + ''.join(f'DELETE FROM {t};\n' for t in DELETE_ORDER) + """
 
 -- 以台灣時間為準，不受資料庫伺服器時區影響（沒寫到的 created_at／updated_at 預設值也跟著用台灣時間）
 SET time_zone = '+08:00';

@@ -16,28 +16,31 @@
 -- ============================================================================
 
 SET NAMES utf8mb4;
-SET FOREIGN_KEY_CHECKS = 0;
-TRUNCATE TABLE payment;
-TRUNCATE TABLE inventory_item;
-TRUNCATE TABLE order_item_option;
-TRUNCATE TABLE order_item;
-TRUNCATE TABLE order_ticket;
-TRUNCATE TABLE cart_item_option;
-TRUNCATE TABLE cart_item;
-TRUNCATE TABLE dining_session_guest;
-TRUNCATE TABLE dining_session;
-TRUNCATE TABLE waitlist;
-TRUNCATE TABLE reservation;
-TRUNCATE TABLE dining_table;
-TRUNCATE TABLE menu_item_option_group;
-TRUNCATE TABLE option_value;
-TRUNCATE TABLE option_group;
-TRUNCATE TABLE menu_item;
-TRUNCATE TABLE menu_category;
-TRUNCATE TABLE staff;
-TRUNCATE TABLE verification_code;
-TRUNCATE TABLE member;
-SET FOREIGN_KEY_CHECKS = 1;
+
+-- 清空舊資料：依外鍵順序從子表刪到父表，不靠關閉外鍵檢查
+-- （phpMyAdmin 匯入預設開著外鍵檢查，TRUNCATE 與 SET FOREIGN_KEY_CHECKS = 0 都會失敗）
+UPDATE waitlist SET dining_session_id = NULL;
+DELETE FROM payment;
+DELETE FROM inventory_item;
+DELETE FROM order_item_option;
+DELETE FROM order_item;
+DELETE FROM order_ticket;
+DELETE FROM cart_item_option;
+DELETE FROM cart_item;
+DELETE FROM dining_session_guest;
+DELETE FROM dining_session;
+DELETE FROM waitlist;
+DELETE FROM reservation;
+DELETE FROM dining_table;
+DELETE FROM menu_item_option_group;
+DELETE FROM option_value;
+DELETE FROM option_group;
+DELETE FROM menu_item;
+DELETE FROM menu_category;
+DELETE FROM staff;
+DELETE FROM verification_code;
+DELETE FROM member;
+
 
 -- 以台灣時間為準，不受資料庫伺服器時區影響（沒寫到的 created_at／updated_at 預設值也跟著用台灣時間）
 SET time_zone = '+08:00';

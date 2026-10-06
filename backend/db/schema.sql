@@ -13,7 +13,18 @@
 -- ============================================================================
 
 SET NAMES utf8mb4;
-SET FOREIGN_KEY_CHECKS = 0;
+
+-- 刪表不靠關閉外鍵檢查（phpMyAdmin 匯入預設會開著外鍵檢查，SET FOREIGN_KEY_CHECKS = 0 會被蓋掉），
+-- 改成依外鍵順序從子表刪到父表。waitlist 與 dining_session 互相參照，先拿掉 waitlist 那邊的外鍵；
+-- 全新的資料庫查不到這個外鍵就略過。
+SET @drop_fk = (SELECT CONCAT('ALTER TABLE waitlist DROP FOREIGN KEY ', constraint_name)
+                  FROM information_schema.table_constraints
+                 WHERE table_schema = DATABASE() AND table_name = 'waitlist'
+                   AND constraint_name = 'fk_waitlist_dining_session' AND constraint_type = 'FOREIGN KEY');
+SET @drop_fk = COALESCE(@drop_fk, 'DO 0');
+PREPARE drop_fk_stmt FROM @drop_fk;
+EXECUTE drop_fk_stmt;
+DEALLOCATE PREPARE drop_fk_stmt;
 
 DROP TABLE IF EXISTS payment;
 DROP TABLE IF EXISTS inventory_item;
@@ -35,8 +46,6 @@ DROP TABLE IF EXISTS menu_category;
 DROP TABLE IF EXISTS staff;
 DROP TABLE IF EXISTS verification_code;
 DROP TABLE IF EXISTS member;
-
-SET FOREIGN_KEY_CHECKS = 1;
 
 -- ----------------------------------------------------------------------------
 -- 1. 帳號與權限
