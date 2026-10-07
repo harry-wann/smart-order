@@ -1,0 +1,16 @@
+package tw.ispan.smartorder.controller;
+
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/order")
+public class MenuController {
+    @GetMapping("/menu")
+    public String menu(){
+
+        return "menu";
+    }
+}
