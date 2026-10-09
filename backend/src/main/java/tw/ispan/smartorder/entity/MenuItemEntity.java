@@ -1,10 +1,11 @@
 package tw.ispan.smartorder.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "menu_item")
@@ -12,22 +13,28 @@ import lombok.Setter;
 @Setter
 public class MenuItemEntity {
     @Id
-    private String id;
-    private String categoryId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     private String name;
     private String description;
-    private String price;
+    private BigDecimal price;
     private String imageUrl;
-    private String isSoupBase;
-    private String trackInventory;
-    private String isRefill;
+    private Boolean isSoupBase;
+    private Boolean trackInventory;
+    private Boolean isRefill;
     private String suitableFor;
-    private String spicyLevel;
-    private String isVegetarian;
-    private String containsBeef;
-    private String soldOut;
+    private Integer spicyLevel;
+    private Boolean isVegetarian;
+    private Boolean containsBeef;
+    private Boolean soldOut;
     private String sortOrder;
-    private String active;
-    private String createdAt;
-    private String updatedAt;
+    private Boolean active;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    @JsonIgnore
+    private MenuCategoryEntity category;
 }

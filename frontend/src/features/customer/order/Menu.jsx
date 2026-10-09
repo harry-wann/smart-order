@@ -1,73 +1,74 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import SOFormInput, { SOFormInputType } from '../../../components/input/SOFormInput'
 import MenuCategoryTabs from '../../../components/MenuCategoryTabs'
 import MenuItemRow from '../../../components/order/MenuItemRow'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import CustomerTopBar from '@/components/CustomerTopBar'
 import SOButton from '@/components/SOButton'
+import ServiceBell from '@/features/customer/order/ServiceBell'
+
+import { Link } from "react-router";
 
 import axios from "axios";
 
 export default function Menu() {
-  function getMenuCategory(){
-    try {
-      const response = axios.get('http://localhost:5173/order/menu')
-      console.log("response")
-    } catch (error) {
-      console.error(error)
+  const [category,setCategory]=useState([]);
+  const [items,setItems]=useState([]);
+  const [activeCategoryId,setActiveCategoryId]=useState(null);
+  const [searchKeyword,setSearchKeyword]=useState('');
+  const [isBellOpen, setIsBellOpen] = useState(false);
+
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const response = await axios.get('http://localhost:8080/api/order/category');
+        setCategory(response.data);
+        if (response.data.length > 0) {
+          setActiveCategoryId(response.data[0].id);
+        }
+      } catch (error) {
+        console.error(error);
+      }
     }
-  }
-  useEffect(()=>{getMenuCategory()},[])
-  const category = ['推薦', '鍋底', '肉品', '海鮮', '蔬菜', '火鍋料', '麵食']
 
-  const items = [
-    {
-      id: '01',
-      img_url: 'img_url',
-      title: '安格斯霜降牛五花',
-      desc: '厚切 3mm，涮 8 秒最好吃。油花分布均勻，是我們賣最好的一款。',
-      price: '380',
-      quantity: '10',
-      sell: '30',
-    },
-    {
-      id: '02',
-      img_url: 'img_url',
-      title: '安格斯霜降牛五花',
-      desc: '厚切 3mm，涮 8 秒最好吃。油花分布均勻，是我們賣最好的一款。',
-      price: '380',
-    },
-    {
-      id: '03',
-      img_url: 'img_url',
-      title: '安格斯霜降牛五花',
-      desc: '厚切 3mm，涮 8 秒最好吃。油花分布均勻，是我們賣最好的一款。',
-      price: '380',
-    },
-    {
-      id: '04',
-      img_url: 'img_url',
-      title: '安格斯霜降牛五花',
-      desc: '厚切 3mm，涮 8 秒最好吃。油花分布均勻，是我們賣最好的一款。',
-      price: '380',
-    },
-  ]
+    loadCategories();
+  }, []);
 
+  useEffect(() => {
+    if (activeCategoryId == null) return;
 
+    let isCurrentRequest = true;
+    const timeoutId = setTimeout(() => {
+    async function loadItems() {
+      try {
+        const response = await axios.get('http://localhost:8080/api/order/items', {
+          params: searchKeyword.trim()
+              ? { keyword: searchKeyword.trim() }
+              : { categoryId: activeCategoryId },
+        });
+        if (isCurrentRequest) {
+          setItems(response.data);
+        }
+      } catch (error) {
+        if (isCurrentRequest) {
+          console.error(error);
+        }
+      }
+    }
 
+    loadItems();
+    }, 300);
 
-  const checkIsSoldOut = (item) => {
-    return Number(item.quantity || 0) <= 0
-  }
-
-  const checkIsPopular = (item) => {
-    return Number(item.sell || 0) > 15
-  }
+    return () => {
+      isCurrentRequest = false;
+      clearTimeout(timeoutId);
+    };
+  }, [activeCategoryId, searchKeyword]);
 
   return (
       <div className="relative min-h-screen w-full self-start bg-surface-2 pb-24">
         <CustomerTopBar title="A03 桌" subTitle="2 大 1 小 18:32 入座" showBackButton={false}>
-          <button type="button" className="cursor-pointer text-gray-600">
+          <button onClick={() => setIsBellOpen(true)} type="button" className="cursor-pointer text-gray-600">
             <SvgIconMap.MenuBell role="img" aria-label="服務鈴" />
           </button>
         </CustomerTopBar>
@@ -78,48 +79,56 @@ export default function Menu() {
               icon={SvgIconMap.MenuSearch}
               defaultValue=""
               placeholder="搜尋菜色"
-              onChange={(e) => console.log(e.target.value)}
+              onChange={setSearchKeyword}
           />
         </div>
 
         <div className="border-b border-line bg-surface">
           <div className="no-scrollbar flex overflow-x-auto border-b border-line px-4 pt-2">
-            <MenuCategoryTabs category={category} />
+            <MenuCategoryTabs
+                category={category}
+                activeCategoryId={activeCategoryId}
+                onClick={(selectedCategory) => setActiveCategoryId(selectedCategory.id)}
+            />
           </div>
         </div>
 
         <main className="p-4">
+          <Link to="/order/itemdetail">
           <div className="flex flex-col gap-4">
             {items.map((item) => (
                 <button key={item.id} className="cursor-pointer text-left">
                   <MenuItemRow
-                      img={item.img_url}
-                      title={item.title}
-                      desc={item.desc}
+                      img={item.imageUrl}
+                      title={item.name}
+                      desc={item.description}
                       price={item.price}
-                      isSoldOut={checkIsSoldOut(item)}
-                      isPopular={checkIsPopular(item)}
+                      isSoldOut={item.soldOut}
                   />
                 </button>
             ))}
           </div>
+          </Link>
         </main>
 
         <div className="fixed bottom-0 left-0 h-23.25 w-full border-t border-line bg-surface px-4 py-4">
-          <SOButton
-              height="h-[56px]"
-              content={[
-                <div key="cart-info" className="flex items-center gap-2">
-                  <SvgIconMap.OrderShoppingCart role="img" aria-label="Cart" className="h-6 w-6" />
-                  <span className="text-lg font-medium">購物車 6 項</span>
-                </div>,
-                <div key="cart-price" className="flex items-center gap-2">
-                  <span className="text-lg font-medium">NT$ 1,420</span>
-                  <SvgIconMap.MenuRight role="img" aria-label="Right" className="h-5 w-5" />
-                </div>,
-              ]}
-          />
+          <Link to="/order/cart">
+            <SOButton
+                height="h-[56px]"
+                content={[
+                  <div key="cart-info" className="flex items-center gap-2">
+                    <SvgIconMap.OrderShoppingCart role="img" aria-label="Cart" className="h-6 w-6" />
+                    <span className="text-lg font-medium">購物車 6 項</span>
+                  </div>,
+                  <div key="cart-price" className="flex items-center gap-2">
+                    <span className="text-lg font-medium">NT$ 1,420</span>
+                    <SvgIconMap.MenuRight role="img" aria-label="Right" className="h-5 w-5" />
+                  </div>,
+                ]}
+            />
+          </Link>
         </div>
+        <ServiceBell open={isBellOpen} onclick={() => setIsBellOpen(false)} />
       </div>
   )
 }
