@@ -1,19 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { fetchSeats } from '@/services/api/seatApi'
 import SOButton from '../../../components/SOButton'
 import TopBar from '@/components/dashboard/TopBar'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 
-// 假資料：後端 API 好了之後換成 fetch 回來的資料
-const INITIAL_TABLES = [
-  { tableNo: 'A01', capacity: 2, area: 'A 區・窗邊', reservable: true, status: 'AVAILABLE' },
-  { tableNo: 'A02', capacity: 2, area: 'A 區・窗邊', reservable: true, status: 'OCCUPIED' },
-  { tableNo: 'A03', capacity: 4, area: 'A 區・窗邊', reservable: true, status: 'OCCUPIED' },
-  { tableNo: 'A04', capacity: 4, area: 'A 區・窗邊', reservable: true, status: 'AVAILABLE' },
-  { tableNo: 'A05', capacity: 4, area: 'A 區・走道', reservable: true, status: 'CLEANING' },
-  { tableNo: 'A06', capacity: 6, area: 'A 區・走道', reservable: true, status: 'AVAILABLE' },
-  { tableNo: 'B01', capacity: 4, area: 'B 區', reservable: true, status: 'OCCUPIED' },
-  { tableNo: 'C01', capacity: 8, area: 'C 包廂', reservable: false, status: 'OCCUPIED' },
-]
+
 
 // 徽章樣式（對應設計稿的 .b-plain / .b-sold）
 
@@ -28,7 +19,25 @@ const STATUS_STYLE = {
 }
 
 function SeatManagement() {
-  const [tables, setTables] = useState(INITIAL_TABLES)
+  const [tables, setTables] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  // 畫面第一次出現時，去後端拿桌位
+  useEffect(() => {
+    const controller = new AbortController()
+
+    fetchSeats(controller.signal)
+      .then((data) => setTables(data.map(toTableRow)))
+      .catch((err) => {
+        if (!controller.signal.aborted) setError(err.message)
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsLoading(false)
+      })
+
+    return () => controller.abort()
+  }, [])
 
   // 頂部統計：全部從 tables 算出來，不另外存 state
   const totalTables = tables.length
@@ -110,6 +119,27 @@ function SeatManagement() {
               </tr>
             </thead>
             <tbody>
+              {isLoading && (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-ink-600">
+                    載入中…
+                  </td>
+                </tr>
+              )}
+              {error && (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-danger">
+                    載入失敗：{error}
+                  </td>
+                </tr>
+              )}
+              {!isLoading && !error && tables.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-ink-600">
+                    目前沒有桌位
+                  </td>
+                </tr>
+              )}
               {tables.map((t) => {
                 const status = STATUS_STYLE[t.status]
                 return (
@@ -217,6 +247,18 @@ function TextButton({ icon, children, ...props }) {
 // 圖示：顏色跟著文字色（currentColor）走
 function Icon({ icon: IconComponent }) {
   return <IconComponent aria-hidden="true" className="svg-icon size-4 flex-none" />
+}
+
+// 後端叫 seats，這個畫面原本叫 capacity，在這裡統一轉換
+function toTableRow(seat) {
+  return {
+    id: seat.id,
+    tableNo: seat.tableNo,
+    capacity: seat.seats,
+    area: seat.area,
+    reservable: seat.reservable,
+    status: seat.status,
+  }
 }
 
 export default SeatManagement
