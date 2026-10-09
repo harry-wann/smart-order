@@ -53,4 +53,8 @@ public class DiningTable {
     public Boolean getActive() {
         return active;
     }
+
+    public void setReservable(Boolean reservable) {
+        this.reservable = reservable;
+    }
 }
