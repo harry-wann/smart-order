@@ -7,7 +7,7 @@ import CustomerTopBar from '@/components/CustomerTopBar'
 import SOButton from '@/components/SOButton'
 import ServiceBell from '@/features/customer/order/ServiceBell'
 
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 
 import axios from "axios";
 
@@ -17,6 +17,7 @@ export default function Menu() {
   const [activeCategoryId,setActiveCategoryId]=useState(null);
   const [searchKeyword,setSearchKeyword]=useState('');
   const [isBellOpen, setIsBellOpen] = useState(false);
+  const navigate = useNavigate("");
 
   useEffect(() => {
     async function loadCategories() {
@@ -94,10 +95,9 @@ export default function Menu() {
         </div>
 
         <main className="p-4">
-          <Link to="/order/itemdetail">
           <div className="flex flex-col gap-4">
             {items.map((item) => (
-                <button key={item.id} className="cursor-pointer text-left">
+                <button key={item.id} onClick={()=>{navigate('/order/itemdetail',{state : {id:item.id}})}} className="cursor-pointer text-left">
                   <MenuItemRow
                       img={item.imageUrl}
                       title={item.name}
@@ -108,7 +108,6 @@ export default function Menu() {
                 </button>
             ))}
           </div>
-          </Link>
         </main>
 
         <div className="fixed bottom-0 left-0 h-23.25 w-full border-t border-line bg-surface px-4 py-4">
