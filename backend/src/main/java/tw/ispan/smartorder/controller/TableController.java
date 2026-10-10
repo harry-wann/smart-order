@@ -1,0 +1,22 @@
+package tw.ispan.smartorder.controller;
+
+import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import tw.ispan.smartorder.dto.TableOverviewResponse;
+import tw.ispan.smartorder.service.TableService;
+
+@RestController
+@RequestMapping("/api/admin/tables")
+public class TableController {
+
+    @Autowired
+    private TableService tableService;
+
+    @GetMapping
+    public List<TableOverviewResponse> findOverview() {
+        return tableService.findOverview();
+    }
+}
