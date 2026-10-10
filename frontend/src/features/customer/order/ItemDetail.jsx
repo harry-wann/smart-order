@@ -2,6 +2,8 @@ import React, { useState, useMemo, useRef, useEffect } from 'react'
 import SOButton from '../../../components/SOButton'
 import OptionRadioGroup from '../../../components/optionRadio/OptionRadioGroup'
 import OptionCheckboxGroup from '../../../components/optionCheckbox/OptionCheckboxGroup'
+import { useLocation } from 'react-router'
+import axios from 'axios'
 
 // 原檔名 ItemDetails.jsx
 // 原路徑 src/components
@@ -25,12 +27,6 @@ const mockItemData = {
       alt: '火鍋湯底與肉片',
     },
   ],
-  product: {
-    name: '安格斯霜降牛五花',
-    badge: '人氣',
-    basePrice: 380,
-    description: '厚切 3mm，涮 8 秒最好吃。美國 Choice 級前胸，油花分布均勻，是我們賣最好的一款。',
-  },
   optionGroups: [
     {
       id: 'portion',
@@ -59,13 +55,16 @@ const mockItemData = {
 }
 
 export default function ItemDetail() {
-  const { images, product, optionGroups } = mockItemData
-
+  const { images, optionGroups } = mockItemData
+  const location = useLocation();
+  const productId = location.state?.productId;
   const [selections, setSelections] = useState({
     portion: [],
     addons: [],
   })
+  const [item, setItem] = useState([]);
 
+  // 輪播
   const scrollRef = useRef(null)
   const [currentImgIndex, setCurrentImgIndex] = useState(0)
 
@@ -89,6 +88,31 @@ export default function ItemDetail() {
     }, 3000)
     return () => clearInterval(timer)
   }, [currentImgIndex, images.length])
+  // ----------------
+
+  useEffect(() => {
+    if (productId == null) return; 
+    async function loadItems(productId) {
+      try {
+        const response = await axios.get(`http://localhost:8080/api/order/items/${productId}`); 
+        setItem(response.data)
+      } catch (error) {
+        console.error(error)
+      }
+    }
+    loadItems(productId)
+  },[productId])
+
+  // useEffect(() => {
+  //   async function option() {
+  //     try {
+  //       const response = await axios.get(`http://localhost:8080/api/option`);
+  //     } catch (error) {
+  //       console.error(error)
+  //     }
+  //   }
+  //   option()
+  // },[])
 
   const totalAmount = useMemo(() => {
     let extraPrice = 0
@@ -100,8 +124,8 @@ export default function ItemDetail() {
         }
       })
     })
-    return product.basePrice + extraPrice
-  }, [selections, optionGroups, product.basePrice])
+    return item.price + extraPrice
+  }, [selections, optionGroups, item.price])
 
   // 尋找第一個尚未選擇的必選項群組
   const missingRequiredGroup = useMemo(() => {
@@ -140,16 +164,13 @@ export default function ItemDetail() {
 
       <div className="px-5 py-6">
         <div className="flex items-start justify-between">
-          <h1 className="text-2xl font-bold tracking-wide">{product.name}</h1>
-          <span className="rounded-full bg-accent-500 px-3 py-1 text-sm font-medium text-surface">
-            {product.badge}
-          </span>
+          <h1 className="text-2xl font-bold tracking-wide">{item.name}</h1>
         </div>
         <div className="mt-2 flex items-baseline gap-1">
-          <span className="text-2xl font-bold text-brand-600">NT$ {product.basePrice}</span>
+          <span className="text-2xl font-bold text-brand-600">NT$ {item.price}</span>
           <span className="text-sm font-medium text-ink-600">起</span>
         </div>
-        <p className="mt-4 leading-relaxed text-ink-600">{product.description}</p>
+        <p className="mt-4 leading-relaxed text-ink-600">{item.description}</p>
         <div className="mt-6 border-b border-line"></div>
       </div>
 
