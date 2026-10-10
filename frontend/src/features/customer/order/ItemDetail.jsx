@@ -103,17 +103,6 @@ export default function ItemDetail() {
     loadItems(productId)
   },[productId])
 
-  // useEffect(() => {
-  //   async function option() {
-  //     try {
-  //       const response = await axios.get(`http://localhost:8080/api/option`);
-  //     } catch (error) {
-  //       console.error(error)
-  //     }
-  //   }
-  //   option()
-  // },[])
-
   const totalAmount = useMemo(() => {
     let extraPrice = 0
     optionGroups.forEach((group) => {
@@ -133,6 +122,7 @@ export default function ItemDetail() {
       (group) => group.isRequired && (!selections[group.id] || selections[group.id].length === 0),
     )
   }, [optionGroups, selections])
+  console.log(item);
 
   return (
     <div className="relative min-h-screen w-full self-start bg-paper pb-24 font-sans text-ink-900">
@@ -164,7 +154,7 @@ export default function ItemDetail() {
 
       <div className="px-5 py-6">
         <div className="flex items-start justify-between">
-          <h1 className="text-2xl font-bold tracking-wide">{item.name}</h1>
+          <h1 className="text-2xl font-bold tracking-wide">{item.menuItemName}</h1>
         </div>
         <div className="mt-2 flex items-baseline gap-1">
           <span className="text-2xl font-bold text-brand-600">NT$ {item.price}</span>

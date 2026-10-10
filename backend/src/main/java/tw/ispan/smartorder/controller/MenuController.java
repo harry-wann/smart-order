@@ -39,15 +39,11 @@ public class MenuController {
     }
 
     @GetMapping("/items/{productId}")
-    public ResponseEntity<MenuItemOptionDetailDto.MenuItemDetailDto> getMenuItemById(
+    public ResponseEntity<MenuItemOptionDetailDto> getMenuItemById(
             @PathVariable Long productId
     ) {
-        MenuItemEntity menuItem = menuItemService.findMenuItemById(productId)
-                .orElseThrow(() -> new RuntimeException("Menu item not found with id: " + productId));
-
-        List<MenuItemOptionDetailDto> options =
+        MenuItemOptionDetailDto menuItem =
                 menuItemService.findOptionValuesByMenuItemId(productId);
-
-        return ResponseEntity.ok(new MenuItemOptionDetailDto.MenuItemDetailDto(menuItem, options));
+        return ResponseEntity.ok(menuItem);
     }
 }

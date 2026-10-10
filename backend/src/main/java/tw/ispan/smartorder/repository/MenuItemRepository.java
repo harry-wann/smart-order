@@ -3,7 +3,7 @@ package tw.ispan.smartorder.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import tw.ispan.smartorder.dto.MenuItemOptionDetailDto;
+import tw.ispan.smartorder.dto.MenuItemOptionDetailRow;
 import tw.ispan.smartorder.entity.MenuItemEntity;
 
 import java.util.List;
@@ -15,12 +15,23 @@ public interface MenuItemRepository extends JpaRepository<MenuItemEntity,Long> {
     );
 
     @Query("""
-    SELECT new tw.ispan.smartorder.dto.MenuItemOptionDetailDto(mi, og, ov)
+    SELECT mi.id AS menuItemId,
+           mi.name AS menuItemName,
+           mi.description AS description,
+           mi.price AS price,
+           og.id AS optionGroupId,
+           og.name AS optionGroupName,
+           og.minSelect AS minSelect,
+           og.maxSelect AS maxSelect,
+           ov.id AS optionValueId,
+           ov.name AS optionValueName,
+           ov.priceDelta AS priceDelta
     FROM MenuItemEntity mi
-    JOIN MenuItemOptionGroupEntity mog ON mi.id = mog.id.menuItemId
-    JOIN OptionGroupEntity og ON mog.id.optionGroupId = og.id
-    JOIN OptionValueEntity ov ON og.id = ov.optionGroupId.id
+    LEFT JOIN MenuItemOptionGroupEntity mog ON mi.id = mog.id.menuItemId
+    LEFT JOIN OptionGroupEntity og ON mog.id.optionGroupId = og.id
+    LEFT JOIN OptionValueEntity ov ON og.id = ov.optionGroupId.id
     WHERE mi.id = :menuItemId
+    ORDER BY mog.sortOrder, og.sortOrder, ov.sortOrder
     """)
-    List<MenuItemOptionDetailDto> findOptionValuesByMenuItemId(@Param("menuItemId") Long menuItemId);
+    List<MenuItemOptionDetailRow> findOptionValuesByMenuItemId(@Param("menuItemId") Long menuItemId);
 }

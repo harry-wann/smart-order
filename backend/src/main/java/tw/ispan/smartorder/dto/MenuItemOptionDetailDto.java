@@ -1,28 +1,26 @@
 package tw.ispan.smartorder.dto;
 
-import lombok.Getter;
-import lombok.Setter;
-import tw.ispan.smartorder.entity.MenuItemEntity;
-import tw.ispan.smartorder.entity.OptionGroupEntity;
-import tw.ispan.smartorder.entity.OptionValueEntity;
-
+import java.math.BigDecimal;
 import java.util.List;
 
-@Getter
-@Setter
-public class MenuItemOptionDetailDto {
-    private MenuItemEntity menuItemId;
-    private OptionGroupEntity optionGroupId;
-    private OptionValueEntity option_group_id;
+public record MenuItemOptionDetailDto(
+        Long id,
+        String name,
+        String description,
+        BigDecimal price,
+        List<OptionGroupDto> optionGroups
+) {
+    public record OptionGroupDto(
+            Long optionGroupId,
+            String name,
+            Integer minSelect,
+            Integer maxSelect,
+            List<OptionValueDto> optionValues
+    ) {}
 
-    public MenuItemOptionDetailDto(MenuItemEntity menuItemId, OptionGroupEntity optionGroupId, OptionValueEntity option_group_id) {
-        this.menuItemId=menuItemId;
-        this.optionGroupId = optionGroupId;
-        this.option_group_id = option_group_id;
-    }
-
-    public record MenuItemDetailDto(
-            MenuItemEntity menuItem,
-            List<MenuItemOptionDetailDto> options
+    public record OptionValueDto(
+            Long optionValueId,
+            String name,
+            BigDecimal priceDelta
     ) {}
 }
