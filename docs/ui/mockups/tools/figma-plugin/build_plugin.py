@@ -5,12 +5,15 @@
 用法：python3 build_plugin.py [layout.json]
 """
 import json, pathlib, sys
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+from figma_fullpage import add_fullpage_variants
 
 HERE = pathlib.Path(__file__).resolve().parent
 data_path = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else HERE / 'layout.json'
 tpl = (HERE / 'code.template.js').read_text(encoding='utf-8')
 raw = data_path.read_text(encoding='utf-8')
 data = json.loads(raw)
+add_fullpage_variants(data)
 
 header = (
     '// 自動產生，請勿手改。改 code.template.js 後重跑 build_plugin.py。\n'
