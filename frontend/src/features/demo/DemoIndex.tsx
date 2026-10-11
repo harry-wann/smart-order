@@ -40,4 +40,10 @@ const DEMOS = [
     description: '用 hooks/northwind 的 useQuery／useMutation，快取、重抓、樂觀更新交給 TanStack Query。',
     path: '/demo/northwind/tanstack',
   },
+  {
+    tag: 'Cloudflare R2',
+    title: '圖片上傳共用元件',
+    description: '用共用 ImageUpload 元件選取、預覽、上傳圖片並處理失敗重試。',
+    path: '/demo/r2-upload',
+  },
 ]

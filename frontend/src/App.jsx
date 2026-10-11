@@ -47,6 +47,7 @@ import DS07 from './features/components-demo/DS07'
 import DemoIndex from './features/demo/DemoIndex'
 import AxiosRestDemo from './features/demo/northwind/AxiosRestDemo'
 import TanStackRestDemo from './features/demo/northwind/TanStackRestDemo'
+import R2UploadDemo from './features/demo/R2UploadDemo'
 import { ToastManager } from './components/toast/ToastManager'
 
 function App() {
@@ -127,6 +128,7 @@ function App() {
       <Route path="/demo" element={<DemoIndex />} />
       <Route path="/demo/northwind/axios" element={<AxiosRestDemo />} />
       <Route path="/demo/northwind/tanstack" element={<TanStackRestDemo />} />
+      <Route path="/demo/r2-upload" element={<R2UploadDemo />} />
     </Routes>
   )
 }

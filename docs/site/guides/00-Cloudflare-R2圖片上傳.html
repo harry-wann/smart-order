@@ -177,54 +177,57 @@ pre.mermaid svg{max-width:100%;height:auto}
 <h1 id="cloudflare-r2-圖片上傳react-spring-boot">Cloudflare R2 圖片上傳（React + Spring Boot）</h1>
 <p>這份教學從 Cloudflare 帳號已註冊開始，帶你建立 R2 儲存空間，並整理本專案串接商品圖片上傳的步驟。</p>
 <h2 id="先了解本專案目前的狀態">先了解本專案目前的狀態</h2>
-<p>本專案使用 <a class="gloss" href="../tech/frontend/34-React與JSX.html" title="看這個技術的白話說明">React</a>、<a class="gloss" href="../tech/backend/14-SpringBoot是什麼.html" title="看這個技術的白話說明">Spring Boot</a> 與 <a class="gloss" href="../tech/database/22-關聯式資料庫與SQL.html" title="看這個技術的白話說明">MySQL</a>。資料庫規格已預留 <code>menu_item.image_url</code>，但目前管理菜單畫面仍以 <code>imageText</code> 當圖片佔位，尚未接上實際檔案上傳。R2 帳號設定完成後，還需要實作後端簽發上傳網址、前端上傳，以及菜單資料儲存。</p>
+<p>本專案使用 <a class="gloss" href="../tech/frontend/34-React與JSX.html" title="看這個技術的白話說明">React</a>、<a class="gloss" href="../tech/backend/14-SpringBoot是什麼.html" title="看這個技術的白話說明">Spring Boot</a> 與 <a class="gloss" href="../tech/database/22-關聯式資料庫與SQL.html" title="看這個技術的白話說明">MySQL</a>。共用圖片上傳元件、R2 簽名 API 與展示範例已完成；管理菜單畫面仍未接上 <code>menu_item.image_url</code> 的儲存流程。</p>
 <ul>
 <li><a href="../spec/modules/M1-菜單與品項.html">菜單與品項規格</a>將圖片上傳列為延伸功能，基礎版本可以先使用圖片網址。</li>
 <li><a href="../spec/03-資料庫設計.html">資料庫規格</a>的 <code>menu_item</code> 已有 <code>image_url VARCHAR(500)</code>。</li>
 <li>Northwind 的 <code>Product</code> 是練習 API，不是火鍋菜單資料表；請依正式的 <code>menu_item</code> 規格串接。</li>
 </ul>
 <h2 id="上傳流程長什麼樣子">上傳流程長什麼樣子</h2>
-<p>圖片由瀏覽器直接傳到 R2，Spring Boot 負責驗證管理者並簽發短效上傳網址。R2 憑證不會放進 React 前端。</p>
+<p>圖片由瀏覽器直接傳到 R2，Spring Boot 驗證檔案資料、簽發短效網址，並在上傳後確認檔案。R2 憑證不會放進 React 前端。現在範例尚未接員工登入或菜單資料庫。</p>
 <pre class="mermaid">sequenceDiagram
-    participant Admin as 管理者瀏覽器
+    participant Browser as 瀏覽器
     participant API as Spring Boot
-    participant R2 as Cloudflare R2
-    participant DB as MySQL
-    Admin->>API: 申請圖片上傳網址（檔案類型、大小）
-    API->>API: 驗證管理者、產生不重複的 object key
-    API-->>Admin: 回傳短效 PUT 網址與 objectKey
-    Admin->>R2: PUT 圖片檔案
-    R2-->>Admin: 上傳成功
-    Admin->>API: 儲存或更新菜單品項與 objectKey
-    API->>R2: HeadObject 確認實際檔案
-    R2-->>API: 回傳大小與 Content-Type
-    API->>DB: 寫入 menu_item.image_url
+    participant Staging as 私有 R2 暫存 Bucket
+    participant Public as 公開 R2 圖片 Bucket
+    Browser->>API: 申請短效網址（檔案類型、大小）
+    API->>API: 建立隨機暫存 key 與短效上傳票據
+    API-->>Browser: 回傳 PUT 網址與上傳票據
+    Browser->>Staging: PUT 到 pending/ 前綴
+    Staging-->>Browser: 上傳成功
+    Browser->>API: 用上傳票據確認檔案
+    API->>Staging: HeadObject 檢查檔案大小與 Content-Type
+    API->>Public: 比對 ETag 後複製到 images/
+    API->>Staging: 刪除暫存物件
+    Public-->>API: 回傳正式圖片網址與 objectKey
+    API-->>Browser: 回傳圖片網址與 objectKey
 </pre>
 <h2 id="1-啟用-r2-並建立-bucket">1. 啟用 R2 並建立 Bucket</h2>
 <ol>
 <li>登入 <a href="https://dash.cloudflare.com/">Cloudflare Dashboard</a>，開啟 <strong>Storage &amp; databases → R2 object storage</strong>。</li>
 <li>如果 R2 尚未啟用，先完成畫面上的啟用流程。建立 R2 API token 前，帳號必須先啟用 R2。</li>
-<li>選擇 <strong>Create bucket</strong>，建立一個 Bucket，例如 <code>smart-order-menu-images</code>。Bucket 名稱使用小寫英文字母、數字與連字號。</li>
-<li>儲存類別選 <strong>Standard</strong>。R2 的免費額度適用於 Standard，不適用於 Infrequent Access。</li>
-<li>暫時上傳一張測試用的菜單圖片，例如 <code>menu-items/test.webp</code>，確認 Bucket 裡看得到檔案。</li>
+<li>選擇 <strong>Create bucket</strong>，建立公開圖片 Bucket，例如 <code>smart-order-menu-images</code>，以及另一個私有暫存 Bucket，例如 <code>smart-order-menu-staging</code>。名稱使用小寫英文字母、數字與連字號。</li>
+<li>兩個 Bucket 的儲存類別都選 <strong>Standard</strong>。R2 的免費額度適用於 Standard，不適用於 Infrequent Access。</li>
+<li>暫時上傳一張測試用的菜單圖片，例如 <code>images/test.webp</code> 到圖片 Bucket，確認稍後設定公開網址後能載入。</li>
 </ol>
+<p>圖片 Bucket 只放完成驗證、可公開展示的圖片；暫存 Bucket 必須保持私有。前端的短效 PUT 網址會指向暫存 Bucket，因此不要替它開啟 Public Development URL 或自訂網域。</p>
 <p>R2 Standard 每月免費額度為 10 GB-month 儲存、100 萬次 Class A 操作、1,000 萬次 Class B 操作，對外傳輸免費。超出儲存或操作額度會依用量計費，請在 Dashboard 留意使用量。<a href="https://developers.cloudflare.com/r2/pricing/">R2 定價與免費額度</a></p>
 <h2 id="2-設定圖片的公開讀取網址">2. 設定圖片的公開讀取網址</h2>
 <p>菜單圖片會顯示給所有顧客看，因此圖片可以公開讀取；上傳權限仍由 Spring Boot 控制。</p>
 <h3 id="開發測試">開發測試</h3>
 <ol>
-<li>開啟 Bucket 的 <strong>Settings</strong>。</li>
+<li>開啟 <code>smart-order-menu-images</code> 圖片 Bucket 的 <strong>Settings</strong>。</li>
 <li>在 <strong>Public Development URL</strong> 區塊啟用公開網址。</li>
 <li>複製 Cloudflare 提供的 <code>r2.dev</code> 網址，打開剛才上傳的測試圖片網址，確認圖片能載入。</li>
 </ol>
 <p><code>r2.dev</code> 有流量限制，只適合開發測試。正式環境請將 Bucket 連到你控制的自訂網域，例如 <code>images.example.com</code>；該網域必須先加入同一個 Cloudflare 帳號。自訂網域也能使用 Cloudflare Cache。<a href="https://developers.cloudflare.com/r2/buckets/public-buckets/">公開 Bucket 與自訂網域</a></p>
 <blockquote>
-<p>只把可公開展示的菜單圖片放在公開 Bucket。不要在裡面放會員資料、訂單附件或其他不應公開的檔案。</p>
+<p>只有 <code>smart-order-menu-images</code> 圖片 Bucket 開啟公開讀取。<code>smart-order-menu-staging</code> 暫存 Bucket 不可公開，裡面可能有尚未完成驗證的上傳內容。</p>
 </blockquote>
 <h2 id="3-建立只限此-bucket-的-r2-api-token">3. 建立只限此 Bucket 的 R2 API token</h2>
 <ol>
 <li>在 R2 頁面找到 <strong>Manage API Tokens</strong>，建立 R2 API token。這裡建立的是 R2 的 S3 API 憑證，不是一般 Cloudflare API token。</li>
-<li>權限選 <strong>Object Read &amp; Write</strong>，並將範圍限制在 <code>smart-order-menu-images</code> 這個 Bucket。</li>
+<li>權限選 <strong>Object Read &amp; Write</strong>，並將範圍限制在 <code>smart-order-menu-images</code> 和 <code>smart-order-menu-staging</code> 這兩個 Bucket。不要授予帳號內其他 Bucket 的存取權。</li>
 <li>建立後立刻複製 <strong>Access Key ID</strong> 與 <strong>Secret Access Key</strong>。Secret Access Key 只會顯示這一次。</li>
 <li>在 R2 Overview 找到 <strong>Account ID</strong>。S3 API endpoint 格式如下：</li>
 </ol>
@@ -232,7 +235,7 @@ pre.mermaid svg{max-width:100%;height:auto}
    https://&lt;ACCOUNT_ID&gt;.r2.cloudflarestorage.com</code></p>
 <p>R2 token 與 endpoint 的建立步驟見 <a href="https://developers.cloudflare.com/r2/api/tokens/">Cloudflare R2 Authentication</a>。Java AWS SDK v2 使用 <code>Region.of("auto")</code>；R2 官方範例也列出 Java client 的必要設定。<a href="https://developers.cloudflare.com/r2/examples/aws/aws-sdk-java/">Java SDK 範例</a></p>
 <h2 id="4-設定瀏覽器上傳的-cors">4. 設定瀏覽器上傳的 CORS</h2>
-<p>React 開發伺服器預設使用 <code>http://localhost:5173</code>。到 Bucket 的 <strong>Settings → <a class="gloss" href="../tech/web/11-CORS跨來源.html" title="看這個技術的白話說明">CORS</a> Policy → Add CORS policy → <a class="gloss" href="../tech/web/09-JSON.html" title="看這個技術的白話說明">JSON</a></strong>，加入以下規則。正式前端部署後，把 <code>https://your-frontend.example.com</code> 換成實際網址；Origin 要包含協定與網域，不要加路徑。</p>
+<p>React 開發伺服器預設使用 <code>http://localhost:5173</code>。到 <code>smart-order-menu-staging</code> 暫存 Bucket 的 <strong>Settings → <a class="gloss" href="../tech/web/11-CORS跨來源.html" title="看這個技術的白話說明">CORS</a> Policy → Add CORS policy → <a class="gloss" href="../tech/web/09-JSON.html" title="看這個技術的白話說明">JSON</a></strong>，加入以下規則。正式前端部署後，把 <code>https://your-frontend.example.com</code> 換成實際網址；Origin 要包含協定與網域，不要加路徑。CORS 只需設定在瀏覽器直接 PUT 的私有暫存 Bucket。</p>
 <pre><code class="language-json">[
   {
     &quot;AllowedOrigins&quot;: [
@@ -253,20 +256,26 @@ pre.mermaid svg{max-width:100%;height:auto}
 R2_ACCESS_KEY_ID=你的_ACCESS_KEY_ID
 R2_SECRET_ACCESS_KEY=你的_SECRET_ACCESS_KEY
 R2_BUCKET_NAME=smart-order-menu-images
-R2_ENDPOINT=https://你的_ACCOUNT_ID.r2.cloudflarestorage.com
+R2_STAGING_BUCKET_NAME=smart-order-menu-staging
 R2_PUBLIC_BASE_URL=https://你的公開圖片網域
+R2_MAX_UPLOAD_BYTES=5242880
+R2_ALLOW_ANONYMOUS_UPLOADS=false
 </code></pre>
-<p>不要把 Access Key 或 Secret Access Key 放在 <code>frontend/.env</code>、React 程式碼、<a class="gloss" href="../tech/team/02-Git是什麼.html" title="看這個技術的白話說明">Git</a> commit 或公開訊息裡。正式部署時，將相同欄位設定在後端主機的環境變數／Secrets 設定中，不要依賴開發機的 <code>backend/.env</code>。</p>
+<p>S3 API endpoint 會由 Account ID 組成：<code>https://&lt;ACCOUNT_ID&gt;.r2.cloudflarestorage.com</code>。不要把 Access Key 或 Secret Access Key 放在 <code>frontend/.env</code>、React 程式碼、<a class="gloss" href="../tech/team/02-Git是什麼.html" title="看這個技術的白話說明">Git</a> commit 或公開訊息裡。正式部署時，將相同欄位設定在後端主機的環境變數／Secrets 設定中，不要依賴開發機的 <code>backend/.env</code>。</p>
 <h2 id="6-實作-spring-boot-簽發網址-api">6. 實作 Spring Boot 簽發網址 API</h2>
-<p>在 <code>backend/pom.xml</code> 加入 AWS SDK for Java v2 的 S3 相依套件，並使用 AWS SDK BOM 統一管理版本。R2 使用 S3-compatible endpoint；官方 Java 範例說明了 <code>endpointOverride</code>、<code>Region.of("auto")</code> 與簽發 PUT 網址的設定。<a href="https://developers.cloudflare.com/r2/examples/aws/aws-sdk-java/">R2 Java SDK 範例</a></p>
-<p>建議新增一個只有登入管理者可呼叫的 API，例如：</p>
-<pre><code class="language-text">POST /api/admin/uploads/presign
+<p>後端已在 <code>backend/pom.xml</code> 加入 AWS SDK for Java v2。R2 設定由 <code>R2StorageProperties</code> 載入，S3 client 與 presigner 在 <code>R2StorageConfiguration</code> 建立；使用 <code>endpointOverride</code>、<code>Region.of("auto")</code> 和 path-style access。<a href="https://developers.cloudflare.com/r2/examples/aws/aws-sdk-java/">R2 Java SDK 範例</a></p>
+<p>目前提供以下 API：</p>
+<pre><code class="language-text">GET  /api/uploads/config
+POST /api/uploads/presign
+POST /api/uploads/complete
 </code></pre>
-<p>請求提供檔案類型與大小；後端驗證管理者、檔案類型與申報大小上限，並自行產生不重複的 object key，例如：</p>
-<pre><code class="language-text">menu-items/9f0c...a21.webp
+<p><code>/config</code> 回傳 <code>R2_MAX_UPLOAD_BYTES</code>，讓元件使用與後端相同的檔案大小限制。<code>/presign</code> 接受 JPEG、PNG、WebP，並建立不可由前端指定 key 的短效上傳票據。PUT 網址有效 10 分鐘，且簽章綁定 Content-Type。物件先傳到私有暫存 Bucket 的 <code>pending/</code>；<code>/complete</code> 以票據找到該物件，使用 <code>HeadObject</code> 檢查實際大小與 Content-Type，再用 ETag 條件複製到公開圖片 Bucket 的 <code>images/</code>，最後刪除暫存物件並回傳正式圖片網址與 object key。分開 Bucket 可避免尚未驗證的圖片被公開讀取；ETag 條件可避免檢查後、複製前暫存內容被替換。上傳票據存在單一後端程序的記憶體中，適合本機範例；多實例部署需改用共用儲存。</p>
+<pre><code class="language-text">smart-order-menu-staging: pending/9f0c...a21.webp
+        ↓ 檢查與 ETag 條件複製
+smart-order-menu-images:  images/9f0c...a21.webp
 </code></pre>
-<p>概念程式碼如下。正式實作還要補上 Spring 設定綁定、錯誤處理、管理者授權與檔案政策檢查。</p>
-<p><code>extensionForValidatedContentType</code> 應只接受後端允許的 Content-Type，再對應到副檔名；不要直接採用前端送來的檔名或副檔名。</p>
+<p>API 實作位於 <code>backend/src/main/java/tw/ispan/smartorder/controller/ImageUploadController.java</code> 與 <code>service/ImageUploadService.java</code>。<code>GET /api/uploads/config</code> 只回傳公開的大小限制；簽發與確認上傳的 POST API 預設由 <code>SecurityConfig</code> 拒絕呼叫。本機展示時才在 <code>backend/.env</code> 暫設 <code>R2_ALLOW_ANONYMOUS_UPLOADS=true</code>。正式／共用環境保持 <code>false</code>，接入員工驗證後再限制管理者存取。設定範例在 <code>backend/.env.example</code>。</p>
+<p>後端只接受 JPEG、PNG、WebP，再由 Content-Type 決定副檔名；不採用前端送來的原始檔名或副檔名。上傳票據與 object key 綁定，前端無法用公開圖片網址要求簽發覆寫網址。</p>
 <pre><code class="language-java">S3Presigner presigner = S3Presigner.builder()
     .endpointOverride(URI.create(endpoint))
     .credentialsProvider(StaticCredentialsProvider.create(
@@ -278,10 +287,10 @@ R2_PUBLIC_BASE_URL=https://你的公開圖片網域
     .build();
 
 String extension = extensionForValidatedContentType(contentType);
-String objectKey = &quot;menu-items/&quot; + UUID.randomUUID() + extension;
+String objectKey = &quot;pending/&quot; + UUID.randomUUID() + extension;
 
 PutObjectRequest putObject = PutObjectRequest.builder()
-    .bucket(bucketName)
+    .bucket(stagingBucketName) // 私有暫存 Bucket
     .key(objectKey)
     .contentType(contentType)
     .build();
@@ -293,21 +302,18 @@ PutObjectPresignRequest request = PutObjectPresignRequest.builder()
 
 String uploadUrl = presigner.presignPutObject(request).url().toString();
 </code></pre>
-<p>API 回傳 <code>uploadUrl</code> 與 <code>objectKey</code>。短效網址建議只有效幾分鐘，並綁定特定 object key 和 <code>Content-Type</code>。不要採用前端傳來的原始檔名作為 object key。若簽章限制了 <code>Content-Type</code>，瀏覽器 PUT 時必須送出完全相同的 header。短效網址等同暫時的上傳權限，不要寫入一般應用程式 log。<a href="https://developers.cloudflare.com/r2/api/s3/presigned-urls/">R2 Presigned URLs</a></p>
-<p>申報的檔案大小來自瀏覽器，不能單靠它限制實際上傳量。儲存菜單品項前，後端應用 <code>HeadObject</code> 讀取 R2 上的實際檔案大小與 Content-Type；不符合政策就拒絕儲存並刪除該物件。<code>HeadObject</code> 讀到的是物件標頭，不會檢查檔案內容；若要確認實際內容是圖片，還要由後端下載檢查檔案簽章，或用圖片解碼套件確認能正常解碼。</p>
-<h2 id="7-從-react-上傳並儲存菜單圖片網址">7. 從 React 上傳並儲存菜單圖片網址</h2>
-<p>取得後端回傳的 <code>uploadUrl</code> 與 <code>objectKey</code> 後，React 直接將檔案 PUT 到 R2：</p>
-<pre><code class="language-ts">const response = await fetch(uploadUrl, {
-  method: 'PUT',
-  headers: { 'Content-Type': file.type },
-  body: file,
-});
+<p>API 回傳 <code>uploadUrl</code> 與不透明的 <code>uploadToken</code>；暫存 key 留在後端。短效網址有效 10 分鐘，並綁定特定暫存 key 和 <code>Content-Type</code>。若簽章限制了 <code>Content-Type</code>，瀏覽器 PUT 時必須送出完全相同的 header。短效網址等同暫時的上傳權限，不要寫入一般應用程式 log。<a href="https://developers.cloudflare.com/r2/api/s3/presigned-urls/">R2 Presigned URLs</a></p>
+<p>瀏覽器送來的檔案大小只是申報值；PUT 本身沒有預先限制實際傳輸量。<code>/complete</code> 會用 <code>HeadObject</code> 比對實際大小與 Content-Type，不符合就刪除暫存物件；未完成確認的 <code>pending/</code> 物件則由<strong>私有暫存 Bucket</strong>的 Lifecycle Rule 在一天後到期清除。到 <code>smart-order-menu-staging</code> → <strong>Settings → Object Lifecycle Rules</strong>，新增套用 <code>pending/</code> 前綴、一天後刪除的規則。<a href="https://developers.cloudflare.com/r2/buckets/object-lifecycles/">R2 Object Lifecycles</a>。<code>HeadObject</code> 讀到的是物件標頭，不會檢查檔案內容；若要確認實際內容是圖片，還要由後端檢查檔案簽章或解碼圖片。</p>
+<h2 id="7-從-react-上傳圖片">7. 從 React 上傳圖片</h2>
+<p>共用元件位於 <code>frontend/src/components/upload/ImageUpload.tsx</code>，上傳 API 呼叫集中在 <code>frontend/src/services/api/uploads/uploadApi.ts</code>。元件先讀取後端大小限制，再檢查格式與大小、取得短效網址、直接 PUT 到 R2，最後呼叫 <code>/complete</code> 確認檔案。執行範例可開啟前端 <code>/demo/r2-upload</code>，或參考 <code>frontend/src/features/demo/R2UploadDemo.tsx</code>。</p>
+<p>在表單使用：</p>
+<pre><code class="language-ts">const [image, setImage] = useState&lt;UploadedImage | null&gt;(null)
 
-if (!response.ok) throw new Error('R2 圖片上傳失敗');
+&lt;ImageUpload value={image} onChange={setImage} label=&quot;菜單圖片&quot; /&gt;
 </code></pre>
-<p>上傳成功後，再呼叫菜單品項的新增／更新 API，傳入後端簽發的 <code>objectKey</code>。後端用 <code>HeadObject</code> 確認物件存在、實際大小與 Content-Type 符合政策，並確認 key 位於 <code>menu-items/</code> 前綴後，才用 <code>R2_PUBLIC_BASE_URL</code> 組出網址，存進 <code>menu_item.image_url</code>。不要直接信任瀏覽器提交的任意圖片網址。</p>
+<p>上傳成功後，元件回傳 <code>{ imageUrl, objectKey }</code>。新增／更新菜單時應傳 <code>objectKey</code>，由菜單 API 確認 key 後再寫入資料庫；不要直接信任瀏覽器提交的任意圖片網址。現在的展示元件尚未接到菜單新增／編輯 API。</p>
 <h2 id="8-上傳失敗時的前端處理">8. 上傳失敗時的前端處理</h2>
-<p>把流程拆成「取得簽章 → 上傳 R2 → 儲存菜單」三個階段。只有前一步確認成功，才進到下一步；任何失敗都保留使用者選的檔案與目前已存在的圖片。</p>
+<p>目前元件的流程是「讀取限制 → 取得簽章 → 上傳 R2 → <code>/complete</code> 確認」。確認成功後才呼叫 <code>onChange</code>；元件本身不會儲存菜單資料。</p>
 <div class="tablewrap"><table>
 <thead>
 <tr>
@@ -318,40 +324,43 @@ if (!response.ok) throw new Error('R2 圖片上傳失敗');
 </thead>
 <tbody>
 <tr>
+<td>讀取大小限制失敗</td>
+<td>停用檔案選擇，提示無法讀取後端設定</td>
+<td>重試讀取設定 API</td>
+</tr>
+<tr>
 <td>取得上傳網址失敗</td>
-<td>顯示「無法開始上傳」，保留所選檔案，不呼叫 R2</td>
+<td>保留所選檔案，不呼叫 R2</td>
 <td>網路或伺服器暫時錯誤時，重試簽發 API</td>
 </tr>
 <tr>
 <td>PUT 上傳失敗</td>
-<td>不呼叫菜單儲存 API；保留檔案與 <code>objectKey</code>，顯示可重試狀態</td>
-<td>網路中斷或 5xx 可有限次重試；網址過期時向後端重新簽發。CORS、Content-Type 不符等設定錯誤先修正再試</td>
+<td>保留檔案與上傳票據，顯示可重試狀態</td>
+<td>網路中斷或 5xx 可手動重試；網址過期時用同一張票據向後端重新簽發。CORS、Content-Type 不符等設定錯誤先修正再試</td>
 </tr>
 <tr>
-<td>R2 回覆成功，但菜單儲存失敗</td>
-<td>保留 <code>objectKey</code>，顯示「圖片已上傳，菜單尚未儲存」</td>
-<td>只重試菜單儲存；不要重新上傳同一張圖</td>
-</tr>
-<tr>
-<td>更換圖片途中失敗</td>
-<td>繼續顯示資料庫裡原本的圖片</td>
-<td>新圖上傳且菜單儲存成功後，後端才刪除舊圖</td>
+<td><code>/complete</code> 確認失敗</td>
+<td>保留檔案與上傳票據；尚未呼叫 <code>onChange</code></td>
+<td>404 或 409 時重新 PUT 暫存物件；其他暫時錯誤可再次呼叫確認</td>
 </tr>
 </tbody>
 </table></div>
-<p>R2 PUT 若因網路中斷而沒有收到回應，前端不一定知道檔案是否已抵達。對同一張圖重試時沿用同一個 <code>objectKey</code>，不要每次都建立新 key；<code>PUT</code> 到相同 key 會覆寫同一個物件，不會累積重複檔案。若簽章網址過期，後端可為這個待上傳 key 重新簽發短效網址。</p>
-<p>只對網路中斷、429 或 5xx 做有限次自動重試，例如最多 2 次並逐次延長等待時間。不要對 4xx 無限重試；403 先檢查網址是否過期、<code>Content-Type</code> 是否與簽章一致、token 和 bucket 權限是否正確。瀏覽器顯示 CORS error 時，檢查前端 Origin、<code>PUT</code> 和 <code>Content-Type</code> 的 CORS 設定。</p>
-<p>若使用者取消編輯或關閉表單，已上傳但未綁定菜單的物件會成為孤兒檔案。可在後端建立清理流程，刪除超過保留時間且未被任何 <code>menu_item.image_url</code> 引用的物件。刪除或換圖時，也由後端在新菜單資料成功儲存後移除舊物件。</p>
+<p>替換既有圖片時，失敗不會呼叫 <code>onChange</code>，父層原本保存的圖片值仍在；元件會顯示本次待上傳檔案的預覽。R2 PUT 若因網路中斷而沒有收到回應，前端不一定知道檔案是否已抵達。對同一張圖重試時沿用同一張上傳票據；後端會為同一個暫存 key 重新簽發短效網址，因此不會多建一張正式圖片。若確認 API 回 404，或回 409 表示檢查期間暫存內容改變，元件會用同一張票據重新 PUT 暫存檔，再要求後端確認。</p>
+<p>目前元件提供手動重試，不會背景自動重試。每次重試都用相同上傳票據重新取得短效網址；如果 <code>/complete</code> 回 404 或 409，元件會重新 PUT 暫存物件。上傳票據過期後需重新取得新票據。R2 PUT 回 403 可先檢查網址是否過期、<code>Content-Type</code> 是否與簽章一致、token 和 bucket 權限是否正確。瀏覽器顯示 CORS error 時，檢查前端 Origin、<code>PUT</code> 和 <code>Content-Type</code> 的 CORS 設定。</p>
+<p>菜單資料儲存目前尚未接入。整合菜單表單時，若圖片已完成上傳但菜單儲存失敗，保留 <code>objectKey</code> 並只重試菜單儲存；成功儲存新圖片後，再由後端清除未被 <code>menu_item.image_url</code> 引用的孤兒圖片與舊圖片。</p>
 <h2 id="9-手動確認設定">9. 手動確認設定</h2>
-<p>目前專案尚未實作上傳 API 和管理頁面的檔案選擇器。R2 帳號設定完成後，可依下列順序繼續：</p>
+<p>R2 設定完成後，可依下列順序測試共用元件：</p>
 <ul>
-<li><input type="checkbox" disabled> R2 Bucket 已建立，儲存類別為 Standard。</li>
+<li><input type="checkbox" disabled> 公開圖片 Bucket 與私有暫存 Bucket 都已建立，儲存類別為 Standard。</li>
 <li><input type="checkbox" disabled> 測試圖片可從開發用公開網址開啟。</li>
-<li><input type="checkbox" disabled> R2 token 僅有指定 Bucket 的 Object Read &amp; Write 權限。</li>
-<li><input type="checkbox" disabled> CORS 已允許 <code>http://localhost:5173</code> 的 <code>PUT</code> 與 <code>Content-Type</code>。</li>
+<li><input type="checkbox" disabled> 只有圖片 Bucket 啟用公開讀取；暫存 Bucket 保持私有。</li>
+<li><input type="checkbox" disabled> R2 token 僅有這兩個 Bucket 的 Object Read &amp; Write 權限。</li>
+<li><input type="checkbox" disabled> 暫存 Bucket 的 CORS 已允許 <code>http://localhost:5173</code> 的 <code>PUT</code> 與 <code>Content-Type</code>。</li>
+<li><input type="checkbox" disabled> 暫存 Bucket 的 Lifecycle Rule 會在一天後刪除 <code>pending/</code> 前綴的未完成物件。</li>
 <li><input type="checkbox" disabled> R2 憑證只設定在後端環境變數。</li>
-<li><input type="checkbox" disabled> 後端簽發網址 API 有管理者授權與圖片類型／大小檢查。</li>
-<li><input type="checkbox" disabled> React 以短效網址上傳後，菜單 API 將 <code>image_url</code> 寫入 My<a class="gloss" href="../tech/database/22-關聯式資料庫與SQL.html" title="看這個技術的白話說明">SQL</a>。</li>
+<li><input type="checkbox" disabled> 本機展示才把 <code>R2_ALLOW_ANONYMOUS_UPLOADS</code> 設為 <code>true</code>；其他環境保持 <code>false</code>，等接入員工驗證後再限制管理者存取。</li>
+<li><input type="checkbox" disabled> <code>/demo/r2-upload</code> 可成功上傳並顯示公開圖片網址。</li>
+<li><input type="checkbox" disabled> 菜單新增／編輯 API 已將確認過的 <code>objectKey</code> 寫入 <code>menu_item.image_url</code>（尚未串接）。</li>
 </ul>
 <h3 id="常見錯誤">常見錯誤</h3>
 <div class="tablewrap"><table>
@@ -372,7 +381,7 @@ if (!response.ok) throw new Error('R2 圖片上傳失敗');
 </tr>
 <tr>
 <td>上傳成功但圖片打不開</td>
-<td>Bucket 是否開啟公開讀取；<code>image_url</code> 的網域和 object key 是否正確</td>
+<td>是否把圖片 Bucket（而不是暫存 Bucket）設為公開；<code>image_url</code> 的網域和 object key 是否正確</td>
 </tr>
 <tr>
 <td>Java SDK 寫入回 403 signature mismatch</td>
@@ -391,7 +400,7 @@ if (!response.ok) throw new Error('R2 圖片上傳失敗');
 <li><a href="https://developers.cloudflare.com/r2/examples/aws/aws-sdk-java/">AWS SDK for Java v2</a></li>
 </ul><div class="pager"><a href="../ui/14-色彩Token.html"><div class="k">← 上一篇</div><div class="n">14 色彩 Token</div></a><a class="next" href="../spring-boot/README.html"><div class="k">下一篇 →</div><div class="n">Spring Boot 學習導覽</div></a></div>
 </article>
-<aside class="toc"><div class="tt">本頁目錄</div><a href="#先了解本專案目前的狀態">先了解本專案目前的狀態</a><a href="#上傳流程長什麼樣子">上傳流程長什麼樣子</a><a href="#1-啟用-r2-並建立-bucket">1. 啟用 R2 並建立 Bucket</a><a href="#2-設定圖片的公開讀取網址">2. 設定圖片的公開讀取網址</a><a href="#3-建立只限此-bucket-的-r2-api-token">3. 建立只限此 Bucket 的 R2 API token</a><a href="#4-設定瀏覽器上傳的-cors">4. 設定瀏覽器上傳的 CORS</a><a href="#5-把憑證放在後端環境變數">5. 把憑證放在後端環境變數</a><a href="#6-實作-spring-boot-簽發網址-api">6. 實作 Spring Boot 簽發網址 API</a><a href="#7-從-react-上傳並儲存菜單圖片網址">7. 從 React 上傳並儲存菜單圖片網址</a><a href="#8-上傳失敗時的前端處理">8. 上傳失敗時的前端處理</a><a href="#9-手動確認設定">9. 手動確認設定</a><a href="#官方文件">官方文件</a></aside>
+<aside class="toc"><div class="tt">本頁目錄</div><a href="#先了解本專案目前的狀態">先了解本專案目前的狀態</a><a href="#上傳流程長什麼樣子">上傳流程長什麼樣子</a><a href="#1-啟用-r2-並建立-bucket">1. 啟用 R2 並建立 Bucket</a><a href="#2-設定圖片的公開讀取網址">2. 設定圖片的公開讀取網址</a><a href="#3-建立只限此-bucket-的-r2-api-token">3. 建立只限此 Bucket 的 R2 API token</a><a href="#4-設定瀏覽器上傳的-cors">4. 設定瀏覽器上傳的 CORS</a><a href="#5-把憑證放在後端環境變數">5. 把憑證放在後端環境變數</a><a href="#6-實作-spring-boot-簽發網址-api">6. 實作 Spring Boot 簽發網址 API</a><a href="#7-從-react-上傳圖片">7. 從 React 上傳圖片</a><a href="#8-上傳失敗時的前端處理">8. 上傳失敗時的前端處理</a><a href="#9-手動確認設定">9. 手動確認設定</a><a href="#官方文件">官方文件</a></aside>
 </div></div>
 </div>
 <script src="../vendor/mermaid.min.js"></script>
