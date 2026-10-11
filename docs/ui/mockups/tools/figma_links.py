@@ -9,7 +9,7 @@
 
 會改三個地方（可重複跑，每次都先清掉舊連結再重寫）：
 
-1. 每張設計稿 HTML：畫框上方標題列的最後面加「在 Figma 開啟」
+1. 每張設計稿 HTML：畫框上方標題列的最後面加「在 Figma 開啟」；若有整頁版本，再加一個連結
 2. mockups/index.html：每張卡片底下加工作包顏色與「在 Figma 開啟」，頁首加工作包圖例
 3. spec/05-開發流程與分工.md §1.4.3：填 Figma 欄
 
@@ -30,6 +30,7 @@ INDEX = ROOT / 'index.html'
 PLAN_MD = ROOT.parent.parent / 'spec' / '05-開發流程與分工.md'
 
 STATES_SUFFIX = ('states-375', 'states-1280')   # figma_prep 的狀態示範批次
+FULLPAGE_SUFFIX = '・整頁展開'
 FILE_URL = ('https://www.figma.com/design/AFqSmBl4P5HUHTI7oKAPZt/'
             '%E7%81%AB%E9%8D%8B%E9%BB%9E%E9%A4%90%E7%B3%BB%E7%B5%B1')
 
@@ -101,6 +102,9 @@ def patch_pages(ids, by_file):
                 body += flink(ids[name])
             elif name:
                 missing.append(name)
+            fullpage_name = name + FULLPAGE_SUFFIX if name else None
+            if fullpage_name and fullpage_name in ids:
+                body += flink(ids[fullpage_name], '整頁展開')
             return m.group(1) + body + m.group(3)
 
         out = META_RE.sub(repl, src)
@@ -158,6 +162,9 @@ def patch_index(ids, main, pkg_of, pkgs):
         name = main.get(code)
         if name in ids:
             foot += flink(ids[name])
+            fullpage_name = name + FULLPAGE_SUFFIX
+            if fullpage_name in ids:
+                foot += flink(ids[fullpage_name], '整頁展開')
         else:
             missing.append(code)
             foot += '<span class="flink off">Figma 還沒匯入</span>'
@@ -199,7 +206,10 @@ def patch_plan(ids, main):
 def main_():
     ids, by_file, main = load()
     pkg_of, pkgs = load_packages()
-    unknown = sorted(set(ids) - {n for fs in by_file.values() for n in fs})
+    known_names = {n for fs in by_file.values() for n in fs}
+    unknown = sorted(name for name in set(ids) - known_names
+                     if not (name.endswith(FULLPAGE_SUFFIX)
+                             and name[:-len(FULLPAGE_SUFFIX)] in known_names))
     changed, miss_pages = patch_pages(ids, by_file)
     miss_index = patch_index(ids, main, pkg_of, pkgs)
     rows, miss_plan = patch_plan(ids, main)
