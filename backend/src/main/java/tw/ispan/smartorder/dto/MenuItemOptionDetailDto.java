@@ -7,6 +7,7 @@ public record MenuItemOptionDetailDto(
         Long id,
         String name,
         String description,
+        String imageUrl,
         BigDecimal price,
         List<OptionGroupDto> optionGroups
 ) {

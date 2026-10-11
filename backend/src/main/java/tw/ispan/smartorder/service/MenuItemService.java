@@ -81,6 +81,7 @@ public class MenuItemService {
                 item.getMenuItemId(),
                 item.getMenuItemName(),
                 item.getDescription(),
+                item.getImageUrl(),
                 item.getPrice(),
                 optionGroups
         );

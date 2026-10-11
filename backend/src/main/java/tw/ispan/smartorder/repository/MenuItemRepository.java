@@ -19,6 +19,7 @@ public interface MenuItemRepository extends JpaRepository<MenuItemEntity,Long> {
            mi.name AS menuItemName,
            mi.description AS description,
            mi.price AS price,
+           mi.imageUrl AS imageUrl,
            og.id AS optionGroupId,
            og.name AS optionGroupName,
            og.minSelect AS minSelect,

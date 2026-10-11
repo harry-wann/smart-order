@@ -6,6 +6,7 @@ public interface MenuItemOptionDetailRow {
     Long getMenuItemId();
     String getMenuItemName();
     String getDescription();
+    String getImageUrl();
     BigDecimal getPrice();
     Long getOptionGroupId();
     String getOptionGroupName();
