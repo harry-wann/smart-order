@@ -23,3 +23,12 @@ export async function fetchTables(signal?: AbortSignal) {
 export async function cleanTable(tableId: number) {
   await employeeClient.post(`/admin/tables/${tableId}/clean`)
 }
+
+// POST /api/admin/tables/{id}/open：現場開桌
+export async function openTable(tableId: number, adultCount: number, childCount: number) {
+  const { data } = await employeeClient.post<TableOverview>(`/admin/tables/${tableId}/open`, {
+    adultCount,
+    childCount,
+  })
+  return data
+}

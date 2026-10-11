@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import SOButton from '@/components/SOButton'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import BellButtonPlaceholder from './BellButtonPlaceholder'
 import ReservationTab from './ReservationTab'
+import { fetchTables, openTable } from '@/services/api/tableApi'
 
 // 假資料：已叫號、等著入座的組別（之後換成 API）
 const calledWaitlist = [
@@ -33,22 +34,6 @@ const checkinReservations = [
     assignedTable: 'B02',
   },
 ]
-
-const TABLE_INFO_BY_NUMBER = {
-  A01: { capacity: 2, area: '窗邊區' },
-  A02: { capacity: 2, area: '窗邊區' },
-  A03: { capacity: 4, area: '窗邊區' },
-  A04: { capacity: 4, area: '窗邊區' },
-  A05: { capacity: 4, area: '窗邊區' },
-  A06: { capacity: 6, area: '窗邊區' },
-  A07: { capacity: 6, area: '窗邊區' },
-  A08: { capacity: 4, area: '窗邊區' },
-  B01: { capacity: 4, area: '座位區' },
-  B02: { capacity: 2, area: '座位區' },
-  B03: { capacity: 4, area: '座位區' },
-  C01: { capacity: 8, area: '包廂區' },
-  C02: { capacity: 8, area: '包廂區' },
-}
 
 // 開桌頁自己的頂列。
 // 不改共用的 TopBar.tsx；但這頁網址有桌號，TopBar 用網址查不到標題，
@@ -290,10 +275,21 @@ function TableOpen() {
   const { tableNo } = useParams()
   const navigate = useNavigate()
 
-  // ===== 假資料：之後換成 API 回傳的資料 =====
-  const tableInfo = TABLE_INFO_BY_NUMBER[tableNo] ?? { capacity: 4, area: '座位區' }
+// 從後端抓桌況，找出網址上這張桌（例如 A01）
+  const [table, setTable] = useState(null)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    fetchTables(controller.signal)
+      .then((data) => setTable(data.find((t) => t.tableNo === tableNo) ?? null))
+      .catch(() => {})
+    return () => controller.abort()
+  }, [tableNo])
+
+  const tableInfo = table ? { capacity: table.seats, area: table.area } : { capacity: 0, area: '載入中' }
+
   // 115 分鐘內的訂位（沒有就是 null）
-  const conflict = { time: '19:30', name: '陳小姐', people: 4 }
+  const conflict = null // 訂位衝突的判斷等Harry做好再接
   // 現在在預約保留時段的話，填保留這張桌的預約 id（沒有就是 null）
   const reservedHoldId = tableNo === 'A08' ? 21 : null
   // ===== 假資料結束 =====
@@ -329,10 +325,20 @@ function TableOpen() {
     }
   }
 
-  function confirmOpen(payload) {
-    // 之後接後端：POST /api/admin/tables/{id}/open，成功後回桌況總覽
-    alert(`已開桌 ${tableNo}：${JSON.stringify(payload)}`)
-    navigate('/admin/table_overview')
+  async function confirmOpen(payload) {
+    // 候位、預約開桌還沒做，先只接現場
+    if (payload.type !== 'walkin') {
+      alert('候位／預約開桌還沒接後端，先用「現場」頁籤')
+      setPendingOpen(null)
+      return
+    }
+    try {
+      await openTable(table.tableId, payload.adults, payload.kids)
+      navigate('/admin/table_overview')
+    } catch (err) {
+      alert(`開桌失敗：${err.message}`)
+      setPendingOpen(null)
+    }
   }
 
   function cancelReservation(id) {
