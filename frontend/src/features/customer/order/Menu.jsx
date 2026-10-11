@@ -97,7 +97,7 @@ export default function Menu() {
         <main className="p-4">
           <div className="flex flex-col gap-4">
             {items.map((item) => (
-                <button key={item.id} onClick={()=>{navigate('/order/itemdetail',{state : {id:item.id}})}} className="cursor-pointer text-left">
+                <button key={item.id} onClick={()=>{navigate('/order/itemdetail',{state : {productId:item.id}})}} className="cursor-pointer text-left">
                   <MenuItemRow
                       img={item.imageUrl}
                       title={item.name}

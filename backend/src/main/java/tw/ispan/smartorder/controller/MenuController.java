@@ -2,11 +2,8 @@ package tw.ispan.smartorder.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import tw.ispan.smartorder.dto.MenuItemOptionDetailDto;
 import tw.ispan.smartorder.entity.MenuCategoryEntity;
 import tw.ispan.smartorder.entity.MenuItemEntity;
 import tw.ispan.smartorder.service.MenuCategoryService;
@@ -39,5 +36,14 @@ public class MenuController {
                 : menuItemService.searchMenuItem(keyword);
 
         return ResponseEntity.ok(items);
+    }
+
+    @GetMapping("/items/{productId}")
+    public ResponseEntity<MenuItemOptionDetailDto> getMenuItemById(
+            @PathVariable Long productId
+    ) {
+        MenuItemOptionDetailDto menuItem =
+                menuItemService.findOptionValuesByMenuItemId(productId);
+        return ResponseEntity.ok(menuItem);
     }
 }
