@@ -2,9 +2,7 @@ package tw.ispan.smartorder.controller;
 
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import tw.ispan.smartorder.dto.TableOverviewResponse;
 import tw.ispan.smartorder.service.TableService;
 
@@ -19,4 +17,10 @@ public class TableController {
     public List<TableOverviewResponse> findOverview() {
         return tableService.findOverview();
     }
+
+    @PostMapping("/{id}/clean")
+    public void clean(@PathVariable Long id) {
+        tableService.clean(id);
+    }
+
 }

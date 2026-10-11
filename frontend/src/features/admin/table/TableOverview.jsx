@@ -4,7 +4,7 @@ import SOButton from '@/components/SOButton'
 import TopBar from '@/components/dashboard/TopBar'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import BellButtonPlaceholder from './BellButtonPlaceholder'
-import { fetchTables } from '@/services/api/tableApi'
+import { fetchTables, cleanTable } from '@/services/api/tableApi'
 
 // 把後臺狀態的英文轉成中文顯示、根據桌位狀態決定顏色、根據狀態決定標籤底色
 const statusStyles = {
@@ -337,14 +337,14 @@ function TableOverview() {
     setDoneCount(doneCount + 1)
   }
 
-  function handleConfirmClean() {
-    // 之後接後端：先送 POST /api/admin/tables/{id}/clean，成功才執行下面
-    setTableList(
-      tableList.map((table) =>
-        table.id === cleaningTable.id ? { id: table.id, status: 'available' } : table,
-      ),
-    )
-    setCleaningTable(null)
+  async function handleConfirmClean() {
+    try {
+      await cleanTable(cleaningTable.tableId)
+      setCleaningTable(null)
+      setReloadKey((k) => k + 1)
+    } catch (err) {
+      alert(`清潔失敗：${err.message}`)
+    }
   }
 
   function handleRetry() {

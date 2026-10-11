@@ -18,3 +18,8 @@ export async function fetchTables(signal?: AbortSignal) {
   const { data } = await employeeClient.get<TableOverview[]>('/admin/tables', { signal })
   return data
 }
+
+// POST /api/admin/tables/{id}/clean：清潔完成 → 空桌
+export async function cleanTable(tableId: number) {
+  await employeeClient.post(`/admin/tables/${tableId}/clean`)
+}

@@ -57,4 +57,9 @@ public class DiningTable {
     public void setReservable(Boolean reservable) {
         this.reservable = reservable;
     }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
 }
