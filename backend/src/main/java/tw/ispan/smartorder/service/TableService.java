@@ -47,4 +47,24 @@ public class TableService {
         table.setStatus("AVAILABLE");
     }
 
+    @Transactional
+    public TableOverviewResponse open(Long id, Integer adultCount, Integer childCount) {
+        // 1. 查桌子，同時鎖住（別人要開同一桌，會在這裡排隊等）
+        DiningTable table = diningTables.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到桌位"));
+
+        // 2. 鎖住之後再檢查：一定要是空桌
+        if (!"AVAILABLE".equals(table.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "此桌已在使用中");
+        }
+
+        // 3. 新增一筆用餐紀錄
+        DiningSession session = diningSessions.save(DiningSession.open(table, adultCount, childCount));
+
+        // 4. 桌子改成用餐中
+        table.setStatus("OCCUPIED");
+
+        return TableOverviewResponse.from(table, session);
+    }
+
 }

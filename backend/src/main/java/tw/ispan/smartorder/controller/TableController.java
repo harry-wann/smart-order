@@ -3,6 +3,7 @@ package tw.ispan.smartorder.controller;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import tw.ispan.smartorder.dto.OpenTableRequest;
 import tw.ispan.smartorder.dto.TableOverviewResponse;
 import tw.ispan.smartorder.service.TableService;
 
@@ -21,6 +22,11 @@ public class TableController {
     @PostMapping("/{id}/clean")
     public void clean(@PathVariable Long id) {
         tableService.clean(id);
+    }
+
+    @PostMapping("/{id}/open")
+    public TableOverviewResponse open(@PathVariable Long id, @RequestBody OpenTableRequest request) {
+        return tableService.open(id, request.adultCount(), request.childCount());
     }
 
 }

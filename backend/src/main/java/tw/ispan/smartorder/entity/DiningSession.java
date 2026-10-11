@@ -2,6 +2,8 @@ package tw.ispan.smartorder.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -38,6 +40,22 @@ public class DiningSession {
     private LocalDateTime closedAt;
 
     protected DiningSession() {}
+
+    // 開桌：建立一筆新的用餐紀錄
+    public static DiningSession open(DiningTable table, Integer adultCount, Integer childCount) {
+        DiningSession session = new DiningSession();
+        session.table = table;
+        session.adultCount = adultCount;
+        session.childCount = childCount;
+        session.status = "OPEN";
+        session.openedAt = LocalDateTime.now();
+        session.sessionToken = UUID.randomUUID().toString().replace("-", "");
+        session.subtotal = BigDecimal.ZERO;
+        session.serviceFee = BigDecimal.ZERO;
+        session.total = BigDecimal.ZERO;
+        session.cartVersion = 0L;
+        return session;
+    }
 
     public Long getId() {
         return id;
