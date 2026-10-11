@@ -1,9 +1,10 @@
-import { useNavigate, useSearchParams } from 'react-router'
-import { useState } from 'react'
+import { useNavigate } from 'react-router'
+import { useEffect, useState } from 'react'
 import SOButton from '@/components/SOButton'
 import TopBar from '@/components/dashboard/TopBar'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import BellButtonPlaceholder from './BellButtonPlaceholder'
+import { fetchTables } from '@/services/api/tableApi'
 
 // 把後臺狀態的英文轉成中文顯示、根據桌位狀態決定顏色、根據狀態決定標籤底色
 const statusStyles = {
@@ -29,21 +30,7 @@ const statusStyles = {
   },
 }
 
-// 桌況總覽的桌位>假資料、之後接後端要改
-const tables = [
-  { id: 'A01', status: 'available' },
-  { id: 'A02', status: 'occupied', adults: 2, kids: 0, minutes: 38, amount: 1860 },
-  { id: 'A03', status: 'occupied', adults: 2, kids: 1, minutes: 3, amount: 960 },
-  { id: 'A04', status: 'available' },
-  { id: 'A05', status: 'cleaning', paidAt: '18:21' },
-  { id: 'A06', status: 'available' },
-  { id: 'A07', status: 'cleaning', paidAt: '18:28' },
-  { id: 'A08', status: 'reserved', reservation: '18:30 陳○君 4 位' },
-  { id: 'B01', status: 'occupied', adults: 4, kids: 0, minutes: 112, amount: 3240 },
-  { id: 'B02', status: 'reserved', reservation: '18:45 林○豪 2 位' },
-  { id: 'B03', status: 'occupied', adults: 2, kids: 2, minutes: 21, amount: 980 },
-  { id: 'C01', status: 'occupied', adults: 6, kids: 2, minutes: 64, amount: 5120 },
-]
+
 
 // 底部候位中的顯示>假資料、之後接後端要改
 const waitinglist = [
@@ -112,15 +99,17 @@ function TableCard({ table, onCleanClick }) {
           <p className="type-caption tabular-nums">
             {table.adults} 大 {table.kids} 小・{table.minutes} 分
           </p>
-          <p className="type-caption font-bold tabular-nums">NT$ {table.amount.toLocaleString()}</p>
+          {table.amount != null && (
+            <p className="type-caption font-bold tabular-nums">NT$ {table.amount.toLocaleString()}</p>
+          )}
         </>
       )}
 
-      {table.status === 'cleaning' && (
+            {table.status === 'cleaning' && table.paidAt && (
         <p className="type-caption tabular-nums">{table.paidAt} 結清</p>
       )}
 
-      {table.status === 'reserved' && <p className="type-caption">{table.reservation}</p>}
+            {table.status === 'reserved' && table.reservation && <p className="type-caption">{table.reservation}</p>}
     </div>
   )
 }
@@ -310,7 +299,7 @@ function SyncIndicator() {
 //------------------------------主元件TableOverview()-------------------------------//
 function TableOverview() {
   const navigate = useNavigate()
-  const [tableList, setTableList] = useState(tables)
+  const [tableList, setTableList] = useState([])
   const [calls, setCalls] = useState(initialBellCalls)
   const [doneCount, setDoneCount] = useState(14)
   const [cleaningTable, setCleaningTable] = useState(null)
@@ -319,10 +308,24 @@ function TableOverview() {
   const cleaningCount = tableList.filter((table) => table.status === 'cleaning').length
   const reservedCount = tableList.filter((table) => table.status === 'reserved').length
 
-  const [searchParams] = useSearchParams()
-  // 暫時用網址切換：/admin/table_overview?state=loading | error | empty
-  // 之後接後端：改成由 fetch 的結果去 setViewState
-  const [viewState, setViewState] = useState(searchParams.get('state') ?? 'ready')
+  const [viewState, setViewState] = useState('loading')
+  const [reloadKey, setReloadKey] = useState(0)
+
+  // 畫面出現時（以及按「重試」時）去後端拿桌況
+  useEffect(() => {
+    const controller = new AbortController()
+
+    fetchTables(controller.signal)
+      .then((data) => {
+        setTableList(data.map(toTableCard))
+        setViewState('ready')
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setViewState('error')
+      })
+
+    return () => controller.abort()
+  }, [reloadKey])
 
   // 顯示空資料的兩種情況：
   // 1. 網址 ?state=empty（demo 用）
@@ -345,8 +348,8 @@ function TableOverview() {
   }
 
   function handleRetry() {
-    // 之後接後端：這裡改成重新 fetch，成功才切回 ready
-    setViewState('ready')
+    setViewState('loading')
+    setReloadKey((k) => k + 1)
   }
 
   function handleUseCache() {
@@ -370,7 +373,7 @@ function TableOverview() {
   
 
       {/* 載入中 */}
-      {viewState === 'loading' && <LoadingSkeleton count={tableList.length} />}
+      {viewState === 'loading' && <LoadingSkeleton count={tableList.length || 12} />}
 
       {/* 空資料 */}
       {showEmpty && <EmptyState />}
@@ -476,6 +479,18 @@ function TableOverview() {
       )}
     </>
   )
+}
+
+// 後端的桌子 → 這個畫面用的格式
+function toTableCard(t) {
+  return {
+    id: t.tableNo,
+    tableId: t.tableId,
+    status: t.displayStatus.toLowerCase(),
+    adults: t.adultCount,
+    kids: t.childCount,
+    minutes: t.openedAt ? Math.floor((Date.now() - new Date(t.openedAt)) / 60000) : null,
+  }
 }
 
 export default TableOverview
