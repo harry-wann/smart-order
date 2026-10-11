@@ -20,7 +20,7 @@ public class MenuController {
     @Autowired
     private MenuItemService menuItemService;
 
-    // Menu 畫面 提取類別
+    // Menu, AdminMenu 畫面 提取類別
     @GetMapping("/category")
     public ResponseEntity<List<MenuCategoryEntity>> category(){
         List<MenuCategoryEntity> category = menuCategoryService.findMenuCategory(1L);

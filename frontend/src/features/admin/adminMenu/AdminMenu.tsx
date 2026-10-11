@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import ToggleSwitch from '../../../components/adminMenu/ToggleSwitch';
 import CategorySidebar from '../../../components/adminMenu/CategorySidebar';
 import type { Category } from '../../../components/adminMenu/CategorySidebar';
@@ -8,6 +8,7 @@ import Badge from '@/components/Badge';
 import SOFormInput, { SOFormInputType } from '@/components/input/SOFormInput';
 import { SvgIconMap } from '@/assets/SvgIconMap';
 import ProductModal from '@/components/adminMenu/ProductModal';
+import axios from 'axios';
 
 export interface BadgeItem {
   text: string;
@@ -25,18 +26,6 @@ export interface Product {
   imageText: string;
 }
 
-const INITIAL_CATEGORIES: Category[] = [
-  { id: 'all', name: '全部', count: 0 }, 
-  { id: 'soup', name: '鍋底', count: 0 },
-  { id: 'meat', name: '肉品', count: 0 },
-  { id: 'seafood', name: '海鮮', count: 0 },
-  { id: 'vegetable', name: '蔬菜', count: 0 },
-  { id: 'hotpot', name: '火鍋料', count: 0 },
-  { id: 'main', name: '主食', count: 0 },
-  { id: 'drink', name: '飲料', count: 0 },
-  { id: 'alcohol', name: '酒類', count: 0 },
-];
-
 const INITIAL_PRODUCTS: Product[] = [
   { id: 1, name: '安格斯霜降牛五花', category: '肉品', price: 380, stock: 18, status: 'active', isPopular: true, imageText: '牛五花' },
   { id: 2, name: '伊比利豬梅花', category: '肉品', price: 320, stock: 24, status: 'active', isPopular: false, imageText: '豬梅花' },
@@ -48,7 +37,7 @@ const INITIAL_PRODUCTS: Product[] = [
 
 export default function AdminMenu() {
   const [activeCategory, setActiveCategory] = useState<string>('全部'); 
-  const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [searchTerm, setSearchTerm] = useState<string>(''); 
 
@@ -177,6 +166,28 @@ export default function AdminMenu() {
     const matchSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
     return matchCategory && matchSearch;
   });
+
+  useEffect(()=>{
+    async function fetchCategories() {
+      try {
+        const response = await axios.get('http://localhost:8080/api/order/category');
+        const fetchedCategories = response.data.map((category: Category[]) => ({
+          ...category,
+          count:0
+        }))
+
+        const categoriesWithAll = [
+          { id: 'all', name: '全部', count: 0 },
+          ...fetchedCategories
+        ];
+
+        setCategories(categoriesWithAll);
+      } catch (error) {
+        console.error(error)
+      }
+    }
+    fetchCategories()
+  },[]);
 
   return (
   <>
