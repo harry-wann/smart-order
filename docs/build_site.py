@@ -35,6 +35,7 @@ GROUPS = [
     ("規格文件",        "spec",            False),
     ("模組規格",        "spec/modules",    False),
     ("UI 文件",         "ui",              False),
+    ("操作教學",        "guides",           False),
     ("Spring Boot 專案", "spring-boot",     False),
     ("技術總表",        "tech",            False),
     ("技術 · 團隊與工具",   "tech/team",     True),
@@ -526,6 +527,9 @@ def build_index(pages):
         "<h2>UI 文件</h2>",
         "<p>畫面、設計規則與交接流程。</p>",
         '<div class="cards">' + cards("UI 文件") + "</div>",
+        "<h2>操作教學</h2>",
+        "<p>專案服務的逐步設定與串接流程。</p>",
+        '<div class="cards">' + cards("操作教學") + "</div>",
         "<h2>Spring Boot 專案與課程</h2>",
         "<p>先完成 <a href=\"setup.html\">環境建置與啟動</a>，再依 "
         "<a href=\"spring-boot/README.html\">學習導覽</a>閱讀 "

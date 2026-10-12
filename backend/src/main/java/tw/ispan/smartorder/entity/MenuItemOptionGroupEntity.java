@@ -6,16 +6,16 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+import tw.ispan.smartorder.entity.embeddable.MenuOptionEntity;
 
 @Entity
 @Table( name = "menu_item_option_group")
 @Getter
 @Setter
 public class MenuItemOptionGroupEntity {
-    @Id
-    private Long menuItemId;
-    private Long optionGroupId;
+    @EmbeddedId
+    private MenuOptionEntity id;
     private Integer sortOrder;
     private String createdAt;
-    private String updateAt;
+    private String updatedAt;
 }
