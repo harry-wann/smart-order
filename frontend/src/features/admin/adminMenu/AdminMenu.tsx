@@ -22,27 +22,34 @@ export interface Product {
   price: number;
   stock: number;
   status: 'active' | 'inactive';
-  isPopular?: boolean; 
+  // isPopular?: boolean;
   imageText: string;
 }
 
 const INITIAL_PRODUCTS: Product[] = [
-  { id: 1, name: '安格斯霜降牛五花', category: '肉品', price: 380, stock: 18, status: 'active', isPopular: true, imageText: '牛五花' },
-  { id: 2, name: '伊比利豬梅花', category: '肉品', price: 320, stock: 24, status: 'active', isPopular: false, imageText: '豬梅花' },
-  { id: 3, name: '紐西蘭小羔羊肩', category: '肉品', price: 340, stock: 0, status: 'inactive', isPopular: false, imageText: '羊肉片' },
-  { id: 4, name: '台灣松阪豬', category: '肉品', price: 300, stock: 9, status: 'active', isPopular: false, imageText: '松阪豬' },
-  { id: 5, name: '美國老饕牛小排', category: '肉品', price: 520, stock: 3, status: 'active', isPopular: false, imageText: '牛小排' },
-  { id: 6, name: '霜降牛舌', category: '肉品', price: 460, stock: 12, status: 'inactive', isPopular: false, imageText: '牛舌' }
+  { id: 1, name: '安格斯霜降牛五花', category: '肉品', price: 380, stock: 18, status: 'active', imageText: '牛五花' },
+  { id: 2, name: '伊比利豬梅花', category: '肉品', price: 320, stock: 24, status: 'active',  imageText: '豬梅花' },
+  { id: 3, name: '紐西蘭小羔羊肩', category: '肉品', price: 340, stock: 0, status: 'inactive',  imageText: '羊肉片' },
+  { id: 4, name: '台灣松阪豬', category: '肉品', price: 300, stock: 9, status: 'active', imageText: '松阪豬' },
+  { id: 5, name: '美國老饕牛小排', category: '肉品', price: 520, stock: 3, status: 'active', imageText: '牛小排' },
+  { id: 6, name: '霜降牛舌', category: '肉品', price: 460, stock: 12, status: 'inactive',imageText: '牛舌' }
 ];
 
 export default function AdminMenu() {
   const [activeCategory, setActiveCategory] = useState<string>('全部'); 
+  // 商品類別
   const [categories, setCategories] = useState<Category[]>([]);
+  // 產品
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
+  // 分類後商品列表
   const [searchTerm, setSearchTerm] = useState<string>(''); 
-
+  // 
   const [modalMode, setModalMode] = useState<'closed' | 'add' | 'edit'>('closed');
+  // 選取商品
   const [currentProduct, setCurrentProduct] = useState<Partial<Product>>({});
+  //
+  const [activeCategoryId,setActiveCategoryId]=useState(null);
+  const [items,setItems]=useState([]);
 
   // 動態計算分類數量
   const displayCategories = categories.map(cat => ({
@@ -72,7 +79,6 @@ export default function AdminMenu() {
       price: 0, 
       stock: 10, 
       status: 'active', 
-      isPopular: false, 
       imageText: '預設圖' 
     });
     setModalMode('add');
@@ -121,7 +127,6 @@ export default function AdminMenu() {
         price: Number(formData.price) || 0,
         stock: stockVal,
         status: (formData.status as 'active' | 'inactive') || 'active',
-        isPopular: formData.isPopular || false,
         imageText: formData.imageText || '預設圖'
       };
       setProducts([newProduct, ...products]);
@@ -157,7 +162,6 @@ export default function AdminMenu() {
   const getProductBadge = (product: Product): BadgeItem | null => {
     if (product.stock === 0) return { text: '售完', type: 'danger' };
     if (product.stock <= 5) return { text: '低量', type: 'warning' };
-    if (product.isPopular) return { text: '人氣', type: 'warning' };
     return null;
   };
 
@@ -180,14 +184,50 @@ export default function AdminMenu() {
           { id: 'all', name: '全部', count: 0 },
           ...fetchedCategories
         ];
+        
 
         setCategories(categoriesWithAll);
+
+        if (response.data.length > 0) {
+          setActiveCategoryId(response.data[0].id);
+          console.log(123,response.data[0].id)
+        }
       } catch (error) {
         console.error(error)
       }
     }
     fetchCategories()
   },[]);
+
+    useEffect(() => {
+      if (activeCategoryId == null) return;
+  
+      let isCurrentRequest = true;
+      const timeoutId = setTimeout(() => {
+      async function loadItems() {
+        try {
+          const response = await axios.get('http://localhost:8080/api/order/items', {
+            params: { categoryId: activeCategoryId },
+          });
+          if (isCurrentRequest) {
+            setItems(response.data);
+            console.log(response.data)
+          }
+        } catch (error) {
+          if (isCurrentRequest) {
+            console.error(error);
+          }
+        }
+      }
+  
+      loadItems();
+      }, 300);
+  
+      return () => {
+        isCurrentRequest = false;
+        clearTimeout(timeoutId);
+      };
+    }, [activeCategoryId]);
 
   return (
   <>

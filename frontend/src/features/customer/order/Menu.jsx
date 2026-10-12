@@ -12,10 +12,15 @@ import { Link, useNavigate } from "react-router";
 import axios from "axios";
 
 export default function Menu() {
+  // 商品類別
   const [category,setCategory]=useState([]);
+  // 選取項目 card
   const [items,setItems]=useState([]);
+  // 依類別觸發取得 id 拿 list
   const [activeCategoryId,setActiveCategoryId]=useState(null);
+  // 搜尋關鍵字拿 list
   const [searchKeyword,setSearchKeyword]=useState('');
+  // 
   const [isBellOpen, setIsBellOpen] = useState(false);
   const navigate = useNavigate("");
 

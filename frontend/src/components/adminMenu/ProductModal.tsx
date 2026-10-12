@@ -13,7 +13,6 @@ export interface Product {
   price: number;
   stock: number;
   status: 'active' | 'inactive';
-  isPopular?: boolean; 
   imageText: string;
 }
 
@@ -139,18 +138,6 @@ export default function ProductModal({
                 className="w-full px-3 py-2 text-sm border border-line rounded-lg focus:outline-none focus:border-brand-600 bg-surface"
               />
             </div>
-          </div>
-          
-          <div className="pt-2">
-            <label className="inline-flex items-center gap-2 text-sm text-ink-900 cursor-pointer group">
-              <input 
-                type="checkbox" 
-                checked={formData.isPopular || false}
-                onChange={e => setFormData({ ...formData, isPopular: e.target.checked })}
-                className="w-4 h-4 text-brand-600 border-line rounded focus:ring-brand-500 cursor-pointer"
-              />
-              <span className="group-hover:text-brand-700 transition-colors">設定為人氣商品</span>
-            </label>
           </div>
 
           <div className="flex justify-end gap-3 pt-6 mt-2 border-t border-line">
