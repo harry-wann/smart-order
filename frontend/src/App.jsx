@@ -68,7 +68,7 @@ function App() {
           <Route path="history" element={<OrderHistory />} />
         </Route>
         {/* 掃碼進入是整頁版面，不套 CustomerLayout */}
-        <Route path="/order/checkin" element={<CheckIn />} />
+        <Route path="/order/checkin/:tableNo" element={<CheckIn />} />
 
         {/* 顧客端 - 會員流程 頁面路徑  */}
         <Route path="/member" element={<CustomerLayout />}>

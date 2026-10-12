@@ -1,7 +1,10 @@
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
 import Badge from "../../../components/Badge";
 import InfoBox from "../../../components/InfoBox";
 import SOButton from "../../../components/SOButton";
+import { useParams, useNavigate } from "react-router";
+import { customerClient } from "@/services/client/customerClient";
+import { joinTable } from "@/services/client/auth";
 
 // 原檔名 Movein.jsx
 // 原 component 名 Movein
@@ -9,9 +12,77 @@ import SOButton from "../../../components/SOButton";
 
 export function CheckIn() {
 
+  const { tableNo } = useParams();             
+  const navigate = useNavigate();              
+  const [status, setStatus] = useState(null); 
+  const [error, setError] = useState("");
+  const [joining, setJoining] = useState(false);
+  
+  useEffect(() => {
+  customerClient
+    .get(`/tables/${tableNo}/status`, { customerAuth: [] })
+    .then(({ data }) => {
+      if (data.joined && data.sessionToken) {
+        joinTable(data.sessionToken);
+        navigate("/order/menu", { replace: true });
+      } else {
+        setStatus(data);
+      }
+    })
+    .catch((e) => setError(e.message));
+  }, [tableNo]);
+
+   async function handleJoin() {
+  setJoining(true);
+  try {
+    const { data } = await customerClient.post(
+      `/tables/${tableNo}/join`,
+      null,                     
+      { customerAuth: [] }      
+    );
+
+
+    joinTable(data.sessionToken);
+
+
+    navigate("/order/menu", { replace: true });
+  } catch (e) {
+    setError(e.message);  
+  } finally {
+    setJoining(false); 
+  }
+}
+
+  function getInfo(status, error) {
+  if (error) {
+    return { icon: "alert", col: "err", text: error , btn:true};
+  }
+  if (!status.open) {
+    return { icon: "alert", col: "warn", text: "這桌尚未開桌，請洽櫃檯。",btn:true };
+  }
+
+
+  return {
+    icon: "check",
+    col: "ok",
+    text: (
+      <>
+        這桌櫃檯已經開好了，直接開始點就可以。
+        同桌的人掃同一張碼會看到一樣的訂單。
+      </>
+    ),
+    btn:false
+  };
+}
+
+if (!status && !error) return <p>確認中…</p>;
+
+const info = getInfo(status, error);
+const canOrder = status?.open && !error; 
+
 
   const val={
-    tab:"A03",
+    tab:`${status.tableNo}`,
     adult:2,
     child:1,
     time:'18:32',
@@ -35,18 +106,14 @@ export function CheckIn() {
         <Badge text="用餐中" col="rec" />
         <h1 className="type-display pt-field">{val.tab}桌</h1>
         <p className="type-body-sm py-field">{val.adult}大 {val.child}小 {val.time}入座</p>
-        <InfoBox icon="check" col="ok" text="F" custimtext=
-          {<>
-          這桌櫃檯已經開好了，直接開始點就可以。
-          同桌的人掃同一張碼會看到一樣的訂單。
-          </>} />
-        
+        <InfoBox icon={info.icon} col={info.col} text="F" custimtext={info.text} />
+
         <SOButton
-                  height="h-12"
-                  text="開始點餐"
-                  disabled={false}
-                  onClick={() => console.log("開始點餐")}
-                />
+          height="h-12"
+          text={joining ? "加入中…" : "開始點餐"}
+          disabled={!canOrder || joining}
+          onClick={handleJoin}
+        />
         <a>有訂位？查詢我的預約</a>
         
       </div>

@@ -1,5 +1,7 @@
 services:
     mysql:
+      env_file:
+      - .env
       image: mysql:5.7.44
       platform: linux/amd64
       environment:
