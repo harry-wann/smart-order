@@ -22,25 +22,28 @@ export interface Product {
   price: number;
   stock: number;
   status: 'active' | 'inactive';
-  // isPopular?: boolean;
   imageText: string;
+  imageUrl?: string | null;
 }
 
-const INITIAL_PRODUCTS: Product[] = [
-  { id: 1, name: '安格斯霜降牛五花', category: '肉品', price: 380, stock: 18, status: 'active', imageText: '牛五花' },
-  { id: 2, name: '伊比利豬梅花', category: '肉品', price: 320, stock: 24, status: 'active',  imageText: '豬梅花' },
-  { id: 3, name: '紐西蘭小羔羊肩', category: '肉品', price: 340, stock: 0, status: 'inactive',  imageText: '羊肉片' },
-  { id: 4, name: '台灣松阪豬', category: '肉品', price: 300, stock: 9, status: 'active', imageText: '松阪豬' },
-  { id: 5, name: '美國老饕牛小排', category: '肉品', price: 520, stock: 3, status: 'active', imageText: '牛小排' },
-  { id: 6, name: '霜降牛舌', category: '肉品', price: 460, stock: 12, status: 'inactive',imageText: '牛舌' }
-];
+interface AdminMenuItemResponse {
+  img: string | null;
+  name: string;
+  price: number;
+}
+
+interface MenuCategoryResponse {
+  id: number;
+  name: string;
+  count: number;
+}
 
 export default function AdminMenu() {
   const [activeCategory, setActiveCategory] = useState<string>('全部'); 
   // 商品類別
   const [categories, setCategories] = useState<Category[]>([]);
   // 產品
-  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
+  const [products, setProducts] = useState<Product[]>([]);
   // 分類後商品列表
   const [searchTerm, setSearchTerm] = useState<string>(''); 
   // 
@@ -48,15 +51,17 @@ export default function AdminMenu() {
   // 選取商品
   const [currentProduct, setCurrentProduct] = useState<Partial<Product>>({});
   //
-  const [activeCategoryId,setActiveCategoryId]=useState(null);
-  const [items,setItems]=useState([]);
+  const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
 
   // 動態計算分類數量
+  const totalProductCount = categories
+    .filter(category => category.id !== 'all')
+    .reduce((total, category) => total + category.count, 0);
   const displayCategories = categories.map(cat => ({
     ...cat,
     count: cat.id === 'all' 
-      ? products.length 
-      : products.filter(p => p.category === cat.name).length
+      ? totalProductCount
+      : cat.count
   }));
 
   const toggleStatus = (id: number) => {
@@ -171,13 +176,19 @@ export default function AdminMenu() {
     return matchCategory && matchSearch;
   });
 
-  useEffect(()=>{
+  const handleSelectCategory = (categoryName: string) => {
+    setActiveCategory(categoryName);
+    const category = categories.find(item => item.name === categoryName);
+    setActiveCategoryId(categoryName === '全部' ? null : Number(category?.id));
+  };
+
+  useEffect(() => {
     async function fetchCategories() {
       try {
-        const response = await axios.get('http://localhost:8080/api/order/category');
-        const fetchedCategories = response.data.map((category: Category[]) => ({
+        const response = await axios.get<MenuCategoryResponse[]>('http://localhost:8080/api/order/admin/categories');
+        const fetchedCategories = response.data.map(category => ({
           ...category,
-          count:0
+          id: String(category.id),
         }))
 
         const categoriesWithAll = [
@@ -187,31 +198,33 @@ export default function AdminMenu() {
         
 
         setCategories(categoriesWithAll);
-
-        if (response.data.length > 0) {
-          setActiveCategoryId(response.data[0].id);
-          console.log(123,response.data[0].id)
-        }
       } catch (error) {
-        console.error(error)
+        console.error(error);
       }
     }
-    fetchCategories()
-  },[]);
+    fetchCategories();
+  }, []);
 
-    useEffect(() => {
-      if (activeCategoryId == null) return;
-  
-      let isCurrentRequest = true;
-      const timeoutId = setTimeout(() => {
+  useEffect(() => {
+    let isCurrentRequest = true;
+    const timeoutId = setTimeout(() => {
       async function loadItems() {
         try {
-          const response = await axios.get('http://localhost:8080/api/order/items', {
-            params: { categoryId: activeCategoryId },
+          const response = await axios.get<AdminMenuItemResponse[]>('http://localhost:8080/api/order/admin/menu', {
+            params: { categoryId: activeCategoryId ?? undefined },
           });
           if (isCurrentRequest) {
-            setItems(response.data);
-            console.log(response.data)
+            const categoryName = categories.find(category => Number(category.id) === activeCategoryId)?.name ?? '全部';
+            setProducts(response.data.map((item, index) => ({
+              id: index + 1,
+              name: item.name,
+              category: categoryName,
+              price: item.price,
+              stock: 10,
+              status: 'active',
+              imageText: item.img ? '' : '無圖片',
+              imageUrl: item.img,
+            })));
           }
         } catch (error) {
           if (isCurrentRequest) {
@@ -219,20 +232,19 @@ export default function AdminMenu() {
           }
         }
       }
-  
       loadItems();
-      }, 300);
-  
-      return () => {
-        isCurrentRequest = false;
-        clearTimeout(timeoutId);
-      };
-    }, [activeCategoryId]);
+    }, 300);
+
+    return () => {
+      isCurrentRequest = false;
+      clearTimeout(timeoutId);
+    };
+  }, [activeCategoryId, categories]);
 
   return (
   <>
     <TopBar 
-      childrenLeft={<div className='flex scale-80'><Badge text={`${products.length} 個品項・${categories.length} 個分類`} col="plain" /></div>} 
+      childrenLeft={<div className='flex scale-80'><Badge text={`${totalProductCount} 個品項・${categories.length} 個分類`} col="plain" /></div>} 
       childrenRight={
         <div className="flex items-center gap-3">
           <div className="w-64">
@@ -264,7 +276,7 @@ export default function AdminMenu() {
         <CategorySidebar 
           categories={displayCategories} 
           activeCategory={activeCategory}
-          onSelectCategory={setActiveCategory}
+          onSelectCategory={handleSelectCategory}
           onAddCategory={handleAddCategory}
           onDeleteCategory={handleDeleteCategory}
         />
@@ -297,7 +309,9 @@ export default function AdminMenu() {
                         <tr key={product.id} className="hover:bg-surface-200 transition-colors">
                           <td className="p-4">
                             <div className="w-16 h-16 bg-surface-200 rounded-lg flex flex-col items-center justify-center text-[10px] text-ink-400 border border-line leading-tight text-center break-all px-1">
-                              <span>{product.imageText}</span>
+                              {product.imageUrl
+                                ? <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                                : <span>{product.imageText}</span>}
                             </div>
                           </td>
                           <td className="p-4">
@@ -313,7 +327,7 @@ export default function AdminMenu() {
                           </td>
                           <td className="p-4 text-ink-600">{product.category}</td>
                           <td className="p-4 font-medium text-ink-900">${product.price}</td>
-                          <td className={`p-4 font-medium ${product.stock === 0 ? 'text-danger' : 'text-ink-600'}`}>{product.stock}</td>
+                          <td className={`p-4 font-medium ${product.stock === 0 ? 'text-danger' : 'text-ink-600'}`}>庫存</td>
                           <td className="p-4">
                             <div className="flex items-center gap-2">
                               <ToggleSwitch active={isActive} onToggle={() => toggleStatus(product.id)} />

@@ -3,6 +3,7 @@ package tw.ispan.smartorder.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import tw.ispan.smartorder.dto.AdminMenuItemDto;
 import tw.ispan.smartorder.dto.MenuItemOptionDetailDto;
 import tw.ispan.smartorder.dto.MenuItemOptionDetailRow;
 import tw.ispan.smartorder.entity.MenuItemEntity;
@@ -23,6 +24,13 @@ public class MenuItemService {
             return menuItemRepository.findAll();
         }
         return menuItemRepository.findByCategory_Id(categoryId);
+    }
+
+    public List<AdminMenuItemDto> findAdminMenuItems(Long categoryId) {
+        if (categoryId == null) {
+            return menuItemRepository.findAllAdminMenuItems();
+        }
+        return menuItemRepository.findAdminMenuItemsByCategoryId(categoryId);
     }
 
     public List<MenuItemEntity> searchMenuItem(String keyword){

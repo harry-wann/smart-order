@@ -3,6 +3,7 @@ package tw.ispan.smartorder.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import tw.ispan.smartorder.dto.AdminMenuCategoryDto;
 import tw.ispan.smartorder.entity.MenuCategoryEntity;
 import tw.ispan.smartorder.repository.MenuCategoryRepository;
 
@@ -15,5 +16,9 @@ public class MenuCategoryService {
     private final MenuCategoryRepository menuCategoryRepository;
     public List<MenuCategoryEntity> findMenuCategory(Long Id){
         return menuCategoryRepository.findAll();
+    }
+
+    public List<AdminMenuCategoryDto> findAdminCategoriesWithItemCount() {
+        return menuCategoryRepository.findAdminCategoriesWithItemCount();
     }
 }

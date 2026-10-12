@@ -3,6 +3,7 @@ package tw.ispan.smartorder.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import tw.ispan.smartorder.dto.AdminMenuItemDto;
 import tw.ispan.smartorder.dto.MenuItemOptionDetailRow;
 import tw.ispan.smartorder.entity.MenuItemEntity;
 
@@ -10,6 +11,21 @@ import java.util.List;
 
 public interface MenuItemRepository extends JpaRepository<MenuItemEntity,Long> {
     List<MenuItemEntity> findByCategory_Id(Long categoryId);
+    @Query("""
+    SELECT new tw.ispan.smartorder.dto.AdminMenuItemDto(mi.imageUrl, mi.name, mi.price)
+    FROM MenuItemEntity mi
+    WHERE mi.category.id = :categoryId
+    ORDER BY mi.sortOrder
+    """)
+    List<AdminMenuItemDto> findAdminMenuItemsByCategoryId(@Param("categoryId") Long categoryId);
+
+    @Query("""
+    SELECT new tw.ispan.smartorder.dto.AdminMenuItemDto(mi.imageUrl, mi.name, mi.price)
+    FROM MenuItemEntity mi
+    ORDER BY mi.sortOrder
+    """)
+    List<AdminMenuItemDto> findAllAdminMenuItems();
+
     List<MenuItemEntity> findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
             String name, String description
     );
