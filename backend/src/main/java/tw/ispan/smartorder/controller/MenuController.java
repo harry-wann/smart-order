@@ -61,8 +61,12 @@ public class MenuController {
     // AdminMenu 畫面 依照 categoryId 提取商品指定資訊
     @GetMapping("/admin/menu")
     public ResponseEntity<List<AdminMenuItemDto>> getAdminMenu(
-            @RequestParam(required = false) Long categoryId
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String keyword
     ) {
-        return ResponseEntity.ok(menuItemService.findAdminMenuItems(categoryId));
+        List<AdminMenuItemDto> items = keyword == null || keyword.isBlank()
+                ? menuItemService.findAdminMenuItems(categoryId)
+                : menuItemService.searchAdminMenuItems(keyword);
+        return ResponseEntity.ok(items);
     }
 }

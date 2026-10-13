@@ -33,6 +33,10 @@ public class MenuItemService {
         return menuItemRepository.findAdminMenuItemsByCategoryId(categoryId);
     }
 
+    public List<AdminMenuItemDto> searchAdminMenuItems(String keyword) {
+        return menuItemRepository.searchAdminMenuItemsByKeyword(keyword.trim());
+    }
+
     public List<MenuItemEntity> searchMenuItem(String keyword){
         String searchKeyword = keyword == null ? "" : keyword.trim();
         if (searchKeyword.isEmpty()) {

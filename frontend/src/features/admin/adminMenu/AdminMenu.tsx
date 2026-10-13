@@ -45,7 +45,7 @@ export default function AdminMenu() {
   // 產品
   const [products, setProducts] = useState<Product[]>([]);
   // 分類後商品列表
-  const [searchTerm, setSearchTerm] = useState<string>(''); 
+  const [searchKeyword, setSearchKeyword] = useState<string>('');
   // 
   const [modalMode, setModalMode] = useState<'closed' | 'add' | 'edit'>('closed');
   // 選取商品
@@ -174,7 +174,7 @@ export default function AdminMenu() {
 
   const filteredProducts = products.filter(item => {
     const matchCategory = activeCategoryId === null || item.categoryId === activeCategoryId;
-    const matchSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchSearch = item.name.toLowerCase().includes(searchKeyword.trim().toLowerCase());
     return matchCategory && matchSearch;
   });
 
@@ -210,7 +210,9 @@ export default function AdminMenu() {
       async function loadItems() {
         try {
           const response = await axios.get<AdminMenuItemResponse[]>('http://localhost:8080/api/order/admin/menu', {
-            params: { categoryId: activeCategoryId === null ? undefined : Number(activeCategoryId) },
+            params: searchKeyword.trim()
+              ? { keyword: searchKeyword.trim() }
+              : { categoryId: activeCategoryId === null ? undefined : Number(activeCategoryId) },
           });
           if (isCurrentRequest) {
             setProducts(response.data.map((item, index) => ({
@@ -235,7 +237,7 @@ export default function AdminMenu() {
     return () => {
       isCurrentRequest = false;
     };
-  }, [activeCategoryId, categories]);
+  }, [activeCategoryId, categories, searchKeyword]);
 
   return (
   <>
@@ -249,7 +251,7 @@ export default function AdminMenu() {
               icon={SvgIconMap.MenuSearch}
               defaultValue=""
               placeholder="搜尋菜色"
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+              onChange={setSearchKeyword}
             />
           </div>
           <SOButton 
@@ -347,7 +349,7 @@ export default function AdminMenu() {
                   ) : (
                     <tr>
                       <td colSpan={7} className="p-8 text-center text-ink-400">
-                        {searchTerm ? '找不到符合的商品' : '此分類目前沒有商品'}
+                        {searchKeyword ? '找不到符合的商品' : '此分類目前沒有商品'}
                       </td>
                     </tr>
                   )}
