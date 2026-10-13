@@ -31,4 +31,14 @@ public class MenuCategoryService {
         category.setUpdatedAt(now);
         return menuCategoryRepository.save(category);
     }
+
+    public MenuCategoryEntity deleteMenuCategory(Long categoryId) {
+        MenuCategoryEntity category = menuCategoryRepository.findById(categoryId).orElse(null);
+        if (category != null) {
+            menuCategoryRepository.delete(category);
+            return category;
+        } else {
+            throw new RuntimeException("Menu category not found with id:" + categoryId);
+        }
+    }
 }

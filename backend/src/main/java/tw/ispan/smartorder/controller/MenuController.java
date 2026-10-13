@@ -77,4 +77,12 @@ public class MenuController {
         MenuCategoryEntity createdCategory = menuCategoryService.createMenuCategory(category);
         return ResponseEntity.ok(createdCategory);
     }
+
+    @DeleteMapping("/admin/categories/{categoryId}")
+    public ResponseEntity<MenuCategoryEntity> deleteAdminCategory(
+            @PathVariable Long categoryId
+    ) {
+        MenuCategoryEntity deletedCategory = menuCategoryService.deleteMenuCategory(categoryId);
+        return ResponseEntity.ok(deletedCategory);
+    }
 }

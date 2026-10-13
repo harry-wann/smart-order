@@ -12,6 +12,7 @@ interface Props {
   onSelectCategory: (id: string) => void;
   onAddCategory: (name: string) => Promise<Category | null>;
   onDeleteCategory?: (categoryId: string, categoryName: string) => void;
+  onDeleteClassification?: (id: string) => Promise<void>;
 }
 
 export default function CategorySidebar({
@@ -19,7 +20,8 @@ export default function CategorySidebar({
   activeCategoryId,
   onSelectCategory,
   onAddCategory,
-  onDeleteCategory
+  // onDeleteCategory,
+  onDeleteClassification
 }: Props) {
   const [isAdding, setIsAdding] = useState(false);
   const [newCategory, setNewCategory] = useState('');
@@ -40,8 +42,17 @@ export default function CategorySidebar({
     }
   };
 
+  const handleDeleteClassification = async (id: string) => {
+    try {
+      await onDeleteClassification?.(id);
+    } catch (error) {
+      console.error(error);
+      alert('刪除分類失敗，請稍後再試。');
+    }
+  };
+
   return (
-    <div className="no-scrollbar h-full w-[180px] shrink-0 overflow-y-auto">
+    <div className="no-scrollbar h-full w-45 shrink-0 overflow-y-auto">
       {/* 標題 */}
       <div className="text-sm text-ink-400 font-medium px-4 mb-4">分類</div>
       
@@ -68,12 +79,12 @@ export default function CategorySidebar({
               </span>
 
               {/* 刪除按鈕，僅在滑鼠懸停時顯示（取代數量顯示的位置） */}
-              {cat.id !== 'all' && onDeleteCategory ? (
+              {cat.id !== 'all' && handleDeleteClassification ? (
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation(); // 防止觸發外層的 onClick (切換分類)
-                    onDeleteCategory(cat.id, cat.name);
+                    handleDeleteClassification(cat.id);
                   }}
                   className="hidden group-hover:block text-xs text-danger hover:text-red-700 transition-colors"
                 >

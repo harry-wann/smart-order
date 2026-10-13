@@ -176,6 +176,34 @@ export default function AdminMenu() {
     return newCategory;
   };
 
+  const handleDeleteClassification = async (categoryId: string): Promise<void> => {
+    if (categoryId === 'all') return;
+
+    const category = categories.find(item => item.id === categoryId);
+    const hasProducts =
+      (category?.count ?? 0) > 0 ||
+      products.some(product => product.categoryId === categoryId);
+
+    if (hasProducts) {
+      alert('此分類下尚有商品，請先將商品移走或刪除。');
+      return;
+    }
+
+    if (!window.confirm(`確定要刪除「${category?.name ?? ''}」分類嗎？`)) {
+      return;
+    }
+
+    await axios.delete(
+      `http://localhost:8080/api/order/admin/categories/${categoryId}`
+    );
+
+    setCategories(prev => prev.filter(item => item.id !== categoryId));
+
+    if (activeCategoryId === categoryId) {
+      setActiveCategoryId(null);
+    }
+  };
+
   const getProductBadge = (product: Product): BadgeItem | null => {
     if (product.stock === 0) return { text: '售完', type: 'danger' };
     if (product.stock <= 5) return { text: '低量', type: 'warning' };
@@ -287,6 +315,7 @@ export default function AdminMenu() {
           onSelectCategory={handleSelectCategory}
           onAddCategory={handleAddCategory}
           onDeleteCategory={handleDeleteCategory}
+          onDeleteClassification={handleDeleteClassification}
         />
 
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-(--shadow-card)">
