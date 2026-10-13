@@ -103,7 +103,10 @@ export default function AdminMenu() {
   const handleDeleteCategory = (categoryId: string, categoryName: string) => {
     if (categoryId === 'all') return; 
 
-    const hasProducts = products.some(p => p.category === categoryName);
+    const category = categories.find(item => item.id === categoryId);
+    const hasProducts =
+      (category?.count ?? 0) > 0 ||
+      products.some(product => product.category === categoryName);
     if (hasProducts) {
       alert(`「${categoryName}」分類下尚有商品，請先將商品刪除或變更分類後再進行操作！`);
       return;
@@ -207,7 +210,6 @@ export default function AdminMenu() {
 
   useEffect(() => {
     let isCurrentRequest = true;
-    const timeoutId = setTimeout(() => {
       async function loadItems() {
         try {
           const response = await axios.get<AdminMenuItemResponse[]>('http://localhost:8080/api/order/admin/menu', {
@@ -233,11 +235,9 @@ export default function AdminMenu() {
         }
       }
       loadItems();
-    }, 300);
 
     return () => {
       isCurrentRequest = false;
-      clearTimeout(timeoutId);
     };
   }, [activeCategoryId, categories]);
 

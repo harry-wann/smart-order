@@ -42,9 +42,7 @@ export default function Menu() {
 
   useEffect(() => {
     if (activeCategoryId == null) return;
-
     let isCurrentRequest = true;
-    const timeoutId = setTimeout(() => {
     async function loadItems() {
       try {
         const response = await axios.get('http://localhost:8080/api/order/items', {
@@ -61,13 +59,10 @@ export default function Menu() {
         }
       }
     }
-
     loadItems();
-    }, 300);
-
+    
     return () => {
       isCurrentRequest = false;
-      clearTimeout(timeoutId);
     };
   }, [activeCategoryId, searchKeyword]);
 
