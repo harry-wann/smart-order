@@ -28,6 +28,19 @@ public class Waitlist {
     private Long diningSessionId;
 
     protected Waitlist() {}
+    // 現場登記：建立一筆新的候位
+    public static Waitlist register(String ticketNo, String contactName, String contactPhone, Integer partySize) {
+        Waitlist w = new Waitlist();
+        w.ticketNo = ticketNo;
+        w.contactName = contactName;
+        w.contactPhone = contactPhone;
+        w.partySize = partySize;
+        w.adultCount = partySize;
+        w.childCount = 0;
+        w.status = "WAITING";
+        w.createdAt = LocalDateTime.now();
+        return w;
+    }
 
     public Long getId() {
         return id;

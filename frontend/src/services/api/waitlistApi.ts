@@ -19,3 +19,13 @@ export async function fetchWaitlist(signal?: AbortSignal) {
   const { data } = await employeeClient.get<WaitlistEntry[]>('/admin/waitlist', { signal })
   return data
 }
+
+// POST /api/admin/waitlist：現場登記取號
+export async function registerWaitlist(contactName: string, contactPhone: string, partySize: number) {
+  const { data } = await employeeClient.post<WaitlistEntry>('/admin/waitlist', {
+    contactName,
+    contactPhone,
+    partySize,
+  })
+  return data
+}

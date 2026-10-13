@@ -3,7 +3,7 @@ import SOButton from '@/components/SOButton'
 import TopBar from '@/components/dashboard/TopBar'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import WaitlistSeatDialog from './WaitlistSeatDialog'
-import { fetchWaitlist } from '@/services/api/waitlistApi'
+import { fetchWaitlist, registerWaitlist } from '@/services/api/waitlistApi'
 
 // 叫號後幾分鐘沒報到會被排程標成過號（規格寫 10 分鐘）
 const CALL_EXPIRE_MINUTES = 10
@@ -102,23 +102,17 @@ function WaitlistManagement() {
   const canSubmit = name.trim() !== '' && phoneLast4.length === 4
 
   // ---------- 動作 ----------
-  function handleTakeNumber() {
+    async function handleTakeNumber() {
     if (!canSubmit) return
-    setWaitlist((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        no: nextNo,
-        name: name.trim(),
-        phoneLast4,
-        partySize,
-        status: 'WAITING',
-        createdAt: new Date(),
-      },
-    ])
-    setName('')
-    setPhoneLast4('')
-    setPartySize(2)
+    try {
+      const created = await registerWaitlist(name.trim(), phoneLast4, partySize)
+      setWaitlist((prev) => [...prev, toWaitlistRow(created)])
+      setName('')
+      setPhoneLast4('')
+      setPartySize(2)
+    } catch (err) {
+      alert(`取號失敗：${err.message}`)
+    }
   }
 
   function updateEntry(id, changes) {
