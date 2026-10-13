@@ -18,7 +18,7 @@ export interface BadgeItem {
 export interface Product {
   id: number;
   name: string;
-  category: string;
+  categoryId: string;
   price: number;
   stock: number;
   status: 'active' | 'inactive';
@@ -30,6 +30,7 @@ interface AdminMenuItemResponse {
   img: string | null;
   name: string;
   price: number;
+  categoryId: number;
 }
 
 interface MenuCategoryResponse {
@@ -39,7 +40,6 @@ interface MenuCategoryResponse {
 }
 
 export default function AdminMenu() {
-  const [activeCategory, setActiveCategory] = useState<string>('全部'); 
   // 商品類別
   const [categories, setCategories] = useState<Category[]>([]);
   // 產品
@@ -51,7 +51,8 @@ export default function AdminMenu() {
   // 選取商品
   const [currentProduct, setCurrentProduct] = useState<Partial<Product>>({});
   //
-  const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
+  const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
+  const activeCategory = categories.find(category => category.id === activeCategoryId)?.name ?? '全部';
 
   // 動態計算分類數量
   const totalProductCount = categories
@@ -75,12 +76,11 @@ export default function AdminMenu() {
   };
 
   const handleOpenAdd = () => {
-    // 動態抓取第一個非「全部」的有效分類名稱
-    const firstValidCategory = categories.find(c => c.id !== 'all')?.name || '';
+    const firstValidCategoryId = categories.find(category => category.id !== 'all')?.id || '';
 
     setCurrentProduct({ 
       name: '', 
-      category: activeCategory === '全部' ? firstValidCategory : activeCategory, 
+      categoryId: activeCategoryId ?? firstValidCategoryId,
       price: 0, 
       stock: 10, 
       status: 'active', 
@@ -106,7 +106,7 @@ export default function AdminMenu() {
     const category = categories.find(item => item.id === categoryId);
     const hasProducts =
       (category?.count ?? 0) > 0 ||
-      products.some(product => product.category === categoryName);
+      products.some(product => product.categoryId === categoryId);
     if (hasProducts) {
       alert(`「${categoryName}」分類下尚有商品，請先將商品刪除或變更分類後再進行操作！`);
       return;
@@ -114,8 +114,8 @@ export default function AdminMenu() {
 
     if (window.confirm(`確定要刪除「${categoryName}」分類嗎？`)) {
       setCategories(prev => prev.filter(c => c.id !== categoryId));
-      if (activeCategory === categoryName) {
-        setActiveCategory('全部');
+      if (activeCategoryId === categoryId) {
+        setActiveCategoryId(null);
       }
     }
   };
@@ -126,12 +126,12 @@ export default function AdminMenu() {
     const stockVal = Number(formData.stock) || 0;
     
     if (modalMode === 'add') {
-      const firstValidCategory = categories.find(c => c.id !== 'all')?.name || '';
+      const firstValidCategoryId = categories.find(category => category.id !== 'all')?.id || '';
       
       const newProduct: Product = {
         id: Date.now(),
         name: formData.name,
-        category: formData.category || firstValidCategory, 
+        categoryId: formData.categoryId || firstValidCategoryId,
         price: Number(formData.price) || 0,
         stock: stockVal,
         status: (formData.status as 'active' | 'inactive') || 'active',
@@ -174,15 +174,13 @@ export default function AdminMenu() {
   };
 
   const filteredProducts = products.filter(item => {
-    const matchCategory = activeCategory === '全部' || item.category === activeCategory;
+    const matchCategory = activeCategoryId === null || item.categoryId === activeCategoryId;
     const matchSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
     return matchCategory && matchSearch;
   });
 
-  const handleSelectCategory = (categoryName: string) => {
-    setActiveCategory(categoryName);
-    const category = categories.find(item => item.name === categoryName);
-    setActiveCategoryId(categoryName === '全部' ? null : Number(category?.id));
+  const handleSelectCategory = (categoryId: string) => {
+    setActiveCategoryId(categoryId === 'all' ? null : categoryId);
   };
 
   useEffect(() => {
@@ -213,14 +211,13 @@ export default function AdminMenu() {
       async function loadItems() {
         try {
           const response = await axios.get<AdminMenuItemResponse[]>('http://localhost:8080/api/order/admin/menu', {
-            params: { categoryId: activeCategoryId ?? undefined },
+            params: { categoryId: activeCategoryId === null ? undefined : Number(activeCategoryId) },
           });
           if (isCurrentRequest) {
-            const categoryName = categories.find(category => Number(category.id) === activeCategoryId)?.name ?? '全部';
             setProducts(response.data.map((item, index) => ({
               id: index + 1,
               name: item.name,
-              category: categoryName,
+              categoryId: String(item.categoryId),
               price: item.price,
               stock: 10,
               status: 'active',
@@ -275,7 +272,7 @@ export default function AdminMenu() {
         
         <CategorySidebar 
           categories={displayCategories} 
-          activeCategory={activeCategory}
+          activeCategoryId={activeCategoryId ?? 'all'}
           onSelectCategory={handleSelectCategory}
           onAddCategory={handleAddCategory}
           onDeleteCategory={handleDeleteCategory}
@@ -325,7 +322,9 @@ export default function AdminMenu() {
                             </div>
                             <div className="text-xs text-ink-400 mt-1">份量・加點配料</div>
                           </td>
-                          <td className="p-4 text-ink-600">{product.category}</td>
+                          <td className="p-4 text-ink-600">
+                            {categories.find(category => category.id === product.categoryId)?.name ?? ''}
+                          </td>
                           <td className="p-4 font-medium text-ink-900">${product.price}</td>
                           <td className={`p-4 font-medium ${product.stock === 0 ? 'text-danger' : 'text-ink-600'}`}>庫存</td>
                           <td className="p-4">

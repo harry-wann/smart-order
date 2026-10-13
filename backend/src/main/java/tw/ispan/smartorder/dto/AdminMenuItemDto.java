@@ -5,5 +5,6 @@ import java.math.BigDecimal;
 public record AdminMenuItemDto(
         String img,
         String name,
-        BigDecimal price
+        BigDecimal price,
+        Long categoryId
 ) {}

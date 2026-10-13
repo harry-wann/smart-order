@@ -8,15 +8,15 @@ export interface Category {
 
 interface Props {
   categories: Category[];
-  activeCategory: string;
-  onSelectCategory: (name: string) => void;
+  activeCategoryId: string;
+  onSelectCategory: (id: string) => void;
   onAddCategory: (name: string) => void;
   onDeleteCategory?: (categoryId: string, categoryName: string) => void;
 }
 
 export default function CategorySidebar({
   categories,
-  activeCategory,
+  activeCategoryId,
   onSelectCategory,
   onAddCategory,
   onDeleteCategory
@@ -40,12 +40,12 @@ export default function CategorySidebar({
       {/* 分類列表 */}
       <div className="flex flex-col gap-1">
         {categories.map((cat) => {
-          const isActive = activeCategory === cat.name;
+          const isActive = activeCategoryId === cat.id;
           
           return (
             <div
               key={cat.id}
-              onClick={() => onSelectCategory(cat.name)}
+              onClick={() => onSelectCategory(cat.id)}
               className={`group flex items-center justify-between px-4 py-3 rounded-lg cursor-pointer transition-colors relative
                 ${isActive 
                   ? 'bg-brand-50 text-brand-700 font-bold' // 命中狀態（如圖片中的「肉品」樣式）

@@ -12,7 +12,7 @@ import java.util.List;
 public interface MenuItemRepository extends JpaRepository<MenuItemEntity,Long> {
     List<MenuItemEntity> findByCategory_Id(Long categoryId);
     @Query("""
-    SELECT new tw.ispan.smartorder.dto.AdminMenuItemDto(mi.imageUrl, mi.name, mi.price)
+    SELECT new tw.ispan.smartorder.dto.AdminMenuItemDto(mi.imageUrl, mi.name, mi.price, mi.category.id)
     FROM MenuItemEntity mi
     WHERE mi.category.id = :categoryId
     ORDER BY mi.sortOrder
@@ -20,7 +20,7 @@ public interface MenuItemRepository extends JpaRepository<MenuItemEntity,Long> {
     List<AdminMenuItemDto> findAdminMenuItemsByCategoryId(@Param("categoryId") Long categoryId);
 
     @Query("""
-    SELECT new tw.ispan.smartorder.dto.AdminMenuItemDto(mi.imageUrl, mi.name, mi.price)
+    SELECT new tw.ispan.smartorder.dto.AdminMenuItemDto(mi.imageUrl, mi.name, mi.price, mi.category.id)
     FROM MenuItemEntity mi
     ORDER BY mi.sortOrder
     """)
