@@ -10,7 +10,7 @@ import java.util.Date;
 
 public class JwtToken {
 	private static final String SECRET = "asdfghjklvasdaswfesasdasdcvwsasdaddasdwfszxcd";
-	private static final long EXP_TIME=1000;
+	private static final long EXP_TIME=60*1000;
 	private static Key key= Keys.hmacShaKeyFor(SECRET.getBytes());
 
 	public static String createToken(String subject){

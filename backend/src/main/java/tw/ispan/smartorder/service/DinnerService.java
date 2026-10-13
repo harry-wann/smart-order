@@ -3,6 +3,7 @@ package tw.ispan.smartorder.service;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import tw.ispan.smartorder.dto.DiningInfoResponse;
 import tw.ispan.smartorder.dto.JoinTableResponse;
 import tw.ispan.smartorder.dto.TableStatusResponse;
 import tw.ispan.smartorder.entity.DiningSession;
@@ -22,7 +23,7 @@ public class DinnerService {
 	private static final String OPEN="OPEN";
 
 	@Autowired
-	private DingingSessionRepository dingingSessionRepo;
+	private DingingSessionRepository diningSessionRepo;
 	@Autowired
 	private DinnerTableRepository dinnerTableRepo;
 	@Autowired
@@ -35,7 +36,7 @@ public class DinnerService {
 	public TableStatusResponse status(String tableNo,String deviceId){
 		DiningTable table = findTable(tableNo);
 
-		Optional<DiningSession> session=dingingSessionRepo.findByTableIdAndStatus(table.getId(),OPEN);
+		Optional<DiningSession> session=diningSessionRepo.findByTableIdAndStatus(table.getId(),OPEN);
 		if(session.isEmpty()){
 			return new TableStatusResponse(table.getTableNo(),false,false,null);
 		}
@@ -46,11 +47,18 @@ public class DinnerService {
 
 	}
 
+	public DiningInfoResponse current(Long sessionId){
+		DiningSession session=diningSessionRepo.findById(sessionId).orElseThrow();
+		DiningTable table=dinnerTableRepo.findById(session.getTableId()).orElseThrow();
+		return new DiningInfoResponse(sessionId,table.getTableNo());
+	}
+
+
 	@Transactional
 	public JoinTableResponse join(String tableNo, String deviceId) {
 		DiningTable table = findTable(tableNo);
 
-		DiningSession session = dingingSessionRepo.findByTableIdAndStatus(table.getId(), OPEN)
+		DiningSession session = diningSessionRepo.findByTableIdAndStatus(table.getId(), OPEN)
 						.orElseThrow(() -> new IllegalArgumentException("這桌尚未開桌，請洽櫃檯"));
 
 		if (!diningSessionGuestRepo.existsByDiningSessionIdAndDeviceId(session.getId(), deviceId)) {
