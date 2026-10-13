@@ -39,6 +39,11 @@ interface MenuCategoryResponse {
   count: number;
 }
 
+interface CreatedMenuCategoryResponse {
+  id: number;
+  name: string;
+}
+
 export default function AdminMenu() {
   // 商品類別
   const [categories, setCategories] = useState<Category[]>([]);
@@ -153,17 +158,22 @@ export default function AdminMenu() {
     setModalMode('closed');
   };
 
-  const handleAddCategory = (newCategoryName: string) => {
+  const handleAddCategory = async (newCategoryName: string): Promise<Category | null> => {
     if (categories.some(c => c.name === newCategoryName)) {
       alert('分類名稱已存在！');
-      return;
+      return null;
     }
-    const newCat: Category = {
-      id: Date.now().toString(),
-      name: newCategoryName,
-      count: 0 
+    const response = await axios.post<CreatedMenuCategoryResponse>(
+      'http://localhost:8080/api/order/admin/categories',
+      { name: newCategoryName },
+    );
+    const newCategory: Category = {
+      id: String(response.data.id),
+      name: response.data.name,
+      count: 0,
     };
-    setCategories([...categories, newCat]);
+    setCategories(prev => [...prev, newCategory]);
+    return newCategory;
   };
 
   const getProductBadge = (product: Product): BadgeItem | null => {

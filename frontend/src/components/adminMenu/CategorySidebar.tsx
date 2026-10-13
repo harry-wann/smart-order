@@ -10,7 +10,7 @@ interface Props {
   categories: Category[];
   activeCategoryId: string;
   onSelectCategory: (id: string) => void;
-  onAddCategory: (name: string) => void;
+  onAddCategory: (name: string) => Promise<Category | null>;
   onDeleteCategory?: (categoryId: string, categoryName: string) => void;
 }
 
@@ -24,11 +24,19 @@ export default function CategorySidebar({
   const [isAdding, setIsAdding] = useState(false);
   const [newCategory, setNewCategory] = useState('');
 
-  const handleAdd = () => {
-    if (newCategory.trim()) {
-      onAddCategory(newCategory.trim());
-      setNewCategory('');
-      setIsAdding(false);
+  const handleAdd = async () => {
+    const categoryName = newCategory.trim();
+    if (!categoryName) return;
+
+    try {
+      const createdCategory = await onAddCategory(categoryName);
+      if (createdCategory) {
+        setNewCategory('');
+        setIsAdding(false);
+      }
+    } catch (error) {
+      console.error(error);
+      alert('新增分類失敗，請稍後再試。');
     }
   };
 

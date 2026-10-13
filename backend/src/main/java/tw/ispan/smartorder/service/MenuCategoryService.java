@@ -7,6 +7,7 @@ import tw.ispan.smartorder.dto.AdminMenuCategoryDto;
 import tw.ispan.smartorder.entity.MenuCategoryEntity;
 import tw.ispan.smartorder.repository.MenuCategoryRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -20,5 +21,14 @@ public class MenuCategoryService {
 
     public List<AdminMenuCategoryDto> findAdminCategoriesWithItemCount() {
         return menuCategoryRepository.findAdminCategoriesWithItemCount();
+    }
+
+    public MenuCategoryEntity createMenuCategory(MenuCategoryEntity category){
+        LocalDateTime now = LocalDateTime.now();
+        category.setSortOrder(0);
+        category.setActive(true);
+        category.setCreatedAt(now);
+        category.setUpdatedAt(now);
+        return menuCategoryRepository.save(category);
     }
 }

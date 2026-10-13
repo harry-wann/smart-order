@@ -69,4 +69,12 @@ public class MenuController {
                 : menuItemService.searchAdminMenuItems(keyword);
         return ResponseEntity.ok(items);
     }
+
+    @PostMapping("/admin/categories")
+    public ResponseEntity<MenuCategoryEntity> createAdminCategory(
+            @RequestBody MenuCategoryEntity category
+    ) {
+        MenuCategoryEntity createdCategory = menuCategoryService.createMenuCategory(category);
+        return ResponseEntity.ok(createdCategory);
+    }
 }
