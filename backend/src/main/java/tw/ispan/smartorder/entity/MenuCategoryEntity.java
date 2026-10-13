@@ -16,8 +16,8 @@ public class MenuCategoryEntity {
     private Long id;
 
     private String name;
-    private String sortOrder;
-    private String active;
+    private Integer sortOrder;
+    private Boolean active;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
