@@ -33,7 +33,7 @@ export default function CategorySidebar({
   };
 
   return (
-    <div className="w-[180px] shrink-0">
+    <div className="no-scrollbar h-full w-[180px] shrink-0 overflow-y-auto">
       {/* 標題 */}
       <div className="text-sm text-ink-400 font-medium px-4 mb-4">分類</div>
       

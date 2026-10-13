@@ -52,7 +52,6 @@ export default function AdminMenu() {
   const [currentProduct, setCurrentProduct] = useState<Partial<Product>>({});
   //
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
-  const activeCategory = categories.find(category => category.id === activeCategoryId)?.name ?? '全部';
 
   // 動態計算分類數量
   const totalProductCount = categories
@@ -267,8 +266,8 @@ export default function AdminMenu() {
         </div>
       }
     />
-    <div className="bg-paper text-ink-900 p-6 min-h-screen font-sans relative">
-      <div className="flex max-w-7xl mx-auto gap-8">
+    <div className="min-h-0 flex-1 overflow-hidden bg-paper p-6 font-sans text-ink-900">
+      <div className="flex h-full min-h-0 max-w-7xl mx-auto gap-8">
         
         <CategorySidebar 
           categories={displayCategories} 
@@ -278,26 +277,29 @@ export default function AdminMenu() {
           onDeleteCategory={handleDeleteCategory}
         />
 
-        <div className="flex-1 bg-surface rounded-xl shadow-(--shadow-card) border border-line overflow-hidden flex flex-col justify-between">
-          <div>
-            <div className="p-4 border-b border-line flex justify-between items-center bg-surface-200">
-              <span className="text-sm font-bold text-ink-600">當前分類：{activeCategory}</span>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-line text-ink-400 text-xs bg-surface-200">
-                    <th className="p-4 font-medium">縮圖</th>
-                    <th className="p-4 font-medium">品項</th>
-                    <th className="p-4 font-medium">分類</th>
-                    <th className="p-4 font-medium">價格</th>
-                    <th className="p-4 font-medium">庫存</th>
-                    <th className="p-4 font-medium">上架狀態</th>
-                    <th className="p-4 font-medium">操作</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line text-sm">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-(--shadow-card)">
+          <div
+            className="no-scrollbar min-h-0 flex-1 overflow-auto"
+            onWheel={event => {
+              if (event.shiftKey) {
+                event.currentTarget.scrollTop += event.deltaY || event.deltaX;
+                event.preventDefault();
+              }
+            }}
+          >
+            <table className="w-full text-left border-collapse">
+              <thead className="sticky top-0 z-10 bg-surface shadow-[inset_0_-1px_0_var(--color-line)]">
+                <tr className="text-ink-400 text-xs bg-surface-2">
+                    <th className="border-b border-line p-4 font-medium">縮圖</th>
+                    <th className="border-b border-line p-4 font-medium">品項</th>
+                    <th className="border-b border-line p-4 font-medium">分類</th>
+                    <th className="border-b border-line p-4 font-medium">價格</th>
+                    <th className="border-b border-line p-4 font-medium">庫存</th>
+                    <th className="border-b border-line p-4 font-medium">上架狀態</th>
+                    <th className="border-b border-line p-4 font-medium">操作</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line text-sm">
                   {filteredProducts.length > 0 ? (
                     filteredProducts.map(product => {
                       const isActive = product.status === 'active';
@@ -349,22 +351,20 @@ export default function AdminMenu() {
                       </td>
                     </tr>
                   )}
-                </tbody>
-              </table>
-            </div>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
-
-      <ProductModal 
-        isOpen={modalMode !== 'closed'}
-        mode={modalMode === 'add' ? 'add' : 'edit'}
-        initialData={currentProduct}
-        categories={categories}
-        onClose={() => setModalMode('closed')}
-        onSave={handleSaveProduct}
-      />
     </div>
+    <ProductModal
+      isOpen={modalMode !== 'closed'}
+      mode={modalMode === 'add' ? 'add' : 'edit'}
+      initialData={currentProduct}
+      categories={categories}
+      onClose={() => setModalMode('closed')}
+      onSave={handleSaveProduct}
+    />
   </>
   );
 }
