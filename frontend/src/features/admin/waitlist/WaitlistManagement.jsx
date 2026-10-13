@@ -3,65 +3,13 @@ import SOButton from '@/components/SOButton'
 import TopBar from '@/components/dashboard/TopBar'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import WaitlistSeatDialog from './WaitlistSeatDialog'
+import { fetchWaitlist } from '@/services/api/waitlistApi'
 
 // 叫號後幾分鐘沒報到會被排程標成過號（規格寫 10 分鐘）
 const CALL_EXPIRE_MINUTES = 10
 
-// 假資料：時間用「現在往前推幾分鐘」產生，畫面上的等待分鐘數才會是活的
-// 後端好了之後換成 GET /api/admin/waitlist 回來的資料
-const minutesAgo = (m) => new Date(Date.now() - m * 60000)
 
-const INITIAL_WAITLIST = [
-  {
-    id: 1,
-    no: 'A10',
-    name: '蔡先生',
-    phoneLast4: '4471',
-    partySize: 4,
-    status: 'EXPIRED',
-    createdAt: minutesAgo(50),
-    doneAt: minutesAgo(24),
-  },
-  {
-    id: 2,
-    no: 'A11',
-    name: '周小姐',
-    phoneLast4: '9106',
-    partySize: 2,
-    status: 'SEATED',
-    createdAt: minutesAgo(35),
-    doneAt: minutesAgo(11),
-  },
-  {
-    id: 3,
-    no: 'A12',
-    name: '王先生',
-    phoneLast4: '0338',
-    partySize: 3,
-    status: 'CALLED',
-    createdAt: minutesAgo(18),
-    calledAt: minutesAgo(4),
-  },
-  {
-    id: 4,
-    no: 'A13',
-    name: '李小姐',
-    phoneLast4: '5210',
-    partySize: 4,
-    status: 'CALLED',
-    createdAt: minutesAgo(3),
-    calledAt: minutesAgo(2),
-  },
-  {
-    id: 5,
-    no: 'A14',
-    name: '張先生',
-    phoneLast4: '7724',
-    partySize: 6,
-    status: 'WAITING',
-    createdAt: minutesAgo(4),
-  },
-]
+
 
 // 桌位假資料（S-10b 選桌用）
 // 後端好了之後換成 GET /api/admin/tables/available?partySize=N
@@ -105,7 +53,19 @@ const STATUS_BADGE = {
 const STATUS_ORDER = { CALLED: 0, WAITING: 1, SEATED: 2, EXPIRED: 2, ABANDONED: 2 }
 
 function WaitlistManagement() {
-  const [waitlist, setWaitlist] = useState(INITIAL_WAITLIST)
+    const [waitlist, setWaitlist] = useState([])
+
+  // 畫面出現時，去後端拿候位清單
+  useEffect(() => {
+    const controller = new AbortController()
+    fetchWaitlist(controller.signal)
+      .then((data) => setWaitlist(data.map(toWaitlistRow)))
+      .catch((err) => {
+        if (!controller.signal.aborted) alert(`候位清單載入失敗：${err.message}`)
+      })
+    return () => controller.abort()
+  }, [])
+
   const [now, setNow] = useState(new Date())
   const [tables, setTables] = useState(INITIAL_TABLES)
   // 正在選桌的那一組；null 代表對話框沒開
@@ -438,6 +398,20 @@ function SmallButton({ variant = 'ghost', children, ...props }) {
       {children}
     </button>
   )
+}
+
+// 後端的候位 → 這個畫面用的格式
+function toWaitlistRow(w) {
+  return {
+    id: w.id,
+    no: w.ticketNo,
+    name: w.contactName,
+    phoneLast4: w.contactPhone,
+    partySize: w.partySize,
+    status: w.status,
+    createdAt: new Date(w.createdAt),
+    calledAt: w.calledAt ? new Date(w.calledAt) : null,
+  }
 }
 
 export default WaitlistManagement
