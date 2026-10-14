@@ -21,4 +21,6 @@ public class DiningTable {
     @Column(name = "seats")
     private Integer seats;
 
+    private String area;
+    private Boolean reservable;
 }
