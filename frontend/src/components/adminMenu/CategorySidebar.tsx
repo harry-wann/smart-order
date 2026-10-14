@@ -8,44 +8,63 @@ export interface Category {
 
 interface Props {
   categories: Category[];
-  activeCategory: string;
-  onSelectCategory: (name: string) => void;
-  onAddCategory: (name: string) => void;
+  activeCategoryId: string;
+  onSelectCategory: (id: string) => void;
+  onAddCategory: (name: string) => Promise<Category | null>;
   onDeleteCategory?: (categoryId: string, categoryName: string) => void;
+  onDeleteClassification?: (id: string) => Promise<void>;
 }
 
 export default function CategorySidebar({
   categories,
-  activeCategory,
+  activeCategoryId,
   onSelectCategory,
   onAddCategory,
-  onDeleteCategory
+  // onDeleteCategory,
+  onDeleteClassification
 }: Props) {
   const [isAdding, setIsAdding] = useState(false);
   const [newCategory, setNewCategory] = useState('');
 
-  const handleAdd = () => {
-    if (newCategory.trim()) {
-      onAddCategory(newCategory.trim());
-      setNewCategory('');
-      setIsAdding(false);
+  const handleAdd = async () => {
+    const categoryName = newCategory.trim();
+    if (!categoryName) return;
+
+    try {
+      const createdCategory = await onAddCategory(categoryName);
+      if (createdCategory) {
+        setNewCategory('');
+        setIsAdding(false);
+      }
+    } catch (error) {
+      console.error(error);
+      alert('新增分類失敗，請稍後再試。');
+    }
+  };
+
+  const handleDeleteClassification = async (id: string) => {
+    try {
+      await onDeleteClassification?.(id);
+    } catch (error) {
+      console.error(error);
+      alert('刪除分類失敗，請稍後再試。');
     }
   };
 
   return (
-    <div className="w-[180px] shrink-0">
+    <div className="no-scrollbar h-full w-45 shrink-0 overflow-y-auto">
       {/* 標題 */}
       <div className="text-sm text-ink-400 font-medium px-4 mb-4">分類</div>
       
       {/* 分類列表 */}
       <div className="flex flex-col gap-1">
         {categories.map((cat) => {
-          const isActive = activeCategory === cat.name;
+          const isActive = activeCategoryId === cat.id;
           
           return (
             <div
               key={cat.id}
-              onClick={() => onSelectCategory(cat.name)}
+              onClick={() => onSelectCategory(cat.id)}
               className={`group flex items-center justify-between px-4 py-3 rounded-lg cursor-pointer transition-colors relative
                 ${isActive 
                   ? 'bg-brand-50 text-brand-700 font-bold' // 命中狀態（如圖片中的「肉品」樣式）
@@ -60,12 +79,12 @@ export default function CategorySidebar({
               </span>
 
               {/* 刪除按鈕，僅在滑鼠懸停時顯示（取代數量顯示的位置） */}
-              {cat.id !== 'all' && onDeleteCategory ? (
+              {cat.id !== 'all' && handleDeleteClassification ? (
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation(); // 防止觸發外層的 onClick (切換分類)
-                    onDeleteCategory(cat.id, cat.name);
+                    handleDeleteClassification(cat.id);
                   }}
                   className="hidden group-hover:block text-xs text-danger hover:text-red-700 transition-colors"
                 >

@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cloudflare R2 圖片上傳（React + Spring Boot） · 火鍋店點餐系統文件</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand-700:#A63522; --brand-600:#C8442E; --brand-500:#DB5B42; --brand-100:#FBE8E3;
+  --accent-500:#E8A33D; --accent-100:#FCF0DC;
+  --bg:#FBF7F0; --surface:#FFFFFF; --surface-2:#F5EFE5; --line:#E6DED2;
+  --t900:#2B211C; --t600:#6B5D54; --t400:#9C8E84;
+  --ok:#3F7A4E; --ok-bg:#E4EFE7; --warn:#D98324; --bad:#B3261E;
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --serif:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --shadow:0 1px 2px rgba(43,33,28,.06),0 4px 12px rgba(43,33,28,.05);
+  --sidebar:280px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:var(--bg);color:var(--t900);font-family:var(--sans);
+  font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased}
+
+.layout{display:flex;min-height:100vh;align-items:flex-start}
+.sidebar{width:var(--sidebar);flex:0 0 var(--sidebar);position:sticky;top:0;height:100vh;
+  overflow-y:auto;background:var(--surface);border-right:1px solid var(--line);padding:22px 0 48px}
+.brand{padding:0 20px 16px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.brand a{text-decoration:none;color:inherit;display:block}
+.brand .logo{font-family:var(--serif);font-weight:900;font-size:18px;line-height:1.35;color:var(--brand-600)}
+.brand .sub{font-size:11.5px;color:var(--t400);margin-top:4px;letter-spacing:.02em}
+.navgroup{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--t400);
+  padding:15px 20px 5px}
+.sidebar a.nav{display:block;padding:6px 20px;color:var(--t600);text-decoration:none;
+  font-size:14px;border-left:3px solid transparent;line-height:1.5}
+.sidebar a.nav:hover{background:var(--brand-100);color:var(--brand-700)}
+.sidebar a.nav.active{background:var(--brand-100);color:var(--brand-700);
+  border-left-color:var(--brand-600);font-weight:700}
+.sidebar details{border-top:1px solid transparent}
+.sidebar details>summary{list-style:none;cursor:pointer;font-size:11px;font-weight:700;
+  letter-spacing:.1em;color:var(--t400);padding:12px 20px 5px;user-select:none}
+.sidebar details>summary::-webkit-details-marker{display:none}
+.sidebar details>summary::before{content:"▸ ";font-size:10px}
+.sidebar details[open]>summary::before{content:"▾ "}
+.sidebar details>summary:hover{color:var(--brand-600)}
+.sidebar .foot{padding:18px 20px;margin-top:14px;border-top:1px solid var(--line);
+  font-size:11.5px;color:var(--t400);line-height:1.7}
+
+.main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 32px 96px}
+.wrap{width:100%;max-width:1140px;display:flex;gap:36px;align-items:flex-start}
+article{flex:1;min-width:0;max-width:880px;padding-top:40px}
+.toc{width:196px;flex:0 0 196px;position:sticky;top:24px;padding-top:52px;font-size:12.5px;
+  max-height:calc(100vh - 60px);overflow-y:auto}
+.toc .tt{font-size:10.5px;letter-spacing:.1em;color:var(--t400);font-weight:700;margin-bottom:9px}
+.toc a{display:block;color:var(--t600);text-decoration:none;padding:3px 0 3px 10px;
+  border-left:2px solid var(--line);line-height:1.5}
+.toc a:hover{color:var(--brand-600);border-left-color:var(--brand-500)}
+
+.topbar{display:none;position:sticky;top:0;z-index:40;background:var(--surface);
+  border-bottom:1px solid var(--line);padding:10px 16px;align-items:center;gap:12px}
+.topbar .logo{font-family:var(--serif);font-weight:900;color:var(--brand-600);font-size:16px}
+.menubtn{background:var(--brand-600);color:#fff;border:0;border-radius:8px;height:40px;
+  padding:0 14px;font-size:15px;font-family:inherit;cursor:pointer}
+
+article h1{font-family:var(--serif);font-weight:900;font-size:32px;line-height:1.35;margin:0 0 10px}
+article h1+p{color:var(--t600)}
+article h2{font-family:var(--serif);font-weight:700;font-size:24px;line-height:1.45;
+  margin:50px 0 14px;padding-bottom:9px;border-bottom:2px solid var(--line)}
+article h3{font-weight:700;font-size:18.5px;margin:30px 0 10px}
+article h4{font-weight:700;font-size:16px;margin:22px 0 8px;color:var(--t600)}
+article p{margin:0 0 16px}
+article ul,article ol{margin:0 0 16px;padding-left:24px}
+article li{margin:5px 0}
+article a{color:var(--brand-600);text-decoration:none;border-bottom:1px solid rgba(200,68,46,.3)}
+article a:hover{border-bottom-color:var(--brand-600)}
+article a.gloss{color:var(--t900);border-bottom:1px dashed var(--accent-500);
+  background:linear-gradient(transparent 72%,var(--accent-100) 72%)}
+article a.gloss:hover{color:var(--brand-700);border-bottom-color:var(--brand-500)}
+article strong{font-weight:700;color:var(--t900)}
+article hr{border:0;border-top:1px solid var(--line);margin:42px 0}
+article img{max-width:100%;border-radius:12px}
+article details{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:12px 16px;margin:0 0 18px}
+article details>summary{cursor:pointer;font-weight:700;color:var(--brand-600)}
+
+article code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.87em;
+  background:var(--surface-2);padding:2px 6px;border-radius:5px;color:var(--brand-700);
+  word-break:break-word}
+article pre{background:#2B211C;color:#F5EFE5;padding:18px 20px;border-radius:12px;
+  overflow-x:auto;margin:0 0 18px;line-height:1.65;font-size:13.5px}
+article pre code{background:none;color:inherit;padding:0;font-size:inherit}
+
+blockquote{margin:0 0 20px;padding:14px 18px;background:var(--accent-100);
+  border-left:4px solid var(--accent-500);border-radius:0 10px 10px 0;color:var(--t600)}
+blockquote p:last-child{margin-bottom:0}
+blockquote strong{color:var(--t900)}
+
+.tablewrap{overflow-x:auto;margin:0 0 20px;border:1px solid var(--line);
+  border-radius:12px;background:var(--surface);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:420px}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--surface-2);font-weight:700;white-space:nowrap;color:var(--t900)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--brand-100)}
+td code,th code{white-space:nowrap}
+article li input[type=checkbox]{width:16px;height:16px;margin-right:6px;accent-color:var(--brand-600)}
+
+pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:22px;text-align:center;overflow-x:auto;box-shadow:var(--shadow);margin:0 0 22px;color:inherit}
+pre.mermaid svg{max-width:100%;height:auto}
+
+.hero{padding:52px 0 32px;border-bottom:1px solid var(--line);margin-bottom:32px}
+.hero .eyebrow{display:inline-block;background:var(--brand-100);color:var(--brand-700);
+  font-size:12.5px;font-weight:700;padding:5px 13px;border-radius:999px;letter-spacing:.04em}
+.hero h1{font-family:var(--serif);font-weight:900;font-size:40px;line-height:1.25;margin:18px 0 12px}
+.hero p{font-size:17px;color:var(--t600);max-width:680px;margin:0}
+.facts{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:10px 16px;font-size:13px;box-shadow:var(--shadow)}
+.fact b{display:block;font-family:var(--serif);font-size:19px;color:var(--brand-600);font-weight:900}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:13px;margin:18px 0 8px}
+.card{display:block;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:16px;text-decoration:none;color:inherit;box-shadow:var(--shadow);transition:.15s}
+.card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(43,33,28,.12);border-color:var(--brand-500)}
+.card .k{font-size:10.5px;letter-spacing:.09em;color:var(--t400);font-weight:700}
+.card .n{font-family:var(--serif);font-weight:700;font-size:17px;margin:5px 0 6px;color:var(--t900)}
+.card .d{font-size:13px;color:var(--t600);line-height:1.6}
+.callout{background:var(--brand-100);border:1px solid var(--brand-500);border-radius:12px;
+  padding:18px 20px;margin:24px 0}
+.callout .h{font-family:var(--serif);font-weight:700;font-size:17px;margin-bottom:6px;color:var(--brand-700)}
+.callout p{margin:0;color:var(--t600);font-size:14.5px}
+.pending{background:var(--accent-100);border-color:var(--accent-500)}
+.pending .h{color:#8A5B12}
+
+.pager{display:flex;gap:12px;margin-top:52px;padding-top:22px;border-top:1px solid var(--line)}
+.pager a{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:13px 16px;text-decoration:none;color:inherit;box-shadow:var(--shadow)}
+.pager a:hover{border-color:var(--brand-500)}
+.pager .k{font-size:11px;color:var(--t400);letter-spacing:.06em}
+.pager .n{font-weight:700;color:var(--brand-600);margin-top:3px;font-size:14.5px}
+.pager .next{text-align:right}
+
+@media(max-width:1200px){ .toc{display:none} }
+@media(max-width:940px){
+  .topbar{display:flex}
+  .layout{display:block}
+  .sidebar{position:fixed;left:0;top:0;height:100vh;z-index:50;transform:translateX(-100%);
+    transition:transform .2s;box-shadow:0 0 40px rgba(43,33,28,.2);width:286px}
+  .sidebar.open{transform:translateX(0)}
+  .main{padding:0 16px 72px}
+  article{padding-top:24px}
+  .hero{padding:30px 0 24px}
+  .hero h1{font-size:30px}
+  article h1{font-size:26px}
+  article h2{font-size:21px;margin-top:38px}
+  .pager{flex-direction:column}
+}
+@media print{
+  .sidebar,.toc,.topbar,.pager{display:none!important}
+  body{background:#fff}
+  .main{padding:0}
+  article{max-width:none}
+  article h2{page-break-after:avoid}
+  .tablewrap,pre.mermaid{box-shadow:none;page-break-inside:avoid}
+  a.gloss{background:none!important;border:0!important}
+}
+</style>
+</head>
+<body>
+<div class="topbar"><button class="menubtn" onclick="document.getElementById('sb').classList.toggle('open')">☰ 目錄</button><span class="logo">火鍋店點餐系統</span></div>
+<div class="layout">
+<nav class="sidebar" id="sb"><div class="brand"><a href="../index.html"><div class="logo">火鍋店點餐系統</div><div class="sub">專案文件 · 77 頁</div></a></div><a class="nav" href="../index.html">首頁</a><div class="navgroup">開始使用</div><a class="nav" href="../setup.html">環境建置與啟動</a><div class="navgroup">規格文件</div><a class="nav" href="../spec/00-架構分層與技術選型.html">00 架構分層與技術選型</a><a class="nav" href="../spec/01-專案總覽.html">01 專案總覽</a><a class="nav" href="../spec/02-需求規格.html">02 需求規格：基礎與進階功能總表</a><a class="nav" href="../spec/03-資料庫設計.html">03 資料庫設計</a><a class="nav" href="../spec/04-API規格.html">04 API 規格</a><a class="nav" href="../spec/05-開發流程與分工.html">05 開發流程與時程</a><a class="nav" href="../spec/06-圖表總覽.html">06 圖表總覽</a><div class="navgroup">模組規格</div><a class="nav" href="../spec/modules/M1-菜單與品項.html">M1 菜單與品項</a><a class="nav" href="../spec/modules/M2-桌位開桌與候位.html">M2 桌位、開桌與候位</a><a class="nav" href="../spec/modules/M3-點餐與服務鈴.html">M3 點餐與服務鈴</a><a class="nav" href="../spec/modules/M4-出菜看板.html">M4 出菜看板（KDS）</a><a class="nav" href="../spec/modules/M5-庫存.html">M5 庫存</a><a class="nav" href="../spec/modules/M6-結帳.html">M6 結帳</a><a class="nav" href="../spec/modules/M7-訂位.html">M7 訂位</a><a class="nav" href="../spec/modules/M8-會員.html">M8 會員</a><div class="navgroup">UI 文件</div><a class="nav" href="../ui/10-UI-UX規格.html">10 UI / UX 規格</a><a class="nav" href="../ui/11-設計系統.html">11 設計系統</a><a class="nav" href="../ui/12-UI設計流程.html">12 UI 設計流程</a><a class="nav" href="../ui/13-畫框註解.html">13 畫框註解</a><a class="nav" href="../ui/14-色彩Token.html">14 色彩 Token</a><div class="navgroup">操作教學</div><a class="nav active" href="../guides/00-Cloudflare-R2圖片上傳.html">00 Cloudflare R2 圖片上傳（React + Spring Boot）</a><div class="navgroup">Spring Boot 專案</div><a class="nav" href="../spring-boot/README.html">Spring Boot 學習導覽</a><div class="navgroup">技術總表</div><a class="nav" href="../tech/00-技術總表.html">00 技術總表</a><details><summary>技術 · 團隊與工具（5）</summary><a class="nav" href="../tech/team/01-命令列.html">01 命令列基本操作</a><a class="nav" href="../tech/team/02-Git是什麼.html">02 Git 是什麼</a><a class="nav" href="../tech/team/03-分支與合併.html">03 分支、合併與衝突</a><a class="nav" href="../tech/team/04-GitHub與PR.html">04 GitHub 與 Pull Request</a><a class="nav" href="../tech/team/05-Docker與Compose.html">05 Docker 與 Docker Compose</a></details><details><summary>技術 · 網頁運作原理（6）</summary><a class="nav" href="../tech/web/06-前端後端在做什麼.html">06 前端與後端各在做什麼</a><a class="nav" href="../tech/web/07-HTTP請求與回應.html">07 HTTP 請求與回應</a><a class="nav" href="../tech/web/08-HTTP狀態碼.html">08 HTTP 狀態碼</a><a class="nav" href="../tech/web/09-JSON.html">09 JSON</a><a class="nav" href="../tech/web/10-REST-API設計.html">10 REST API 設計</a><a class="nav" href="../tech/web/11-CORS跨來源.html">11 CORS 跨來源問題</a></details><details><summary>技術 · 後端（10）</summary><a class="nav" href="../tech/backend/12-Java與JDK.html">12 Java 與 JDK</a><a class="nav" href="../tech/backend/13-Maven.html">13 Maven 與相依套件</a><a class="nav" href="../tech/backend/14-SpringBoot是什麼.html">14 Spring Boot 是什麼</a><a class="nav" href="../tech/backend/15-依賴注入.html">15 依賴注入</a><a class="nav" href="../tech/backend/16-三層架構.html">16 Controller / Service / Repository</a><a class="nav" href="../tech/backend/17-Entity與DTO.html">17 Entity 與 DTO</a><a class="nav" href="../tech/backend/18-全域例外處理.html">18 全域例外處理</a><a class="nav" href="../tech/backend/19-Swagger.html">19 Swagger 自動產生 API 文件</a><a class="nav" href="../tech/backend/20-SpringSecurity.html">20 Spring Security 基礎</a><a class="nav" href="../tech/backend/21-JWT.html">21 JWT 與登入狀態</a></details><details><summary>技術 · 資料庫（8）</summary><a class="nav" href="../tech/database/22-關聯式資料庫與SQL.html">22 關聯式資料庫與 SQL</a><a class="nav" href="../tech/database/23-資料表設計.html">23 資料表設計</a><a class="nav" href="../tech/database/24-索引.html">24 索引是什麼</a><a class="nav" href="../tech/database/25-ORM與JPA.html">25 ORM 與 JPA</a><a class="nav" href="../tech/database/26-JPA關聯對應.html">26 JPA 關聯對應</a><a class="nav" href="../tech/database/27-交易Transaction.html">27 交易 Transaction</a><a class="nav" href="../tech/database/28-鎖與併發.html">28 鎖與併發（防超賣）</a><a class="nav" href="../tech/database/29-Flyway.html">29 Flyway 資料庫版本控管</a></details><details><summary>技術 · 前端（14）</summary><a class="nav" href="../tech/frontend/30-現代JavaScript.html">30 現代 JavaScript 速成</a><a class="nav" href="../tech/frontend/31-非同步與async.html">31 非同步與 async/await</a><a class="nav" href="../tech/frontend/32-npm與套件.html">32 npm 與 node_modules</a><a class="nav" href="../tech/frontend/33-Vite.html">33 Vite</a><a class="nav" href="../tech/frontend/34-React與JSX.html">34 React 與 JSX</a><a class="nav" href="../tech/frontend/35-Props與State.html">35 Props 與 State</a><a class="nav" href="../tech/frontend/36-useState.html">36 useState</a><a class="nav" href="../tech/frontend/37-useEffect.html">37 useEffect</a><a class="nav" href="../tech/frontend/38-ReactRouter.html">38 React Router</a><a class="nav" href="../tech/frontend/39-Tailwind.html">39 Tailwind CSS</a><a class="nav" href="../tech/frontend/40-fetch串接API.html">40 fetch 串接後端 API</a><a class="nav" href="../tech/frontend/51-Axios.html">51 Axios 串接後端 API</a><a class="nav" href="../tech/frontend/52-TanStackQuery.html">52 TanStack Query 管理後端資料</a><a class="nav" href="../tech/frontend/53-Northwind範例.html">53 Axios + TanStack Query 實作</a></details><details><summary>技術 · 即時與排程（4）</summary><a class="nav" href="../tech/realtime/41-WebSocket與STOMP.html">41 WebSocket 與 STOMP</a><a class="nav" href="../tech/realtime/42-前端接WebSocket.html">42 前端接 WebSocket</a><a class="nav" href="../tech/realtime/43-排程與Cron.html">43 排程任務與 Cron</a><a class="nav" href="../tech/realtime/44-Redis.html">44 Redis</a></details><details><summary>技術 · 進階（2）</summary><a class="nav" href="../tech/advanced/45-訊息佇列RabbitMQ.html">45 訊息佇列 RabbitMQ</a><a class="nav" href="../tech/advanced/46-區間重疊與訂位排程.html">46 訂位排程的演算法</a></details><details><summary>技術 · 品質與部署（4）</summary><a class="nav" href="../tech/quality/47-單元測試.html">47 單元測試 JUnit + Mockito</a><a class="nav" href="../tech/quality/48-Testcontainers.html">48 Testcontainers</a><a class="nav" href="../tech/quality/49-GitHubActions.html">49 GitHub Actions CI</a><a class="nav" href="../tech/quality/50-部署上線.html">50 部署上線</a></details><a class="nav" href="../../spring-boot/tutorial/index.html">Spring Boot 逐步課程</a><div class="foot">由 Markdown 自動產生<br>環境建置請編輯根目錄 README.md<br>其餘文件請編輯 <code>docs/</code> 下的 .md<br>再執行 <code>python3 docs/build_site.py</code></div></nav>
+<div class="main"><div class="wrap">
+<article>
+<h1 id="cloudflare-r2-圖片上傳react-spring-boot">Cloudflare R2 圖片上傳（React + Spring Boot）</h1>
+<p>這份教學從 Cloudflare 帳號已註冊開始，帶你建立 R2 儲存空間，並整理本專案串接商品圖片上傳的步驟。</p>
+<h2 id="先了解本專案目前的狀態">先了解本專案目前的狀態</h2>
+<p>本專案使用 <a class="gloss" href="../tech/frontend/34-React與JSX.html" title="看這個技術的白話說明">React</a>、<a class="gloss" href="../tech/backend/14-SpringBoot是什麼.html" title="看這個技術的白話說明">Spring Boot</a> 與 <a class="gloss" href="../tech/database/22-關聯式資料庫與SQL.html" title="看這個技術的白話說明">MySQL</a>。共用圖片上傳元件、R2 簽名 API 與展示範例已完成；管理菜單畫面仍未接上 <code>menu_item.image_url</code> 的儲存流程。</p>
+<ul>
+<li><a href="../spec/modules/M1-菜單與品項.html">菜單與品項規格</a>將圖片上傳列為延伸功能，基礎版本可以先使用圖片網址。</li>
+<li><a href="../spec/03-資料庫設計.html">資料庫規格</a>的 <code>menu_item</code> 已有 <code>image_url VARCHAR(500)</code>。</li>
+<li>Northwind 的 <code>Product</code> 是練習 API，不是火鍋菜單資料表；請依正式的 <code>menu_item</code> 規格串接。</li>
+</ul>
+<h2 id="上傳流程長什麼樣子">上傳流程長什麼樣子</h2>
+<p>圖片由瀏覽器直接傳到 R2，Spring Boot 驗證檔案資料、簽發短效網址，並在上傳後確認檔案。R2 憑證不會放進 React 前端。現在範例尚未接員工登入或菜單資料庫。</p>
+<pre class="mermaid">sequenceDiagram
+    participant Browser as 瀏覽器
+    participant API as Spring Boot
+    participant Staging as 私有 R2 暫存 Bucket
+    participant Public as 公開 R2 圖片 Bucket
+    Browser->>API: 申請短效網址（檔案類型、大小）
+    API->>API: 建立隨機暫存 key 與短效上傳票據
+    API-->>Browser: 回傳 PUT 網址與上傳票據
+    Browser->>Staging: PUT 到 pending/ 前綴
+    Staging-->>Browser: 上傳成功
+    Browser->>API: 用上傳票據確認檔案
+    API->>Staging: HeadObject 檢查檔案大小與 Content-Type
+    API->>Public: 比對 ETag 後複製到 images/
+    API->>Staging: 刪除暫存物件
+    Public-->>API: 回傳正式圖片網址與 objectKey
+    API-->>Browser: 回傳圖片網址與 objectKey
+</pre>
+<h2 id="1-啟用-r2-並建立-bucket">1. 啟用 R2 並建立 Bucket</h2>
+<ol>
+<li>登入 <a href="https://dash.cloudflare.com/">Cloudflare Dashboard</a>，開啟 <strong>Storage &amp; databases → R2 object storage</strong>。</li>
+<li>如果 R2 尚未啟用，先完成畫面上的啟用流程。建立 R2 API token 前，帳號必須先啟用 R2。</li>
+<li>選擇 <strong>Create bucket</strong>，建立公開圖片 Bucket，例如 <code>smart-order-menu-images</code>，以及另一個私有暫存 Bucket，例如 <code>smart-order-menu-staging</code>。名稱使用小寫英文字母、數字與連字號。</li>
+<li>兩個 Bucket 的儲存類別都選 <strong>Standard</strong>。R2 的免費額度適用於 Standard，不適用於 Infrequent Access。</li>
+<li>暫時上傳一張測試用的菜單圖片，例如 <code>images/test.webp</code> 到圖片 Bucket，確認稍後設定公開網址後能載入。</li>
+</ol>
+<p>圖片 Bucket 只放完成驗證、可公開展示的圖片；暫存 Bucket 必須保持私有。前端的短效 PUT 網址會指向暫存 Bucket，因此不要替它開啟 Public Development URL 或自訂網域。</p>
+<p>R2 Standard 每月免費額度為 10 GB-month 儲存、100 萬次 Class A 操作、1,000 萬次 Class B 操作，對外傳輸免費。超出儲存或操作額度會依用量計費，請在 Dashboard 留意使用量。<a href="https://developers.cloudflare.com/r2/pricing/">R2 定價與免費額度</a></p>
+<h2 id="2-設定圖片的公開讀取網址">2. 設定圖片的公開讀取網址</h2>
+<p>菜單圖片會顯示給所有顧客看，因此圖片可以公開讀取；上傳權限仍由 Spring Boot 控制。</p>
+<h3 id="開發測試">開發測試</h3>
+<ol>
+<li>開啟 <code>smart-order-menu-images</code> 圖片 Bucket 的 <strong>Settings</strong>。</li>
+<li>在 <strong>Public Development URL</strong> 區塊啟用公開網址。</li>
+<li>複製 Cloudflare 提供的 <code>r2.dev</code> 網址，打開剛才上傳的測試圖片網址，確認圖片能載入。</li>
+</ol>
+<p><code>r2.dev</code> 有流量限制，只適合開發測試。正式環境請將 Bucket 連到你控制的自訂網域，例如 <code>images.example.com</code>；該網域必須先加入同一個 Cloudflare 帳號。自訂網域也能使用 Cloudflare Cache。<a href="https://developers.cloudflare.com/r2/buckets/public-buckets/">公開 Bucket 與自訂網域</a></p>
+<blockquote>
+<p>只有 <code>smart-order-menu-images</code> 圖片 Bucket 開啟公開讀取。<code>smart-order-menu-staging</code> 暫存 Bucket 不可公開，裡面可能有尚未完成驗證的上傳內容。</p>
+</blockquote>
+<h2 id="3-建立只限此-bucket-的-r2-api-token">3. 建立只限此 Bucket 的 R2 API token</h2>
+<ol>
+<li>在 R2 頁面找到 <strong>Manage API Tokens</strong>，建立 R2 API token。這裡建立的是 R2 的 S3 API 憑證，不是一般 Cloudflare API token。</li>
+<li>權限選 <strong>Object Read &amp; Write</strong>，並將範圍限制在 <code>smart-order-menu-images</code> 和 <code>smart-order-menu-staging</code> 這兩個 Bucket。不要授予帳號內其他 Bucket 的存取權。</li>
+<li>建立後立刻複製 <strong>Access Key ID</strong> 與 <strong>Secret Access Key</strong>。Secret Access Key 只會顯示這一次。</li>
+<li>在 R2 Overview 找到 <strong>Account ID</strong>。S3 API endpoint 格式如下：</li>
+</ol>
+<p><code>text
+   https://&lt;ACCOUNT_ID&gt;.r2.cloudflarestorage.com</code></p>
+<p>R2 token 與 endpoint 的建立步驟見 <a href="https://developers.cloudflare.com/r2/api/tokens/">Cloudflare R2 Authentication</a>。Java AWS SDK v2 使用 <code>Region.of("auto")</code>；R2 官方範例也列出 Java client 的必要設定。<a href="https://developers.cloudflare.com/r2/examples/aws/aws-sdk-java/">Java SDK 範例</a></p>
+<h2 id="4-設定瀏覽器上傳的-cors">4. 設定瀏覽器上傳的 CORS</h2>
+<p>React 開發伺服器預設使用 <code>http://localhost:5173</code>。到 <code>smart-order-menu-staging</code> 暫存 Bucket 的 <strong>Settings → <a class="gloss" href="../tech/web/11-CORS跨來源.html" title="看這個技術的白話說明">CORS</a> Policy → Add CORS policy → <a class="gloss" href="../tech/web/09-JSON.html" title="看這個技術的白話說明">JSON</a></strong>，加入以下規則。正式前端部署後，把 <code>https://your-frontend.example.com</code> 換成實際網址；Origin 要包含協定與網域，不要加路徑。CORS 只需設定在瀏覽器直接 PUT 的私有暫存 Bucket。</p>
+<pre><code class="language-json">[
+  {
+    &quot;AllowedOrigins&quot;: [
+      &quot;http://localhost:5173&quot;,
+      &quot;https://your-frontend.example.com&quot;
+    ],
+    &quot;AllowedMethods&quot;: [&quot;PUT&quot;],
+    &quot;AllowedHeaders&quot;: [&quot;Content-Type&quot;],
+    &quot;ExposeHeaders&quot;: [&quot;ETag&quot;],
+    &quot;MaxAgeSeconds&quot;: 3600
+  }
+]
+</code></pre>
+<p>瀏覽器用短效網址跨來源執行 <code>PUT</code> 時，仍會檢查 CORS；即使網址簽章正確，CORS 沒設定好也會被瀏覽器擋下。<a href="https://developers.cloudflare.com/r2/buckets/cors/">R2 CORS 設定</a></p>
+<h2 id="5-把憑證放在後端環境變數">5. 把憑證放在後端環境變數</h2>
+<p>將以下欄位加到自己本機的 <code>backend/.env</code>。<code>R2_PUBLIC_BASE_URL</code> 開發時填 <code>r2.dev</code> 網址，正式環境改填自訂網域；網址最後不要加 <code>/</code>。</p>
+<pre><code class="language-properties">R2_ACCOUNT_ID=你的_ACCOUNT_ID
+R2_ACCESS_KEY_ID=你的_ACCESS_KEY_ID
+R2_SECRET_ACCESS_KEY=你的_SECRET_ACCESS_KEY
+R2_BUCKET_NAME=smart-order-menu-images
+R2_STAGING_BUCKET_NAME=smart-order-menu-staging
+R2_PUBLIC_BASE_URL=https://你的公開圖片網域
+R2_MAX_UPLOAD_BYTES=5242880
+R2_ALLOW_ANONYMOUS_UPLOADS=false
+</code></pre>
+<p>S3 API endpoint 會由 Account ID 組成：<code>https://&lt;ACCOUNT_ID&gt;.r2.cloudflarestorage.com</code>。不要把 Access Key 或 Secret Access Key 放在 <code>frontend/.env</code>、React 程式碼、<a class="gloss" href="../tech/team/02-Git是什麼.html" title="看這個技術的白話說明">Git</a> commit 或公開訊息裡。正式部署時，將相同欄位設定在後端主機的環境變數／Secrets 設定中，不要依賴開發機的 <code>backend/.env</code>。</p>
+<h2 id="6-實作-spring-boot-簽發網址-api">6. 實作 Spring Boot 簽發網址 API</h2>
+<p>後端已在 <code>backend/pom.xml</code> 加入 AWS SDK for Java v2。R2 設定由 <code>R2StorageProperties</code> 載入，S3 client 與 presigner 在 <code>R2StorageConfiguration</code> 建立；使用 <code>endpointOverride</code>、<code>Region.of("auto")</code> 和 path-style access。<a href="https://developers.cloudflare.com/r2/examples/aws/aws-sdk-java/">R2 Java SDK 範例</a></p>
+<p>目前提供以下 API：</p>
+<pre><code class="language-text">GET  /api/uploads/config
+POST /api/uploads/presign
+POST /api/uploads/complete
+</code></pre>
+<p><code>/config</code> 回傳 <code>R2_MAX_UPLOAD_BYTES</code>，讓元件使用與後端相同的檔案大小限制。<code>/presign</code> 接受 JPEG、PNG、WebP，並建立不可由前端指定 key 的短效上傳票據。PUT 網址有效 10 分鐘，且簽章綁定 Content-Type。物件先傳到私有暫存 Bucket 的 <code>pending/</code>；<code>/complete</code> 以票據找到該物件，使用 <code>HeadObject</code> 檢查實際大小與 Content-Type，再用 ETag 條件複製到公開圖片 Bucket 的 <code>images/</code>，最後刪除暫存物件並回傳正式圖片網址與 object key。分開 Bucket 可避免尚未驗證的圖片被公開讀取；ETag 條件可避免檢查後、複製前暫存內容被替換。上傳票據存在單一後端程序的記憶體中，適合本機範例；多實例部署需改用共用儲存。</p>
+<pre><code class="language-text">smart-order-menu-staging: pending/9f0c...a21.webp
+        ↓ 檢查與 ETag 條件複製
+smart-order-menu-images:  images/9f0c...a21.webp
+</code></pre>
+<p>API 實作位於 <code>backend/src/main/java/tw/ispan/smartorder/controller/ImageUploadController.java</code> 與 <code>service/ImageUploadService.java</code>。<code>GET /api/uploads/config</code> 只回傳公開的大小限制；簽發與確認上傳的 POST API 預設由 <code>SecurityConfig</code> 拒絕呼叫。本機展示時才在 <code>backend/.env</code> 暫設 <code>R2_ALLOW_ANONYMOUS_UPLOADS=true</code>。正式／共用環境保持 <code>false</code>，接入員工驗證後再限制管理者存取。設定範例在 <code>backend/.env.example</code>。</p>
+<p>後端只接受 JPEG、PNG、WebP，再由 Content-Type 決定副檔名；不採用前端送來的原始檔名或副檔名。上傳票據與 object key 綁定，前端無法用公開圖片網址要求簽發覆寫網址。</p>
+<pre><code class="language-java">S3Presigner presigner = S3Presigner.builder()
+    .endpointOverride(URI.create(endpoint))
+    .credentialsProvider(StaticCredentialsProvider.create(
+        AwsBasicCredentials.create(accessKey, secretKey)))
+    .region(Region.of(&quot;auto&quot;))
+    .serviceConfiguration(S3Configuration.builder()
+        .pathStyleAccessEnabled(true)
+        .build())
+    .build();
+
+String extension = extensionForValidatedContentType(contentType);
+String objectKey = &quot;pending/&quot; + UUID.randomUUID() + extension;
+
+PutObjectRequest putObject = PutObjectRequest.builder()
+    .bucket(stagingBucketName) // 私有暫存 Bucket
+    .key(objectKey)
+    .contentType(contentType)
+    .build();
+
+PutObjectPresignRequest request = PutObjectPresignRequest.builder()
+    .signatureDuration(Duration.ofMinutes(10))
+    .putObjectRequest(putObject)
+    .build();
+
+String uploadUrl = presigner.presignPutObject(request).url().toString();
+</code></pre>
+<p>API 回傳 <code>uploadUrl</code> 與不透明的 <code>uploadToken</code>；暫存 key 留在後端。短效網址有效 10 分鐘，並綁定特定暫存 key 和 <code>Content-Type</code>。若簽章限制了 <code>Content-Type</code>，瀏覽器 PUT 時必須送出完全相同的 header。短效網址等同暫時的上傳權限，不要寫入一般應用程式 log。<a href="https://developers.cloudflare.com/r2/api/s3/presigned-urls/">R2 Presigned URLs</a></p>
+<p>瀏覽器送來的檔案大小只是申報值；PUT 本身沒有預先限制實際傳輸量。<code>/complete</code> 會用 <code>HeadObject</code> 比對實際大小與 Content-Type，不符合就刪除暫存物件；未完成確認的 <code>pending/</code> 物件則由<strong>私有暫存 Bucket</strong>的 Lifecycle Rule 在一天後到期清除。到 <code>smart-order-menu-staging</code> → <strong>Settings → Object Lifecycle Rules</strong>，新增套用 <code>pending/</code> 前綴、一天後刪除的規則。<a href="https://developers.cloudflare.com/r2/buckets/object-lifecycles/">R2 Object Lifecycles</a>。<code>HeadObject</code> 讀到的是物件標頭，不會檢查檔案內容；若要確認實際內容是圖片，還要由後端檢查檔案簽章或解碼圖片。</p>
+<h2 id="7-從-react-上傳圖片">7. 從 React 上傳圖片</h2>
+<p>共用元件位於 <code>frontend/src/components/upload/ImageUpload.tsx</code>，上傳 API 呼叫集中在 <code>frontend/src/services/api/uploads/uploadApi.ts</code>。元件先讀取後端大小限制，再檢查格式與大小、取得短效網址、直接 PUT 到 R2，最後呼叫 <code>/complete</code> 確認檔案。執行範例可開啟前端 <code>/demo/r2-upload</code>，或參考 <code>frontend/src/features/demo/R2UploadDemo.tsx</code>。</p>
+<p>在表單使用：</p>
+<pre><code class="language-ts">const [image, setImage] = useState&lt;UploadedImage | null&gt;(null)
+
+&lt;ImageUpload value={image} onChange={setImage} label=&quot;菜單圖片&quot; /&gt;
+</code></pre>
+<p>上傳成功後，元件回傳 <code>{ imageUrl, objectKey }</code>。新增／更新菜單時應傳 <code>objectKey</code>，由菜單 API 確認 key 後再寫入資料庫；不要直接信任瀏覽器提交的任意圖片網址。現在的展示元件尚未接到菜單新增／編輯 API。</p>
+<h2 id="8-上傳失敗時的前端處理">8. 上傳失敗時的前端處理</h2>
+<p>目前元件的流程是「讀取限制 → 取得簽章 → 上傳 R2 → <code>/complete</code> 確認」。確認成功後才呼叫 <code>onChange</code>；元件本身不會儲存菜單資料。</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>失敗階段</th>
+<th>前端行為</th>
+<th>重試方式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>讀取大小限制失敗</td>
+<td>停用檔案選擇，提示無法讀取後端設定</td>
+<td>重試讀取設定 API</td>
+</tr>
+<tr>
+<td>取得上傳網址失敗</td>
+<td>保留所選檔案，不呼叫 R2</td>
+<td>網路或伺服器暫時錯誤時，重試簽發 API</td>
+</tr>
+<tr>
+<td>PUT 上傳失敗</td>
+<td>保留檔案與上傳票據，顯示可重試狀態</td>
+<td>網路中斷或 5xx 可手動重試；網址過期時用同一張票據向後端重新簽發。CORS、Content-Type 不符等設定錯誤先修正再試</td>
+</tr>
+<tr>
+<td><code>/complete</code> 確認失敗</td>
+<td>保留檔案與上傳票據；尚未呼叫 <code>onChange</code></td>
+<td>404 或 409 時重新 PUT 暫存物件；其他暫時錯誤可再次呼叫確認</td>
+</tr>
+</tbody>
+</table></div>
+<p>替換既有圖片時，失敗不會呼叫 <code>onChange</code>，父層原本保存的圖片值仍在；元件會顯示本次待上傳檔案的預覽。R2 PUT 若因網路中斷而沒有收到回應，前端不一定知道檔案是否已抵達。對同一張圖重試時沿用同一張上傳票據；後端會為同一個暫存 key 重新簽發短效網址，因此不會多建一張正式圖片。若確認 API 回 404，或回 409 表示檢查期間暫存內容改變，元件會用同一張票據重新 PUT 暫存檔，再要求後端確認。</p>
+<p>目前元件提供手動重試，不會背景自動重試。每次重試都用相同上傳票據重新取得短效網址；如果 <code>/complete</code> 回 404 或 409，元件會重新 PUT 暫存物件。上傳票據過期後需重新取得新票據。R2 PUT 回 403 可先檢查網址是否過期、<code>Content-Type</code> 是否與簽章一致、token 和 bucket 權限是否正確。瀏覽器顯示 CORS error 時，檢查前端 Origin、<code>PUT</code> 和 <code>Content-Type</code> 的 CORS 設定。</p>
+<p>菜單資料儲存目前尚未接入。整合菜單表單時，若圖片已完成上傳但菜單儲存失敗，保留 <code>objectKey</code> 並只重試菜單儲存；成功儲存新圖片後，再由後端清除未被 <code>menu_item.image_url</code> 引用的孤兒圖片與舊圖片。</p>
+<h2 id="9-手動確認設定">9. 手動確認設定</h2>
+<p>R2 設定完成後，可依下列順序測試共用元件：</p>
+<ul>
+<li><input type="checkbox" disabled> 公開圖片 Bucket 與私有暫存 Bucket 都已建立，儲存類別為 Standard。</li>
+<li><input type="checkbox" disabled> 測試圖片可從開發用公開網址開啟。</li>
+<li><input type="checkbox" disabled> 只有圖片 Bucket 啟用公開讀取；暫存 Bucket 保持私有。</li>
+<li><input type="checkbox" disabled> R2 token 僅有這兩個 Bucket 的 Object Read &amp; Write 權限。</li>
+<li><input type="checkbox" disabled> 暫存 Bucket 的 CORS 已允許 <code>http://localhost:5173</code> 的 <code>PUT</code> 與 <code>Content-Type</code>。</li>
+<li><input type="checkbox" disabled> 暫存 Bucket 的 Lifecycle Rule 會在一天後刪除 <code>pending/</code> 前綴的未完成物件。</li>
+<li><input type="checkbox" disabled> R2 憑證只設定在後端環境變數。</li>
+<li><input type="checkbox" disabled> 本機展示才把 <code>R2_ALLOW_ANONYMOUS_UPLOADS</code> 設為 <code>true</code>；其他環境保持 <code>false</code>，等接入員工驗證後再限制管理者存取。</li>
+<li><input type="checkbox" disabled> <code>/demo/r2-upload</code> 可成功上傳並顯示公開圖片網址。</li>
+<li><input type="checkbox" disabled> 菜單新增／編輯 API 已將確認過的 <code>objectKey</code> 寫入 <code>menu_item.image_url</code>（尚未串接）。</li>
+</ul>
+<h3 id="常見錯誤">常見錯誤</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>現象</th>
+<th>優先檢查</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>瀏覽器顯示 CORS error</td>
+<td><code>AllowedOrigins</code> 是否逐字符合前端網址（含 <code>http</code>／<code>https</code> 與 port）、是否允許 <code>PUT</code> 和 <code>Content-Type</code></td>
+</tr>
+<tr>
+<td>PUT 回 403</td>
+<td>簽章網址是否過期；上傳 <code>Content-Type</code> 是否與簽發時相同；Account ID、endpoint、bucket 和 key 是否一致</td>
+</tr>
+<tr>
+<td>上傳成功但圖片打不開</td>
+<td>是否把圖片 Bucket（而不是暫存 Bucket）設為公開；<code>image_url</code> 的網域和 object key 是否正確</td>
+</tr>
+<tr>
+<td>Java SDK 寫入回 403 signature mismatch</td>
+<td>若由 Java SDK 直接 <code>PutObject</code>，確認 R2 範例要求的 <code>chunkedEncodingEnabled(false)</code>；瀏覽器直傳時則先檢查簽章的 headers</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="官方文件">官方文件</h2>
+<ul>
+<li><a href="https://developers.cloudflare.com/r2/get-started/s3/">R2 入門與 S3 API</a></li>
+<li><a href="https://developers.cloudflare.com/r2/pricing/">R2 定價</a></li>
+<li><a href="https://developers.cloudflare.com/r2/api/tokens/">R2 Authentication 與 token 權限</a></li>
+<li><a href="https://developers.cloudflare.com/r2/buckets/public-buckets/">公開 Bucket 與自訂網域</a></li>
+<li><a href="https://developers.cloudflare.com/r2/buckets/cors/">Bucket CORS</a></li>
+<li><a href="https://developers.cloudflare.com/r2/api/s3/presigned-urls/">Presigned URLs</a></li>
+<li><a href="https://developers.cloudflare.com/r2/examples/aws/aws-sdk-java/">AWS SDK for Java v2</a></li>
+</ul><div class="pager"><a href="../ui/14-色彩Token.html"><div class="k">← 上一篇</div><div class="n">14 色彩 Token</div></a><a class="next" href="../spring-boot/README.html"><div class="k">下一篇 →</div><div class="n">Spring Boot 學習導覽</div></a></div>
+</article>
+<aside class="toc"><div class="tt">本頁目錄</div><a href="#先了解本專案目前的狀態">先了解本專案目前的狀態</a><a href="#上傳流程長什麼樣子">上傳流程長什麼樣子</a><a href="#1-啟用-r2-並建立-bucket">1. 啟用 R2 並建立 Bucket</a><a href="#2-設定圖片的公開讀取網址">2. 設定圖片的公開讀取網址</a><a href="#3-建立只限此-bucket-的-r2-api-token">3. 建立只限此 Bucket 的 R2 API token</a><a href="#4-設定瀏覽器上傳的-cors">4. 設定瀏覽器上傳的 CORS</a><a href="#5-把憑證放在後端環境變數">5. 把憑證放在後端環境變數</a><a href="#6-實作-spring-boot-簽發網址-api">6. 實作 Spring Boot 簽發網址 API</a><a href="#7-從-react-上傳圖片">7. 從 React 上傳圖片</a><a href="#8-上傳失敗時的前端處理">8. 上傳失敗時的前端處理</a><a href="#9-手動確認設定">9. 手動確認設定</a><a href="#官方文件">官方文件</a></aside>
+</div></div>
+</div>
+<script src="../vendor/mermaid.min.js"></script>
+<script>
+mermaid.initialize({
+  startOnLoad: true, securityLevel: 'loose', theme: 'base',
+  fontFamily: '"Noto Sans TC","PingFang TC",system-ui,sans-serif',
+  themeVariables: {
+    background:'#FFFFFF',
+    primaryColor:'#FBE8E3', primaryTextColor:'#2B211C', primaryBorderColor:'#C8442E',
+    secondaryColor:'#FCF0DC', secondaryBorderColor:'#E8A33D',
+    tertiaryColor:'#F5EFE5', tertiaryBorderColor:'#E6DED2',
+    lineColor:'#9C8E84', textColor:'#2B211C',
+    mainBkg:'#FBE8E3', nodeBorder:'#C8442E', clusterBkg:'#FBF7F0', clusterBorder:'#E6DED2',
+    titleColor:'#2B211C', edgeLabelBackground:'#FBF7F0',
+    actorBkg:'#FBE8E3', actorBorder:'#C8442E', actorTextColor:'#2B211C',
+    signalColor:'#6B5D54', signalTextColor:'#2B211C',
+    labelBoxBkgColor:'#FCF0DC', labelBoxBorderColor:'#E8A33D', labelTextColor:'#2B211C',
+    loopTextColor:'#2B211C', noteBkgColor:'#FCF0DC', noteBorderColor:'#E8A33D', noteTextColor:'#2B211C',
+    activationBkgColor:'#E6DED2', activationBorderColor:'#9C8E84', sequenceNumberColor:'#FFFFFF',
+    altBackground:'#F5EFE5',
+    taskBkgColor:'#FBE8E3', taskBorderColor:'#C8442E', taskTextColor:'#2B211C',
+    taskTextOutsideColor:'#2B211C', taskTextDarkColor:'#2B211C',
+    activeTaskBkgColor:'#E8A33D', activeTaskBorderColor:'#C9862A',
+    doneTaskBkgColor:'#E4EFE7', doneTaskBorderColor:'#3F7A4E',
+    critBkgColor:'#C8442E', critBorderColor:'#A63522',
+    gridColor:'#E6DED2', todayLineColor:'#B3261E',
+    sectionBkgColor:'#FBF7F0', sectionBkgColor2:'#F5EFE5', altSectionBkgColor:'#FFFFFF',
+    classText:'#2B211C',
+    attributeBackgroundColorOdd:'#FFFFFF', attributeBackgroundColorEven:'#F5EFE5'
+  },
+  gantt:{barHeight:18,barGap:5,topPadding:52,leftPadding:180,fontSize:12},
+  mindmap:{padding:12},
+  sequence:{actorMargin:42,boxTextMargin:6,noteMargin:10,messageMargin:32,width:150},
+  er:{entityPadding:12,minEntityWidth:110}
+});
+</script>
+<script>document.addEventListener('click',function(e){var sb=document.getElementById('sb');if(window.innerWidth<=940&&sb.classList.contains('open')&&!sb.contains(e.target)&&!e.target.closest('.menubtn')){sb.classList.remove('open');}});</script>
+</body>
+</html>

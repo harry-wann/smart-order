@@ -100,6 +100,12 @@
 
 技術短篇使用火鍋店情境；Spring Boot 課程使用 Northwind 練習資料庫。兩者講同一套觀念，例子與資料表名稱不同，請不要把 `Products` 直接當作正式菜單表。
 
+## 操作教學
+
+| 文件 | 內容 |
+|---|---|
+| [Cloudflare R2 圖片上傳](guides/00-Cloudflare-R2圖片上傳.md) | 從建立 Bucket、設定公開圖片網址與 CORS，到 React + Spring Boot 的直傳流程 |
+
 ---
 
 ## HTML 版（給人看）

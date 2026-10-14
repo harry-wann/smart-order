@@ -8,6 +8,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.OffsetDateTime;
 import java.util.Map;
@@ -46,6 +47,13 @@ public class ApiExceptionHandler {
                 ? "JSON 格式錯誤或欄位型別不正確"
                 : exception.getMessage();
         return response(HttpStatus.BAD_REQUEST, message, request);
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ApiError> handleResponseStatus(
+            ResponseStatusException exception, HttpServletRequest request) {
+        return response(HttpStatus.valueOf(exception.getStatusCode().value()),
+                exception.getReason() == null ? "請求無法完成" : exception.getReason(), request);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)

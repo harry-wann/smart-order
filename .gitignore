@@ -99,3 +99,4 @@ backend/.vscode/*
 *.log
 logs/
 tmp/
+backend/qwe.puml
