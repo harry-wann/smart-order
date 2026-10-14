@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>S-07｜預約管理・離線修訂稿（2026-10-14）</title>
+<link rel="stylesheet" href="../../_shared.css">
+<!-- 2026-10-14 offline review variant; not synced to Figma. -->
+</head>
+<body>
+<!-- #thumbmode：總覽頁用 iframe 取縮圖時，只留第一個畫框 -->
+<span id="thumbmode"></span>
+<div class="stage">
+
+<div>
+  <p class="meta"><b>S-07｜預約管理</b><code>1280 × 800</code><code>/admin/reservations</code><a class="flink" href="https://www.figma.com/design/AFqSmBl4P5HUHTI7oKAPZt/%E7%81%AB%E9%8D%8B%E9%BB%9E%E9%A4%90%E7%B3%BB%E7%B5%B1?node-id=1233-3365" target="_blank" rel="noopener">在 Figma 開啟 ↗</a></p>
+  <div class="frame f-desk">
+    <div class="admin">
+        <aside class="side">
+        <div class="brand">鼎沸鍋物<small>SMART ORDER</small></div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg>桌況總覽</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M17 21H7V12.6a4.5 4.5 0 1 1 2.5-8.2 4 4 0 0 1 5 0A4.5 4.5 0 1 1 17 12.6z"/><path d="M7 17h10"/></svg>出菜看板</div>
+        <div class="nav-item on"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M3 10h18M8 2.5v4M16 2.5v4"/></svg>預約管理</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>候位管理</div>
+        <div class="nav-sep">菜　單</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>菜單管理</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>選項群組</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>庫存管理</div>
+        <div class="nav-sep">設　定</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>座位管理</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M3 3v18h18M18 17V9M13 17V5M8 17v-3"/></svg>報表</div>
+        <div class="fill"></div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>小美・外場</div>
+        </aside>
+      <div class="main">
+        <header class="topbar"><div class="h2">預約管理</div>
+          <div class="r g8" style="margin-left:8px">
+            <button class="iconbtn" style="width:36px;height:36px"><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+            <span class="num" style="font-weight:700">9/13（日）</span>
+            <span class="t-cap num">現在 18:06</span>
+            <button class="iconbtn" style="width:36px;height:36px"><svg class="ic ic-sm" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button>
+          </div>
+          <span class="fill"></span>
+          </header>
+        <div class="content"><div class="c g16" style="height:100%">
+          <div class="statstrip">
+            <div class="st"><span class="v">8</span><span class="k">今日預約</span></div>
+            <div class="vr"></div>
+            <div class="st"><span class="v" style="color:var(--success)">1</span><span class="k">已報到</span></div>
+            <div class="vr"></div>
+            <div class="st"><span class="v" style="color:var(--accent-600)">4</span><span class="k">待報到</span></div>
+            <div class="vr"></div>
+            <div class="st"><span class="v" style="color:var(--danger)">1</span><span class="k">逾時未到</span></div>
+            <div class="vr"></div>
+            <div class="st"><span class="v">2</span><span class="k">已預先點餐</span></div>
+            <span class="fill"></span>
+            <span class="t-cap">可預約比例 70%・18 桌中開放 13 桌</span>
+          </div>
+
+          <table class="dt">
+            <tr><th style="width:72px">時段</th><th style="width:96px">姓名</th><th style="width:120px">電話</th>
+                <th style="width:64px">人數</th><th style="width:64px">配桌</th>
+                <th style="width:160px">預先點餐</th><th style="width:196px">狀態</th><th>操作</th></tr>
+            <tr>
+              <td class="n" style="font-weight:700;font-size:15px">17:00</td>
+              <td><b style="font-size:15px">王大明</b></td>
+              <td class="n">0912***678</td>
+              <td class="n">2 位</td>
+              <td class="n" style="font-weight:700">A01</td>
+              <td><span class="dim">—</span></td>
+              <td><span class="badge b-done">已報到</span></td>
+              <td><button class="btn btn-ghost btn-sm">看桌位</button></td>
+            </tr><tr>
+              <td class="n" style="font-weight:700;font-size:15px">17:30</td>
+              <td><b style="font-size:15px">鄭文彬</b></td>
+              <td class="n">0916***728</td>
+              <td class="n">2 位</td>
+              <td class="n" style="font-weight:700">B02</td>
+              <td><span class="dim">—</span></td>
+              <td><span class="badge b-sold">逾時未到</span></td>
+              <td><button class="btn btn-ghost btn-sm">登記候位</button></td>
+            </tr><tr style="opacity:.55">
+              <td class="n" style="font-weight:700;font-size:15px">18:00</td>
+              <td><b style="font-size:15px">張小雯</b></td>
+              <td class="n">0921***037</td>
+              <td class="n">2 位</td>
+              <td class="n"><span class="dim">—</span></td>
+              <td><span class="dim">—</span></td>
+              <td><div class="r g8"><span class="badge b-plain">已取消</span><span class="t-cap" style="white-space:nowrap">店家代取消・小美</span></div></td>
+              <td><button class="btn btn-ghost btn-sm">明細</button></td>
+            </tr><tr>
+              <td class="n" style="font-weight:700;font-size:15px">18:30</td>
+              <td><b style="font-size:15px">陳怡君</b></td>
+              <td class="n">0933***210</td>
+              <td class="n">4 位</td>
+              <td class="n" style="font-weight:700">A08</td>
+              <td><span class="badge b-pri">4 項・預估 1,980</span></td>
+              <td><div class="r g8"><span class="badge b-info">已確認</span><span class="t-hold"><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="10.5" width="16" height="11" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>保留 A08</span></div></td>
+              <td><div class="r g8"><button class="btn btn-primary btn-sm">報到開桌</button><button class="btn btn-ghost btn-sm">取消訂位</button></div></td>
+            </tr><tr>
+              <td class="n" style="font-weight:700;font-size:15px">18:45</td>
+              <td><b style="font-size:15px">林家豪</b></td>
+              <td class="n">0935***806</td>
+              <td class="n">2 位</td>
+              <td class="n" style="font-weight:700">B02</td>
+              <td><span class="dim">—</span></td>
+              <td><span class="badge b-info">已確認</span></td>
+              <td><div class="r g8"><span class="t-cap num">18:15 起可報到</span><button class="btn btn-ghost btn-sm">取消訂位</button></div></td>
+            </tr><tr>
+              <td class="n" style="font-weight:700;font-size:15px">19:00</td>
+              <td><b style="font-size:15px">吳美玲</b></td>
+              <td class="n">0987***553</td>
+              <td class="n">8 位</td>
+              <td class="n" style="font-weight:700">C02</td>
+              <td><span class="badge b-pri">7 項・預估 3,240</span></td>
+              <td><span class="badge b-info">已確認</span></td>
+              <td><div class="r g8"><span class="t-cap num">18:30 起可報到</span><button class="btn btn-ghost btn-sm">取消訂位</button></div></td>
+            </tr><tr>
+              <td class="n" style="font-weight:700;font-size:15px">19:30</td>
+              <td><b style="font-size:15px">黃先生</b></td>
+              <td class="n">0955***192</td>
+              <td class="n">4 位</td>
+              <td class="n" style="font-weight:700">A04</td>
+              <td><span class="dim">—</span></td>
+              <td><span class="badge b-info">已確認</span></td>
+              <td><div class="r g8"><span class="t-cap num">19:00 起可報到</span><button class="btn btn-ghost btn-sm">取消訂位</button></div></td>
+            </tr><tr style="opacity:.55">
+              <td class="n" style="font-weight:700;font-size:15px">20:00</td>
+              <td><b style="font-size:15px">劉品妤</b></td>
+              <td class="n">0978***361</td>
+              <td class="n">4 位</td>
+              <td class="n"><span class="dim">—</span></td>
+              <td><span class="dim">—</span></td>
+              <td><span class="badge b-plain">已取消</span></td>
+              <td><button class="btn btn-ghost btn-sm">明細</button></td>
+            </tr>
+          </table>
+
+          <div class="infobox ib-warn"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5.2l3.2 1.8"/></svg>
+            <div><b>開始前 30 分～開始後 10 分可以報到</b>，這段時間配到的桌會先鎖住；<b>「取消訂位」隨時可按</b>。
+            逾時請改登記候位。<b>預先點餐是預估金額，訂位不收錢</b>。</div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div>
+  <p class="meta"></p>
+<div class="sidenote">
+  <b>什麼時候能報到</b>
+  <dl style="margin:0">
+    <dt>開始前 30 分 ～ 開始後 10 分</dt>
+    <dd>只有這段時間出現「報到開桌」。<br>
+        現在 18:06，所以 18:30 那筆有按鈕<br>
+        （18:00 那筆已經取消）</dd>
+    <dt>更早的列</dt>
+    <dd>按鈕位置換成灰字「18:15 起可報到」。<br>
+        硬送會回 409 RESERVATION_TOO_EARLY<br>
+        「還沒到可報到時間（18:15 起）」</dd>
+    <dt>逾時未到那一列</dt>
+    <dd>沒有報到鈕，換成 ghost「登記候位」，<br>
+        帶著姓名人數去 S-10。報到 API 自己看時間，<br>
+        超過就回 409 RESERVATION_EXPIRED</dd>
+  </dl>
+  <b class="mt16" style="display:block">配到的桌會先鎖住</b>
+  <dl style="margin:0">
+    <dt>保留 A08</dt>
+    <dd>同一段時間（開始前 30 分～後 10 分）<br>
+        配到的空桌在桌況上顯示「預約保留」，<br>
+        狀態欄多一行小字</dd>
+    <dt>取消訂位（櫃檯代客取消）：隨時可按</dt>
+    <dd>每一筆已確認的都有，<b>不受任何期限</b>，<br>
+        通常是客人來電。<br>
+        跟 S-02d 同一個二次確認：<br>
+        「確定要取消 陳怡君 18:30 的訂位嗎？<br>
+        通常是客人來電取消。<br>
+        取消後 A08 會變回空桌，<br>
+        這筆訂位無法恢復。」<br>
+        （姓名、時間、桌號換成那一列的）<br>
+        POST /api/admin/reservations/{id}/cancel<br>
+        body 可帶 reason。訂位轉 CANCELLED，<br>
+        配桌清空，桌子與名額一起釋出。<br>
+        不是 CONFIRMED 的回<br>
+        409 RESERVATION_NOT_CANCELLABLE</dd>
+    <dt>店家代取消的列</dt>
+    <dd>膠囊「已取消」＋小字<br>
+        「店家代取消・小美」（按的人）；<br>
+        客人自己取消的沒有小字（20:00）。<br>
+        操作只剩「明細」，沒有恢復<br>
+        （18:00 張小雯那列）</dd>
+    <dt>客人自己取消只到前 30 分</dt>
+    <dd>之後客人要來電，由這裡取消。<br>
+        前 30 分剛好是保留開始，<br>
+        所以保留中只剩櫃檯能取消</dd>
+    <dt>算出來的，不靠排程</dt>
+    <dd>保留只在查詢時判斷，不寫進桌位狀態；<br>
+        標成 NO_SHOW 之後自然就不再保留</dd>
+  </dl>
+  <b class="mt16" style="display:block">排程、配桌與併發</b>
+  <dl style="margin:0">
+    <dt>兩支排程</dt>
+    <dd>NO_SHOW 每 5 分鐘（過時 10 分未報到）；<br>
+        用餐前 2 小時提醒（模擬簡訊）。<br>
+        都要有手動觸發 API，demo 不用等</dd>
+    <dt>best-fit ＋ 區間重疊</dt>
+    <dd>4 位的優先給 4 人桌，沒有才往上找。<br>
+        A.start &lt; B.end AND B.start &lt; A.end，<br>
+        只算 CONFIRMED 與<br>
+        還沒結帳的 SEATED，結帳後就釋出名額；<br>
+        悲觀鎖 ＋ 唯一約束擋同桌同時段重複訂</dd>
+    <dt>頂欄沒有代訂按鈕</dt>
+    <dd>訂位只從顧客端 C-16 進來</dd>
+  </dl>
+  <b class="mt16" style="display:block">按「報到開桌」</b>
+  <dl style="margin:0">
+    <dt>先跳 S-07b 選桌</dt>
+    <dd>原保留桌排第一，其他列坐得下的空桌，<br>
+        稍後有訂位的桌紅字標示、排最後。<br>
+        不改 reservation.table_id</dd>
+    <dt>建立用餐紀錄、轉單、扣庫存</dt>
+    <dd>人數自動帶入，這筆轉 SEATED。<br>
+        有預點就複製成 is_preorder 的單，<br>
+        <b>價格照預點當下的快照</b>；這時候才扣庫存，<br>
+        扣不到的回 soldOut 清單（預點不鎖庫存）</dd>
+  </dl>
+</div>
+</div>
+
+</div>
+</body>
+</html>
