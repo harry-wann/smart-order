@@ -54,6 +54,7 @@ public class SecurityConfig {
                     authorize.requestMatchers(HttpMethod.POST, "/api/admin/auth/login").permitAll();
                     authorize.requestMatchers("/api/admin/reservations/**").hasAnyRole("COUNTER", "MANAGER");
                     authorize.requestMatchers("/api/admin/scheduler/**").hasRole("MANAGER");
+                    authorize.requestMatchers("/api/admin/tables/available").hasAnyRole("COUNTER", "MANAGER");
 
                     authorize
                             .requestMatchers(

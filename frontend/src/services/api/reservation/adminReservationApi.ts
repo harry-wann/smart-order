@@ -41,3 +41,36 @@ export async function cancelReservationByStaff({ id, reason }: { id: number; rea
   )
   return data
 }
+
+export type AvailableTable = {
+  tableId: number
+  tableNo: string
+  area: string
+  seats: number
+  upcomingReservationAt: string | null
+  isOwnHold: boolean
+}
+
+export type SeatResult = {
+  diningSessionId: number
+  tableNo: string
+  adultCount: number
+  childCount: number
+  preorderTicketId: number | null
+  soldOut: { name: string; quantity: number; reason: string }[]
+}
+
+// GET /admin/tables/available：從人出發開桌的空桌清單；帶 reservationId 時自己的原保留桌排第一
+export async function fetchAvailableTables(partySize: number, reservationId?: number, signal?: AbortSignal) {
+  const { data } = await employeeClient.get<AvailableTable[]>('/admin/tables/available', {
+    params: { partySize, reservationId },
+    signal,
+  })
+  return data
+}
+
+// POST /admin/reservations/{id}/seat：報到並開桌
+export async function seatReservation({ id, tableId }: { id: number; tableId: number }) {
+  const { data } = await employeeClient.post<SeatResult>(`/admin/reservations/${id}/seat`, { tableId })
+  return data
+}

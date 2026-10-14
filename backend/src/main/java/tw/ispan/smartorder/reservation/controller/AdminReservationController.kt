@@ -10,9 +10,11 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import tw.ispan.smartorder.common.exception.ApiException
+import tw.ispan.smartorder.reservation.dto.request.SeatReservationRequest
 import tw.ispan.smartorder.reservation.dto.request.StaffCancelRequest
 import tw.ispan.smartorder.reservation.dto.response.AdminReservationResponse
 import tw.ispan.smartorder.reservation.dto.response.CancelReservationResponse
+import tw.ispan.smartorder.reservation.dto.response.SeatReservationResponse
 import tw.ispan.smartorder.reservation.service.AdminReservationService
 import tw.ispan.smartorder.staff.security.StaffPrincipal
 import java.time.LocalDate
@@ -27,6 +29,14 @@ class AdminReservationController(
     @GetMapping
     fun list(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) date: LocalDate): List<AdminReservationResponse> {
         return service.list(date)
+    }
+
+    @PostMapping("/{id}/seat")
+    fun seat(
+        @PathVariable id: Long,
+        @Valid @RequestBody request: SeatReservationRequest,
+    ): SeatReservationResponse {
+        return service.seat(id, request.tableId!!)
     }
 
     @PostMapping("/{id}/cancel")
