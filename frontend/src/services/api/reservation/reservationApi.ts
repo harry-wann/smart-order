@@ -1,5 +1,5 @@
 import { customerClient } from '@/services/client/customerClient'
-import type { Availability, CreateReservationInput, ReservationCreated } from './types'
+import type { Availability, CreateReservationInput, ReservationCreated, ReservationDetail } from './types'
 
 const RESERVATIONS = '/reservations'
 
@@ -8,6 +8,16 @@ export async function fetchAvailability(date: string, partySize: number, signal?
   const { data } = await customerClient.get<Availability>(`${RESERVATIONS}/availability`, {
     params: { date, partySize },
     customerAuth: [],
+    signal,
+  })
+  return data
+}
+
+// GET /reservations/{id}：匿名帶訂位時拿到的 accessToken，沒有就用會員身分查
+export async function fetchReservation(id: number, accessToken?: string | null, signal?: AbortSignal) {
+  const { data } = await customerClient.get<ReservationDetail>(`${RESERVATIONS}/${id}`, {
+    headers: accessToken ? { 'X-Reservation-Token': accessToken } : undefined,
+    customerAuth: accessToken ? [] : ['member'],
     signal,
   })
   return data
