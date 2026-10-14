@@ -167,7 +167,7 @@ function TicketsPage() {
 
 ## 同桌共用購物車：CART_UPDATED
 
-購物車存在後端、整桌共用。同桌任何人加、改、刪，後端都會推一個 `CART_UPDATED` 到 `/topic/session/{id}`：
+購物車存在後端、整桌共用。同桌每位 guest 能加自己的列，只有列 owner 能修改或刪除；成功異動後，後端會推一個 `CART_UPDATED` 到 `/topic/session/{id}`：
 
 ```json
 {
