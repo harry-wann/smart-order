@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import tw.ispan.smartorder.reservation.entity.ReservationEntity
 import tw.ispan.smartorder.reservation.enums.ReservationStatus
+import tw.ispan.smartorder.reservation.projection.CalledWaitlistProjection
 import tw.ispan.smartorder.reservation.projection.MemberContactProjection
 import tw.ispan.smartorder.reservation.projection.SeatedTableProjection
 import java.time.LocalDateTime
@@ -44,6 +45,24 @@ interface ReservationRepository : JpaRepository<ReservationEntity, Long> {
         from: LocalDateTime,
         to: LocalDateTime,
     ): List<ReservationEntity>
+
+    fun findByStatusAndStartTimeGreaterThanEqualAndStartTimeLessThanEqualAndPartySizeLessThanEqualOrderByStartTimeAsc(
+        status: ReservationStatus,
+        from: LocalDateTime,
+        to: LocalDateTime,
+        maxPartySize: Int,
+    ): List<ReservationEntity>
+
+    // 候位屬於工作包 D，這裡只讀「已叫號」的組別給開桌頁看
+    @Query(
+        nativeQuery = true,
+        value = """
+        select id, ticket_no as ticketNo, contact_name as contactName, party_size as partySize, created_at as createdAt
+        from waitlist where status = 'CALLED' and party_size <= :seats
+        order by called_at
+        """
+    )
+    fun findCalledWaitlist(seats: Int): List<CalledWaitlistProjection>
 
     fun findByStatusAndStartTimeGreaterThanEqualAndStartTimeLessThan(
         status: ReservationStatus,
