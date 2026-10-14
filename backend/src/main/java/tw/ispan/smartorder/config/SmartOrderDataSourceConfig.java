@@ -1,9 +1,6 @@
 package tw.ispan.smartorder.config;
 
 import jakarta.persistence.EntityManagerFactory;
-import java.util.Map;
-import javax.sql.DataSource;
-import org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy;
 import org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -17,6 +14,9 @@ import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
+
+import javax.sql.DataSource;
+import java.util.Map;
 
 /**
  * 專題本身的資料庫（smartorder）。Entity 放 tw.ispan.smartorder.entity、Repository 放 tw.ispan.smartorder.repository 才會被這一組管理。
