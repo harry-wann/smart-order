@@ -25,6 +25,8 @@ export function useCreateReservation() {
     mutationFn: createReservation,
     onSuccess: (created, { asMember }) => {
       if (!asMember) saveReservationToken(created.accessToken)
+      // 會員的「我的預約」可能還在快取裡，剛訂的這筆要看得到
+      else return queryClient.invalidateQueries({ queryKey: reservationKeys.mine() })
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: [...reservationKeys.all, 'availability'] }),
   })

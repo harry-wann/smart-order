@@ -71,7 +71,7 @@ function DateTime() {
         onError: (error) => {
           // 客滿：留在本頁，時段重抓後會標成已額滿
           if (isApiError(error, 'SLOT_UNAVAILABLE')) setTime(null)
-          setNotice(error.message)
+          setNotice(error.details[0]?.message ?? error.message)
         },
       },
     )

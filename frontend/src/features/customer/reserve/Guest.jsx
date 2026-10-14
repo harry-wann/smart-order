@@ -13,6 +13,8 @@ import Badge from '../../../components/Badge'
 // 原檔名 guest.jsx
 
 const PHONE_PATTERN = /^09\d{8}$/
+// 跟後端 @Email 一樣寬鬆：有 @、兩邊都有字就好
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+$/
 
 export function Guest() {
   const navigate = useNavigate()
@@ -26,6 +28,7 @@ export function Guest() {
     const contact = { name: name.trim(), phone: phone.replace(/\D/g, ''), email: email.trim() }
     if (!contact.name) return setError('請填寫姓名')
     if (!PHONE_PATTERN.test(contact.phone)) return setError('手機號碼格式為 09 開頭共 10 碼')
+    if (contact.email && !EMAIL_PATTERN.test(contact.email)) return setError('電子信箱格式不正確')
     navigate('/reserve/datetime', { state: { contact, reservationType: 'GUEST' } })
   }
 

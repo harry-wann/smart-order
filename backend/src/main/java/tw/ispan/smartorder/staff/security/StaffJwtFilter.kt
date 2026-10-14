@@ -10,6 +10,7 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.filter.OncePerRequestFilter
 
 // 只認身分、不擋請求：哪些路徑要登入、要什麼角色寫在 SecurityConfig。
+// 角色直接取自 JWT、不查資料庫：員工被停用或改角色後，舊權杖要等到過期（最多 12 小時）才失效。
 // 跟 SessionTokenFilter 一樣用 new 加進 security chain，不要加 @Component，否則會被註冊兩次
 class StaffJwtFilter(
     private val jwtProvider: StaffJwtProvider,

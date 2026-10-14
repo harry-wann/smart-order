@@ -5,6 +5,7 @@ import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
+import java.net.InetAddress
 import java.time.Duration
 import java.time.Instant
 import java.util.Date
@@ -14,7 +15,15 @@ import java.util.Date
 class StaffJwtProvider(
     @Value("\${app.staff-jwt.secret}") secret: String,
     @Value("\${app.staff-jwt.ttl:PT12H}") private val ttl: Duration,
+    @Value("\${server.address:0.0.0.0}") serverAddress: String,
 ) {
+    init {
+        // 預設金鑰寫在 repo 裡，誰都能拿來簽 MANAGER 權杖；只允許在只聽本機的開發環境用
+        require(secret != DEV_SECRET || InetAddress.getByName(serverAddress).isLoopbackAddress) {
+            "server.address 不是本機時，一定要用環境變數 STAFF_JWT_SECRET 設定員工 JWT 金鑰"
+        }
+    }
+
     private val key = Keys.hmacShaKeyFor(secret.toByteArray())
 
     fun create(principal: StaffPrincipal, now: Instant = Instant.now()): Pair<String, Instant> {
@@ -45,6 +54,7 @@ class StaffJwtProvider(
     }
 
     companion object {
+        const val DEV_SECRET = "smart-order-local-dev-staff-jwt-secret-change-me"
         private const val TYPE = "typ"
         private const val STAFF = "staff"
         private const val NAME = "name"

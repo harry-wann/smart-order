@@ -334,6 +334,7 @@ function TableOpen() {
 
   function confirmOpen(payload) {
     if (payload.type === 'reservation') {
+      if (seatReservation.isPending) return
       setPendingOpen(null)
       setNotice(null)
       seatReservation.mutate(
@@ -352,6 +353,7 @@ function TableOpen() {
   }
 
   function cancelReservation(id) {
+    if (cancelByStaff.isPending) return
     setNotice(null)
     cancelByStaff.mutate({ id }, { onError: (error) => setNotice(error.message) })
   }
@@ -429,6 +431,7 @@ function TableOpen() {
                 seats={tableInfo.capacity}
                 holdId={isHeld ? reservedHold.id : null}
                 openLabel={openLabel}
+                busy={seatReservation.isPending || cancelByStaff.isPending}
                 onOpen={requestOpen}
                 onCancel={cancelReservation}
               />
