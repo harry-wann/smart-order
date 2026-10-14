@@ -31,12 +31,15 @@ function node(type){
       this.width=w; this.height=h;
     },
     resizeWithoutConstraints(w,h){ this.resize(w,h); },
-    remove(){ if(this.parent) this.parent.children = this.parent.children.filter(x=>x!==this); },
+    // 真的 Figma：刪掉的節點只能讀 removed，讀 name 等屬性會丟錯
+    remove(){ if(this.parent) this.parent.children = this.parent.children.filter(x=>x!==this); this.removed = true; },
     findAll(fn){ const out=[]; const walk=(n)=>{ n.children.forEach(c=>{ if(!fn||fn(c)) out.push(c); walk(c); }); }; walk(this); return out; },
     setRangeFontName(){}, setRangeFills(){}, insertCharacters(){},
     _pd:{}, setPluginData(k,v){ this._pd[k]=v; }, getPluginData(k){ return this._pd[k]||''; },
     clone(){ return node(type); },
   };
+  let _name = '';
+  Object.defineProperty(n, 'name', { get(){ if (n.removed) throw new Error('in get_name: The node with id "'+n.id+'" does not exist'); return _name; }, set(v){ _name = v; } });
   Object.defineProperty(n, 'x', { get(){ return n._x||0 }, set(v){ if(!isFinite(v)) nanHits.push(`x ${n.name} ${v}`); n._x=v } });
   Object.defineProperty(n, 'y', { get(){ return n._y||0 }, set(v){ if(!isFinite(v)) nanHits.push(`y ${n.name} ${v}`); n._y=v } });
   created[type==='FRAME'?'FRAME':type==='TEXT'?'TEXT':type==='RECTANGLE'?'RECTANGLE':type==='GROUP'?'GROUP':'SVG']++;
@@ -100,6 +103,53 @@ const DATA_FRAMES = (() => {
   const topNow = pages.map(p=>p.children.length);
   console.log('重跑後畫框 id 改變：', idChanged.length ? idChanged.slice(0,5).join(', ')+'…共'+idChanged.length : '無');
   console.log('重跑前後頂層節點數：', firstTop.join('/'), '→', topNow.join('/'), firstTop.join()===topNow.join() ? '✓' : '✗ 有東西重複或遺失');
+
+  // 修訂稿：只勾「修訂稿」跑兩次。原稿那一輪的頂層節點（畫框、標題、說明卡、底板、圖例）
+  // 一個都不能被刪、被搬；修訂畫框要全部建出來，重跑也不能多出東西。
+  const revWant = DATA_FRAMES.filter(f=>f.batch.indexOf('rev-')===0).map(f=>f.name);
+  // 原稿那一輪會把同頁的修訂畫框一起排進去，所以快照只看原稿的節點；修訂節點本來就會重建
+  const revName = c => c.name.indexOf('・修訂 ')>=0 || c.name.indexOf('｜修訂 ')>=0;
+  const before = pages.map(p=>p.children.filter(c=>!revName(c)).map(c=>({c, n:c.name, x:c.x, y:c.y})));
+  await figma.ui.onmessage({ type:'run', groups:['rev'] });
+  await new Promise(r=>setTimeout(r,200));
+  const revTop = pages.map(p=>p.children.length);
+  await figma.ui.onmessage({ type:'run', groups:['rev'] });
+  await new Promise(r=>setTimeout(r,200));
+  const touched = [];
+  pages.forEach((p,i)=>before[i].forEach(o=>{
+    if (p.children.indexOf(o.c) < 0) touched.push('刪掉 '+o.n);
+    else if (o.c.x!==o.x || o.c.y!==o.y) touched.push('搬動 '+o.n);
+  }));
+  const revGot = pages.flatMap(p=>p.children.filter(c=>c.type==='FRAME' && revWant.indexOf(c.name)>=0).map(c=>c.name));
+  console.log('修訂稿畫框：', revGot.length + ' / ' + revWant.length, revGot.length===revWant.length ? '✓' : '✗');
+  console.log('修訂稿重跑前後頂層節點數：', revTop.join('/'), '→', pages.map(p=>p.children.length).join('/'),
+              revTop.join()===pages.map(p=>p.children.length).join() ? '✓' : '✗');
+  console.log('原稿節點被動到：', touched.length ? '✗ ' + touched.slice(0,6).join('、') + '…共' + touched.length : '無 ✓');
+
+  // 先匯修訂、之後又重匯原稿：修訂列要跟著排回最下面，圖例要留在頁首
+  const revIds = {}; pages.forEach(p=>p.children.forEach(c=>{ if (revWant.indexOf(c.name)>=0) revIds[c.name]=c.id; }));
+  await figma.ui.onmessage({ type:'run', groups:['01-customer-375'] });
+  await new Promise(r=>setTimeout(r,200));
+  const cust = pages[1];
+  const isRevNode = c => c.name.indexOf('・修訂 ')>=0 || c.name.indexOf('｜修訂 ')>=0;
+  const legend = cust.children.find(c=>c.name.indexOf('工作包圖例｜')===0);
+  const origBottom = Math.max(...cust.children.filter(c=>!isRevNode(c) && c.type==='FRAME').map(c=>c.y+c.height));
+  const revTopY = Math.min(...cust.children.filter(c=>c.type==='FRAME' && isRevNode(c)).map(c=>c.y));
+  const legendTop = legend && legend.y <= Math.min(...cust.children.filter(c=>c.type==='FRAME').map(c=>c.y));
+  const revIdKept = Object.keys(revIds).every(n=>cust.children.concat(pages[0].children, pages[2].children).some(c=>c.name===n && c.id===revIds[n]));
+  // 更新工作包標示：只換圖例與標籤，畫框不能被動到，數量不能變
+  const snap = pages.map(p=>p.children.filter(c=>c.type==='FRAME').map(c=>({c,x:c.x,y:c.y})));
+  const nTags = () => pages.flatMap(p=>p.children).filter(c=>c.name.indexOf('工作包｜')===0).length;
+  const tagsBefore = nTags(), topBefore = pages.map(p=>p.children.length).join('/');
+  await figma.ui.onmessage({ type:'refresh-pkg' });
+  await figma.ui.onmessage({ type:'refresh-pkg' });
+  const framesMoved = snap.some((s,i)=>s.some(o=>pages[i].children.indexOf(o.c)<0 || o.c.x!==o.x || o.c.y!==o.y));
+  const legendCards = pages.filter(p=>{ const l=p.children.find(c=>c.name.indexOf('工作包圖例｜')===0); return l && l.children.some(k=>k.name==='圖例底'); }).length;
+  console.log('更新工作包標示：標籤', tagsBefore, '→', nTags(), tagsBefore===nTags() ? '✓' : '✗',
+              '／頂層節點', topBefore, '→', pages.map(p=>p.children.length).join('/'), topBefore===pages.map(p=>p.children.length).join('/') ? '✓' : '✗',
+              '／畫框沒被動到', framesMoved ? '✗' : '✓', '／圖例白底', legendCards + ' 張');
+  console.log('重匯原稿後：修訂列在最下面', revTopY > origBottom ? '✓' : '✗',
+              '／圖例在頁首', legendTop ? '✓' : '✗', '／修訂畫框 id 不變', revIdKept ? '✓' : '✗');
   // 頂層的畫框有兩種：畫面本身，以及掛在它右邊的說明卡。下面的檢查只算畫面。
   const isScreen = c => c.type==='FRAME' && c.name.indexOf('說明｜')!==0;
   const frames = pages.flatMap(p=>p.children.filter(isScreen));

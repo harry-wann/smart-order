@@ -4,9 +4,20 @@
 import asyncio, json, glob, os, pathlib, sys
 from playwright.async_api import async_playwright
 
-SRC = sys.argv[1] if len(sys.argv) > 1 else '/tmp/dist/B'
-OUT = sys.argv[2] if len(sys.argv) > 2 else '/tmp/fp/layout.json'
-NAMES = sys.argv[3] if len(sys.argv) > 3 else os.path.join(os.path.dirname(SRC) or '.', 'frames.json')
+# --glob 'rev-*.html' 只量符合的檔；--merge 把量到的畫框併進既有的 OUT（同檔名的換掉，其他不動）。
+# 修訂稿用這兩個：只量新版，原稿的量測結果保持上次匯入時的樣子。
+ARGS, GLOB, MERGE = [], '*.html', False
+_it = iter(sys.argv[1:])
+for _a in _it:
+    if _a == '--glob':
+        GLOB = next(_it, None) or sys.exit('--glob 後面要接檔名樣式，例如 --glob \'rev-*.html\'')
+    elif _a == '--merge':
+        MERGE = True
+    else:
+        ARGS.append(_a)
+SRC = ARGS[0] if len(ARGS) > 0 else '/tmp/dist/B'
+OUT = ARGS[1] if len(ARGS) > 1 else '/tmp/fp/layout.json'
+NAMES = ARGS[2] if len(ARGS) > 2 else os.path.join(os.path.dirname(SRC) or '.', 'frames.json')
 
 # 字型對照表放在這支腳本旁邊（以前硬寫在 /tmp，換一台機器就不見了）。
 # 要換別份可以用環境變數 FONTFIX 指定。
@@ -266,6 +277,14 @@ PROBE_JS = """() => {
 }"""
 
 
+# FONTFIX 用 @font-face 帶字型（沒把字型裝進系統，例如 macOS）時，字型是用到才載、
+# 載完前量到的是備援字型的度量。先把要用的字重都載起來，等 document.fonts 就緒再量。
+FONTS_READY_JS = """() => Promise.all(
+  ['400', '500', '700', '900'].map(w => document.fonts.load(w + ' 16px "Noto Sans TC"', '\u62dbNT$ 1,420'))
+  .concat(['700', '900'].map(w => document.fonts.load(w + ' 16px "Noto Serif TC"', '\u8a02')))
+).then(() => document.fonts.ready).then(() => true)"""
+
+
 async def check_fonts(pg):
     """量測前先確認字型真的有載到。
 
@@ -276,6 +295,7 @@ async def check_fonts(pg):
     """
     await pg.set_content('<body></body>')
     await pg.add_style_tag(content=FF)
+    await pg.evaluate(FONTS_READY_JS)
     await pg.wait_for_timeout(200)
     r = await pg.evaluate(PROBE_JS)
     bad = [k for k, v in r.items() if not (1.35 <= v <= 1.60)]
@@ -300,7 +320,7 @@ async def main():
             names[e['file']] = e
     else:
         print('警告：找不到 %s，改用 <title> 命名' % NAMES)
-    files = sorted(glob.glob(os.path.join(SRC, '*.html')))
+    files = sorted(glob.glob(os.path.join(SRC, GLOB)))
     frames = []
     async with async_playwright() as p:
         b = await p.chromium.launch(executable_path=CHROMIUM) if CHROMIUM else await p.chromium.launch()
@@ -311,6 +331,7 @@ async def main():
             await pg.goto('file://' + f)
             await pg.add_style_tag(content=FF)
             await pg.add_style_tag(content='*,*::before,*::after{animation:none!important;transition:none!important}')
+            await pg.evaluate(FONTS_READY_JS)
             await pg.wait_for_timeout(350)
             title = await pg.title()
             nodes = await pg.evaluate(JS)
@@ -347,6 +368,12 @@ async def main():
                     fr['flow_i'] = e['flow_i'] * 100 + i
                 frames.append(fr)
         await b.close()
+    if MERGE and os.path.exists(OUT):
+        done = {f['file'] for f in frames}
+        old = json.loads(pathlib.Path(OUT).read_text(encoding='utf-8'))['frames']
+        kept = [f for f in old if f['file'] not in done]
+        print('併入既有 %s：保留 %d 個、換上 %d 個' % (OUT, len(kept), len(frames)))
+        frames = kept + frames
     data = {'v': 1, 'frames': frames}
     pathlib.Path(OUT).write_text(json.dumps(data, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
     def count(n):

@@ -2,7 +2,7 @@
 
 > 由 `tools/figma_prep.py` 產生。
 
-**52 個檔案，0 個問題。**
+**69 個檔案，0 個問題。**
 
 | 檔案 | 結果 | 問題 |
 |---|---|---|
@@ -58,6 +58,23 @@
 | `s10b-waitlist-seat.html` | PASS | — |
 | `s11-service-bell-panel.html` | PASS | — |
 | `s12-reports.html` | PASS | — |
+| `revisions/2026-10-14/c04-menu.html` | PASS | — |
+| `revisions/2026-10-14/c04b-menu-notify.html` | PASS | — |
+| `revisions/2026-10-14/c04c-menu-notify-order.html` | PASS | — |
+| `revisions/2026-10-14/c06-cart.html` | PASS | — |
+| `revisions/2026-10-14/c08-tickets.html` | PASS | — |
+| `revisions/2026-10-14/ds08-admin.html` | PASS | — |
+| `revisions/2026-10-14/s02-tables.html` | PASS | — |
+| `revisions/2026-10-14/s02b-open-table.html` | PASS | — |
+| `revisions/2026-10-14/s02c-open-waitlist.html` | PASS | — |
+| `revisions/2026-10-14/s02d-open-reservation.html` | PASS | — |
+| `revisions/2026-10-14/s03-table-detail.html` | PASS | — |
+| `revisions/2026-10-14/s03b-checkout-countdown.html` | PASS | — |
+| `revisions/2026-10-14/s07-reservations.html` | PASS | — |
+| `revisions/2026-10-14/s07b-reservation-seat.html` | PASS | — |
+| `revisions/2026-10-14/s09-inventory.html` | PASS | — |
+| `revisions/2026-10-14/s10-waitlist.html` | PASS | — |
+| `revisions/2026-10-14/s10b-waitlist-seat.html` | PASS | — |
 
 ## 間距例外（11-設計系統.md §4.1.1，不是錯）
 
@@ -66,7 +83,7 @@
 | margin-top:2px（例外4 光學對齊） | 1 |
 | padding:0 14px（例外3 按鈕 sm 左右 14px） | 1 |
 | padding:0 20px（例外3 按鈕 md 左右 20px） | 1 |
-| padding:16px 20px（例外1 卡片內距 20px） | 7 |
+| padding:16px 20px（例外1 卡片內距 20px） | 8 |
 | padding:20px（例外1 卡片內距 20px） | 6 |
 | padding:2px 10px（例外2 膠囊標籤 2px 10px） | 5 |
 | padding:2px 8px（例外2 膠囊標籤（售完印章）） | 1 |

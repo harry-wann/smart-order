@@ -4,7 +4,27 @@
   "api": "1.0.0",
   "main": "code.js",
   "ui": "ui.html",
-  "editorType": ["figma"],
+  "editorType": [
+    "figma"
+  ],
   "documentAccess": "dynamic-page",
-  "networkAccess": { "allowedDomains": ["none"] }
+  "networkAccess": {
+    "allowedDomains": [
+      "none"
+    ]
+  },
+  "menu": [
+    {
+      "name": "開啟匯入面板",
+      "command": "open"
+    },
+    {
+      "name": "只匯入修訂稿",
+      "command": "import-rev"
+    },
+    {
+      "name": "更新工作包標示（圖例與標籤）",
+      "command": "refresh-pkg"
+    }
+  ]
 }
