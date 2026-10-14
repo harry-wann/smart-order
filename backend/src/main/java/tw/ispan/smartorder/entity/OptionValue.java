@@ -1,8 +1,12 @@
 package tw.ispan.smartorder.entity;
 
 import jakarta.persistence.*;
-import java.math.BigDecimal;
+import lombok.Data;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+@Data
 @Entity
 @Table(name = "option_value")
 public class OptionValue {
@@ -20,19 +24,7 @@ public class OptionValue {
     @Column(name = "sort_order")
     private Integer sortOrder;
 
-    public Long getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public BigDecimal getPriceDelta() {
-        return priceDelta;
-    }
-
-    public Integer getSortOrder() {
-        return sortOrder;
-    }
+    private Boolean active;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

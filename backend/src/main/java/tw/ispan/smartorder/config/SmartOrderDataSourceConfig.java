@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManagerFactory;
 import java.util.Map;
 import javax.sql.DataSource;
 import org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy;
+import org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.autoconfigure.DataSourceProperties;
@@ -59,7 +60,7 @@ public class SmartOrderDataSourceConfig {
         // 資料表由 Flyway 管理，Hibernate 不自動改表；欄位用 snake_case
         factory.setJpaPropertyMap(Map.of(
                 "hibernate.hbm2ddl.auto", "none",
-                "hibernate.physical_naming_strategy", CamelCaseToUnderscoresNamingStrategy.class.getName()
+                "hibernate.physical_naming_strategy", PhysicalNamingStrategySnakeCaseImpl.class.getName()
         ));
         return factory;
     }
