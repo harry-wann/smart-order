@@ -1,6 +1,5 @@
 package tw.ispan.smartorder.service;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tw.ispan.smartorder.dto.AdminMenuCategoryDto;
@@ -11,10 +10,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 public class MenuCategoryService {
+
     @Autowired
-    private final MenuCategoryRepository menuCategoryRepository;
+    private MenuCategoryRepository menuCategoryRepository;
+
     public List<MenuCategoryEntity> findMenuCategory(Long Id){
         return menuCategoryRepository.findAll();
     }
