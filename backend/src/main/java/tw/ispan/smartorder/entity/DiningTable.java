@@ -1,18 +1,19 @@
 package tw.ispan.smartorder.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
-@Table(name = "dining_table")
+@Table(name="dining_table")
+@Getter @Setter
+@NoArgsConstructor
 public class DiningTable {
-
-    @Id
-    private Long id;
-
-    private String tableNo;
-
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
+	private String tableNo;
     private Integer seats;
 
     private String area;
@@ -22,35 +23,4 @@ public class DiningTable {
     private Boolean reservable;
 
     private Boolean active;
-
-    protected DiningTable() {
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getTableNo() {
-        return tableNo;
-    }
-
-    public Integer getSeats() {
-        return seats;
-    }
-
-    public String getArea() {
-        return area;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public Boolean getReservable() {
-        return reservable;
-    }
-
-    public Boolean getActive() {
-        return active;
-    }
 }
