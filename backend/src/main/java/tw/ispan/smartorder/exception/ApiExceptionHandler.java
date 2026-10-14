@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.OffsetDateTime;
+import java.util.Map;
 import java.util.stream.Collectors;
 import tw.ispan.northwind.exception.CategoryNotFoundException;
 import tw.ispan.northwind.exception.ProductNotFoundException;
@@ -69,4 +70,13 @@ public class ApiExceptionHandler {
 
     public record ApiError(int status, String message, String path, OffsetDateTime timestamp) {
     }
+
+    @ExceptionHandler(TableNoFoundException.class)
+    public ResponseEntity<ApiError> handleTableNotFound(
+            TableNoFoundException exception,HttpServletRequest request
+    ){
+        return response(HttpStatus.NOT_FOUND,exception.getMessage(),request);
+    }
+    
+
 }

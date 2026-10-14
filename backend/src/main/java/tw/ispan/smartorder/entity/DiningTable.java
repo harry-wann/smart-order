@@ -2,11 +2,15 @@ package tw.ispan.smartorder.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
 
 @Data
 @Entity
 @Table(name = "dining_table")
+@NoArgsConstructor
 public class DiningTable {
+
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

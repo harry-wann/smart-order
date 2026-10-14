@@ -2,6 +2,8 @@ package tw.ispan.smartorder.entity;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "dining_session_guest")
 public class DiningSessionGuest {
@@ -13,11 +15,7 @@ public class DiningSessionGuest {
     @Column(name = "display_name")
     private String displayName;
 
-    public Long getId() {
-        return id;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
+    private Long diningSessionId;
+    private String deviceId;
+    private LocalDateTime joinedAt;
 }
