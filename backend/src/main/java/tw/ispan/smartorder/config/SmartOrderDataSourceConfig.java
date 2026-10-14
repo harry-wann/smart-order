@@ -24,7 +24,11 @@ import org.springframework.transaction.PlatformTransactionManager;
  */
 @Configuration
 @EnableJpaRepositories(
-        basePackages = {"tw.ispan.smartorder.repository", "tw.ispan.smartorder.reservation.repository"},
+        basePackages = {
+                "tw.ispan.smartorder.repository",
+                "tw.ispan.smartorder.reservation.repository",
+                "tw.ispan.smartorder.staff.repository"
+        },
         entityManagerFactoryRef = SmartOrderDataSourceConfig.ENTITY_MANAGER_FACTORY,
         transactionManagerRef = SmartOrderDataSourceConfig.TRANSACTION_MANAGER,
         nameGenerator = FullyQualifiedAnnotationBeanNameGenerator.class
@@ -54,7 +58,10 @@ public class SmartOrderDataSourceConfig {
             @Qualifier("smartOrderDataSource") DataSource dataSource) {
         LocalContainerEntityManagerFactoryBean factory = new LocalContainerEntityManagerFactoryBean();
         factory.setDataSource(dataSource);
-        factory.setPackagesToScan("tw.ispan.smartorder.entity", "tw.ispan.smartorder.reservation.entity");
+        factory.setPackagesToScan(
+                "tw.ispan.smartorder.entity",
+                "tw.ispan.smartorder.reservation.entity",
+                "tw.ispan.smartorder.staff.entity");
         factory.setPersistenceUnitName("smartorder");
         factory.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
         // 資料表由 Flyway 管理，Hibernate 不自動改表；欄位用 snake_case

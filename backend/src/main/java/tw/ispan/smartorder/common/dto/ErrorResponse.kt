@@ -1,4 +1,4 @@
-package tw.ispan.smartorder.reservation.dto.response
+package tw.ispan.smartorder.common.dto
 
 import com.fasterxml.jackson.annotation.JsonInclude
 import java.time.OffsetDateTime

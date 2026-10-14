@@ -1,4 +1,4 @@
-package tw.ispan.smartorder.reservation.exception
+package tw.ispan.smartorder.common.exception
 
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.core.Ordered
@@ -12,14 +12,15 @@ import org.springframework.web.bind.MissingServletRequestParameterException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
-import tw.ispan.smartorder.reservation.dto.response.ErrorDetail
-import tw.ispan.smartorder.reservation.dto.response.ErrorResponse
+import tw.ispan.smartorder.common.dto.ErrorDetail
+import tw.ispan.smartorder.common.dto.ErrorResponse
 import java.time.OffsetDateTime
 
-// 只管訂位這個套件；全站共用的 ApiExceptionHandler 還沒有 code 欄位，先不動它
-@RestControllerAdvice(basePackages = ["tw.ispan.smartorder.reservation"])
+// 錯誤回應照 04 §1.2 帶 code。只管列在 basePackages 的套件；
+// 全站共用的 ApiExceptionHandler 還沒有 code 欄位，其他人的 API 先不動
+@RestControllerAdvice(basePackages = ["tw.ispan.smartorder.reservation", "tw.ispan.smartorder.staff"])
 @Order(Ordered.HIGHEST_PRECEDENCE)
-class ReservationExceptionHandler {
+class ApiExceptionAdvice {
 
     @ExceptionHandler(ApiException::class)
     fun handleApi(exception: ApiException, request: HttpServletRequest): ResponseEntity<ErrorResponse> {

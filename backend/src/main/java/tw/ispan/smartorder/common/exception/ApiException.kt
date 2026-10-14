@@ -1,4 +1,4 @@
-package tw.ispan.smartorder.reservation.exception
+package tw.ispan.smartorder.common.exception
 
 import org.springframework.http.HttpStatus
 
@@ -14,5 +14,6 @@ class ApiException(
         fun notFound(message: String) = ApiException(HttpStatus.NOT_FOUND, "NOT_FOUND", message)
         fun conflict(code: String, message: String) = ApiException(HttpStatus.CONFLICT, code, message)
         fun unauthorized(message: String) = ApiException(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", message)
+        fun forbidden(message: String) = ApiException(HttpStatus.FORBIDDEN, "FORBIDDEN", message)
     }
 }
