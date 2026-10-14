@@ -692,6 +692,8 @@ async function run(groups) {
         page.appendChild(tt[1]); tt[1].x = x; tt[1].y = y + 62;   // 標題 44px 一行之後
         const pill = makeLevelPill(f, page, x + tt[0].width + 24, y + 8);
         const tag = f.pkg ? makePkgTag(f, page, pill.x + pill.width + 16, y + 8) : null;
+        const headerRight = tag ? tag.x + tag.width : pill.x + pill.width;
+        const headerW = Math.max(tt[0].width, tt[1].width, headerRight - x) + 24;
         if (f.level === '進階') advCount++;
 
         makeFrameShadow(f, page, x, y + TITLE_H);
@@ -706,10 +708,10 @@ async function run(groups) {
         }
         made.push(frame);
 
-        let slotW = f.w, slotH = TITLE_H + f.h;
+        let slotW = Math.max(f.w, headerW), slotH = TITLE_H + f.h;
         if (f.note) {
           const panel = makeNotePanel(f.note, f.name, x + f.w + NOTE_GAP, y + TITLE_H, page);
-          slotW = f.w + NOTE_GAP + NOTE_W;
+          slotW = Math.max(slotW, f.w + NOTE_GAP + NOTE_W);
           slotH = Math.max(slotH, TITLE_H + panel.height);
           if (panel.height > f.h) noteTallWarn++;
         } else {
@@ -726,7 +728,7 @@ async function run(groups) {
         if (advPlate) {
           // 整格（標題、膠囊、畫框、說明卡）往外留 40px
           const pad = 40;
-          const right = Math.max(x + slotW, pill.x + pill.width);
+          const right = Math.max(x + slotW, headerRight);
           advPlate.x = x - pad;
           advPlate.y = y - pad;
           advPlate.resize(Math.max(right - x + pad * 2, 1),

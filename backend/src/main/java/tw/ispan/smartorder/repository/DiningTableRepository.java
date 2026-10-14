@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import tw.ispan.smartorder.entity.DiningTable;
+
+import java.util.List;
 import java.util.Optional;
 
 public interface DiningTableRepository extends JpaRepository<DiningTable, Long> {
@@ -14,4 +16,6 @@ public interface DiningTableRepository extends JpaRepository<DiningTable, Long> 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select t from DiningTable t where t.tableNo = :tableNumber")
     Optional<DiningTable> findWithLockByTableNo(@Param("tableNumber") String tableNumber);
+
+    List<DiningTable> findByActiveTrueOrderByTableNoAsc();
 }

@@ -3,8 +3,8 @@ package tw.ispan.smartorder.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 
-@Entity
 @Data
+@Entity
 @Table(name = "dining_table")
 public class DiningTable {
 
