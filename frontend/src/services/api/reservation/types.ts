@@ -45,6 +45,13 @@ export type ReservationDetail = {
   hasPreorder: boolean
 }
 
+export type CancelledReservation = {
+  reservationId: number
+  status: ReservationStatus
+  cancelSource: CancelSource
+  cancelledAt: string
+}
+
 export type ReservationCreated = {
   reservationId: number
   reservationNo: string

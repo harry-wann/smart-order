@@ -5,6 +5,7 @@ import jakarta.validation.Valid
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import tw.ispan.smartorder.reservation.dto.request.CreateReservationRequest
 import tw.ispan.smartorder.reservation.dto.response.AvailabilityResponse
+import tw.ispan.smartorder.reservation.dto.response.CancelReservationResponse
 import tw.ispan.smartorder.reservation.dto.response.ReservationCreatedResponse
 import tw.ispan.smartorder.reservation.dto.response.ReservationDetailResponse
 import tw.ispan.smartorder.reservation.security.MemberIdentityResolver
@@ -53,6 +55,15 @@ class ReservationController(
         httpRequest: HttpServletRequest,
     ): ReservationDetailResponse {
         return service.detail(id, accessToken, memberIdentity.memberId(httpRequest))
+    }
+
+    @DeleteMapping("/{id}")
+    fun cancel(
+        @PathVariable id: Long,
+        @RequestHeader(RESERVATION_TOKEN, required = false) accessToken: String?,
+        httpRequest: HttpServletRequest,
+    ): CancelReservationResponse {
+        return service.cancelByCustomer(id, accessToken, memberIdentity.memberId(httpRequest))
     }
 
     companion object {

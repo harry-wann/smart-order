@@ -25,6 +25,12 @@ interface ReservationRepository : JpaRepository<ReservationEntity, Long> {
     )
     fun findOccupying(tableIds: Collection<Long>, from: LocalDateTime, to: LocalDateTime): List<ReservationEntity>
 
+    // 取消、報到會搶同一筆，先鎖住再檢查狀態；MySQL 5.7 要用原生的 FOR UPDATE
+    @Query(nativeQuery = true, value = "select * from reservation where id = :id for update")
+    fun findByIdForUpdate(id: Long): ReservationEntity?
+
+    fun findByMemberIdOrderByStartTimeDesc(memberId: Long): List<ReservationEntity>
+
     @Query(
         nativeQuery = true,
         value = "select phone, nickname from member where id = :memberId and status = 'ACTIVE'"

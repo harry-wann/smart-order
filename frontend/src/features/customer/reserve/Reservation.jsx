@@ -22,7 +22,7 @@ export function Reservation() {
     if (customerTokens.member.get()) {
       navigate('/reserve/datetime', { state: { reservationType: 'MEMBER' } })
     } else {
-      navigate('/member/login')
+      navigate('/member/login', { state: { returnTo: '/reserve/datetime', reservationType: 'MEMBER' } })
     }
   }
 

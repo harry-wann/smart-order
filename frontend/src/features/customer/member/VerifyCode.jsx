@@ -1,5 +1,6 @@
 import React,{useState} from 'react'
 import {useLocation, useNavigate} from "react-router"
+import { signInMockMember } from '@/services/client/mockMember'
 import CustomerTopBar from '@/components/CustomerTopBar'
 import SOButton from '../../../components/SOButton'
 import InfoBox from '../../../components/InfoBox'
@@ -28,6 +29,7 @@ export default function VerifyCode() {
 
   const handleverifycode=()=>{
     if(code!==Data.VERIFY)return
+    signInMockMember()
 
     if (!returnTo) {
       navigate("/member/center")
