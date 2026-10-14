@@ -1,62 +1,106 @@
-import SOButton from '../../../components/SOButton'
-
-// 原檔名 ordersubmitted.jsx
-// 原路徑 src/features/ProductDetail
+import { useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router'
+import SOButton from '@/components/SOButton'
+import { getOrderTicket } from '@/api/orderApi.js'
 
 export default function OrderSubmitted() {
-  // 訂單假資料，之後串後端 API 時可以換掉
-  const orderItems = [
-    {
-      id: 1,
-      name: '安格斯霜降牛五花',
-      quantity: 1,
-      options: ['全份', '加蔥花'],
-      note: '不要太生',
-      status: '製作中',
-    },
-    {
-      id: 2,
-      name: '白飯',
-      quantity: 2,
-      options: [],
-      note: '免費續加',
-      status: '製作中',
-    },
-  ]
+  const { orderTicketId } = useParams()
+  const navigate = useNavigate()
+
+  // 後端訂單資料、狀態、錯誤訊息
+  const [order, setOrder] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  // 取得訂單
+  useEffect(() => {
+    let cancelled = false
+
+    async function fetchOrder() {
+      try {
+        setLoading(true)
+        setError('')
+
+        const data = await getOrderTicket(orderTicketId)
+
+        if (!cancelled) {
+          setOrder(data)
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err.message)
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    if (orderTicketId) {
+      fetchOrder()
+    } else {
+      setError('缺少訂單編號')
+      setLoading(false)
+    }
+
+    return () => {
+      cancelled = true
+    }
+  }, [orderTicketId])
+
+  // 狀態轉換
+  const statusText = {
+    PENDING: '待製作',
+    PREPARING: '製作中',
+    SERVED: '已出餐',
+    CANCELLED: '已取消',
+  }
+
+  // 取得商品
+  const orderItems = order?.items ?? []
+
+  if (loading) {
+    return <p className="p-6 text-center">訂單載入中...</p>
+  }
+
+  if (error) {
+    return <p className="p-6 text-center text-brand-500">{error}</p>
+  }
+
+  if (!order) {
+    return <p className="p-6 text-center">找不到訂單</p>
+  }
 
   return (
     <div className="flex min-h-203 w-full flex-col bg-surface-2">
       {/* 上方成功內容區：375 × 659 */}
       <main className="flex min-h-164.75 flex-1 flex-col items-center px-6 pt-26.25">
         {/* 成功圖示 */}
-        <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-info-bg">
-          <svg
-            viewBox="0 0 24 24"
+        <div className="flex h-24 w-24 items-center justify-center rounded-pill bg-success-bg">
+          <svg w-13 h-13
+            viewBox="0 0 22 24"
             fill="none"
-            className="h-14 w-14"
-            stroke="#43815C"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
           >
-            <path d="M5 12l4 4L19 6" />
+            <path
+              d="M7.33301 12.1834L9.89967 14.7501L14.6663 9.9834"
+              stroke="#3F7A4E"
+              strokeWidth="1.60417"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </div>
-
         {/* 標題 */}
-        <h1 className="mt-7 type-h1 font-bold text-ink-900">第 2 單已送出</h1>
+        <h1 className="mt-7 type-h1 font-bold text-ink-900">第  {order.sequenceNo}  單已送出</h1>
 
         {/* 說明文字 */}
         <div className="mt-2 text-center type-body-sm text-ink-600">
           <p>廚房已經收到，請稍候。</p>
-          <p>同桌其他人的手機也會看到這張單。</p>
         </div>
 
-        {/* 這一單的內容 */}
-
+        {/* 這單的內容 */}
         <div className="mt-7 w-full rounded-btn border border-line bg-surface px-4 py-3 shadow-sm">
-          {/* 卡片標題 */}
-          <p className="mb-1 type-caption text-ink-600">這一單的內容</p>
 
           {/* 訂單商品 */}
           {orderItems.map((item, index) => (
@@ -64,12 +108,12 @@ export default function OrderSubmitted() {
               <div className="flex items-start gap-3 py-2">
                 {/* 製作狀態 */}
                 <span className="rounded-pill border border-warning-line bg-warning-bg px-2 py-1 text-[10px] text-hold-ink">
-                  {item.status}
+                  {statusText[item.status] ?? item.status}
                 </span>
 
                 {/* 商品資訊 */}
                 <div className="min-w-0 flex-1">
-                  {/* 商品名稱 + 數量 */}
+                  {/* 商品名稱 數量 */}
                   <div className="flex items-center gap-1">
                     <p className="type-body font-medium text-ink-900">{item.name}</p>
 
@@ -84,7 +128,7 @@ export default function OrderSubmitted() {
                     </p>
                   )}
 
-                  {/* 沒有 options，但是有 note */}
+                  {/* 沒 options，有 note */}
                   {item.options.length === 0 && item.note && (
                     <p className="mt-1 type-caption text-ink-600">{item.note}</p>
                   )}
@@ -97,8 +141,6 @@ export default function OrderSubmitted() {
           ))}
         </div>
 
-        {/* 自動跳轉提示 */}
-        <p className="mt-5 type-caption text-ink-600">2 秒後自動帶你去看出菜進度</p>
       </main>
 
       {/* 底部按鈕區：375 × 153 */}

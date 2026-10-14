@@ -1,97 +1,123 @@
 import { useEffect, useState } from 'react'
 
-// 原路徑 src/features/order-checkbill
-
 export default function PaymentProcessing({
-  paymentMethod,
-  subtotal,
-  serviceFee,
-  onCancel,
-  onComplete,
-}) {
+                                            paymentMethod,
+                                            tableNumber,
+                                            subtotal = 0,
+                                            serviceFee = 0,
+                                            onCancel,
+                                            onComplete,
+                                          }) {
   const [countdown, setCountdown] = useState(3)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
 
-  const total = subtotal + serviceFee
+  const total = Number(subtotal) + Number(serviceFee)
 
-  // 判斷付款方式
-  const paymentTitle = paymentMethod === 'cash' ? '現金付款中' : '信用卡付款中'
+  const paymentTitle = {
+    cash: '現金付款中',
+    credit: '信用卡付款中',
+    barcode: '條碼付款中',
+  }[paymentMethod] || '付款中'
 
-  // 3 → 2 → 1 → 關閉
+  // 倒數 3 → 2 → 1
   useEffect(() => {
+    if (countdown <= 1) return
+
     const timer = setTimeout(() => {
-      if (countdown > 1) {
-        setCountdown(countdown - 1)
-      } else {
-        onComplete()
-      }
+      setCountdown((prev) => prev - 1)
     }, 1000)
 
     return () => clearTimeout(timer)
-  }, [countdown, onComplete])
+  }, [countdown])
+
+  // 倒數結束，呼叫付款 API
+  useEffect(() => {
+    if (countdown !== 1 || submitting || error) return
+
+    const timer = setTimeout(async () => {
+      setSubmitting(true)
+
+      try {
+        await onComplete()
+      } catch (err) {
+        setError(err.message || '付款失敗')
+        setSubmitting(false)
+      }
+    }, 10000)
+
+    return () => clearTimeout(timer)
+  }, [countdown, submitting, error, onComplete])
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35">
-      <div className="w-110 bg-white px-8 pt-9 pb-8 shadow-lg">
+      <div className="w-110 rounded-[10px] bg-white px-8 pt-9 pb-8 shadow-lg">
         {/* 桌號 */}
-        <div className="flex items-center justify-center gap-2 type-caption text-ink-600">
-          <span>A03 桌・櫃檯結帳</span>
-        </div>
+        <p className="text-center type-caption text-ink-600">
+          {tableNumber} 桌・櫃檯結帳
+        </p>
 
-        {/* 付款方式 */}
-        <h2 className="mt-3 text-center type-h1 font-bold text-ink-900">{paymentTitle}</h2>
+        {/* 標題 */}
+        <h2 className="mt-3 text-center type-h1 font-bold">
+          {paymentTitle}
+        </h2>
 
-        {/* 倒數圓圈 */}
+        {/* 倒數動畫 */}
         <div className="mt-6 flex justify-center">
           <div className="relative flex h-26 w-26 items-center justify-center">
-            {/* 淺色底圓 */}
-            <div className="absolute inset-0 rounded-pill border-[6px] border-surface-2" />
+            <div className="absolute inset-0 rounded-full border-[6px] border-surface-2" />
 
-            {/* 旋轉紅線 */}
-            <div className="absolute inset-0 animate-spin">
-              <div className="absolute top-0 left-1/2 h-1.5 w-9.25 -translate-x-1/2 rounded-pill bg-brand-600" />
+            <div
+              className={`absolute inset-0 rounded-full border-[6px] border-transparent border-t-brand-600 ${
+                countdown > 1 ? 'animate-spin' : ''}`}
+            />
 
-              <div className="absolute top-1/2 left-0 h-9.25 w-1.5 -translate-y-1/2 rounded-pill bg-brand-600" />
-
-              <div className="absolute top-1/2 right-0 h-9.25 w-1.5 -translate-y-1/2 rounded-pill bg-brand-600" />
-
-              <div className="absolute bottom-0 left-1/2 h-1.5 w-9.25 -translate-x-1/2 rounded-pill bg-brand-600" />
-            </div>
-
-            {/* 倒數 */}
-            <span className="relative z-10 type-kds-table font-bold text-brand-600">
-              {countdown}
+            <span className="relative z-10 text-4xl font-bold text-brand-600">
+              {submitting ? '...' : countdown}
             </span>
           </div>
         </div>
 
-        {/* 提示 */}
-        <p className="mt-4 text-center type-body-sm text-ink-600">秒後送出，按錯付款方式請按取消</p>
+        {/* 說明 */}
+        <p className="mt-4 text-center type-body-sm text-ink-600">
+          {submitting ? '正在送出付款，請稍候' : '秒後送出付款'}
+        </p>
 
         {/* 金額 */}
-        <div className="mt-4 text-center">
-          <p className="type-display font-bold text-ink-900">NT$ {total.toLocaleString()}</p>
+        <div className="mt-5 text-center">
+          <p className="text-3xl font-bold text-ink-900">
+            NT$ {total.toLocaleString()}
+          </p>
 
           <p className="mt-2 type-caption text-ink-600">
-            小計 {subtotal.toLocaleString()}＋服務費 {serviceFee.toLocaleString()}
+            小計 NT$ {Number(subtotal).toLocaleString()}
+            {' ＋ '}
+            服務費 NT$ {Number(serviceFee).toLocaleString()}
           </p>
         </div>
 
-        {/* 系統提示 */}
-        <div className="mx-auto mt-6 flex h-11.5 max-w-90 items-center rounded-btn bg-surface-2 px-4">
-          <div className="mr-3 flex h-4 w-4 items-center justify-center rounded-pill border border-ink-600 type-body-sm text-ink-600">
-            i
-          </div>
-
-          <p className="type-body-sm text-ink-600">本系統為教學專題，付款為模擬流程</p>
+        {/* 提示 */}
+        <div className="mt-6 rounded-btn bg-surface-2 p-4">
+          <p className="text-center type-body-sm text-ink-600">
+            此為模擬付款流程，不會產生真實交易
+          </p>
         </div>
 
-        {/* 取消 */}
+        {/* 錯誤 */}
+        {error && (
+          <p role="alert" className="mt-4 text-center text-brand-600">
+            {error}
+          </p>
+        )}
+
+        {/* 取消按鈕 */}
         <button
           type="button"
           onClick={onCancel}
-          className="mt-6 w-full cursor-pointer text-center type-h3 text-ink-600 hover:text-brand-600"
+          disabled={submitting}
+          className="mt-6 w-full cursor-pointer text-center type-h3 text-ink-600 transition hover:text-brand-600 disabled:opacity-50"
         >
-          取消
+          {error ? '返回' : '取消'}
         </button>
       </div>
     </div>
