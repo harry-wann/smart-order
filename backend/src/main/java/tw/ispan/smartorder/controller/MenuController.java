@@ -5,11 +5,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tw.ispan.smartorder.dto.AdminMenuCategoryDto;
 import tw.ispan.smartorder.dto.AdminMenuItemDto;
+import tw.ispan.smartorder.dto.GetOptionByIdDto;
 import tw.ispan.smartorder.dto.MenuItemOptionDetailDto;
 import tw.ispan.smartorder.entity.MenuCategoryEntity;
 import tw.ispan.smartorder.entity.MenuItemEntity;
 import tw.ispan.smartorder.service.MenuCategoryService;
 import tw.ispan.smartorder.service.MenuItemService;
+import tw.ispan.smartorder.service.OptionGroupService;
 
 import java.util.List;
 
@@ -21,6 +23,9 @@ public class MenuController {
 
     @Autowired
     private MenuItemService menuItemService;
+
+    @Autowired
+    private OptionGroupService optionGroupService;
 
     // Menu 畫面 提取類別
     @GetMapping("/category")
@@ -84,5 +89,10 @@ public class MenuController {
     ) {
         MenuCategoryEntity deletedCategory = menuCategoryService.deleteMenuCategory(categoryId);
         return ResponseEntity.ok(deletedCategory);
+    }
+
+    @GetMapping("/admin/optionGroups")
+    public ResponseEntity<List<GetOptionByIdDto>> getOptionGroups() {
+        return ResponseEntity.ok(optionGroupService.getAllOptionGroups());
     }
 }
