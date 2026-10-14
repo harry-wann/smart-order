@@ -24,4 +24,14 @@ public class WaitlistController {
         return waitlistService.register(request);
     }
 
+    @PostMapping("/{id}/call")
+    public WaitlistResponse call(@PathVariable Long id) {
+        return waitlistService.call(id);
+    }
+
+    @DeleteMapping("/{id}")
+    public void abandon(@PathVariable Long id) {
+        waitlistService.abandon(id);
+    }
+
 }

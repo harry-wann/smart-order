@@ -42,6 +42,19 @@ public class Waitlist {
         return w;
     }
 
+    // 叫號：狀態改成已叫號，記下叫號時間（排程用它算 10 分鐘過號）
+    public void call() {
+        this.status = "CALLED";
+        this.calledAt = LocalDateTime.now();
+    }
+
+    // 放棄：客人不等了
+    public void abandon() {
+        this.status = "ABANDONED";
+    }
+
+
+
     public Long getId() {
         return id;
     }

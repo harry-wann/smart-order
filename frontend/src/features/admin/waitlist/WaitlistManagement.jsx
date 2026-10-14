@@ -3,7 +3,7 @@ import SOButton from '@/components/SOButton'
 import TopBar from '@/components/dashboard/TopBar'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import WaitlistSeatDialog from './WaitlistSeatDialog'
-import { fetchWaitlist, registerWaitlist } from '@/services/api/waitlistApi'
+import { fetchWaitlist, registerWaitlist, callWaitlist, abandonWaitlist } from '@/services/api/waitlistApi'
 
 // 叫號後幾分鐘沒報到會被排程標成過號（規格寫 10 分鐘）
 const CALL_EXPIRE_MINUTES = 10
@@ -119,8 +119,24 @@ function WaitlistManagement() {
     setWaitlist((prev) => prev.map((w) => (w.id === id ? { ...w, ...changes } : w)))
   }
 
-  const handleCall = (id) => updateEntry(id, { status: 'CALLED', calledAt: new Date() })
-  const handleAbandon = (id) => updateEntry(id, { status: 'ABANDONED', doneAt: new Date() })
+  async function handleCall(id) {
+    try {
+      const updated = await callWaitlist(id)
+      updateEntry(id, toWaitlistRow(updated))
+    } catch (err) {
+      alert(`叫號失敗：${err.message}`)
+    }
+  }
+
+  async function handleAbandon(id) {
+    try {
+      await abandonWaitlist(id)
+      updateEntry(id, { status: 'ABANDONED', doneAt: new Date() })
+    } catch (err) {
+      alert(`放棄失敗：${err.message}`)
+    }
+  }
+  
   // TODO: 再叫一次 → 之後接候位螢幕重新播報
   const handleRecall = (id) => console.log('再叫一次', id)
   // 報到開桌 → 打開 S-10b

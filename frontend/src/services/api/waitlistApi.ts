@@ -29,3 +29,14 @@ export async function registerWaitlist(contactName: string, contactPhone: string
   })
   return data
 }
+
+// POST /api/admin/waitlist/{id}/call：叫號
+export async function callWaitlist(id: number) {
+  const { data } = await employeeClient.post<WaitlistEntry>(`/admin/waitlist/${id}/call`)
+  return data
+}
+
+// DELETE /api/admin/waitlist/{id}：放棄
+export async function abandonWaitlist(id: number) {
+  await employeeClient.delete(`/admin/waitlist/${id}`)
+}
