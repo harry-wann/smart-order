@@ -42,4 +42,13 @@ class ReservationEntity(
     var createdAt: LocalDateTime? = null,
     @Column(insertable = false, updatable = false)
     var updatedAt: LocalDateTime? = null,
-)
+) {
+    // table_id 清成 NULL 才會釋放 UNIQUE(table_id, start_time)，那個時段的名額跟著回來
+    fun cancel(source: CancelSource, staffId: Long?, now: LocalDateTime) {
+        status = ReservationStatus.CANCELLED
+        cancelledAt = now
+        cancelSource = source
+        cancelledByStaffId = staffId
+        tableId = null
+    }
+}

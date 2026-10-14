@@ -25,7 +25,6 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 
 @Service
 class ReservationService(
@@ -125,17 +124,10 @@ class ReservationService(
         if (LocalDateTime.now(clock) >= deadline) {
             throw ApiException.conflict("CANCEL_DEADLINE_PASSED", "訂位前 30 分鐘內請來電取消")
         }
-        cancel(reservation, CancelSource.CUSTOMER, null)
-        return CancelReservationResponse(reservation.id!!, reservation.status, CancelSource.CUSTOMER, toOffset(reservation.cancelledAt!!))
-    }
-
-    // table_id 清成 NULL 才會釋放 UNIQUE(table_id, start_time)，那個時段的名額跟著回來
-    private fun cancel(reservation: ReservationEntity, source: CancelSource, staffId: Long?) {
-        reservation.status = ReservationStatus.CANCELLED
-        reservation.cancelledAt = LocalDateTime.now(clock)
-        reservation.cancelSource = source
-        reservation.cancelledByStaffId = staffId
-        reservation.tableId = null
+        reservation.cancel(CancelSource.CUSTOMER, null, LocalDateTime.now(clock))
+        return CancelReservationResponse(
+            reservation.id!!, reservation.status, CancelSource.CUSTOMER, toOffset(reservation.cancelledAt!!),
+        )
     }
 
     // 會員看自己的、匿名憑訂位時拿到的 accessToken；只憑 id 不能動別人的訂位
@@ -242,8 +234,7 @@ class ReservationService(
         )
     }
 
-    private fun toOffset(time: LocalDateTime): OffsetDateTime =
-        time.truncatedTo(ChronoUnit.SECONDS).atZone(properties.zone).toOffsetDateTime()
+    private fun toOffset(time: LocalDateTime): OffsetDateTime = properties.toOffset(time)
 
     private fun newAccessToken(): String {
         val bytes = ByteArray(24)

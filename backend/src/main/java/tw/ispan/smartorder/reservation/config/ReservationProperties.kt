@@ -1,8 +1,11 @@
 package tw.ispan.smartorder.reservation.config
 
 import org.springframework.boot.context.properties.ConfigurationProperties
+import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.OffsetDateTime
 import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 
 @ConfigurationProperties(prefix = "reservation")
 data class ReservationProperties(
@@ -21,4 +24,8 @@ data class ReservationProperties(
 ) {
     val occupyMinutes: Long
         get() = diningMinutes + bufferMinutes
+
+    // 資料庫存的是店家時區的時間，回給前端時補上 +08:00
+    fun toOffset(time: LocalDateTime): OffsetDateTime =
+        time.truncatedTo(ChronoUnit.SECONDS).atZone(zone).toOffsetDateTime()
 }

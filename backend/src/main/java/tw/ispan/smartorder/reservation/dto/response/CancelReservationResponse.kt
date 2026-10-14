@@ -9,4 +9,6 @@ data class CancelReservationResponse(
     val status: ReservationStatus,
     val cancelSource: CancelSource,
     val cancelledAt: OffsetDateTime,
+    // 櫃檯代客取消才有
+    val cancelledByStaffName: String? = null,
 )
