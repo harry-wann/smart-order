@@ -10,7 +10,7 @@ import tw.ispan.smartorder.repository.CartItemOptionRepository;
 import tw.ispan.smartorder.entity.DiningSession;
 import tw.ispan.smartorder.entity.CartItem;
 import tw.ispan.smartorder.entity.CartItemOption;
-import tw.ispan.smartorder.entity.OptionValue;
+import tw.ispan.smartorder.entity.OptionValueEntity;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -92,11 +92,11 @@ public class OrderCartService {
             List<CartItemOption> itemOptions = cartItemOptionRepository.findByCartItem_Id(cartItemId);
 
             // 照選項排序
-            List<OptionValue> optionValues = itemOptions
+            List<OptionValueEntity> optionValues = itemOptions
                     .stream()
                     .map(CartItemOption::getOptionValue)
                     .sorted(Comparator.comparing(
-                            OptionValue::getSortOrder,
+                            OptionValueEntity::getSortOrder,
                             Comparator.nullsLast(
                                     Comparator.naturalOrder()
                             )
@@ -105,7 +105,7 @@ public class OrderCartService {
             // 整理選項名稱
             List<String> options = optionValues
                     .stream()
-                    .map(OptionValue::getName)
+                    .map(OptionValueEntity::getName)
                     .toList();
 
             // 計算加價

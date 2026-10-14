@@ -104,7 +104,7 @@ public class OrderSubmitService {
             orderItem = itemRepository.saveAndFlush(orderItem);
 
             for (CartItemOption cartOption : cartOptions) {
-                OptionValue value = cartOption.getOptionValue();
+                OptionValueEntity value = cartOption.getOptionValue();
                 OrderItemOption orderOption = new OrderItemOption();
                 orderOption.setOrderItemId(orderItem.getId());
                 orderOption.setGroupNameSnapshot("");          // 目前 OptionValue 沒有選項群組關聯，先保留空字串。

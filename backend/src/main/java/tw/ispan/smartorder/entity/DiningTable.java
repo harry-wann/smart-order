@@ -23,4 +23,5 @@ public class DiningTable {
 
     private String area;
     private Boolean reservable;
+    private Boolean active;
 }

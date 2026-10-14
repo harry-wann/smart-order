@@ -15,7 +15,7 @@ public class CartItemOption {
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "option_value_id")
-    private OptionValue optionValue;
+    private OptionValueEntity optionValue;
 
     public CartItem getCartItem() {
         return cartItem;
@@ -25,11 +25,11 @@ public class CartItemOption {
         this.cartItem = cartItem;
     }
 
-    public OptionValue getOptionValue() {
+    public OptionValueEntity getOptionValue() {
         return optionValue;
     }
 
-    public void setOptionValue(OptionValue optionValue) {
+    public void setOptionValue(OptionValueEntity optionValue) {
         this.optionValue = optionValue;
     }
 }
