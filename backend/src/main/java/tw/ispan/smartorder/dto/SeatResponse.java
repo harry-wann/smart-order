@@ -1,6 +1,6 @@
 package tw.ispan.smartorder.dto;
 
-import tw.ispan.smartorder.entity.DiningTable;
+import tw.ispan.smartorder.entity.DiningTableEntity;
 
 public record SeatResponse(
         Long id,
@@ -10,7 +10,7 @@ public record SeatResponse(
         Boolean reservable,
         String status
 ) {
-    public static SeatResponse from(DiningTable table) {
+    public static SeatResponse from(DiningTableEntity table) {
         return new SeatResponse(
                 table.getId(),
                 table.getTableNo(),

@@ -64,8 +64,8 @@ function App() {
           <Route path="index" element={<OrderIndex />} />
           <Route path="menu" element={<Menu />} />
           <Route path="itemdetail" element={<ItemDetail />} />
-          <Route path="cart" element={<OrderCart />} />
-          <Route path="submitted" element={<OrderSubmitted />} />
+          <Route path="cart/:sessionId" element={<OrderCart />} />
+          <Route path="submitted/:orderTicketId" element={<OrderSubmitted />} />
           <Route path="history" element={<OrderHistory />} />
         </Route>
         {/* 掃碼進入是整頁版面，不套 CustomerLayout */}
@@ -98,7 +98,7 @@ function App() {
         <Route index element={<Navigate to="/admin/table_overview" replace />} />
         <Route path="table_overview" element={<TableOverview />} />
         <Route path="table_overview/:tableNo/open" element={<TableOpen />} />
-        <Route path="table/detail" element={<TableDetail />} />
+        <Route path="table/:tableNumber" element={<TableDetail />} />
         <Route path="reservations" element={<ReservationManagement />} />
         <Route path="seats" element={<SeatManagement />} />
         <Route path="kitchen" element={<KitchenOverview />} />

@@ -1,9 +1,7 @@
 package tw.ispan.smartorder.config;
 
 import jakarta.persistence.EntityManagerFactory;
-import java.util.Map;
-import javax.sql.DataSource;
-import org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy;
+import org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.jdbc.autoconfigure.DataSourceProperties;
@@ -16,6 +14,9 @@ import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
+
+import javax.sql.DataSource;
+import java.util.Map;
 
 /**
  * 專題本身的資料庫（smartorder）。Entity 放 tw.ispan.smartorder.entity、Repository 放 tw.ispan.smartorder.repository 才會被這一組管理；
@@ -67,7 +68,7 @@ public class SmartOrderDataSourceConfig {
         // 資料表由 Flyway 管理，Hibernate 不自動改表；欄位用 snake_case
         factory.setJpaPropertyMap(Map.of(
                 "hibernate.hbm2ddl.auto", "none",
-                "hibernate.physical_naming_strategy", CamelCaseToUnderscoresNamingStrategy.class.getName()
+                "hibernate.physical_naming_strategy", PhysicalNamingStrategySnakeCaseImpl.class.getName()
         ));
         return factory;
     }
