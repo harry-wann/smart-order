@@ -17,6 +17,9 @@ export type Props = {
   partySize: number
   tables: SeatTable[]
   ownHoldTableNo?: string
+  // 送出後被擋（例如桌子剛被開走）時顯示在按鈕上方；清單由呼叫端重新載入
+  notice?: string | null
+  submitting?: boolean
   onClose: () => void
   onConfirm: (tableNo: string) => void
 }
@@ -28,6 +31,8 @@ function SeatDialog({
   partySize,
   tables,
   ownHoldTableNo,
+  notice,
+  submitting = false,
   onClose,
   onConfirm,
 }: Props) {
@@ -77,6 +82,7 @@ function SeatDialog({
             只提醒、不擋；想把桌留給那組，就換一張桌。
           </p>
         </div>
+        {notice && <p className="mt-4 type-body-sm text-danger">{notice}</p>}
         <div className="mt-6 flex gap-3">
           <div className="w-32 flex-none">
             <SOButton
@@ -87,7 +93,12 @@ function SeatDialog({
             />
           </div>
           <div className="flex-1">
-            <SOButton height="h-13" text="確定開桌" onClick={handleMainClick} />
+            <SOButton
+              height="h-13"
+              text={submitting ? '開桌中…' : '確定開桌'}
+              disabled={submitting}
+              onClick={handleMainClick}
+            />
           </div>
         </div>
       </DialogFrame>
@@ -113,6 +124,7 @@ function SeatDialog({
           ? '原保留桌排第一，其他依座位數由小到大；稍後有訂位的桌排最後，一樣能開，但會再確認一次。'
           : '座位數小的排前面；稍後有訂位的桌排最後，一樣能開，但會再確認一次。預約保留中的桌不會列出來。'}
       </p>
+      {notice && <p className="mt-3 type-body-sm text-danger">{notice}</p>}
 
       <div className="mt-6 flex gap-3">
         <div className="w-32 flex-none">
@@ -122,10 +134,13 @@ function SeatDialog({
           <SOButton
             height="h-13"
             text={
-              selected.upcomingReservation
-                ? `仍要開 ${selected.tableNo}`
-                : `開 ${selected.tableNo}`
+              submitting
+                ? '開桌中…'
+                : selected.upcomingReservation
+                  ? `仍要開 ${selected.tableNo}`
+                  : `開 ${selected.tableNo}`
             }
+            disabled={submitting}
             onClick={handleMainClick}
           />
         </div>

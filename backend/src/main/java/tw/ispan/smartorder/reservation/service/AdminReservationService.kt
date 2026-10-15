@@ -6,24 +6,32 @@ import org.springframework.transaction.annotation.Transactional
 import tw.ispan.smartorder.common.exception.ApiException
 import tw.ispan.smartorder.reservation.config.ReservationProperties
 import tw.ispan.smartorder.reservation.dto.response.AdminReservationResponse
+import tw.ispan.smartorder.reservation.dto.response.AvailableTableResponse
 import tw.ispan.smartorder.reservation.dto.response.CancelReservationResponse
+import tw.ispan.smartorder.reservation.dto.response.SeatReservationResponse
+import tw.ispan.smartorder.reservation.entity.DiningSessionEntity
 import tw.ispan.smartorder.reservation.entity.ReservationEntity
 import tw.ispan.smartorder.reservation.enums.CancelSource
 import tw.ispan.smartorder.reservation.enums.ReservationStatus
+import tw.ispan.smartorder.reservation.repository.ReservationDiningSessionRepository
 import tw.ispan.smartorder.reservation.repository.ReservationRepository
 import tw.ispan.smartorder.reservation.repository.ReservationTableRepository
 import tw.ispan.smartorder.staff.repository.StaffRepository
 import tw.ispan.smartorder.staff.security.StaffPrincipal
+import java.security.SecureRandom
 import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
-// S-07 預約管理：櫃檯看一天的訂位、代客取消
+// S-07 預約管理：櫃檯看一天的訂位、代客取消、報到開桌（S-07b）
 @Service
 class AdminReservationService(
     private val reservationRepo: ReservationRepository,
     private val tableRepo: ReservationTableRepository,
+    private val sessionRepo: ReservationDiningSessionRepository,
     private val staffRepo: StaffRepository,
+    private val holdService: TableHoldService,
     private val properties: ReservationProperties,
     private val clock: Clock,
 ) {
@@ -70,6 +78,100 @@ class AdminReservationService(
         )
     }
 
+    // S-07b 選桌：空桌且坐得下；保留給別筆訂位的不列，自己的原保留桌排第一，
+    // 115 分鐘內有別筆訂位的排在沒衝突的後面
+    @Transactional(readOnly = true)
+    fun availableTables(partySize: Int, reservationId: Long?): List<AvailableTableResponse> {
+        if (partySize < 1) throw ApiException.badRequest("人數至少 1 位")
+        val holds = holdService.snapshot(LocalDateTime.now(clock))
+        val excludeIds = setOfNotNull(reservationId)
+
+        return tableRepo.findAvailable(partySize).mapNotNull { table ->
+            val holder = holds.heldBy(table.id!!)
+            val isOwnHold = holder != null && holder.id == reservationId
+            if (holder != null && !isOwnHold) return@mapNotNull null
+            AvailableTableResponse(
+                tableId = table.id!!,
+                tableNo = table.tableNo!!,
+                area = table.area!!,
+                seats = table.seats,
+                upcomingReservationAt = holds.upcoming(table.id!!, excludeIds)?.startTime?.format(HH_MM),
+                isOwnHold = isOwnHold,
+            )
+        }.sortedWith(
+            compareByDescending<AvailableTableResponse> { it.isOwnHold }
+                .thenBy { it.upcomingReservationAt != null }
+                .thenBy { it.seats }
+                .thenBy { it.tableNo },
+        )
+    }
+
+    // 報到開桌：鎖訂位 → 檢查狀態與報到時間窗 → 鎖桌 → 檢查空桌與保留 → 建立用餐紀錄。
+    // 鎖的順序固定是「訂位再桌位」，跟取消、現場開桌搶同一筆時不會互相卡死
+    @Transactional
+    fun seat(id: Long, tableId: Long): SeatReservationResponse {
+        val reservation = reservationRepo.findByIdForUpdate(id) ?: throw ApiException.notFound("找不到這筆訂位")
+        if (reservation.status != ReservationStatus.CONFIRMED) {
+            throw ApiException.conflict("RESERVATION_NOT_ACTIVE", "這筆訂位已經取消或已報到")
+        }
+
+        // 不能等 NO_SHOW 排程，報到這裡自己看時間
+        val now = LocalDateTime.now(clock)
+        val start = reservation.startTime!!
+        val checkInFrom = start.minusMinutes(properties.holdBeforeMinutes)
+        if (now < checkInFrom) {
+            throw ApiException.conflict("RESERVATION_TOO_EARLY", "還沒到可報到時間（${checkInFrom.format(HH_MM)} 起）")
+        }
+        if (now > start.plusMinutes(properties.holdAfterMinutes)) {
+            throw ApiException.conflict("RESERVATION_EXPIRED", "已超過保留時間，請改登記候位")
+        }
+
+        val table = tableRepo.findByIdForUpdate(tableId) ?: throw ApiException.notFound("找不到這張桌")
+        if (table.status != TABLE_AVAILABLE) {
+            throw ApiException.conflict("TABLE_OCCUPIED", "${table.tableNo} 使用中，請換一張桌")
+        }
+        if (table.seats < reservation.partySize) {
+            throw ApiException.badRequest("${table.tableNo} 坐不下 ${reservation.partySize} 位")
+        }
+        // 鎖住桌位之後再算一次保留，不相信畫面上的狀態；自己的保留桌照常開
+        val holder = holdService.snapshot(now).heldBy(tableId)
+        if (holder != null && holder.id != reservation.id) {
+            throw ApiException.conflict(
+                "TABLE_RESERVED",
+                "這張桌保留給 ${holder.contactName} ${holder.startTime!!.format(HH_MM)}，客人來電取消的話請到預約管理取消訂位",
+            )
+        }
+
+        val session = sessionRepo.save(
+            DiningSessionEntity(
+                tableId = tableId,
+                reservationId = reservation.id,
+                sessionToken = newSessionToken(),
+                adultCount = reservation.adultCount,
+                childCount = reservation.childCount,
+                openedAt = now,
+            )
+        )
+        table.status = TABLE_OCCUPIED
+        // 不改 table_id：那是訂位當下配的桌，實際坐哪張記在用餐紀錄
+        reservation.status = ReservationStatus.SEATED
+
+        return SeatReservationResponse(
+            diningSessionId = session.id!!,
+            tableNo = table.tableNo!!,
+            adultCount = reservation.adultCount,
+            childCount = reservation.childCount,
+            preorderTicketId = null,
+            soldOut = emptyList(),
+        )
+    }
+
+    private fun newSessionToken(): String {
+        val bytes = ByteArray(16)
+        random.nextBytes(bytes)
+        return bytes.joinToString("") { "%02x".format(it) }
+    }
+
     private fun toAdminResponse(
         reservation: ReservationEntity,
         assignedTableNo: String?,
@@ -103,5 +205,12 @@ class AdminReservationService(
             cancelledByStaffName = cancelledByStaffName,
             preorderItemCount = 0,
         )
+    }
+
+    companion object {
+        private val HH_MM = DateTimeFormatter.ofPattern("HH:mm")
+        private const val TABLE_AVAILABLE = "AVAILABLE"
+        private const val TABLE_OCCUPIED = "OCCUPIED"
+        private val random = SecureRandom()
     }
 }

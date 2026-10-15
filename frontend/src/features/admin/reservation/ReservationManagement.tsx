@@ -7,9 +7,11 @@ import TopBar from '@/components/dashboard/TopBar'
 import CancelReservationDialog from '@/features/admin/reservation/CancelReservationDialog'
 import {
   useAdminReservations,
+  useAvailableTables,
   useCancelReservationByStaff,
+  useSeatReservation,
 } from '@/hooks/reservation/useAdminReservations'
-import type { AdminReservation } from '@/services/api/reservation/adminReservationApi'
+import type { AdminReservation, AvailableTable } from '@/services/api/reservation/adminReservationApi'
 import type { ReservationStatus } from '@/services/api/reservation/types'
 import { fetchSeats } from '@/services/api/seatApi'
 import { queryScope } from '@/services/client/queryClient'
@@ -48,7 +50,13 @@ function ReservationManagement() {
     queryFn: ({ signal }) => fetchSeats(signal),
   })
   const reservations = (reservationsQuery.data ?? []).map(toReservation)
-  const tables = INITIAL_TABLES
+  const availableTables = useAvailableTables(
+    seatingTarget?.partySize ?? 1,
+    seatingTarget?.id,
+    seatingTarget !== null,
+  )
+  const seatReservation = useSeatReservation()
+  const [seatNotice, setSeatNotice] = useState<string | null>(null)
   const totalTables = seatsQuery.data?.length ?? 0
   const reservableTables = seatsQuery.data?.filter((seat) => seat.reservable).length ?? 0
 
@@ -72,9 +80,36 @@ function ReservationManagement() {
     setNotice(null)
   }
 
-  // 報到開桌在 S-07b 串接後端，這裡先只關掉對話框
-  function handleSeat() {
-    setSeatingTarget(null)
+  function openSeatDialog(reservation: Reservation) {
+    setSeatNotice(null)
+    setSeatingTarget(reservation)
+  }
+
+  function handleSeat(tableNo: string) {
+    if (!seatingTarget) return
+    const table = availableTables.data?.find((option) => option.tableNo === tableNo)
+    if (!table) return
+    setSeatNotice(null)
+    seatReservation.mutate(
+      { id: seatingTarget.id, tableId: table.tableId },
+      {
+        onSuccess: (result) => {
+          setSeatingTarget(null)
+          setNotice(`已報到，開 ${result.tableNo}`)
+        },
+        onError: (error) => {
+          // 桌子剛被開走或撞到別筆的保留：留在對話框、重新載入空桌
+          if (error.code === 'TABLE_OCCUPIED' || error.code === 'TABLE_RESERVED') {
+            setSeatNotice(`${error.message}，已重新載入空桌`)
+            void availableTables.refetch()
+            return
+          }
+          // 訂位已取消、已報到或超過保留時間：關掉對話框，清單會重抓
+          setSeatingTarget(null)
+          setNotice(error.message)
+        },
+      },
+    )
   }
 
   function handleCancel() {
@@ -175,7 +210,7 @@ function ReservationManagement() {
                   key={reservation.id}
                   reservation={reservation}
                   now={now}
-                  onCheckIn={() => setSeatingTarget(reservation)}
+                  onCheckIn={() => openSeatDialog(reservation)}
                   onCancel={() => setCancelTarget(reservation)}
                   onRegisterWaitlist={() => navigate('/admin/waitlist')}
                   onViewTable={() => navigate('/admin/table/detail')}
@@ -198,13 +233,15 @@ function ReservationManagement() {
         </div>
       </div>
 
-      {seatingTarget && (
+      {seatingTarget && availableTables.isSuccess && (
         <SeatDialog
           title={`${seatingTarget.name}・${seatingTarget.partySize} 位`}
           summary={getSeatSummary(seatingTarget)}
           partySize={seatingTarget.partySize}
-          tables={getSeatTables(tables, reservations, seatingTarget, now)}
-          ownHoldTableNo={seatingTarget.tableNo}
+          tables={availableTables.data.map(toSeatTable)}
+          ownHoldTableNo={availableTables.data.find((table) => table.isOwnHold)?.tableNo}
+          notice={seatNotice}
+          submitting={seatReservation.isPending}
           onClose={() => setSeatingTarget(null)}
           onConfirm={handleSeat}
         />
@@ -234,8 +271,6 @@ export default ReservationManagement
 
 const CHECK_IN_EARLY_MINUTES = 30
 const OVERDUE_MINUTES = 10
-const UPCOMING_WINDOW_MINUTES = 115
-const MINUTE_MS = 60000
 const WEEKDAYS = '日一二三四五六'
 
 const COLUMNS = [
@@ -249,17 +284,6 @@ const COLUMNS = [
   { label: '操作', width: '' },
 ]
 
-const INITIAL_TABLES: SeatTable[] = [
-  { tableNo: 'A01', capacity: 2, area: 'A 區・窗邊', status: 'OCCUPIED' },
-  { tableNo: 'A02', capacity: 2, area: 'A 區・窗邊', status: 'AVAILABLE' },
-  { tableNo: 'A04', capacity: 4, area: 'A 區・窗邊', status: 'AVAILABLE' },
-  { tableNo: 'A05', capacity: 4, area: 'A 區・走道', status: 'AVAILABLE' },
-  { tableNo: 'A06', capacity: 6, area: 'A 區・走道', status: 'AVAILABLE' },
-  { tableNo: 'A08', capacity: 4, area: 'A 區・窗邊', status: 'AVAILABLE' },
-  { tableNo: 'B02', capacity: 2, area: 'B 區', status: 'OCCUPIED' },
-  { tableNo: 'B04', capacity: 4, area: 'B 區', status: 'AVAILABLE' },
-  { tableNo: 'C02', capacity: 8, area: 'C 包廂', status: 'AVAILABLE' },
-]
 
 function toReservation(row: AdminReservation): Reservation {
   return {
@@ -306,35 +330,15 @@ function getSeatSummary({ startAt, tableNo, preorder }: Reservation) {
     .join('・')
 }
 
-function getSeatTables(
-  tables: SeatTable[],
-  reservations: Reservation[],
-  target: Reservation,
-  now: Date,
-): SeatTable[] {
-  const others = reservations.filter((reservation) => reservation.id !== target.id)
-  const heldTableNos = others.flatMap((reservation) =>
-    reservation.tableNo && getRowState(reservation, now) === 'CHECKIN_OPEN'
-      ? [reservation.tableNo]
-      : [],
-  )
-  const windowStart = now.getTime()
-  const windowEnd = windowStart + UPCOMING_WINDOW_MINUTES * MINUTE_MS
-
-  return tables
-    .filter((table) => !heldTableNos.includes(table.tableNo))
-    .map((table) => {
-      const upcoming = others
-        .filter(
-          (reservation) =>
-            reservation.tableNo === table.tableNo &&
-            reservation.status === 'CONFIRMED' &&
-            reservation.startAt.getTime() > windowStart &&
-            reservation.startAt.getTime() <= windowEnd,
-        )
-        .sort((a, b) => a.startAt.getTime() - b.startAt.getTime())[0]
-      return upcoming ? { ...table, upcomingReservation: formatTime(upcoming.startAt) } : table
-    })
+// 後端已經篩好、排好；這裡只換成共用選桌對話框要的欄位
+function toSeatTable(table: AvailableTable): SeatTable {
+  return {
+    tableNo: table.tableNo,
+    capacity: table.seats,
+    area: table.area,
+    status: 'AVAILABLE',
+    upcomingReservation: table.upcomingReservationAt ?? undefined,
+  }
 }
 
 function formatTime(date: Date) {
@@ -391,7 +395,7 @@ function ReservationRow({
     reservation
   const state = getRowState(reservation, now)
   const pill = STATE_PILL[state]
-  const checkInOpensAt = new Date(startAt.getTime() - CHECK_IN_EARLY_MINUTES * MINUTE_MS)
+  const checkInOpensAt = reservation.checkInFrom
 
   return (
     <tr className={`border-b border-line last:border-b-0 ${state === 'CANCELLED' ? 'opacity-55' : ''}`}>

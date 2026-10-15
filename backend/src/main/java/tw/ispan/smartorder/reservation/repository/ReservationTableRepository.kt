@@ -29,4 +29,17 @@ interface ReservationTableRepository : JpaRepository<DiningTableEntity, Long> {
         """
     )
     fun findReservableForUpdate(partySize: Int): List<DiningTableEntity>
+
+    @Query(
+        """
+        select t from DiningTableEntity t
+        where t.active = true and t.status = 'AVAILABLE' and t.seats >= :partySize
+        order by t.seats, t.tableNo
+        """
+    )
+    fun findAvailable(partySize: Int): List<DiningTableEntity>
+
+    // 開桌要先鎖桌位，兩個櫃檯同時開同一張只會成功一個
+    @Query(nativeQuery = true, value = "select * from dining_table where id = :id and active = 1 for update")
+    fun findByIdForUpdate(id: Long): DiningTableEntity?
 }

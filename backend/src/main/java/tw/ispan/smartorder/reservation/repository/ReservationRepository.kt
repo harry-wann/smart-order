@@ -39,6 +39,12 @@ interface ReservationRepository : JpaRepository<ReservationEntity, Long> {
         to: LocalDateTime,
     ): List<ReservationEntity>
 
+    fun findByStatusAndTableIdIsNotNullAndStartTimeGreaterThanEqualAndStartTimeLessThanEqual(
+        status: ReservationStatus,
+        from: LocalDateTime,
+        to: LocalDateTime,
+    ): List<ReservationEntity>
+
     fun findByStatusAndStartTimeGreaterThanEqualAndStartTimeLessThan(
         status: ReservationStatus,
         from: LocalDateTime,
