@@ -6,13 +6,13 @@ import {
   useOpenOptions,
   useSeatReservation,
 } from '@/hooks/reservation/useAdminReservations'
-import { fetchSeats } from '@/services/api/seatApi'
+import { fetchSeats } from '@/services/api/table/seatApi'
 import { queryScope } from '@/services/client/queryClient'
 import SOButton from '@/components/SOButton'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import BellButtonPlaceholder from './BellButtonPlaceholder'
 import ReservationTab from './ReservationTab'
-import { openTable } from '@/services/api/tableApi'
+import { openTable } from '@/services/api/table/tableApi'
 
 // 假資料：已叫號、等著入座的組別（之後換成 API）
 const calledWaitlist = [

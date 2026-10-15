@@ -1,7 +1,7 @@
 package tw.ispan.smartorder.dto;
 
 import java.time.LocalDateTime;
-import tw.ispan.smartorder.entity.Waitlist;
+import tw.ispan.smartorder.entity.WaitlistEntity;
 
 public record WaitlistResponse(
         Long id,
@@ -15,7 +15,7 @@ public record WaitlistResponse(
         LocalDateTime createdAt,
         LocalDateTime calledAt) {
 
-    public static WaitlistResponse from(Waitlist w) {
+    public static WaitlistResponse from(WaitlistEntity w) {
         return new WaitlistResponse(
                 w.getId(),
                 w.getTicketNo(),

@@ -1,8 +1,8 @@
 package tw.ispan.smartorder.dto;
 
 import java.time.LocalDateTime;
-import tw.ispan.smartorder.entity.DiningSession;
-import tw.ispan.smartorder.entity.DiningTable;
+import tw.ispan.smartorder.entity.DiningSessionEntity;
+import tw.ispan.smartorder.entity.DiningTableEntity;
 
 public record TableOverviewResponse(
         Long tableId,
@@ -15,7 +15,7 @@ public record TableOverviewResponse(
         Integer childCount,
         LocalDateTime openedAt) {
 
-    public static TableOverviewResponse from(DiningTable table, DiningSession session) {
+    public static TableOverviewResponse from(DiningTableEntity table, DiningSessionEntity session) {
         return new TableOverviewResponse(
                 table.getId(),
                 table.getTableNo(),

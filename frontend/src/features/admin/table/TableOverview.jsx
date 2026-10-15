@@ -4,7 +4,7 @@ import SOButton from '@/components/SOButton'
 import TopBar from '@/components/dashboard/TopBar'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import BellButtonPlaceholder from './BellButtonPlaceholder'
-import { fetchTables, cleanTable } from '@/services/api/tableApi'
+import { fetchTables, cleanTable } from '@/services/api/table/tableApi'
 
 // 把後臺狀態的英文轉成中文顯示、根據桌位狀態決定顏色、根據狀態決定標籤底色
 const statusStyles = {

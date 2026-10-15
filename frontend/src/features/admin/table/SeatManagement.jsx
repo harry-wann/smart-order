@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { fetchSeats, updateSeatReservable } from '@/services/api/seatApi'
+import { fetchSeats, updateSeatReservable } from '@/services/api/table/seatApi'
 import SOButton from '../../../components/SOButton'
 import TopBar from '@/components/dashboard/TopBar'
 import { SvgIconMap } from '@/assets/SvgIconMap'
