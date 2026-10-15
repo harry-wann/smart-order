@@ -11,9 +11,9 @@ export default function OptionGroupSidebar({ groups, selectedGroupId, onSelectGr
           <div
             key={group.id}
             onClick={() => onSelectGroup(group.id)}
-            className={`p-[var(--spacing-card)] rounded-[var(--radius-card)] cursor-pointer transition-all border ${
+            className={`p-(--spacing-card) rounded-(--radius-card) cursor-pointer transition-all border ${
               isSelected 
-                ? 'bg-brand-100 border-[#E8C2BD] shadow-[var(--shadow-card)]' 
+                ? 'bg-brand-100 border-[#E8C2BD] shadow-(--shadow-card)' 
                 : 'bg-surface border-line hover:border-line-strong'
             }`}
           >

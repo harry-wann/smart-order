@@ -17,6 +17,8 @@ export default function MenuOptions() {
   const [selectedGroupId, setSelectedGroupId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [detailsError, setDetailsError] = useState('');
 
   const [isEditingGroupName, setIsEditingGroupName] = useState(false);
   const [tempGroupName, setTempGroupName] = useState('');
@@ -66,6 +68,49 @@ export default function MenuOptions() {
   }, []);
 
   const currentGroup = groups.find(g => g.id === selectedGroupId);
+
+  useEffect(() => {
+    if (!selectedGroupId) return undefined;
+
+    let isCurrentRequest = true;
+    async function loadOptionGroupDetails() {
+      setIsLoadingDetails(true);
+      setDetailsError('');
+      try {
+        const { data } = await optionGroupsClient.get(
+          `/order/admin/optionGroups/${selectedGroupId}`
+        );
+        if (!isCurrentRequest) return;
+
+        setGroups(prevGroups => prevGroups.map(group => (
+          group.id === selectedGroupId
+            ? {
+                ...group,
+                items: data.items.map(item => ({
+                  id: String(item.id),
+                  name: item.name,
+                  priceDiff: Number(item.priceDelta),
+                  sortOrder: item.sortOrder,
+                  status: item.active ? 'active' : 'inactive',
+                })),
+                associatedProducts: data.associatedProducts,
+              }
+            : group
+        )));
+      } catch (error) {
+        if (isCurrentRequest) {
+          setDetailsError(error instanceof Error ? error.message : '載入選項群組資料失敗');
+        }
+      } finally {
+        if (isCurrentRequest) setIsLoadingDetails(false);
+      }
+    }
+
+    loadOptionGroupDetails();
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, [selectedGroupId]);
 
   const handleOpenAddGroupModal = () => {
     setNewGroupName('');
@@ -193,13 +238,20 @@ export default function MenuOptions() {
           <div className="flex-1 flex flex-col gap-(--spacing-field)">
             <OptionGroupDetail
               currentGroup={currentGroup}
+              isLoading={isLoadingDetails}
               onOpenGroupNameModal={handleOpenGroupNameModal}
               onOpenItemModal={handleOpenItemModal}
             />
 
             <AssociatedProducts
               associatedProducts={currentGroup.associatedProducts}
+              isLoading={isLoadingDetails}
             />
+            {detailsError && (
+              <div role="alert" className="text-danger">
+                載入選項群組資料失敗：{detailsError}
+              </div>
+            )}
           </div>
 
           <GroupNameModal
