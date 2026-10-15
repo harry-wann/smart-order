@@ -11,7 +11,7 @@ export default function OptionGroupSidebar({ groups, selectedGroupId, onSelectGr
           <div
             key={group.id}
             onClick={() => onSelectGroup(group.id)}
-            className={`p-(--spacing-card) rounded-(--radius-card) cursor-pointer transition-all border ${
+            className={`group p-(--spacing-card) rounded-(--radius-card) cursor-pointer transition-all border ${
               isSelected 
                 ? 'bg-brand-100 border-[#E8C2BD] shadow-(--shadow-card)' 
                 : 'bg-surface border-line hover:border-line-strong'
@@ -19,7 +19,18 @@ export default function OptionGroupSidebar({ groups, selectedGroupId, onSelectGr
           >
             <div className="flex justify-between items-center mb-1">
               <span className="type-h3">{group.name}</span>
-              <span className="text-ink-400">›</span>
+              <button
+                type="button"
+                aria-label={`刪除${group.name}群組`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  window.confirm(`確定要刪除「${group.name}」群組嗎？`);
+                }}
+                className="text-ink-400 transition-colors group-hover:text-danger group-focus-within:text-danger"
+              >
+                <span className="group-hover:hidden group-focus-within:hidden">›</span>
+                <span className="hidden group-hover:inline group-focus-within:inline">刪除</span>
+              </button>
             </div>
           </div>
         );
