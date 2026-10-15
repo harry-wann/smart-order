@@ -11,7 +11,7 @@ export default function OptionGroupDetail({ currentGroup, onOpenGroupNameModal, 
         <div className="flex items-center gap-3">
           <h2 className="type-h1">{currentGroup.name}</h2>
           <span className="bg-surface-2 text-ink-600 px-2.5 py-0.5 rounded-[var(--radius-pill)] type-dashboard-top-bar-tag">
-            必選 單選
+            選項群組
           </span>
         </div>
         <button 
@@ -28,15 +28,15 @@ export default function OptionGroupDetail({ currentGroup, onOpenGroupNameModal, 
       <div className="grid grid-cols-3 gap-4 mb-8 bg-surface-2 p-4 rounded-[var(--radius-btn)] border border-line">
         <div>
           <div className="type-caption text-ink-400 mb-1">至少要選</div>
-          <div className="type-price">{currentGroup.minSelect} 項</div>
+          <div className="type-price">{currentGroup.minSelect ?? '—'}</div>
         </div>
         <div>
           <div className="type-caption text-ink-400 mb-1">最多可選</div>
-          <div className="type-price">{currentGroup.maxSelect} 項</div>
+          <div className="type-price">{currentGroup.maxSelect ?? '—'}</div>
         </div>
         <div>
           <div className="type-caption text-ink-400 mb-1">排序</div>
-          <div className="type-price">{currentGroup.sortOrder}</div>
+          <div className="type-price">{currentGroup.sortOrder ?? '—'}</div>
         </div>
       </div>
 
@@ -69,7 +69,7 @@ export default function OptionGroupDetail({ currentGroup, onOpenGroupNameModal, 
             </tr>
           </thead>
           <tbody className="divide-y divide-line text-sm">
-            {currentGroup.items.map(item => (
+            {currentGroup.items.length > 0 ? currentGroup.items.map(item => (
               <tr key={item.id} className="hover:bg-surface-2/50">
                 <td className="py-4 type-body font-medium">{item.name}</td>
                 <td className="py-4 type-body text-ink-600">+{item.priceDiff}</td>
@@ -89,10 +89,17 @@ export default function OptionGroupDetail({ currentGroup, onOpenGroupNameModal, 
                     onClick={() => onOpenItemModal(item)}
                     className="p-1.5 text-ink-400 hover:text-ink-900 rounded-[var(--radius-btn)] hover:bg-surface-2 transition-colors"
                   >
-<SvgIconMap.OptionsEdit />                  </button>
+                    <SvgIconMap.OptionsEdit />
+                  </button>
                 </td>
               </tr>
-            ))}
+            )) : (
+              <tr>
+                <td colSpan={5} className="py-4 text-center text-ink-400">
+                  此 API 尚未提供選項值資料
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

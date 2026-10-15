@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import TopBar from '@/components/dashboard/TopBar'
 import OptionGroupSidebar from '../../../components/menuOptions/OptionGroupSidebar';
 import OptionGroupDetail from '../../../components/menuOptions/OptionGroupDetail';
@@ -7,55 +7,15 @@ import GroupNameModal from '../../../components/menuOptions/GroupNameModal';
 import EditItemModal from '../../../components/menuOptions/EditItemModal';
 import SOButton from '@/components/SOButton';
 import Badge from '@/components/Badge';
+import { createApiClient } from '@/services/client/createApiClient'
 
-const INITIAL_OPTION_GROUPS = [
-  {
-    id: 'g1',
-    name: '份量',
-    typeDescription: '必選 單選 · 掛在 18 個品項上',
-    minSelect: 1,
-    maxSelect: 1,
-    sortOrder: 1,
-    items: [
-      { id: 'i1', name: '半份 約 120g', priceDiff: 0, sortOrder: 1, status: 'active' },
-      { id: 'i2', name: '全份 約 220g', priceDiff: 80, sortOrder: 2, status: 'active' },
-      { id: 'i3', name: '加大 約 320g', priceDiff: 160, sortOrder: 3, status: 'disabled' },
-    ],
-    associatedProducts: [
-      '安格斯霜降牛五花', '伊比利豬梅花', '台灣松阪豬', '美國老饕牛小排',
-      '霜降牛舌', '紐西蘭小羔羊肩', '海鮮拼盤', '時蔬八品', '...還有 10 個'
-    ]
-  },
-  {
-    id: 'g2',
-    name: '辣度',
-    typeDescription: '選填 單選 · 掛在 22 個品項上',
-    minSelect: 0,
-    maxSelect: 1,
-    sortOrder: 2,
-    items: [
-      { id: 'i4', name: '不辣', priceDiff: 0, sortOrder: 1, status: 'active' },
-      { id: 'i5', name: '小辣', priceDiff: 0, sortOrder: 2, status: 'active' },
-    ],
-    associatedProducts: ['麻辣鍋底', '川味口水雞']
-  },
-  {
-    id: 'g3',
-    name: '加點配料',
-    typeDescription: '選填 複選 · 掛在 26 個品項上',
-    minSelect: 0,
-    maxSelect: 5,
-    sortOrder: 3,
-    items: [
-      { id: 'i6', name: '手工蝦滑', priceDiff: 120, sortOrder: 1, status: 'active' },
-    ],
-    associatedProducts: ['綜合火鍋料']
-  }
-];
+const optionGroupsClient = createApiClient()
 
 export default function MenuOptions() {
-  const [groups, setGroups] = useState(INITIAL_OPTION_GROUPS);
-  const [selectedGroupId, setSelectedGroupId] = useState(INITIAL_OPTION_GROUPS[0].id);
+  const [groups, setGroups] = useState([]);
+  const [selectedGroupId, setSelectedGroupId] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
   const [isEditingGroupName, setIsEditingGroupName] = useState(false);
   const [tempGroupName, setTempGroupName] = useState('');
@@ -64,14 +24,51 @@ export default function MenuOptions() {
   const [tempItemName, setTempItemName] = useState('');
   const [tempItemPrice, setTempItemPrice] = useState(0);
 
-  const currentGroup = groups.find(g => g.id === selectedGroupId) || groups[0];
+  useEffect(() => {
+    let isCurrentRequest = true;
+
+    async function loadOptionGroups() {
+      try {
+        const { data } = await optionGroupsClient.get('/order/admin/optionGroups');
+        if (!isCurrentRequest) return;
+
+        const fetchedGroups = data.map(group => ({
+          id: String(group.id),
+          name: group.name,
+          typeDescription: '選項群組',
+          minSelect: null,
+          maxSelect: null,
+          sortOrder: null,
+          items: [],
+          associatedProducts: null,
+        }));
+        setGroups(fetchedGroups);
+        setSelectedGroupId(fetchedGroups[0]?.id ?? null);
+      } catch (error) {
+        if (isCurrentRequest) {
+          setLoadError(error instanceof Error ? error.message : '載入選項群組失敗');
+        }
+      } finally {
+        if (isCurrentRequest) setIsLoading(false);
+      }
+    }
+
+    loadOptionGroups();
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, []);
+
+  const currentGroup = groups.find(g => g.id === selectedGroupId);
 
   const handleOpenGroupNameModal = () => {
+    if (!currentGroup) return;
     setTempGroupName(currentGroup.name);
     setIsEditingGroupName(true);
   };
 
   const handleSaveGroupName = () => {
+    if (!currentGroup) return;
     setGroups(prevGroups =>
       prevGroups.map(g =>
         g.id === currentGroup.id ? { ...g, name: tempGroupName } : g
@@ -105,7 +102,7 @@ export default function MenuOptions() {
   return (<><TopBar
         childrenLeft={
           <div className='flex scale-70'>
-            <Badge text="5 個群組" col="plain" />
+            <Badge text={`${groups.length} 個群組`} col="plain" />
           </div>
         }
         childrenRight={
@@ -113,44 +110,51 @@ export default function MenuOptions() {
         }
       />
     <div className="flex h-screen bg-paper p-(--spacing-page) gap-(--spacing-field) text-ink-900 font-sans relative">
-      
-      
       <OptionGroupSidebar 
         groups={groups} 
         selectedGroupId={selectedGroupId} 
         onSelectGroup={setSelectedGroupId} 
       />
 
-      <div className="flex-1 flex flex-col gap-(--spacing-field)">
-        <OptionGroupDetail 
-          currentGroup={currentGroup}
-          onOpenGroupNameModal={handleOpenGroupNameModal}
-          onOpenItemModal={handleOpenItemModal}
-        />
+      {isLoading ? (
+        <div className="flex-1 text-ink-600">載入選項群組中...</div>
+      ) : loadError ? (
+        <div role="alert" className="flex-1 text-danger">載入選項群組失敗：{loadError}</div>
+      ) : currentGroup ? (
+        <>
+          <div className="flex-1 flex flex-col gap-(--spacing-field)">
+            <OptionGroupDetail
+              currentGroup={currentGroup}
+              onOpenGroupNameModal={handleOpenGroupNameModal}
+              onOpenItemModal={handleOpenItemModal}
+            />
 
-        <AssociatedProducts 
-          associatedProducts={currentGroup.associatedProducts} 
-        />
-      </div>
+            <AssociatedProducts
+              associatedProducts={currentGroup.associatedProducts}
+            />
+          </div>
 
-      <GroupNameModal 
-        isOpen={isEditingGroupName}
-        groupName={tempGroupName}
-        setGroupName={setTempGroupName}
-        onClose={() => setIsEditingGroupName(false)}
-        onSave={handleSaveGroupName}
-      />
+          <GroupNameModal
+            isOpen={isEditingGroupName}
+            groupName={tempGroupName}
+            setGroupName={setTempGroupName}
+            onClose={() => setIsEditingGroupName(false)}
+            onSave={handleSaveGroupName}
+          />
 
-      <EditItemModal 
-        isOpen={Boolean(editingItem)}
-        itemName={tempItemName}
-        setItemName={setTempItemName}
-        itemPrice={tempItemPrice}
-        setItemPrice={setTempItemPrice}
-        onClose={() => setEditingItem(null)}
-        onSave={handleSaveItem}
-      />
-
+          <EditItemModal
+            isOpen={Boolean(editingItem)}
+            itemName={tempItemName}
+            setItemName={setTempItemName}
+            itemPrice={tempItemPrice}
+            setItemPrice={setTempItemPrice}
+            onClose={() => setEditingItem(null)}
+            onSave={handleSaveItem}
+          />
+        </>
+      ) : (
+        <div className="flex-1 text-ink-600">目前沒有選項群組</div>
+      )}
     </div></>
   );
 }

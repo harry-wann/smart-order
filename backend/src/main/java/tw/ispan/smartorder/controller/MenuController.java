@@ -91,6 +91,7 @@ public class MenuController {
         return ResponseEntity.ok(deletedCategory);
     }
 
+    // MenuOptions 畫面 提取所有選項群組資訊
     @GetMapping("/admin/optionGroups")
     public ResponseEntity<List<GetOptionByIdDto>> getOptionGroups() {
         return ResponseEntity.ok(optionGroupService.getAllOptionGroups());
