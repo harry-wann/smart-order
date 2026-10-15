@@ -3,6 +3,7 @@ import {
   cancelReservationByStaff,
   fetchAdminReservations,
   fetchAvailableTables,
+  fetchOpenOptions,
   seatReservation,
 } from '@/services/api/reservation/adminReservationApi'
 import { queryScope } from '@/services/client/queryClient'
@@ -10,8 +11,10 @@ import { queryScope } from '@/services/client/queryClient'
 export const adminReservationKeys = {
   all: [...queryScope.employee, 'reservations'] as const,
   day: (date: string) => [...adminReservationKeys.all, date] as const,
+  tables: [...queryScope.employee, 'tables'] as const,
   availableTables: (partySize: number, reservationId?: number) =>
-    [...queryScope.employee, 'tables', 'available', partySize, reservationId ?? null] as const,
+    [...adminReservationKeys.tables, 'available', partySize, reservationId ?? null] as const,
+  openOptions: (tableId: number) => [...adminReservationKeys.tables, 'open-options', tableId] as const,
 }
 
 // 櫃檯一直開著這頁，每 30 秒重抓一次，報到、取消、逾時才跟得上
@@ -28,7 +31,12 @@ export function useCancelReservationByStaff() {
 
   return useMutation({
     mutationFn: cancelReservationByStaff,
-    onSettled: () => queryClient.invalidateQueries({ queryKey: adminReservationKeys.all }),
+    // 取消會解開那張桌的保留，桌位相關的清單也要重抓
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: adminReservationKeys.all }),
+        queryClient.invalidateQueries({ queryKey: adminReservationKeys.tables }),
+      ]),
   })
 }
 
@@ -50,7 +58,17 @@ export function useSeatReservation() {
     onSettled: () =>
       Promise.all([
         queryClient.invalidateQueries({ queryKey: adminReservationKeys.all }),
-        queryClient.invalidateQueries({ queryKey: [...queryScope.employee, 'tables'] }),
+        queryClient.invalidateQueries({ queryKey: adminReservationKeys.tables }),
       ]),
+  })
+}
+
+// 開桌頁：保留、可報到的預約都跟著時間在變，30 秒重抓一次
+export function useOpenOptions(tableId: number | undefined) {
+  return useQuery({
+    queryKey: adminReservationKeys.openOptions(tableId ?? 0),
+    queryFn: ({ signal }) => fetchOpenOptions(tableId ?? 0, signal),
+    enabled: tableId !== undefined,
+    refetchInterval: 30_000,
   })
 }

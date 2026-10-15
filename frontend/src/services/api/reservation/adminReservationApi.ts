@@ -74,3 +74,32 @@ export async function seatReservation({ id, tableId }: { id: number; tableId: nu
   const { data } = await employeeClient.post<SeatResult>(`/admin/reservations/${id}/seat`, { tableId })
   return data
 }
+
+export type OpenOptions = {
+  tableId: number
+  tableNo: string
+  seats: number
+  area: string
+  status: 'AVAILABLE' | 'OCCUPIED' | 'CLEANING'
+  waitlist: { id: number; no: string; name: string; partySize: number; waitedMinutes: number; status: string }[]
+  reservations: {
+    id: number
+    reservationNo: string
+    name: string
+    phoneMasked: string
+    startTime: string
+    adultCount: number
+    childCount: number
+    partySize: number
+    preorderItemCount: number
+    assignedTableNo: string | null
+  }[]
+  heldFor: { reservationId: number; reservationNo: string; name: string; partySize: number; startTime: string } | null
+  upcomingOnThisTable: { reservationNo: string; name: string; startTime: string; endTime: string; partySize: number } | null
+}
+
+// GET /admin/tables/{id}/open-options：開桌頁要的清單，加上這張桌的保留與稍後的訂位
+export async function fetchOpenOptions(tableId: number, signal?: AbortSignal) {
+  const { data } = await employeeClient.get<OpenOptions>(`/admin/tables/${tableId}/open-options`, { signal })
+  return data
+}

@@ -8,6 +8,7 @@ import tw.ispan.smartorder.reservation.enums.ReservationStatus
 import tw.ispan.smartorder.reservation.repository.ReservationRepository
 import java.time.Clock
 import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
 
 // 排程與手動觸發 API 共用的邏輯；排程那邊只負責呼叫和記日誌
 @Service
@@ -29,7 +30,8 @@ class ReservationJobService(
     // 每筆只會被抓到一次。還沒有簡訊／推播通道，先記進日誌
     @Transactional(readOnly = true)
     fun sendReminders(): Int {
-        val from = LocalDateTime.now(clock).plusMinutes(REMIND_BEFORE_MINUTES)
+        // 截到分鐘：排程會晚幾毫秒才跑，不截的話整點、半點的訂位會被前一輪先抓走，提早 15 分鐘提醒
+        val from = LocalDateTime.now(clock).truncatedTo(ChronoUnit.MINUTES).plusMinutes(REMIND_BEFORE_MINUTES)
         val reservations = reservationRepo.findByStatusAndStartTimeGreaterThanEqualAndStartTimeLessThan(
             ReservationStatus.CONFIRMED,
             from,

@@ -57,6 +57,14 @@ function ReservationManagement() {
   )
   const seatReservation = useSeatReservation()
   const [seatNotice, setSeatNotice] = useState<string | null>(null)
+  // 搶桌失敗、清單重抓後換一個 key，讓對話框的選取與「再確認」狀態從頭開始
+  const [seatDialogKey, setSeatDialogKey] = useState(0)
+
+  // 空桌清單查不到（例如權限不足）就關掉對話框，不要讓按鈕看起來沒反應
+  if (seatingTarget && availableTables.isError) {
+    setSeatingTarget(null)
+    setNotice(availableTables.error.message)
+  }
   const totalTables = seatsQuery.data?.length ?? 0
   const reservableTables = seatsQuery.data?.filter((seat) => seat.reservable).length ?? 0
 
@@ -86,7 +94,7 @@ function ReservationManagement() {
   }
 
   function handleSeat(tableNo: string) {
-    if (!seatingTarget) return
+    if (!seatingTarget || seatReservation.isPending) return
     const table = availableTables.data?.find((option) => option.tableNo === tableNo)
     if (!table) return
     setSeatNotice(null)
@@ -101,6 +109,7 @@ function ReservationManagement() {
           // 桌子剛被開走或撞到別筆的保留：留在對話框、重新載入空桌
           if (error.code === 'TABLE_OCCUPIED' || error.code === 'TABLE_RESERVED') {
             setSeatNotice(`${error.message}，已重新載入空桌`)
+            setSeatDialogKey((key) => key + 1)
             void availableTables.refetch()
             return
           }
@@ -113,7 +122,7 @@ function ReservationManagement() {
   }
 
   function handleCancel() {
-    if (!cancelTarget) return
+    if (!cancelTarget || cancelByStaff.isPending) return
     const target = cancelTarget
     setCancelTarget(null)
     setNotice(null)
@@ -235,6 +244,7 @@ function ReservationManagement() {
 
       {seatingTarget && availableTables.isSuccess && (
         <SeatDialog
+          key={seatDialogKey}
           title={`${seatingTarget.name}・${seatingTarget.partySize} 位`}
           summary={getSeatSummary(seatingTarget)}
           partySize={seatingTarget.partySize}

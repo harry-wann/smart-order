@@ -90,10 +90,12 @@ class ReservationService(
         try {
             reservationRepo.saveAndFlush(reservation)
         } catch (e: DataIntegrityViolationException) {
-            // UNIQUE(table_id, start_time) 是鎖之外的最後一道保險
+            // UNIQUE(table_id, start_time) 是鎖之外的最後一道保險；其他資料錯誤照常往外丟
+            if (e.mostSpecificCause.message?.contains(UNIQUE_TABLE_START) != true) throw e
             throw ApiException.conflict("SLOT_UNAVAILABLE", "這個時段剛好被訂走了，請改選其他時段")
         }
-        reservation.reservationNo = "R-%s-%04d".format(start.format(YYMMDD), reservation.id!! % 10000)
+        // 流水號就是 id，不足 4 碼補 0（跟 seed 的 LPAD 一樣），超過也不截斷
+        reservation.reservationNo = "R-%s-%04d".format(start.format(YYMMDD), reservation.id!!)
 
         return toCreatedResponse(reservation, table)
     }
@@ -178,7 +180,7 @@ class ReservationService(
                 ?: throw ApiException.unauthorized("會員身分無效，請重新登入")
             reservation.contactName = request.contactName?.takeIf { it.isNotBlank() } ?: member.getNickname() ?: "會員"
             reservation.contactPhone = member.getPhone()
-            reservation.contactEmail = request.contactEmail
+            reservation.contactEmail = request.contactEmail?.takeIf { it.isNotBlank() }
             return
         }
 
@@ -245,6 +247,7 @@ class ReservationService(
     companion object {
         private val HH_MM = DateTimeFormatter.ofPattern("HH:mm")
         private val YYMMDD = DateTimeFormatter.ofPattern("yyMMdd")
+        private const val UNIQUE_TABLE_START = "uk_reservation_table_start"
         private val PREORDER_DEADLINE = LocalTime.of(20, 0)
         private val random = SecureRandom()
     }

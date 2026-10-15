@@ -8,6 +8,11 @@ import tw.ispan.smartorder.reservation.config.ReservationProperties
 import tw.ispan.smartorder.reservation.dto.response.AdminReservationResponse
 import tw.ispan.smartorder.reservation.dto.response.AvailableTableResponse
 import tw.ispan.smartorder.reservation.dto.response.CancelReservationResponse
+import tw.ispan.smartorder.reservation.dto.response.HeldForResponse
+import tw.ispan.smartorder.reservation.dto.response.OpenOptionsResponse
+import tw.ispan.smartorder.reservation.dto.response.OpenReservationItem
+import tw.ispan.smartorder.reservation.dto.response.OpenWaitlistItem
+import tw.ispan.smartorder.reservation.dto.response.UpcomingReservationResponse
 import tw.ispan.smartorder.reservation.dto.response.SeatReservationResponse
 import tw.ispan.smartorder.reservation.entity.DiningSessionEntity
 import tw.ispan.smartorder.reservation.entity.ReservationEntity
@@ -22,6 +27,7 @@ import java.security.SecureRandom
 import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.Duration
 import java.time.format.DateTimeFormatter
 
 // S-07 預約管理：櫃檯看一天的訂位、代客取消、報到開桌（S-07b）
@@ -105,6 +111,77 @@ class AdminReservationService(
                 .thenBy { it.tableNo },
         )
     }
+
+    // S-02 點空桌進開桌頁：可報到的預約、已叫號的候位、這張桌的保留與稍後的訂位
+    @Transactional(readOnly = true)
+    fun openOptions(tableId: Long): OpenOptionsResponse {
+        val table = tableRepo.findById(tableId).orElse(null)?.takeIf { it.active }
+            ?: throw ApiException.notFound("找不到這張桌")
+        val now = LocalDateTime.now(clock)
+        val holds = holdService.snapshot(now)
+
+        // −10 是保留時間的尾巴、+30 是最早可報到；清單自己看時間，不等 NO_SHOW 排程
+        val reservations = reservationRepo
+            .findByStatusAndStartTimeGreaterThanEqualAndStartTimeLessThanEqualAndPartySizeLessThanEqualOrderByStartTimeAsc(
+                ReservationStatus.CONFIRMED,
+                now.minusMinutes(properties.holdAfterMinutes),
+                now.plusMinutes(properties.holdBeforeMinutes),
+                table.seats,
+            )
+        val assignedTableNos = tableRepo.findAllById(reservations.mapNotNull { it.tableId }.toSet())
+            .associate { it.id to it.tableNo }
+        // 用餐中、待清理的桌不顯示保留，客人到了從 S-07b 另選一張
+        val holder = if (table.status == TABLE_AVAILABLE) holds.heldBy(tableId) else null
+        val upcoming = holds.upcoming(tableId, setOfNotNull(holder?.id))
+
+        return OpenOptionsResponse(
+            tableId = tableId,
+            tableNo = table.tableNo!!,
+            seats = table.seats,
+            area = table.area!!,
+            status = table.status!!,
+            waitlist = reservationRepo.findCalledWaitlist(table.seats).map {
+                OpenWaitlistItem(
+                    id = it.getId(),
+                    no = it.getTicketNo(),
+                    name = it.getContactName(),
+                    partySize = it.getPartySize(),
+                    waitedMinutes = Duration.between(it.getCreatedAt(), now).toMinutes(),
+                    status = "CALLED",
+                )
+            },
+            reservations = reservations.map {
+                OpenReservationItem(
+                    id = it.id!!,
+                    reservationNo = it.reservationNo ?: "",
+                    name = it.contactName!!,
+                    phoneMasked = maskPhone(it.contactPhone!!),
+                    startTime = properties.toOffset(it.startTime!!),
+                    adultCount = it.adultCount,
+                    childCount = it.childCount,
+                    partySize = it.partySize,
+                    preorderItemCount = 0,
+                    assignedTableNo = assignedTableNos[it.tableId],
+                )
+            },
+            heldFor = holder?.let {
+                HeldForResponse(it.id!!, it.reservationNo ?: "", it.contactName!!, it.partySize, properties.toOffset(it.startTime!!))
+            },
+            upcomingOnThisTable = upcoming?.let {
+                UpcomingReservationResponse(
+                    reservationNo = it.reservationNo ?: "",
+                    name = it.contactName!!,
+                    startTime = properties.toOffset(it.startTime!!),
+                    endTime = properties.toOffset(it.endTime!!),
+                    partySize = it.partySize,
+                )
+            },
+        )
+    }
+
+    // 0933123210 → 0933***210
+    private fun maskPhone(phone: String): String =
+        if (phone.length < 7) phone else phone.take(4) + "***" + phone.takeLast(3)
 
     // 報到開桌：鎖訂位 → 檢查狀態與報到時間窗 → 鎖桌 → 檢查空桌與保留 → 建立用餐紀錄。
     // 鎖的順序固定是「訂位再桌位」，跟取消、現場開桌搶同一筆時不會互相卡死

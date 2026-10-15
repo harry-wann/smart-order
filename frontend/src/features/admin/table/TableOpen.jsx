@@ -1,5 +1,13 @@
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router'
+import {
+  useCancelReservationByStaff,
+  useOpenOptions,
+  useSeatReservation,
+} from '@/hooks/reservation/useAdminReservations'
+import { fetchSeats } from '@/services/api/seatApi'
+import { queryScope } from '@/services/client/queryClient'
 import SOButton from '@/components/SOButton'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import BellButtonPlaceholder from './BellButtonPlaceholder'
@@ -10,28 +18,6 @@ const calledWaitlist = [
   { id: 13, queueNo: 'A13', name: '李小姐', people: 4, waitMinutes: 2 },
   { id: 12, queueNo: 'A12', name: '王先生', people: 3, waitMinutes: 18 },
   { id: 14, queueNo: 'A14', name: '張先生', people: 6, waitMinutes: 4 },
-]
-
-// 假資料：現在可以報到的預約（之後換成 API）
-const checkinReservations = [
-  {
-    id: 21,
-    time: '18:30',
-    name: '陳怡君',
-    phone: '0933123210',
-    people: 4,
-    preorderCount: 4,
-    assignedTable: 'A08',
-  },
-  {
-    id: 22,
-    time: '18:45',
-    name: '林家豪',
-    phone: '0935123806',
-    people: 2,
-    preorderCount: 0,
-    assignedTable: 'B02',
-  },
 ]
 
 const TABLE_INFO_BY_NUMBER = {
@@ -290,16 +276,30 @@ function TableOpen() {
   const { tableNo } = useParams()
   const navigate = useNavigate()
 
-  // ===== 假資料：之後換成 API 回傳的資料 =====
-  const tableInfo = TABLE_INFO_BY_NUMBER[tableNo] ?? { capacity: 4, area: '座位區' }
-  // 115 分鐘內的訂位（沒有就是 null）
-  const conflict = { time: '19:30', name: '陳小姐', people: 4 }
-  // 現在在預約保留時段的話，填保留這張桌的預約 id（沒有就是 null）
-  const reservedHoldId = tableNo === 'A08' ? 21 : null
-  // ===== 假資料結束 =====
+  // 網址帶的是桌號，開桌頁的 API 要桌位 id，從座位設定查
+  const seatsQuery = useQuery({
+    queryKey: [...queryScope.employee, 'seats'],
+    queryFn: ({ signal }) => fetchSeats(signal),
+  })
+  const tableId = seatsQuery.data?.find((seat) => seat.tableNo === tableNo)?.id
+  // 預約清單、保留、稍後的訂位都來自後端（工作包 E）；現場與候位開桌仍是假資料（工作包 D）
+  const optionsQuery = useOpenOptions(tableId)
+  const options = optionsQuery.data
+  const seatReservation = useSeatReservation()
+  const cancelByStaff = useCancelReservationByStaff()
+  const [notice, setNotice] = useState(null)
 
-  const [reservations, setReservations] = useState(checkinReservations)
-  const visibleReservations = reservations.filter((item) => item.people <= tableInfo.capacity)
+  const tableInfo = options
+    ? { capacity: options.seats, area: options.area }
+    : (TABLE_INFO_BY_NUMBER[tableNo] ?? { capacity: 4, area: '座位區' })
+  // 115 分鐘內的訂位（沒有就是 null）
+  const upcoming = options?.upcomingOnThisTable
+  const conflict = upcoming
+    ? { time: toTime(upcoming.startTime), name: upcoming.name, people: upcoming.partySize }
+    : null
+  const reservedHoldId = options?.heldFor?.reservationId ?? null
+
+  const visibleReservations = (options?.reservations ?? []).map(toReservationRow)
   const reservedHold = visibleReservations.find((item) => item.id === reservedHoldId) ?? null
   const reservationCount = visibleReservations.length
   const openLabel = conflict ? '仍要開桌' : '開桌'
@@ -310,7 +310,10 @@ function TableOpen() {
       : calledWaitlist.length > 0
         ? 'waitlist'
         : 'walkin'
-  const [activeTab, setActiveTab] = useState(defaultTab)
+  // 資料回來前不知道預設頁籤，沒手動切過就一直跟著資料決定
+  const [pickedTab, setPickedTab] = useState(null)
+  const activeTab = pickedTab ?? defaultTab
+  const setActiveTab = setPickedTab
   const [pendingOpen, setPendingOpen] = useState(null)
 
   const tabs = [
@@ -330,14 +333,29 @@ function TableOpen() {
   }
 
   function confirmOpen(payload) {
+    if (payload.type === 'reservation') {
+      if (seatReservation.isPending) return
+      setPendingOpen(null)
+      setNotice(null)
+      seatReservation.mutate(
+        { id: payload.reservationId, tableId },
+        {
+          onSuccess: () => navigate('/admin/table_overview'),
+          // 搶桌、撞到保留、訂位剛被取消或已逾時：留在本頁，清單會重抓
+          onError: (error) => setNotice(error.message),
+        },
+      )
+      return
+    }
     // 之後接後端：POST /api/admin/tables/{id}/open，成功後回桌況總覽
     alert(`已開桌 ${tableNo}：${JSON.stringify(payload)}`)
     navigate('/admin/table_overview')
   }
 
   function cancelReservation(id) {
-    // 之後接後端：POST /api/admin/reservations/{id}/cancel
-    setReservations((list) => list.filter((item) => item.id !== id))
+    if (cancelByStaff.isPending) return
+    setNotice(null)
+    cancelByStaff.mutate({ id }, { onError: (error) => setNotice(error.message) })
   }
 
   return (
@@ -346,6 +364,10 @@ function TableOpen() {
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         <main className="mx-auto w-full max-w-205 p-6">
+          {notice && <p className="mb-4 type-body-sm text-danger">{notice}</p>}
+          {optionsQuery.isError && (
+            <p className="mb-4 type-body-sm text-danger">{optionsQuery.error.message}</p>
+          )}
           {isHeld ? (
             <AlertBar
               tone="hold"
@@ -409,6 +431,7 @@ function TableOpen() {
                 seats={tableInfo.capacity}
                 holdId={isHeld ? reservedHold.id : null}
                 openLabel={openLabel}
+                busy={seatReservation.isPending || cancelByStaff.isPending}
                 onOpen={requestOpen}
                 onCancel={cancelReservation}
               />
@@ -429,3 +452,21 @@ function TableOpen() {
 }
 
 export default TableOpen
+
+// 開桌頁預約頁籤要的欄位；電話後端已經遮好了
+function toReservationRow(item) {
+  return {
+    id: item.id,
+    time: toTime(item.startTime),
+    name: item.name,
+    phone: item.phoneMasked,
+    people: item.partySize,
+    preorderCount: item.preorderItemCount,
+    assignedTable: item.assignedTableNo ?? '—',
+  }
+}
+
+// "2026-10-15T18:30:00+08:00" → "18:30"（後端回的就是店家時區）
+function toTime(isoTime) {
+  return isoTime.slice(11, 16)
+}

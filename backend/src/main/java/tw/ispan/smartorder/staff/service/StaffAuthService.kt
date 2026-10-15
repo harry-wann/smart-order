@@ -22,8 +22,9 @@ class StaffAuthService(
     @Transactional(readOnly = true)
     fun login(request: StaffLoginRequest): StaffLoginResponse {
         val staff = staffRepo.findByUsernameAndActiveTrue(request.username.trim())
-        // 帳號不存在跟密碼錯回一樣的訊息，不透露哪個帳號存在
-        if (staff == null || !passwordEncoder.matches(request.password, staff.passwordHash)) {
+        // 帳號不存在時也比對一次假的 hash，回應時間跟密碼錯一樣，看不出哪個帳號存在
+        val matched = passwordEncoder.matches(request.password, staff?.passwordHash ?: DUMMY_HASH)
+        if (staff == null || !matched) {
             throw ApiException.unauthorized("帳號或密碼錯誤")
         }
         val principal = StaffPrincipal(staff.id!!, staff.displayName!!, staff.role!!)
@@ -37,5 +38,6 @@ class StaffAuthService(
 
     companion object {
         private val ZONE = ZoneId.of("Asia/Taipei")
+        private val DUMMY_HASH = BCryptPasswordEncoder().encode("not-a-real-password")
     }
 }

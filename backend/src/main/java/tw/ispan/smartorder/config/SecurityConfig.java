@@ -14,7 +14,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.time.OffsetDateTime;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import tw.ispan.smartorder.controller.SessionTokenFilter;
 import tw.ispan.smartorder.repository.DingingSessionRepository;
 import tw.ispan.smartorder.staff.security.StaffJwtFilter;
@@ -54,7 +57,8 @@ public class SecurityConfig {
                     authorize.requestMatchers(HttpMethod.POST, "/api/admin/auth/login").permitAll();
                     authorize.requestMatchers("/api/admin/reservations/**").hasAnyRole("COUNTER", "MANAGER");
                     authorize.requestMatchers("/api/admin/scheduler/**").hasRole("MANAGER");
-                    authorize.requestMatchers("/api/admin/tables/available").hasAnyRole("COUNTER", "MANAGER");
+                    authorize.requestMatchers("/api/admin/tables/available", "/api/admin/tables/*/open-options")
+                            .hasAnyRole("COUNTER", "MANAGER");
 
                     authorize
                             .requestMatchers(
@@ -67,11 +71,14 @@ public class SecurityConfig {
                             ).permitAll()
                             .anyRequest().authenticated();
                 })
+                // 只有店家端回 401（前端會清掉員工權杖、導回登入頁）；上傳等其他被擋的路徑維持 403
                 .exceptionHandling(handling -> handling
-                        .authenticationEntryPoint((request, response, exception) ->
-                                writeError(response, 401, "UNAUTHORIZED", "請先登入"))
+                        .defaultAuthenticationEntryPointFor(
+                                (request, response, exception) ->
+                                        writeError(request, response, 401, "UNAUTHORIZED", "請先登入"),
+                                PathPatternRequestMatcher.withDefaults().matcher("/api/admin/**"))
                         .accessDeniedHandler((request, response, exception) ->
-                                writeError(response, 403, "FORBIDDEN", "權限不足")))
+                                writeError(request, response, 403, "FORBIDDEN", "權限不足")))
                 .addFilterBefore(new SessionTokenFilter(sessionRepo),
                         UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(new StaffJwtFilter(staffJwtProvider),
@@ -79,12 +86,14 @@ public class SecurityConfig {
         return http.build();
     }
 
-    private static void writeError(HttpServletResponse response, int status, String code, String message)
-            throws java.io.IOException {
+    // 格式同 04 §1.2；message、path 都是固定值或伺服器端的路徑，直接組字串
+    private static void writeError(HttpServletRequest request, HttpServletResponse response,
+                                   int status, String code, String message) throws java.io.IOException {
         response.setStatus(status);
         response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write(
-                "{\"status\":" + status + ",\"code\":\"" + code + "\",\"message\":\"" + message + "\"}");
+        response.getWriter().write("{\"timestamp\":\"" + OffsetDateTime.now() + "\",\"status\":" + status
+                + ",\"code\":\"" + code + "\",\"message\":\"" + message
+                + "\",\"path\":\"" + request.getRequestURI() + "\"}");
     }
 
     /**
