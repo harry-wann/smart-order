@@ -10,9 +10,6 @@ export default function OptionGroupDetail({ currentGroup, onOpenGroupNameModal, 
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
           <h2 className="type-h1">{currentGroup.name}</h2>
-          <span className="bg-surface-2 text-ink-600 px-2.5 py-0.5 rounded-[var(--radius-pill)] type-dashboard-top-bar-tag">
-            選項群組
-          </span>
         </div>
         <button 
           onClick={onOpenGroupNameModal}

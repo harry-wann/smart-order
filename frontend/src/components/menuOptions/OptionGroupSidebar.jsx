@@ -21,7 +21,6 @@ export default function OptionGroupSidebar({ groups, selectedGroupId, onSelectGr
               <span className="type-h3">{group.name}</span>
               <span className="text-ink-400">›</span>
             </div>
-            <div className="type-caption text-ink-600">{group.typeDescription}</div>
           </div>
         );
       })}
