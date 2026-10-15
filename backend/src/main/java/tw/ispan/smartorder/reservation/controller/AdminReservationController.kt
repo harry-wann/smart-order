@@ -19,7 +19,8 @@ import tw.ispan.smartorder.reservation.service.AdminReservationService
 import tw.ispan.smartorder.staff.security.StaffPrincipal
 import java.time.LocalDate
 
-// 角色限制寫在 SecurityConfig：COUNTER、MANAGER
+// 角色限制寫在 SecurityConfig：COUNTER、MANAGER。
+// 擋人的規則放同一個地方，哪條路徑開給誰一眼看得完；controller 只在需要知道「是誰操作」時才去拿登入的員工
 @RestController
 @RequestMapping("/api/admin/reservations")
 class AdminReservationController(
@@ -39,6 +40,9 @@ class AdminReservationController(
         return service.seat(id, request.tableId!!)
     }
 
+    // 取消原因是選填，所以連 body 都可以不帶（request 才會是 null）。
+    // 是哪個員工取消的從 JWT 拿，不收前端傳的 staffId，不然誰都能填別人的名字進紀錄；
+    // 走到這裡一定登入過（沒登入在 SecurityConfig 就 401 了），這個 null 檢查只是保險
     @PostMapping("/{id}/cancel")
     fun cancel(
         @PathVariable id: Long,

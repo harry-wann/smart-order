@@ -11,6 +11,7 @@ import { queryScope } from '@/services/client/queryClient'
 export const adminReservationKeys = {
   all: [...queryScope.employee, 'reservations'] as const,
   day: (date: string) => [...adminReservationKeys.all, date] as const,
+  // 空桌清單和開桌選項不放在 reservations 底下；報到、取消兩邊都會動到，所以 mutation 各 invalidate 一次
   tables: [...queryScope.employee, 'tables'] as const,
   availableTables: (partySize: number, reservationId?: number) =>
     [...adminReservationKeys.tables, 'available', partySize, reservationId ?? null] as const,
@@ -31,7 +32,9 @@ export function useCancelReservationByStaff() {
 
   return useMutation({
     mutationFn: cancelReservationByStaff,
-    // 取消會解開那張桌的保留，桌位相關的清單也要重抓
+    // 取消會解開那張桌的保留，桌位相關的清單也要重抓。
+    // 桌況的即時推播（TABLE_STATUS）還沒接，目前靠這裡重抓；用 onSettled 是因為失敗
+    // （例如客人剛好自己取消了）時畫面也要對上後端現況
     onSettled: () =>
       Promise.all([
         queryClient.invalidateQueries({ queryKey: adminReservationKeys.all }),
@@ -55,6 +58,7 @@ export function useSeatReservation() {
 
   return useMutation({
     mutationFn: seatReservation,
+    // 成功是訂位轉 SEATED、桌子變使用中；失敗多半是桌子或訂位剛被改過，所以成功失敗都重抓
     onSettled: () =>
       Promise.all([
         queryClient.invalidateQueries({ queryKey: adminReservationKeys.all }),
@@ -64,6 +68,7 @@ export function useSeatReservation() {
 }
 
 // 開桌頁：保留、可報到的預約都跟著時間在變，30 秒重抓一次
+// tableId 要等座位設定查回來才有，沒有就不發請求；?? 0 只是讓 queryKey 和型別過得去
 export function useOpenOptions(tableId: number | undefined) {
   return useQuery({
     queryKey: adminReservationKeys.openOptions(tableId ?? 0),

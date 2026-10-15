@@ -53,10 +53,16 @@ public class SecurityConfig {
                     }
                     authorize.requestMatchers("/api/uploads/**").denyAll();
 
-                    // 員工登入；以下店家端規則都要放在 /api/** 之前
+                    // 員工登入；以下店家端規則都要放在 /api/** 之前（規則由上往下比，第一條符合就用，
+                    // 擺後面會先被 /api/** 的 permitAll 吃掉）。login 要放行，不然沒登入就被擋，永遠登不進去
                     authorize.requestMatchers(HttpMethod.POST, "/api/admin/auth/login").permitAll();
+                    // 只替訂位用到的路徑加角色，不寫成 /api/admin/** 一把鎖：隊友的店家端 API 還沒接登入，
+                    // 一起鎖起來他們的頁面會全部 401，等各自接好再一條一條加進來。
+                    // hasRole 比對的是 ROLE_ 開頭的 authority，由 StaffJwtFilter 組給 Spring Security
                     authorize.requestMatchers("/api/admin/reservations/**").hasAnyRole("COUNTER", "MANAGER");
+                    // 排程手動觸發會一次改一批訂位的狀態（例如 NO_SHOW），只給店長
                     authorize.requestMatchers("/api/admin/scheduler/**").hasRole("MANAGER");
+                    // 只列這兩條，不寫 /api/admin/tables/**：同路徑下還有隊友的桌況總覽、現場開桌、整理完成
                     authorize.requestMatchers("/api/admin/tables/available", "/api/admin/tables/*/open-options")
                             .hasAnyRole("COUNTER", "MANAGER");
 
@@ -71,7 +77,10 @@ public class SecurityConfig {
                             ).permitAll()
                             .anyRequest().authenticated();
                 })
-                // 只有店家端回 401（前端會清掉員工權杖、導回登入頁）；上傳等其他被擋的路徑維持 403
+                // 沒登入（或 token 過期、被改過）打 /api/admin/** 回 401 JSON，前端看到 401 會清掉員工權杖、導回登入頁；
+                // entry point 只套 /api/admin/**，其他路徑（例如 denyAll 的上傳）不動，維持原本的 403。
+                // 登入了但角色不夠（例如 COUNTER 去按排程）走 accessDeniedHandler 回 403，
+                // 前端只顯示「權限不足」，不能跟 401 混在一起導回登入頁
                 .exceptionHandling(handling -> handling
                         .defaultAuthenticationEntryPointFor(
                                 (request, response, exception) ->
@@ -81,12 +90,16 @@ public class SecurityConfig {
                                 writeError(request, response, 403, "FORBIDDEN", "權限不足")))
                 .addFilterBefore(new SessionTokenFilter(sessionRepo),
                         UsernamePasswordAuthenticationFilter.class)
+                // StaffJwtFilter 自己只處理 /api/admin/，跟上面 SessionTokenFilter 的顧客端權杖各管各的
                 .addFilterBefore(new StaffJwtFilter(staffJwtProvider),
                         UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
-    // 格式同 04 §1.2；message、path 都是固定值或伺服器端的路徑，直接組字串
+    // 格式同 04 §1.2；message、path 都是固定值或伺服器端的路徑，直接組字串。
+    // 這是 filter 層的錯誤，進不了 ApiExceptionAdvice（那邊只接 controller 丟的例外），所以自己寫；
+    // 沒有 details，跟 ErrorResponse 在 details 為空時不輸出該欄位的結果一樣，前端看到的格式一致。
+    // contentType 要帶 charset，不然 getWriter 預設編碼會讓中文 message 變亂碼
     private static void writeError(HttpServletRequest request, HttpServletResponse response,
                                    int status, String code, String message) throws java.io.IOException {
         response.setStatus(status);

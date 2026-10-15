@@ -16,6 +16,8 @@ class AdminTableController(
     private val service: AdminReservationService,
 ) {
 
+    // reservationId 只有從 S-07b 替某筆訂位選桌時才帶：那筆自己的保留桌不能當成「被別人保留」濾掉，
+    // 還要排第一個；從 S-10b 替候位選桌就不帶
     @GetMapping("/available")
     fun available(
         @RequestParam partySize: Int,

@@ -17,7 +17,8 @@ import { SvgIconMap } from '@/assets/SvgIconMap'
 export function Reservation() {
   const navigate = useNavigate()
 
-  // 已登入會員就直接選時段；會員登入（工作包 A）完成前先導到登入頁
+  // 已登入會員就直接選時段；會員登入（工作包 A）完成前先導到登入頁。
+  // 只看有沒有存 token，有沒有效交給 API 判斷；returnTo 讓驗證碼頁通過後直接回來選時段
   function handleMember() {
     if (customerTokens.member.get()) {
       navigate('/reserve/datetime', { state: { reservationType: 'MEMBER' } })

@@ -36,6 +36,8 @@ function SeatDialog({
   onClose,
   onConfirm,
 }: Props) {
+  // 這兩個 state 只在掛載時初始化，不隨 props 同步。呼叫端靠 key 重新掛載來重置：
+  // 每次打開都是新的，搶桌失敗、空桌清單換了之後也是，才不會留著已經不存在的選取
   const [pickedNo, setPickedNo] = useState<string | null>(null)
   const [confirming, setConfirming] = useState(false)
 

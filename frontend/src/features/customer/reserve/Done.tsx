@@ -19,7 +19,8 @@ function Done() {
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    // 匿名訂位只記在這支手機，C-19 靠這份清單找回來
+    // 匿名訂位只記在這支手機，C-19 靠這份清單找回來。
+    // addReservation 遇到同一筆會略過，重新整理或從清單點回來都不會重複寫入
     if (!reservation || reservation.member || !accessToken) return
     const confirmation = toConfirmation(reservation, accessToken, routeReservation?.contact)
     saveReservations('GUEST', addReservation(loadReservations('GUEST'), confirmation, 'GUEST'))
