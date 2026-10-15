@@ -14,7 +14,7 @@ import tw.ispan.smartorder.reservation.dto.response.OpenReservationItem
 import tw.ispan.smartorder.reservation.dto.response.OpenWaitlistItem
 import tw.ispan.smartorder.reservation.dto.response.UpcomingReservationResponse
 import tw.ispan.smartorder.reservation.dto.response.SeatReservationResponse
-import tw.ispan.smartorder.reservation.entity.DiningSessionEntity
+import tw.ispan.smartorder.entity.DiningSessionEntity
 import tw.ispan.smartorder.reservation.entity.ReservationEntity
 import tw.ispan.smartorder.reservation.enums.CancelSource
 import tw.ispan.smartorder.reservation.enums.ReservationStatus
@@ -220,14 +220,14 @@ class AdminReservationService(
         }
 
         val session = sessionRepo.save(
-            DiningSessionEntity(
-                tableId = tableId,
-                reservationId = reservation.id,
-                sessionToken = newSessionToken(),
-                adultCount = reservation.adultCount,
-                childCount = reservation.childCount,
-                openedAt = now,
-            )
+            DiningSessionEntity().apply {
+                this.tableId = tableId
+                reservationId = reservation.id
+                sessionToken = newSessionToken()
+                adultCount = reservation.adultCount
+                childCount = reservation.childCount
+                openedAt = now
+            }
         )
         table.status = TABLE_OCCUPIED
         // 不改 table_id：那是訂位當下配的桌，實際坐哪張記在用餐紀錄

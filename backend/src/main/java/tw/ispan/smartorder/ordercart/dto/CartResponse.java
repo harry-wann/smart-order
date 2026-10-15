@@ -7,7 +7,7 @@ public record CartResponse(
         Long sessionId,
         String tableNumber,
         boolean locked,
-        Integer cartVersion,
+        Long cartVersion,
         List<CartItemResponse> items
 ) {
     public record CartItemResponse(

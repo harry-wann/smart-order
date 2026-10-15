@@ -3,7 +3,7 @@ package tw.ispan.smartorder.reservation.repository
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
-import tw.ispan.smartorder.reservation.entity.DiningTableEntity
+import tw.ispan.smartorder.entity.DiningTableEntity
 
 @Repository
 interface ReservationTableRepository : JpaRepository<DiningTableEntity, Long> {

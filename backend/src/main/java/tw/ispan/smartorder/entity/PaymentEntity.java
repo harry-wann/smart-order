@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @Entity
 @Data
 @Table(name = "payment")
-public class Payment {
+public class PaymentEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,10 +30,10 @@ public class Payment {
     @Column(name = "paid_at")
     private LocalDateTime paidAt;
 
-    protected Payment() {
+    protected PaymentEntity() {
     }
 
-    public Payment(
+    public PaymentEntity(
             Long diningSessionId,
             String method,
             BigDecimal amount

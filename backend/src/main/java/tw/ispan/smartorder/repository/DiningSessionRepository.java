@@ -6,16 +6,16 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import tw.ispan.smartorder.entity.DiningSession;
+import tw.ispan.smartorder.entity.DiningSessionEntity;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface DiningSessionRepository
-        extends JpaRepository<DiningSession, Long> {
+        extends JpaRepository<DiningSessionEntity, Long> {
 
     // 查詢最新用餐紀錄
-    Optional<DiningSession>
+    Optional<DiningSessionEntity>
     findFirstByTableIdAndStatusOrderByOpenedAtDesc(
             Long tableId,
             String status
@@ -23,7 +23,7 @@ public interface DiningSessionRepository
 
     // 結帳時鎖定用餐紀錄（保留原本功能）
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    List<DiningSession> findByTableIdAndStatus(
+    List<DiningSessionEntity> findByTableIdAndStatus(
             Long tableId,
             String status
     );
@@ -38,7 +38,7 @@ public interface DiningSessionRepository
                     """,
             nativeQuery = true
     )
-    Optional<DiningSession> findWithLockById(
+    Optional<DiningSessionEntity> findWithLockById(
             @Param("id") Long id
     );
 }

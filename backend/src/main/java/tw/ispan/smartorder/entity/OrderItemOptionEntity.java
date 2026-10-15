@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @Entity
 @Data
 @Table(name = "order_item_option")
-public class OrderItemOption {
+public class OrderItemOptionEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,7 +26,7 @@ public class OrderItemOption {
             insertable = false,
             updatable = false
     )
-    private OrderItem orderItem;
+    private OrderItemEntity orderItem;
 
     // group
     @Column(name = "group_name_snapshot")

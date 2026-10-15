@@ -1,15 +1,15 @@
 package tw.ispan.smartorder.repository;
 
-import tw.ispan.smartorder.entity.CartItemOption;
-import tw.ispan.smartorder.entity.CartItemOptionId;
+import tw.ispan.smartorder.entity.CartItemOptionEntity;
+import tw.ispan.smartorder.entity.CartItemOptionIdEntity;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface CartItemOptionRepository
-        extends JpaRepository<CartItemOption, CartItemOptionId> {
+        extends JpaRepository<CartItemOptionEntity, CartItemOptionIdEntity> {
 
-    List<CartItemOption> findByCartItem_Id(Long cartItemId);
+    List<CartItemOptionEntity> findByCartItem_Id(Long cartItemId);
 
     void deleteByCartItem_Id(Long cartItemId);
 }

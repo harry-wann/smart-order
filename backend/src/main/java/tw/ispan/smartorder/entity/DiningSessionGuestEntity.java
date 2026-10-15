@@ -1,12 +1,14 @@
 package tw.ispan.smartorder.entity;
 
 import jakarta.persistence.*;
+import lombok.Data;
 
 import java.time.LocalDateTime;
 
+@Data
 @Entity
 @Table(name = "dining_session_guest")
-public class DiningSessionGuest {
+public class DiningSessionGuestEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

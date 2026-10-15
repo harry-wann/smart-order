@@ -7,9 +7,9 @@ import tw.ispan.smartorder.repository.DiningSessionRepository;
 import tw.ispan.smartorder.repository.CartItemRepository;
 import tw.ispan.smartorder.repository.CartItemOptionRepository;
 
-import tw.ispan.smartorder.entity.DiningSession;
-import tw.ispan.smartorder.entity.CartItem;
-import tw.ispan.smartorder.entity.CartItemOption;
+import tw.ispan.smartorder.entity.DiningSessionEntity;
+import tw.ispan.smartorder.entity.CartItemEntity;
+import tw.ispan.smartorder.entity.CartItemOptionEntity;
 import tw.ispan.smartorder.entity.OptionValueEntity;
 
 import org.springframework.http.HttpStatus;
@@ -47,7 +47,7 @@ public class OrderCartService {
     public CartResponse getCart(Long sessionId, Long currentGuestId) {
 
         // 用餐場次
-        DiningSession session = diningSessionRepository
+        DiningSessionEntity session = diningSessionRepository
                 .findById(sessionId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "找不到用餐場次"
@@ -60,9 +60,9 @@ public class OrderCartService {
         boolean locked = !"OPEN".equals(session.getStatus());
 
         // 取得購物車
-        Integer cartVersion = session.getCartVersion();
+        Long cartVersion = session.getCartVersion();
 
-        List<CartItem> cartItems = cartItemRepository
+        List<CartItemEntity> cartItems = cartItemRepository
                 .findByDiningSession_IdAndAddedByGuest_IdOrderByIdAsc(
                         sessionId, currentGuestId
                 );
@@ -70,7 +70,7 @@ public class OrderCartService {
         List<CartItemResponse> items = new ArrayList<>();
 
         // 處理商品
-        for (CartItem cartItem : cartItems) {
+        for (CartItemEntity cartItem : cartItems) {
 
             Long cartItemId = cartItem.getId();
             String name = cartItem.getMenuItem().getName();
@@ -89,12 +89,12 @@ public class OrderCartService {
                 people = displayName + " 加的";
             }
             // 查詢商品選項
-            List<CartItemOption> itemOptions = cartItemOptionRepository.findByCartItem_Id(cartItemId);
+            List<CartItemOptionEntity> itemOptions = cartItemOptionRepository.findByCartItem_Id(cartItemId);
 
             // 照選項排序
             List<OptionValueEntity> optionValues = itemOptions
                     .stream()
-                    .map(CartItemOption::getOptionValue)
+                    .map(CartItemOptionEntity::getOptionValue)
                     .sorted(Comparator.comparing(
                             OptionValueEntity::getSortOrder,
                             Comparator.nullsLast(
@@ -159,10 +159,10 @@ public class OrderCartService {
         }
 
         // 確認點餐並鎖定
-        DiningSession session = checkSessionOpenForUpdate(sessionId);
+        DiningSessionEntity session = checkSessionOpenForUpdate(sessionId);
 
         // 查詢目前客人加入的商品
-        CartItem item = cartItemRepository
+        CartItemEntity item = cartItemRepository
                 .findByIdAndDiningSession_IdAndAddedByGuest_Id(
                         itemId, sessionId, currentGuestId
                 )
@@ -192,10 +192,10 @@ public class OrderCartService {
     ) {
 
         // 確認點餐並鎖定
-        DiningSession session = checkSessionOpenForUpdate(sessionId);
+        DiningSessionEntity session = checkSessionOpenForUpdate(sessionId);
 
         // 確認商品是目前客人的
-        CartItem item = cartItemRepository
+        CartItemEntity item = cartItemRepository
                 .findByIdAndDiningSession_IdAndAddedByGuest_Id(
                         itemId, sessionId, currentGuestId
                 )
@@ -222,10 +222,10 @@ public class OrderCartService {
     }
 
     // 確認是否仍可點餐
-    private DiningSession checkSessionOpenForUpdate(Long sessionId) {
+    private DiningSessionEntity checkSessionOpenForUpdate(Long sessionId) {
 
 // 使用悲觀鎖查詢用餐場次，若找不到則回傳 404 錯誤
-        DiningSession session = diningSessionRepository
+        DiningSessionEntity session = diningSessionRepository
                 .findWithLockById(sessionId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "找不到用餐場次"

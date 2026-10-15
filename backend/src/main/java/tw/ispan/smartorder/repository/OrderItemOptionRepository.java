@@ -1,20 +1,20 @@
 package tw.ispan.smartorder.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import tw.ispan.smartorder.entity.OrderItemOption;
+import tw.ispan.smartorder.entity.OrderItemOptionEntity;
 
 import java.util.List;
 
 public interface OrderItemOptionRepository
-        extends JpaRepository<OrderItemOption, Long> {
+        extends JpaRepository<OrderItemOptionEntity, Long> {
 
     // 查詢一個餐點的選項
-    List<OrderItemOption> findByOrderItemIdOrderByIdAsc(
+    List<OrderItemOptionEntity> findByOrderItemIdOrderByIdAsc(
             Long orderItemId
     );
 
     // 查詢多個餐點的選項
-    List<OrderItemOption> findByOrderItemIdInOrderByIdAsc(
+    List<OrderItemOptionEntity> findByOrderItemIdInOrderByIdAsc(
             List<Long> orderItemIds
     );
 }

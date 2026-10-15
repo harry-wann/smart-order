@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 
 @Entity
 @Table(name = "cart_item")
-public class CartItem {
+public class CartItemEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -16,15 +16,15 @@ public class CartItem {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "dining_session_id")
-    private DiningSession diningSession;
+    private DiningSessionEntity diningSession;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "menu_item_id")
-    private MenuItem menuItem;
+    private MenuItemEntity menuItem;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "added_by_guest_id")
-    private DiningSessionGuest addedByGuest;
+    private DiningSessionGuestEntity addedByGuest;
 
     @Setter
     @Column(name = "quantity")
@@ -40,15 +40,15 @@ public class CartItem {
         return id;
     }
 
-    public DiningSession getDiningSession() {
+    public DiningSessionEntity getDiningSession() {
         return diningSession;
     }
 
-    public MenuItem getMenuItem() {
+    public MenuItemEntity getMenuItem() {
         return menuItem;
     }
 
-    public DiningSessionGuest getAddedByGuest() {
+    public DiningSessionGuestEntity getAddedByGuest() {
         return addedByGuest;
     }
 

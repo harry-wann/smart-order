@@ -44,27 +44,27 @@ public class OrderSubmitService {
         }
 
         // 所有同桌的送單、修改購物車都必須先取得同一筆 session 鎖。
-        DiningSession session = sessionRepository.findWithLockById(sessionId)
+        DiningSessionEntity session = sessionRepository.findWithLockById(sessionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到用餐場次"));
         if (!"OPEN".equals(session.getStatus())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "此桌已停止點餐");
         }
 
-        List<CartItem> cartItems = cartItemRepository
+        List<CartItemEntity> cartItems = cartItemRepository
                 .findByDiningSession_IdAndAddedByGuest_IdOrderByIdAsc(sessionId, guestId);
         if (cartItems.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "你的購物車沒有商品");
         }
 
-        List<OrderTicket> previousTickets = ticketRepository
+        List<OrderTicketEntity> previousTickets = ticketRepository
                 .findByDiningSessionIdOrderBySequenceNoDesc(sessionId);
         int nextSequence = previousTickets.stream()
-                .map(OrderTicket::getSequenceNo)
+                .map(OrderTicketEntity::getSequenceNo)
                 .filter(Objects::nonNull)
                 .max(Integer::compareTo)
                 .orElse(0) + 1;
 
-        OrderTicket ticket = new OrderTicket();
+        OrderTicketEntity ticket = new OrderTicketEntity();
         ticket.setDiningSessionId(sessionId);
         ticket.setSubmittedByGuestId(guestId);
         ticket.setSequenceNo(nextSequence);
@@ -74,7 +74,7 @@ public class OrderSubmitService {
         ticket = ticketRepository.saveAndFlush(ticket);
 
         BigDecimal addedSubtotal = BigDecimal.ZERO;
-        for (CartItem cart : cartItems) {
+        for (CartItemEntity cart : cartItems) {
             int quantity = cart.getQuantity() == null ? 0 : cart.getQuantity();
             if (quantity <= 0) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "購物車商品數量不正確");
@@ -83,7 +83,7 @@ public class OrderSubmitService {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "購物車商品不存在");
             }
 
-            List<CartItemOption> cartOptions = cartItemOptionRepository.findByCartItem_Id(cart.getId());
+            List<CartItemOptionEntity> cartOptions = cartItemOptionRepository.findByCartItem_Id(cart.getId());
             BigDecimal optionsPrice = cartOptions.stream()
                     .map(option -> money(option.getOptionValue().getPriceDelta()))
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -91,7 +91,7 @@ public class OrderSubmitService {
             BigDecimal lineTotal = unitPrice.add(optionsPrice)
                     .multiply(BigDecimal.valueOf(quantity));
 
-            OrderItem orderItem = new OrderItem();
+            OrderItemEntity orderItem = new OrderItemEntity();
             orderItem.setOrderTicketId(ticket.getId());
             orderItem.setMenuItemId(cart.getMenuItem().getId());
             orderItem.setItemNameSnapshot(cart.getMenuItem().getName());
@@ -103,9 +103,9 @@ public class OrderSubmitService {
             orderItem.setLineTotal(lineTotal);
             orderItem = itemRepository.saveAndFlush(orderItem);
 
-            for (CartItemOption cartOption : cartOptions) {
+            for (CartItemOptionEntity cartOption : cartOptions) {
                 OptionValueEntity value = cartOption.getOptionValue();
-                OrderItemOption orderOption = new OrderItemOption();
+                OrderItemOptionEntity orderOption = new OrderItemOptionEntity();
                 orderOption.setOrderItemId(orderItem.getId());
                 orderOption.setGroupNameSnapshot("");          // 目前 OptionValue 沒有選項群組關聯，先保留空字串。
                 orderOption.setValueNameSnapshot(value.getName());
@@ -125,8 +125,8 @@ public class OrderSubmitService {
         sessionRepository.save(session);
 
         // 只刪除當前 guest 的購物車，先刪選項再刪商品。
-        for (CartItem cart : cartItems) {
-            List<CartItemOption> cartOptions = cartItemOptionRepository.findByCartItem_Id(cart.getId());
+        for (CartItemEntity cart : cartItems) {
+            List<CartItemOptionEntity> cartOptions = cartItemOptionRepository.findByCartItem_Id(cart.getId());
             cartItemOptionRepository.deleteAll(cartOptions);
         }
         cartItemOptionRepository.flush();
@@ -138,20 +138,20 @@ public class OrderSubmitService {
 
     @Transactional(readOnly = true)
     public OrderSubmittedResponse getOrder(Long orderTicketId) {
-        OrderTicket ticket = ticketRepository.findById(orderTicketId)
+        OrderTicketEntity ticket = ticketRepository.findById(orderTicketId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到訂單"));
-        List<OrderItem> items = itemRepository
+        List<OrderItemEntity> items = itemRepository
                 .findByOrderTicketIdAndStatusNotOrderByIdAsc(orderTicketId, "CANCELLED");
-        List<Long> ids = items.stream().map(OrderItem::getId).toList();
-        Map<Long, List<OrderItemOption>> optionMap = ids.isEmpty() ? Map.of()
+        List<Long> ids = items.stream().map(OrderItemEntity::getId).toList();
+        Map<Long, List<OrderItemOptionEntity>> optionMap = ids.isEmpty() ? Map.of()
                 : optionRepository.findByOrderItemIdInOrderByIdAsc(ids).stream()
-                .collect(Collectors.groupingBy(OrderItemOption::getOrderItemId));
+                .collect(Collectors.groupingBy(OrderItemOptionEntity::getOrderItemId));
 
         List<OrderSubmittedResponse.OrderItemResponse> resultItems = items.stream()
                 .map(item -> new OrderSubmittedResponse.OrderItemResponse(
                         item.getId(), item.getItemNameSnapshot(), item.getQuantity(),
                         optionMap.getOrDefault(item.getId(), List.of()).stream()
-                                .map(OrderItemOption::getValueNameSnapshot).toList(),
+                                .map(OrderItemOptionEntity::getValueNameSnapshot).toList(),
                         item.getNote(), item.getStatus()))
                 .toList();
         return new OrderSubmittedResponse(ticket.getId(), ticket.getSequenceNo(),

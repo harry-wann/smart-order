@@ -2,12 +2,12 @@ package tw.ispan.smartorder.tabledetail.service;
 
 import tw.ispan.smartorder.tabledetail.dto.TableDetailResponse;
 
-import tw.ispan.smartorder.entity.DiningTable;
-import tw.ispan.smartorder.entity.DiningSession;
-import tw.ispan.smartorder.entity.OrderTicket;
-import tw.ispan.smartorder.entity.OrderItem;
-import tw.ispan.smartorder.entity.OrderItemOption;
-import tw.ispan.smartorder.entity.Payment;
+import tw.ispan.smartorder.entity.DiningTableEntity;
+import tw.ispan.smartorder.entity.DiningSessionEntity;
+import tw.ispan.smartorder.entity.OrderTicketEntity;
+import tw.ispan.smartorder.entity.OrderItemEntity;
+import tw.ispan.smartorder.entity.OrderItemOptionEntity;
+import tw.ispan.smartorder.entity.PaymentEntity;
 
 import tw.ispan.smartorder.repository.DiningTableRepository;
 import tw.ispan.smartorder.repository.DiningSessionRepository;
@@ -68,7 +68,7 @@ public class TableService {
     public TableDetailResponse getDetail(String tableNumber) {
 
         // 查詢桌位
-        DiningTable table = tableRepository.findByTableNo(tableNumber)
+        DiningTableEntity table = tableRepository.findByTableNo(tableNumber)
                 .orElseThrow(() ->
                         new ResponseStatusException(
                                 HttpStatus.NOT_FOUND, "找不到桌位：" + tableNumber
@@ -76,7 +76,7 @@ public class TableService {
                 );
 
         // 查詢目前用餐紀錄
-        DiningSession session = sessionRepository
+        DiningSessionEntity session = sessionRepository
                 .findFirstByTableIdAndStatusOrderByOpenedAtDesc(
                         table.getId(), "OPEN"
                 ).orElse(null);
@@ -114,7 +114,7 @@ public class TableService {
         );
 
         // 查詢訂單
-        List<OrderTicket> tickets = ticketRepository
+        List<OrderTicketEntity> tickets = ticketRepository
                 .findByDiningSessionIdAndStatusNotOrderBySequenceNoDesc(
                         session.getId(), "CANCELLED"
                 );
@@ -141,10 +141,10 @@ public class TableService {
     // 訂單轉 DTO
 
     private TableDetailResponse.OrderDto toOrderDto(
-            OrderTicket ticket
+            OrderTicketEntity ticket
     ) {
 
-        List<OrderItem> items = itemRepository.findByOrderTicketIdAndStatusNotOrderByIdAsc(
+        List<OrderItemEntity> items = itemRepository.findByOrderTicketIdAndStatusNotOrderByIdAsc(
                 ticket.getId(), "CANCELLED"
         );
 
@@ -171,16 +171,16 @@ public class TableService {
     // 餐點轉 DTO
 
     private TableDetailResponse.OrderItemDto toOrderItemDto(
-            OrderItem item
+            OrderItemEntity item
     ) {
 
         // 查詢餐點選項
-        List<OrderItemOption> options = optionRepository
+        List<OrderItemOptionEntity> options = optionRepository
                 .findByOrderItemIdOrderByIdAsc(item.getId());
 
         // 合併選項
         String optionsText = options.stream()
-                .map(OrderItemOption::getValueNameSnapshot)
+                .map(OrderItemOptionEntity::getValueNameSnapshot)
                 .filter(value -> value != null && !value.isBlank())
                 .collect(Collectors.joining("・"));
 
@@ -235,7 +235,7 @@ public class TableService {
         }
 
         // 鎖定桌位
-        DiningTable table = tableRepository
+        DiningTableEntity table = tableRepository
                 .findWithLockByTableNo(tableNumber)
                 .orElseThrow(() ->
                         new ResponseStatusException(
@@ -245,7 +245,7 @@ public class TableService {
                 );
 
         // 鎖定目前 用餐紀錄
-        List<DiningSession> sessions = sessionRepository
+        List<DiningSessionEntity> sessions = sessionRepository
                 .findByTableIdAndStatus(
                         table.getId(),
                         "OPEN"
@@ -265,7 +265,7 @@ public class TableService {
             );
         }
 
-        DiningSession session = sessions.get(0);
+        DiningSessionEntity session = sessions.get(0);
 
         // 取得結帳金額
         BigDecimal amount = safeMoney(session.getTotal());
@@ -278,7 +278,7 @@ public class TableService {
         }
 
         // 新增付款紀錄
-        Payment payment = new Payment(
+        PaymentEntity payment = new PaymentEntity(
                 session.getId(),
                 method,
                 amount

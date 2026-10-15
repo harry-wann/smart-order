@@ -3,15 +3,15 @@ package tw.ispan.smartorder.entity;
 import java.io.Serializable;
 import java.util.Objects;
 
-public class CartItemOptionId implements Serializable {
+public class CartItemOptionIdEntity implements Serializable {
 
     private Long cartItem;
     private Long optionValue;
 
-    public CartItemOptionId() {
+    public CartItemOptionIdEntity() {
     }
 
-    public CartItemOptionId(Long cartItem, Long optionValue) {
+    public CartItemOptionIdEntity(Long cartItem, Long optionValue) {
         this.cartItem = cartItem;
         this.optionValue = optionValue;
     }
@@ -36,7 +36,7 @@ public class CartItemOptionId implements Serializable {
     public boolean equals(Object obj) {
         if (this == obj) return true;
 
-        if (!(obj instanceof CartItemOptionId other)) {
+        if (!(obj instanceof CartItemOptionIdEntity other)) {
             return false;
         }
 
