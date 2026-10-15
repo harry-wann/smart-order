@@ -1,5 +1,11 @@
 import { customerClient } from '@/services/client/customerClient'
-import type { Availability, CreateReservationInput, ReservationCreated, ReservationDetail } from './types'
+import type {
+  Availability,
+  CancelledReservation,
+  CreateReservationInput,
+  ReservationCreated,
+  ReservationDetail,
+} from './types'
 
 const RESERVATIONS = '/reservations'
 
@@ -19,6 +25,24 @@ export async function fetchReservation(id: number, accessToken?: string | null, 
     headers: accessToken ? { 'X-Reservation-Token': accessToken } : undefined,
     customerAuth: accessToken ? [] : ['member'],
     signal,
+  })
+  return data
+}
+
+// GET /members/me/reservations：會員的全部訂位，新的在前
+export async function fetchMyReservations(signal?: AbortSignal) {
+  const { data } = await customerClient.get<ReservationDetail[]>('/members/me/reservations', {
+    customerAuth: ['member'],
+    signal,
+  })
+  return data
+}
+
+// DELETE /reservations/{id}：客人線上取消，訂位前 30 分鐘之後後端會擋
+export async function cancelReservation({ id, accessToken }: { id: number; accessToken?: string | null }) {
+  const { data } = await customerClient.delete<CancelledReservation>(`${RESERVATIONS}/${id}`, {
+    headers: accessToken ? { 'X-Reservation-Token': accessToken } : undefined,
+    customerAuth: accessToken ? [] : ['member'],
   })
   return data
 }

@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional
 import tw.ispan.smartorder.reservation.config.ReservationProperties
 import tw.ispan.smartorder.reservation.dto.request.CreateReservationRequest
 import tw.ispan.smartorder.reservation.dto.response.AvailabilityResponse
+import tw.ispan.smartorder.reservation.dto.response.CancelReservationResponse
 import tw.ispan.smartorder.reservation.dto.response.ReservationCreatedResponse
 import tw.ispan.smartorder.reservation.dto.response.ReservationDetailResponse
 import tw.ispan.smartorder.reservation.dto.response.SlotResponse
@@ -13,6 +14,7 @@ import tw.ispan.smartorder.reservation.entity.DiningTableEntity
 import tw.ispan.smartorder.reservation.entity.ReservationEntity
 import tw.ispan.smartorder.reservation.exception.ApiException
 import tw.ispan.smartorder.reservation.repository.ReservationRepository
+import tw.ispan.smartorder.reservation.enums.CancelSource
 import tw.ispan.smartorder.reservation.enums.ReservationStatus
 import tw.ispan.smartorder.reservation.repository.ReservationTableRepository
 import java.security.MessageDigest
@@ -99,17 +101,48 @@ class ReservationService(
 
     @Transactional(readOnly = true)
     fun detail(id: Long, accessToken: String?, memberId: Long?): ReservationDetailResponse {
-        val reservation = findAccessible(id, accessToken, memberId)
+        val reservation = checkAccess(reservationRepo.findById(id).orElse(null), accessToken, memberId)
         val table = reservation.tableId?.let { tableRepo.findById(it).orElse(null) }
         return toDetailResponse(reservation, table)
     }
 
-    // 會員看自己的、匿名憑訂位時拿到的 accessToken；只憑 id 不能看別人的訂位
-    private fun findAccessible(id: Long, accessToken: String?, memberId: Long?): ReservationEntity {
+    @Transactional(readOnly = true)
+    fun memberReservations(memberId: Long?): List<ReservationDetailResponse> {
+        if (memberId == null) throw ApiException.unauthorized("請先登入會員")
+        val reservations = reservationRepo.findByMemberIdOrderByStartTimeDesc(memberId)
+        val tables = tableRepo.findAllById(reservations.mapNotNull { it.tableId }.toSet()).associateBy { it.id }
+        return reservations.map { toDetailResponse(it, tables[it.tableId]) }
+    }
+
+    // 客人線上取消：期限是訂位前 30 分，也就是預約保留開始的時間；之後只能請櫃檯代取消
+    @Transactional
+    fun cancelByCustomer(id: Long, accessToken: String?, memberId: Long?): CancelReservationResponse {
+        val reservation = checkAccess(reservationRepo.findByIdForUpdate(id), accessToken, memberId)
+        if (reservation.status != ReservationStatus.CONFIRMED) {
+            throw ApiException.conflict("RESERVATION_NOT_CANCELLABLE", "這筆訂位已經不能取消了")
+        }
+        val deadline = reservation.startTime!!.minusMinutes(properties.holdBeforeMinutes)
+        if (LocalDateTime.now(clock) >= deadline) {
+            throw ApiException.conflict("CANCEL_DEADLINE_PASSED", "訂位前 30 分鐘內請來電取消")
+        }
+        cancel(reservation, CancelSource.CUSTOMER, null)
+        return CancelReservationResponse(reservation.id!!, reservation.status, CancelSource.CUSTOMER, toOffset(reservation.cancelledAt!!))
+    }
+
+    // table_id 清成 NULL 才會釋放 UNIQUE(table_id, start_time)，那個時段的名額跟著回來
+    private fun cancel(reservation: ReservationEntity, source: CancelSource, staffId: Long?) {
+        reservation.status = ReservationStatus.CANCELLED
+        reservation.cancelledAt = LocalDateTime.now(clock)
+        reservation.cancelSource = source
+        reservation.cancelledByStaffId = staffId
+        reservation.tableId = null
+    }
+
+    // 會員看自己的、匿名憑訂位時拿到的 accessToken；只憑 id 不能動別人的訂位
+    private fun checkAccess(reservation: ReservationEntity?, accessToken: String?, memberId: Long?): ReservationEntity {
         if (accessToken.isNullOrBlank() && memberId == null) {
             throw ApiException.unauthorized("請登入會員，或用訂位時的這支手機查詢")
         }
-        val reservation = reservationRepo.findById(id).orElse(null)
         val allowed = reservation != null &&
             ((memberId != null && reservation.memberId == memberId) || sameToken(reservation.accessToken, accessToken))
         // 不是自己的也回 404，不讓人用猜 id 的方式確認訂位存不存在
