@@ -8,6 +8,9 @@ import tw.ispan.smartorder.reservation.dto.response.ReservationDetailResponse
 import tw.ispan.smartorder.reservation.security.MemberIdentityResolver
 import tw.ispan.smartorder.reservation.service.ReservationService
 
+// 會員看自己的訂位（C-19）。網址不帶會員 id，從登入身分取，沒辦法改個 id 去看別人的。
+// 身分目前是 mock（MEMBER_MOCK_ENABLED），換成真的會員 JWT 只動 MemberIdentityResolver，這裡不用改；
+// 沒登入時 memberId 是 null，由 service 回 401
 @RestController
 @RequestMapping("/api/members/me/reservations")
 class MemberReservationController(

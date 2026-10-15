@@ -19,14 +19,18 @@ import {
 function Reservations() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  // 匿名訂位只記在這支手機：每筆存 id 和 accessToken，狀態一律向後端查
+  // 匿名訂位只記在這支手機：每筆存 id 和 accessToken，狀態一律向後端查。
+  // 進頁讀一次就好，取消只改後端的狀態，id 和 token 不會變，不用跟 localStorage 同步
   const [guestRecords] = useState(loadGuestRecords)
   const hasMemberToken = Boolean(customerTokens.member.get())
+  // 會員檢視：網址帶 ?view=member（會員訂完從 Done 過來），或這支手機沒有匿名訂位但有會員 token。
+  // 另一邊的查詢不發（會員檢視不查匿名的，匿名檢視不打 /members/me）
   const isMemberView =
     searchParams.get('view') === 'member' || (guestRecords.length === 0 && hasMemberToken)
   const memberQuery = useMyReservations(isMemberView && hasMemberToken)
   const guestQuery = useGuestReservations(isMemberView ? [] : guestRecords)
   const cancelReservation = useCancelReservation()
+  // 取消期限拿 cancellableUntil 跟 now 比，now 每 30 秒更新，頁面放著不動按鈕也會自己停用
   const [now, setNow] = useState(() => new Date())
   const [activeTab, setActiveTab] = useState<TabKey>('upcoming')
   const [cancelTarget, setCancelTarget] = useState<Reservation | null>(null)
@@ -51,6 +55,9 @@ function Reservations() {
   function handleConfirmCancel() {
     if (!cancelTarget) return
     const target = cancelTarget
+    // 先關確認框再送出，送出中的狀態顯示在那張卡片的按鈕上（cancelling）。
+    // 成功不用手動改畫面，hook 會 invalidate 清單，重抓後那筆就變成已取消；
+    // 被後端擋下來（例如過了期限）的訊息顯示在清單上方
     setCancelTarget(null)
     setNotice(null)
     cancelReservation.mutate(
@@ -135,6 +142,7 @@ function Reservations() {
             now={now}
             cancelling={cancelReservation.isPending && cancelReservation.variables?.id === reservation.id}
             onCancel={() => {
+              // now 最多慢 30 秒，按下去的當下再用現在的時間確認一次期限
               setNow(new Date())
               if (!isCancellationDeadlinePassed(reservation, new Date())) setCancelTarget(reservation)
             }}
@@ -338,6 +346,7 @@ function toReservation(
   const [date, rest] = detail.startTime.split('T')
   return {
     id: detail.reservationId,
+    // 只有匿名訂位找得到 token；會員清單這欄是 undefined，取消時就改用會員身分
     accessToken: guestRecords.find(({ id }) => id === detail.reservationId)?.accessToken,
     reservationNo: detail.reservationNo,
     date,
@@ -389,6 +398,7 @@ function getDaysLabel(dayOffset: number) {
   return `還有 ${dayOffset} 天`
 }
 
+// 期限用後端給的 cancellableUntil，前端不自己算「前 30 分鐘」，規則只留一份在後端
 function isCancellationDeadlinePassed(reservation: Reservation, now: Date) {
   return now.getTime() >= Date.parse(reservation.cancellableUntil)
 }

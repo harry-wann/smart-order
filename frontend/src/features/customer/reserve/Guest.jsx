@@ -12,6 +12,7 @@ import Badge from '../../../components/Badge'
 
 // 原檔名 guest.jsx
 
+// 跟後端 CreateReservationRequest 同一條規則，前端先擋掉明顯打錯的，後端還是會再驗一次
 const PHONE_PATTERN = /^09\d{8}$/
 // 跟後端 @Email 一樣寬鬆：有 @、兩邊都有字就好
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+$/
@@ -23,7 +24,8 @@ export function Guest() {
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
 
-  // 聯絡資料帶到下一頁（C-16c），在那裡跟時段一起送出
+  // 聯絡資料帶到下一頁（C-16c），在那裡跟時段一起送出。
+  // 手機欄位給的值是 0912-345-678 這種帶連字號的格式，驗證和送出前先只留數字
   function handleNext() {
     const contact = { name: name.trim(), phone: phone.replace(/\D/g, ''), email: email.trim() }
     if (!contact.name) return setError('請填寫姓名')

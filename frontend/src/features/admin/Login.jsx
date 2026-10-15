@@ -17,7 +17,9 @@ export const Login=()=>{
   const[submitting,setSubmitting]=useState(false);
   const navigate=useNavigate();
 
-  // 登入成功存員工 JWT，之後 employeeClient 的請求都會自動帶上
+  // 登入成功存員工 JWT，之後 employeeClient 的請求都會自動帶上。
+  // 密碼打錯後端回 401，但登入請求沒帶 token，employeeClient 不會把人導回登入頁，
+  // 「帳號或密碼錯誤」就直接顯示在表單下方
   async function handleLogin() {
     setError("");
     setSubmitting(true);

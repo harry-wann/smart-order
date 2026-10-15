@@ -21,7 +21,12 @@ import java.util.List;
 // 原檔名 ApiExceptionAdvice.kt
 
 // 錯誤回應照 04 §1.2 帶 code。只管列在 basePackages 的套件；
-// 全站共用的 ApiExceptionHandler 還沒有 code 欄位，其他人的 API 先不動
+// 全站共用的 ApiExceptionHandler 還沒有 code 欄位，其他人的 API 先不動。
+// basePackages 看的是「丟例外的那支 controller」在哪個套件，所以隊友的 controller 出錯還是走原本那份，
+// 他們頁面現在讀的錯誤格式不會被換掉。
+// 全站那份也處理 MethodArgumentNotValidException、HttpMessageNotReadableException，
+// 沒排順序的話訂位這邊的驗證失敗會落到誰手上不一定，所以這份要排最前面。
+// 只有 controller 丟出來的例外會進來；filter 層的 401／403 不會經過這裡，那邊在 SecurityConfig 自己寫
 @RestControllerAdvice(basePackages = {"tw.ispan.smartorder.reservation", "tw.ispan.smartorder.staff"})
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class ApiExceptionAdvice {
@@ -32,6 +37,7 @@ public class ApiExceptionAdvice {
         return response(exception.getStatus(), exception.getCode(), message, request, List.of());
     }
 
+    // @Valid 沒過：每個欄位一筆放進 details，訊息就是 DTO 上寫的那句，外層 message 只是總稱
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(
             MethodArgumentNotValidException exception,
@@ -44,6 +50,9 @@ public class ApiExceptionAdvice {
         return response(HttpStatus.BAD_REQUEST, "VALIDATION_FAILED", "欄位格式不正確", request, details);
     }
 
+    // 請求還沒走到欄位驗證就壞了：JSON 格式錯或有不認得的欄位（fail-on-unknown-properties 有開）、
+    // 日期數字格式錯、少帶必填的參數或標頭。都是前端送錯，統一回 VALIDATION_FAILED，
+    // 不把框架的英文錯誤訊息直接丟給使用者；沒有欄位資訊，所以不帶 details
     @ExceptionHandler({
             HttpMessageNotReadableException.class,
             MissingServletRequestParameterException.class,

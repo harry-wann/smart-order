@@ -25,6 +25,7 @@ export function useMyReservations(enabled: boolean) {
 }
 
 // 匿名訂位：這支手機記住的每一筆都各自帶自己的 accessToken 去查；查不到的（例如資料被清掉）就略過
+// queryKey 跟單筆的 detail(id) 同一把，Done 剛查過的直接用快取，取消後 invalidate(all) 也會一起重抓
 export function useGuestReservations(records: { id: number; accessToken: string }[]) {
   return useQueries({
     queries: records.map(({ id, accessToken }) => ({
@@ -38,6 +39,7 @@ export function useGuestReservations(records: { id: number; accessToken: string 
   })
 }
 
+// 網址上的 id 不是數字時 Number() 會變 NaN，這種就不發請求
 export function useReservation(id: number, accessToken?: string | null) {
   return useQuery({
     queryKey: reservationKeys.detail(id),

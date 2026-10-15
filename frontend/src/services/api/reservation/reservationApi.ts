@@ -20,6 +20,8 @@ export async function fetchAvailability(date: string, partySize: number, signal?
 }
 
 // GET /reservations/{id}：匿名帶訂位時拿到的 accessToken，沒有就用會員身分查
+// token 由呼叫端每次傳進來，不從 customerTokens.reservation 讀：那一格只存最近一筆，
+// 同一支手機訂過好幾筆時，每筆要各帶各的才查得到。customerAuth: [] 是不要順便帶桌邊的 session token
 export async function fetchReservation(id: number, accessToken?: string | null, signal?: AbortSignal) {
   const { data } = await customerClient.get<ReservationDetail>(`${RESERVATIONS}/${id}`, {
     headers: accessToken ? { 'X-Reservation-Token': accessToken } : undefined,

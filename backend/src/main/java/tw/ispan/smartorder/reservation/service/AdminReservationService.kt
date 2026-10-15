@@ -30,7 +30,9 @@ import java.time.LocalDateTime
 import java.time.Duration
 import java.time.format.DateTimeFormatter
 
-// S-07 預約管理：櫃檯看一天的訂位、代客取消、報到開桌（S-07b）
+// S-07 預約管理：櫃檯看一天的訂位、代客取消、報到開桌（S-07b）。
+// 預約保留不存欄位也沒有排程，都是 TableHoldService 從訂位時間算出來的，
+// 所以這裡取消、報到只要把訂位狀態改對，保留就會自己消失，不用去改桌子。
 @Service
 class AdminReservationService(
     private val reservationRepo: ReservationRepository,
@@ -51,6 +53,8 @@ class AdminReservationService(
         )
         if (reservations.isEmpty()) return emptyList()
 
+        // 配桌號和實際坐的桌是兩回事：取消的訂位 table_id 已經是 NULL 所以沒有配桌號；
+        // 報到不會改 table_id，實際坐哪張要去 dining_session 找
         val tableNos = tableRepo.findAllById(reservations.mapNotNull { it.tableId }.toSet())
             .associate { it.id to it.tableNo }
         val seatedTableNos = reservationRepo.findSeatedTables(reservations.map { it.id!! })
@@ -64,7 +68,8 @@ class AdminReservationService(
         }
     }
 
-    // 櫃檯代客取消：隨時可以取消，不受客人那邊「訂位前 30 分」的期限
+    // 櫃檯代客取消：隨時可以取消，不受客人那邊「訂位前 30 分」的期限；客人來電說不來了就是走這裡。
+    // 取消後那張桌的保留跟著消失、名額也放出來（entity 的 cancel() 會清掉 table_id）
     @Transactional
     fun cancelByStaff(id: Long, staff: StaffPrincipal, reason: String?): CancelReservationResponse {
         // 先鎖住再檢查狀態，兩個櫃檯同時按或剛好在報到，後到的會看到已經不是 CONFIRMED
@@ -73,6 +78,7 @@ class AdminReservationService(
             throw ApiException.conflict("RESERVATION_NOT_CANCELLABLE", "這筆訂位已經不能取消了")
         }
         reservation.cancel(CancelSource.STAFF, staff.id, LocalDateTime.now(clock))
+        // reason 不存欄位，只寫 log（03 §5）
         log.info("櫃檯代客取消訂位 {}，員工 {}（{}），原因：{}", reservation.reservationNo, staff.displayName, staff.id, reason ?: "未填")
 
         return CancelReservationResponse(
@@ -85,7 +91,8 @@ class AdminReservationService(
     }
 
     // S-07b 選桌：空桌且坐得下；保留給別筆訂位的不列，自己的原保留桌排第一，
-    // 115 分鐘內有別筆訂位的排在沒衝突的後面
+    // 115 分鐘內有別筆訂位的排在沒衝突的後面。
+    // 115 分鐘內有訂位只影響排序和提醒，不擋；seat() 也不檢查這一項（M2 問題 5）
     @Transactional(readOnly = true)
     fun availableTables(partySize: Int, reservationId: Long?): List<AvailableTableResponse> {
         if (partySize < 1) throw ApiException.badRequest("人數至少 1 位")
@@ -120,6 +127,7 @@ class AdminReservationService(
         val now = LocalDateTime.now(clock)
         val holds = holdService.snapshot(now)
 
+        // 報到時間窗內、人數坐得下這張桌的 CONFIRMED 訂位都列，不限原本配到這張的（報到可以改坐別桌）。
         // −10 是保留時間的尾巴、+30 是最早可報到；清單自己看時間，不等 NO_SHOW 排程
         val reservations = reservationRepo
             .findByStatusAndStartTimeGreaterThanEqualAndStartTimeLessThanEqualAndPartySizeLessThanEqualOrderByStartTimeAsc(
@@ -132,6 +140,7 @@ class AdminReservationService(
             .associate { it.id to it.tableNo }
         // 用餐中、待清理的桌不顯示保留，客人到了從 S-07b 另選一張
         val holder = if (table.status == TABLE_AVAILABLE) holds.heldBy(tableId) else null
+        // 115 分鐘內的下一筆別筆訂位，只提醒不擋；保留中的那筆已經在 heldFor，不重複算進來
         val upcoming = holds.upcoming(tableId, setOfNotNull(holder?.id))
 
         return OpenOptionsResponse(
@@ -183,7 +192,14 @@ class AdminReservationService(
     private fun maskPhone(phone: String): String =
         if (phone.length < 7) phone else phone.take(4) + "***" + phone.takeLast(3)
 
-    // 報到開桌：鎖訂位 → 檢查狀態與報到時間窗 → 鎖桌 → 檢查空桌與保留 → 建立用餐紀錄。
+    // 報到開桌，每一步擋的錯誤不一樣，順序是：
+    // 1. 鎖訂位，狀態要是 CONFIRMED（RESERVATION_NOT_ACTIVE）。取消和報到會搶同一筆，鎖了才看得到對方的結果
+    // 2. 報到時間窗 start−30 ~ start+10（RESERVATION_TOO_EARLY / RESERVATION_EXPIRED）。
+    //    這裡自己比時間，不靠 NO_SHOW 排程；排程每 5 分才跑一次，過了 start+10 最多還要再等 5 分才標得到
+    // 3. 鎖桌，要是空桌（TABLE_OCCUPIED）、坐得下（400）
+    // 4. 桌鎖住之後重算一次預約保留，保留給別筆訂位就擋（TABLE_RESERVED），保留給自己的照常開
+    // 5. 都過了才建 dining_session、桌子改 OCCUPIED、訂位改 SEATED。桌子和訂位是已經載入的 entity，
+    //    改完狀態 commit 時自動寫回，不用再 save
     // 鎖的順序固定是「訂位再桌位」，跟取消、現場開桌搶同一筆時不會互相卡死
     @Transactional
     fun seat(id: Long, tableId: Long): SeatReservationResponse {
@@ -222,6 +238,7 @@ class AdminReservationService(
         val session = sessionRepo.save(
             DiningSessionEntity().apply {
                 this.tableId = tableId
+                // 重疊判斷靠這欄找這筆訂位的用餐紀錄，沒填的話 SEATED 的名額會被當成已經釋出
                 reservationId = reservation.id
                 sessionToken = newSessionToken()
                 adultCount = reservation.adultCount
@@ -230,7 +247,8 @@ class AdminReservationService(
             }
         )
         table.status = TABLE_OCCUPIED
-        // 不改 table_id：那是訂位當下配的桌，實際坐哪張記在用餐紀錄
+        // 不改 table_id：那是訂位當下配的桌，實際坐哪張記在用餐紀錄。
+        // 名額會佔到客人結帳為止：SEATED 加上這筆 OPEN 的 dining_session 才算佔位（見 ReservationRepository.findOccupying）
         reservation.status = ReservationStatus.SEATED
 
         return SeatReservationResponse(
@@ -273,6 +291,8 @@ class AdminReservationService(
             assignedTableNo = assignedTableNo,
             seatedTableNo = seatedTableNo,
             status = reservation.status,
+            // 跟 TableHolds.isHolding 是同一條規則（CONFIRMED、有配桌、在 start−30 ~ start+10）。
+            // 這裡手上已經有整天的訂位，直接算，不再查一次；兩邊的規則要一起改
             holding = reservation.status == ReservationStatus.CONFIRMED && reservation.tableId != null &&
                 now >= checkInFrom && now <= checkInUntil,
             checkInFrom = properties.toOffset(checkInFrom),
@@ -286,6 +306,7 @@ class AdminReservationService(
 
     companion object {
         private val HH_MM = DateTimeFormatter.ofPattern("HH:mm")
+        // DiningTableEntity.status 是 String 不是 enum，值要跟 M2 桌位的三種狀態一致
         private const val TABLE_AVAILABLE = "AVAILABLE"
         private const val TABLE_OCCUPIED = "OCCUPIED"
         private val random = SecureRandom()

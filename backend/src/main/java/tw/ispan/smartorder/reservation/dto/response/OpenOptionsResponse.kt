@@ -32,6 +32,7 @@ data class OpenReservationItem(
     val id: Long,
     val reservationNo: String,
     val name: String,
+    // 後端先遮好（0933***210），這份清單只讓櫃檯認人，不需要完整號碼
     val phoneMasked: String,
     val startTime: OffsetDateTime,
     val adultCount: Int,

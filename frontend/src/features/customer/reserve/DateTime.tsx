@@ -24,7 +24,9 @@ function DateTime() {
   const availability = useAvailability(date, people)
   const slots = availability.data?.slots ?? []
   const fullSlots = slots.filter((slot) => !slot.available).map((slot) => slot.time)
-  // 換日期或人數後，原本選的時段可能變成已額滿，就當作還沒選
+  // 換日期或人數後，原本選的時段可能變成已額滿，就當作還沒選。
+  // 用算的，不在 render 或 effect 裡 setTime(null)：少一次多餘的 render，
+  // 而且 time 還留著使用者點的值，換回有空的日期時原本選的也還在
   const selectedTime = time !== null && !fullSlots.includes(time) ? time : null
   const summary = selectedTime
     ? `${formatDateWithWeekday(addDays(today, dayOffset))}${selectedTime}・${people} 位`
@@ -54,6 +56,7 @@ function DateTime() {
     createReservation.mutate(
       {
         asMember: reservationType === 'MEMBER',
+        // 固定用店家時區送，不吃手機的時區；後端也是用店家時區換算
         startTime: `${date}T${selectedTime}:00+08:00`,
         adultCount: people,
         childCount: 0,
@@ -63,13 +66,16 @@ function DateTime() {
       },
       {
         onSuccess: (created) => {
+          // accessToken 只有這一刻拿得到，連同聯絡資料放在 route state 帶給 Done；
+          // Done 其餘內容都重新向 API 讀，所以這包資料只有這兩樣有用
           const reservation = toConfirmation(created, people, reservationType, contact)
           navigate(`/reserve/${created.reservationId}/done`, {
             state: { reservation } satisfies ReservationRouteState,
           })
         },
         onError: (error) => {
-          // 客滿：留在本頁，時段重抓後會標成已額滿
+          // 客滿：留在本頁，時段重抓後會標成已額滿。換日期的空檔畫面還是上一份時段，
+          // 這時送出剛好客滿也會走到這裡。驗證錯誤顯示 details[0]，其他顯示 message
           if (isApiError(error, 'SLOT_UNAVAILABLE')) setTime(null)
           setNotice(error.details[0]?.message ?? error.message)
         },

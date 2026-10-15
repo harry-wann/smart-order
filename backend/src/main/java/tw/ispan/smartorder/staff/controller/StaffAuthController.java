@@ -12,6 +12,8 @@ import tw.ispan.smartorder.staff.service.StaffAuthService;
 
 // 原檔名 StaffAuthController.kt
 
+// 路徑在 /api/admin 底下，所以 SecurityConfig 要先把 login 放行，
+// 不然還沒登入就先被擋下來，永遠拿不到 token
 @RestController
 @RequestMapping("/api/admin/auth")
 @RequiredArgsConstructor

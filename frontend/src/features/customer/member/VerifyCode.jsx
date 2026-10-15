@@ -29,6 +29,7 @@ export default function VerifyCode() {
 
   const handleverifycode=()=>{
     if(code!==Data.VERIFY)return
+    // 驗證碼對了先存 mock 權杖，之後訂位、我的預約才帶得出會員身分；正式登入完成後改存後端的 JWT
     signInMockMember()
 
     if (!returnTo) {

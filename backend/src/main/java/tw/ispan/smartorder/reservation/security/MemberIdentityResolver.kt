@@ -9,6 +9,9 @@ import org.springframework.stereotype.Component
 // 會員登入（工作包 A）完成前的替身：只認 "Bearer mock-member-{id}"。
 // 誰都能冒用任一會員，所以預設關閉，只有 .env 設 MEMBER_MOCK_ENABLED=true 才開。
 // 換成真的會員 JWT 時只改這個類別，訂位這邊的呼叫端不用動。
+// 回 null 就是匿名（沒開 mock、沒帶 header、格式不對都一樣），訂位那邊改用 accessToken 判斷。
+// 這裡只解析 id，不查會員存不存在：建立訂位時 fillContact 會查，
+// 查詢、取消則是拿 id 跟訂位的 member_id 比，對不上就是 404。
 @Component
 class MemberIdentityResolver(
     @Value("\${app.member-mock.enabled:false}") private val mockEnabled: Boolean,

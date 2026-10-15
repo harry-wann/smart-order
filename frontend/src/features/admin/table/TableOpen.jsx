@@ -289,6 +289,7 @@ function TableOpen() {
   const cancelByStaff = useCancelReservationByStaff()
   const [notice, setNotice] = useState(null)
 
+  // 開桌選項回來前先用內建的對照表頂著，頂列的人數和區域不用等資料才出現
   const tableInfo = options
     ? { capacity: options.seats, area: options.area }
     : (TABLE_INFO_BY_NUMBER[tableNo] ?? { capacity: 4, area: '座位區' })
@@ -299,6 +300,7 @@ function TableOpen() {
     : null
   const reservedHoldId = options?.heldFor?.reservationId ?? null
 
+  // 坐不坐得下、用餐時間在現在 −10 ～ +30 分的篩選都在後端做了，這裡不再 filter
   const visibleReservations = (options?.reservations ?? []).map(toReservationRow)
   const reservedHold = visibleReservations.find((item) => item.id === reservedHoldId) ?? null
   const reservationCount = visibleReservations.length
@@ -310,7 +312,8 @@ function TableOpen() {
       : calledWaitlist.length > 0
         ? 'waitlist'
         : 'walkin'
-  // 資料回來前不知道預設頁籤，沒手動切過就一直跟著資料決定
+  // 資料回來前不知道預設頁籤，沒手動切過就一直跟著資料決定。
+  // 不用 effect 等資料回來再 setState，pickedTab 有值（手動切過）就以它為準，沒有就用算出來的
   const [pickedTab, setPickedTab] = useState(null)
   const activeTab = pickedTab ?? defaultTab
   const setActiveTab = setPickedTab
@@ -354,6 +357,7 @@ function TableOpen() {
 
   function cancelReservation(id) {
     if (cancelByStaff.isPending) return
+    // 不用自己從清單移掉：成功後 hook 會重抓開桌選項，那筆就消失，這張桌的保留也跟著解開
     setNotice(null)
     cancelByStaff.mutate({ id }, { onError: (error) => setNotice(error.message) })
   }

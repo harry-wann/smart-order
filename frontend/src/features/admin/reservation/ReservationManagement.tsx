@@ -50,6 +50,8 @@ function ReservationManagement() {
     queryFn: ({ signal }) => fetchSeats(signal),
   })
   const reservations = (reservationsQuery.data ?? []).map(toReservation)
+  // 按下「報到開桌」才查空桌，帶 reservationId 讓後端把這筆自己的保留桌排第一、標「原保留桌」。
+  // 還沒選訂位時 partySize 先放 1 湊參數，enabled 是 false，不會真的發請求
   const availableTables = useAvailableTables(
     seatingTarget?.partySize ?? 1,
     seatingTarget?.id,
@@ -57,10 +59,12 @@ function ReservationManagement() {
   )
   const seatReservation = useSeatReservation()
   const [seatNotice, setSeatNotice] = useState<string | null>(null)
-  // 搶桌失敗、清單重抓後換一個 key，讓對話框的選取與「再確認」狀態從頭開始
+  // 搶桌失敗、清單重抓後換一個 key，讓對話框的選取與「再確認」狀態從頭開始。
+  // 對話框的 state 只在掛載時初始化，原本選的桌這時可能已經不在新清單裡
   const [seatDialogKey, setSeatDialogKey] = useState(0)
 
-  // 空桌清單查不到（例如權限不足）就關掉對話框，不要讓按鈕看起來沒反應
+  // 空桌清單查不到（例如權限不足）就關掉對話框，不要讓按鈕看起來沒反應。
+  // 直接在 render 裡 set 比用 effect 少渲染一次；條件成立 set 完 seatingTarget 就是 null，不會一直重跑
   if (seatingTarget && availableTables.isError) {
     setSeatingTarget(null)
     setNotice(availableTables.error.message)
@@ -106,7 +110,8 @@ function ReservationManagement() {
           setNotice(`已報到，開 ${result.tableNo}`)
         },
         onError: (error) => {
-          // 桌子剛被開走或撞到別筆的保留：留在對話框、重新載入空桌
+          // 桌子剛被開走或撞到別筆的保留：留在對話框、重新載入空桌。
+          // 比 error.code 而不是 message 文字，後端錯誤格式是 {code, message, details}
           if (error.code === 'TABLE_OCCUPIED' || error.code === 'TABLE_RESERVED') {
             setSeatNotice(`${error.message}，已重新載入空桌`)
             setSeatDialogKey((key) => key + 1)
@@ -124,6 +129,7 @@ function ReservationManagement() {
   function handleCancel() {
     if (!cancelTarget || cancelByStaff.isPending) return
     const target = cancelTarget
+    // 先關確認框再送出；成功不用手動改列，hook 會 invalidate，重抓後那列變已取消、桌子也釋出
     setCancelTarget(null)
     setNotice(null)
     cancelByStaff.mutate({ id: target.id }, { onError: (error) => setNotice(error.message) })
@@ -246,6 +252,7 @@ function ReservationManagement() {
         </div>
       </div>
 
+      {/* 空桌清單回來才開對話框，沒資料時它會直接顯示「沒有坐得下的空桌」，一閃而過會誤導 */}
       {seatingTarget && availableTables.isSuccess && (
         <SeatDialog
           key={seatDialogKey}
@@ -299,6 +306,7 @@ const COLUMNS = [
 ]
 
 
+// 預先點餐（進階功能 7.E1）還沒做，後端目前固定回 0 件，所以不帶 preorder，預點欄都是空的
 function toReservation(row: AdminReservation): Reservation {
   return {
     id: row.reservationId,
@@ -323,7 +331,8 @@ function toDateParam(date: Date) {
   return `${date.getFullYear()}-${month}-${day}`
 }
 
-// 報到時間窗由後端給；過了窗還沒報到就算逾時，不等 NO_SHOW 排程
+// 報到時間窗由後端給；過了窗還沒報到就算逾時，不等 NO_SHOW 排程。
+// now 每 30 秒更新一次，列的狀態和按鈕會自己從「還沒到」變「可報到」再變「逾時」
 function getRowState(reservation: Reservation, now: Date): RowState {
   if (reservation.status === 'SEATED') return 'SEATED'
   if (reservation.status === 'CANCELLED') return 'CANCELLED'
@@ -344,7 +353,8 @@ function getSeatSummary({ startAt, tableNo, preorder }: Reservation) {
     .join('・')
 }
 
-// 後端已經篩好、排好；這裡只換成共用選桌對話框要的欄位
+// 後端已經篩好、排好；這裡只換成共用選桌對話框要的欄位。
+// status 固定 AVAILABLE：清單裡本來就只有能開的桌，原保留桌也在裡面，由 isOwnHold 另外標
 function toSeatTable(table: AvailableTable): SeatTable {
   return {
     tableNo: table.tableNo,

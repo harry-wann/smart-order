@@ -23,6 +23,8 @@ public class StaffAuthService {
 
     private static final ZoneId ZONE = ZoneId.of("Asia/Taipei");
     private static final BCryptPasswordEncoder PASSWORD_ENCODER = new BCryptPasswordEncoder();
+    // 強度要跟資料庫裡真的 hash 一樣（預設 10），不然假比對花的時間不同，等於白做；
+    // 放在這裡啟動時算一次，不要每次登入現算
     private static final String DUMMY_HASH = PASSWORD_ENCODER.encode("not-a-real-password");
 
     private final StaffRepository staffRepo;
@@ -31,7 +33,9 @@ public class StaffAuthService {
     @Transactional(readOnly = true)
     public StaffLoginResponse login(StaffLoginRequest request) {
         StaffEntity staff = staffRepo.findByUsernameAndActiveTrue(request.username().strip()).orElse(null);
-        // 帳號不存在時也比對一次假的 hash，回應時間跟密碼錯一樣，看不出哪個帳號存在
+        // 帳號不存在、被停用、密碼錯，三種都回同一句「帳號或密碼錯誤」，不讓人從訊息試出哪些帳號存在。
+        // 光訊息一樣還不夠：BCrypt 故意算很慢，帳號不存在如果直接回，會比密碼錯快上一截，
+        // 量回應時間一樣猜得出來。所以不存在時也拿假的 hash 比對一次，兩條路花的時間差不多
         boolean matched = PASSWORD_ENCODER.matches(
                 request.password(), staff != null ? staff.getPasswordHash() : DUMMY_HASH);
         if (staff == null || !matched) {
