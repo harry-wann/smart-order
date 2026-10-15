@@ -5,6 +5,7 @@ import OptionGroupDetail from '../../../components/menuOptions/OptionGroupDetail
 import AssociatedProducts from '../../../components/menuOptions/AssociatedProducts';
 import GroupNameModal from '../../../components/menuOptions/GroupNameModal';
 import EditItemModal from '../../../components/menuOptions/EditItemModal';
+import AddOptionGroupModal from '../../../components/menuOptions/AddOptionGroupModal';
 import SOButton from '@/components/SOButton';
 import Badge from '@/components/Badge';
 import { createApiClient } from '@/services/client/createApiClient'
@@ -19,6 +20,12 @@ export default function MenuOptions() {
 
   const [isEditingGroupName, setIsEditingGroupName] = useState(false);
   const [tempGroupName, setTempGroupName] = useState('');
+  const [isAddingGroup, setIsAddingGroup] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [newGroupMinSelect, setNewGroupMinSelect] = useState('0');
+  const [newGroupMaxSelect, setNewGroupMaxSelect] = useState('1');
+  const [addGroupError, setAddGroupError] = useState('');
+  const [isSavingGroup, setIsSavingGroup] = useState(false);
 
   const [editingItem, setEditingItem] = useState(null);
   const [tempItemName, setTempItemName] = useState('');
@@ -35,9 +42,9 @@ export default function MenuOptions() {
         const fetchedGroups = data.map(group => ({
           id: String(group.id),
           name: group.name,
-          minSelect: null,
-          maxSelect: null,
-          sortOrder: null,
+          minSelect: group.minSelect,
+          maxSelect: group.maxSelect,
+          sortOrder: group.sortOrder,
           items: [],
           associatedProducts: null,
         }));
@@ -59,6 +66,63 @@ export default function MenuOptions() {
   }, []);
 
   const currentGroup = groups.find(g => g.id === selectedGroupId);
+
+  const handleOpenAddGroupModal = () => {
+    setNewGroupName('');
+    setNewGroupMinSelect('0');
+    setNewGroupMaxSelect('1');
+    setAddGroupError('');
+    setIsAddingGroup(true);
+  };
+
+  const handleAddGroup = async () => {
+    const name = newGroupName.trim();
+    const minSelect = Number(newGroupMinSelect);
+    const maxSelect = Number(newGroupMaxSelect);
+
+    if (!name) {
+      setAddGroupError('請輸入群組名稱');
+      return;
+    }
+    if (name.length > 50) {
+      setAddGroupError('群組名稱最多 50 個字元');
+      return;
+    }
+    if (!Number.isSafeInteger(minSelect) || minSelect < 0) {
+      setAddGroupError('min_select 必須是大於或等於 0 的整數');
+      return;
+    }
+    if (!Number.isSafeInteger(maxSelect) || maxSelect < 1 || maxSelect < minSelect) {
+      setAddGroupError('max_select 必須是大於等於 min_select 且至少為 1 的整數');
+      return;
+    }
+    setIsSavingGroup(true);
+    setAddGroupError('');
+    try {
+      const { data } = await optionGroupsClient.post('/order/admin/optionGroups', {
+        name,
+        minSelect,
+        maxSelect,
+      });
+      const createdGroup = {
+        id: String(data.id),
+        name: data.name,
+        minSelect: data.minSelect,
+        maxSelect: data.maxSelect,
+        sortOrder: data.sortOrder,
+        items: [],
+        associatedProducts: null,
+      };
+
+      setGroups(prevGroups => [...prevGroups, createdGroup]);
+      setSelectedGroupId(createdGroup.id);
+      setIsAddingGroup(false);
+    } catch (error) {
+      setAddGroupError(error instanceof Error ? error.message : '新增群組失敗，請稍後再試');
+    } finally {
+      setIsSavingGroup(false);
+    }
+  };
 
   const handleOpenGroupNameModal = () => {
     if (!currentGroup) return;
@@ -105,7 +169,12 @@ export default function MenuOptions() {
           </div>
         }
         childrenRight={
-          <SOButton height="h-[44px]"text="新增群組" />
+          <SOButton
+            height="h-[44px]"
+            text="新增群組"
+            onClick={handleOpenAddGroupModal}
+            disabled={isLoading}
+          />
         }
       />
     <div className="flex h-screen bg-paper p-(--spacing-page) gap-(--spacing-field) text-ink-900 font-sans relative">
@@ -154,6 +223,20 @@ export default function MenuOptions() {
       ) : (
         <div className="flex-1 text-ink-600">目前沒有選項群組</div>
       )}
-    </div></>
+    </div>
+    <AddOptionGroupModal
+      isOpen={isAddingGroup}
+      groupName={newGroupName}
+      setGroupName={setNewGroupName}
+      minSelect={newGroupMinSelect}
+      setMinSelect={setNewGroupMinSelect}
+      maxSelect={newGroupMaxSelect}
+      setMaxSelect={setNewGroupMaxSelect}
+      error={addGroupError}
+      isSaving={isSavingGroup}
+      onClose={() => setIsAddingGroup(false)}
+      onSave={handleAddGroup}
+    />
+    </>
   );
 }
