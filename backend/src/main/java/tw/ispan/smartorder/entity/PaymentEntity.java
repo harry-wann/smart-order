@@ -1,14 +1,18 @@
 package tw.ispan.smartorder.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Data
 @Table(name = "payment")
+@Getter
+@Setter
+@NoArgsConstructor
 public class PaymentEntity {
 
     @Id
@@ -18,32 +22,17 @@ public class PaymentEntity {
     @Column(name = "dining_session_id")
     private Long diningSessionId;
 
+    // CASH / CARD / BARCODE
     @Column(name = "method")
     private String method;
 
     @Column(name = "amount")
     private BigDecimal amount;
 
+    // PENDING / SUCCESS / FAILED / REFUNDED
     @Column(name = "status")
     private String status;
 
     @Column(name = "paid_at")
     private LocalDateTime paidAt;
-
-    protected PaymentEntity() {
-    }
-
-    public PaymentEntity(
-            Long diningSessionId,
-            String method,
-            BigDecimal amount
-    ) {
-        this.diningSessionId = diningSessionId;
-        this.method = method;
-        this.amount = amount;
-        this.status = "SUCCESS";
-        this.paidAt = LocalDateTime.now();
-    }
-
-
 }

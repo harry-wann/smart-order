@@ -185,6 +185,8 @@
                     <compilerPlugins>
                         <plugin>spring</plugin>
                         <plugin>jpa</plugin>
+                        <!-- Kotlin 比 Java 先編譯，靠這個插件才看得到 Java Entity 上 Lombok 產生的 getter/setter -->
+                        <plugin>lombok</plugin>
                     </compilerPlugins>
                 </configuration>
                 <executions>
@@ -224,6 +226,11 @@
                     <dependency>
                         <groupId>org.jetbrains.kotlin</groupId>
                         <artifactId>kotlin-maven-noarg</artifactId>
+                        <version>${kotlin.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.jetbrains.kotlin</groupId>
+                        <artifactId>kotlin-maven-lombok</artifactId>
                         <version>${kotlin.version}</version>
                     </dependency>
                 </dependencies>

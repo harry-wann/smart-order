@@ -6,15 +6,15 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.filter.OncePerRequestFilter;
-import tw.ispan.smartorder.repository.DingingSessionRepository;
+import tw.ispan.smartorder.repository.DiningSessionRepository;
 import tw.ispan.smartorder.util.JwtToken;
 
 import java.io.IOException;
 
 public class SessionTokenFilter extends OncePerRequestFilter {
-	private final DingingSessionRepository sessionRepo;
+	private final DiningSessionRepository sessionRepo;
 
-	public SessionTokenFilter(DingingSessionRepository sessionRepo){
+	public SessionTokenFilter(DiningSessionRepository sessionRepo){
 		this.sessionRepo=sessionRepo;
 	}
 

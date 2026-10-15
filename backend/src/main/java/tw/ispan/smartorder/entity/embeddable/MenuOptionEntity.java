@@ -1,33 +1,22 @@
 package tw.ispan.smartorder.entity.embeddable;
 
-
 import jakarta.persistence.Embeddable;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.io.Serializable;
-import java.util.Objects;
 
+// menu_item_option_group 的複合主鍵；JPA 用 equals/hashCode 比對主鍵，所以要 @EqualsAndHashCode
 @Embeddable
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode
 public class MenuOptionEntity implements Serializable {
     private Long menuItemId;
     private Long optionGroupId;
-    public MenuOptionEntity() {
-    }
-
-    public MenuOptionEntity(Long menuItemId, Long optionGroupId) {
-        this.menuItemId = menuItemId;
-        this.optionGroupId = optionGroupId;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof MenuOptionEntity that)) return false;
-        return Objects.equals(menuItemId, that.menuItemId)
-                && Objects.equals(optionGroupId, that.optionGroupId);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(menuItemId, optionGroupId);
-    }
 }

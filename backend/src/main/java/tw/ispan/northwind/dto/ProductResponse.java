@@ -1,6 +1,6 @@
 package tw.ispan.northwind.dto;
 
-import tw.ispan.northwind.entity.Product;
+import tw.ispan.northwind.entity.ProductEntity;
 
 import java.math.BigDecimal;
 
@@ -16,7 +16,7 @@ public record ProductResponse(
         Integer categoryId
 ) {
 
-    public static ProductResponse from(Product product) {
+    public static ProductResponse from(ProductEntity product) {
         return new ProductResponse(
                 product.getId(),
                 product.getProductName(),

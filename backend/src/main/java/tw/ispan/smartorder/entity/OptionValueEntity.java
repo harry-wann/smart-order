@@ -1,14 +1,18 @@
 package tw.ispan.smartorder.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Data
 @Entity
 @Table(name = "option_value")
+@Getter
+@Setter
+@NoArgsConstructor
 public class OptionValueEntity {
     @Id
     private Long id;

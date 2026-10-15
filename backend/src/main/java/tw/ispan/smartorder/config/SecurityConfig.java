@@ -19,7 +19,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.time.OffsetDateTime;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import tw.ispan.smartorder.controller.SessionTokenFilter;
-import tw.ispan.smartorder.repository.DingingSessionRepository;
+import tw.ispan.smartorder.repository.DiningSessionRepository;
 import tw.ispan.smartorder.staff.security.StaffJwtFilter;
 import tw.ispan.smartorder.staff.security.StaffJwtProvider;
 
@@ -35,7 +35,7 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain apiSecurity(
             HttpSecurity http,
-            DingingSessionRepository sessionRepo,
+            DiningSessionRepository sessionRepo,
             StaffJwtProvider staffJwtProvider,
             @Value("${app.r2.allow-anonymous-uploads:false}") boolean allowAnonymousUploads) throws Exception {
         http

@@ -10,6 +10,7 @@ import java.util.List;
 @Table(name = "menu_category")
 @Getter
 @Setter
+@NoArgsConstructor
 public class MenuCategoryEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
