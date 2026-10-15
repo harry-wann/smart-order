@@ -4,7 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
-import tw.ispan.smartorder.reservation.entity.ReservationEntity
+import tw.ispan.smartorder.entity.ReservationEntity
 import tw.ispan.smartorder.reservation.enums.ReservationStatus
 import tw.ispan.smartorder.reservation.projection.CalledWaitlistProjection
 import tw.ispan.smartorder.reservation.projection.MemberContactProjection

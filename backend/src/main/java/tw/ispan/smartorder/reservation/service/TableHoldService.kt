@@ -2,7 +2,7 @@ package tw.ispan.smartorder.reservation.service
 
 import org.springframework.stereotype.Service
 import tw.ispan.smartorder.reservation.config.ReservationProperties
-import tw.ispan.smartorder.reservation.entity.ReservationEntity
+import tw.ispan.smartorder.entity.ReservationEntity
 import tw.ispan.smartorder.reservation.enums.ReservationStatus
 import tw.ispan.smartorder.reservation.repository.ReservationRepository
 import java.time.LocalDateTime

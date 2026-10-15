@@ -162,6 +162,13 @@
             <version>0.11.5</version>
         </dependency>
 
+        <!-- jjwt 簽發與解析 JWT 時要用的 JSON 實作，少了它簽 token 會丟 UnknownClassException -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>0.11.5</version>
+            <scope>runtime</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -178,6 +185,8 @@
                     <compilerPlugins>
                         <plugin>spring</plugin>
                         <plugin>jpa</plugin>
+                        <!-- Kotlin 比 Java 先編譯，靠這個插件才看得到 Java Entity 上 Lombok 產生的 getter/setter -->
+                        <plugin>lombok</plugin>
                     </compilerPlugins>
                 </configuration>
                 <executions>
@@ -217,6 +226,11 @@
                     <dependency>
                         <groupId>org.jetbrains.kotlin</groupId>
                         <artifactId>kotlin-maven-noarg</artifactId>
+                        <version>${kotlin.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.jetbrains.kotlin</groupId>
+                        <artifactId>kotlin-maven-lombok</artifactId>
                         <version>${kotlin.version}</version>
                     </dependency>
                 </dependencies>

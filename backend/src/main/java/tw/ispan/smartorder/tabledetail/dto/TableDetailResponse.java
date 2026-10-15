@@ -18,7 +18,8 @@ public record TableDetailResponse(
 ) {
 
     public record OrderDto(
-            long id,
+            Long id,
+            Integer sequenceNo,
             String status,
             String time,
             BigDecimal total,

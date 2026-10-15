@@ -1,13 +1,17 @@
 package tw.ispan.smartorder.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-@Data
 @Entity
 @Table(name = "dining_session_guest")
+@Getter
+@Setter
+@NoArgsConstructor
 public class DiningSessionGuestEntity {
 
     @Id

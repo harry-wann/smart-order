@@ -6,6 +6,7 @@ import { SvgIconMap } from '@/assets/SvgIconMap'
 import CustomerTopBar from '@/components/CustomerTopBar'
 import SOButton from '@/components/SOButton'
 import ServiceBell from '@/features/customer/order/ServiceBell'
+import { getCurrentDining } from '@/services/api/dining/diningApi'
 
 import { Link, useNavigate } from "react-router";
 
@@ -22,7 +23,15 @@ export default function Menu() {
   const [searchKeyword,setSearchKeyword]=useState('');
   // 
   const [isBellOpen, setIsBellOpen] = useState(false);
+  // 購物車路徑要帶用餐場次 id
+  const [sessionId, setSessionId] = useState(null);
   const navigate = useNavigate("");
+
+  useEffect(() => {
+    getCurrentDining()
+      .then((dining) => setSessionId(dining.sessionId))
+      .catch((error) => console.error(error));
+  }, []);
 
   useEffect(() => {
     async function loadCategories() {
@@ -111,7 +120,12 @@ export default function Menu() {
         </main>
 
         <div className="fixed bottom-0 left-0 h-23.25 w-full border-t border-line bg-surface px-4 py-4">
-          <Link to="/order/cart">
+          <Link
+            to={`/order/cart/${sessionId ?? ''}`}
+            onClick={(event) => {
+              if (!sessionId) event.preventDefault();
+            }}
+          >
             <SOButton
                 height="h-[56px]"
                 content={[

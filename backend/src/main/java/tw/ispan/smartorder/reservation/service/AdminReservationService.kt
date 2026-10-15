@@ -15,12 +15,12 @@ import tw.ispan.smartorder.reservation.dto.response.OpenWaitlistItem
 import tw.ispan.smartorder.reservation.dto.response.UpcomingReservationResponse
 import tw.ispan.smartorder.reservation.dto.response.SeatReservationResponse
 import tw.ispan.smartorder.entity.DiningSessionEntity
-import tw.ispan.smartorder.reservation.entity.ReservationEntity
+import tw.ispan.smartorder.entity.ReservationEntity
 import tw.ispan.smartorder.reservation.enums.CancelSource
 import tw.ispan.smartorder.reservation.enums.ReservationStatus
-import tw.ispan.smartorder.reservation.repository.ReservationDiningSessionRepository
+import tw.ispan.smartorder.repository.DiningSessionRepository
 import tw.ispan.smartorder.reservation.repository.ReservationRepository
-import tw.ispan.smartorder.reservation.repository.ReservationTableRepository
+import tw.ispan.smartorder.repository.DiningTableRepository
 import tw.ispan.smartorder.staff.repository.StaffRepository
 import tw.ispan.smartorder.staff.security.StaffPrincipal
 import java.security.SecureRandom
@@ -34,8 +34,8 @@ import java.time.format.DateTimeFormatter
 @Service
 class AdminReservationService(
     private val reservationRepo: ReservationRepository,
-    private val tableRepo: ReservationTableRepository,
-    private val sessionRepo: ReservationDiningSessionRepository,
+    private val tableRepo: DiningTableRepository,
+    private val sessionRepo: DiningSessionRepository,
     private val staffRepo: StaffRepository,
     private val holdService: TableHoldService,
     private val properties: ReservationProperties,
@@ -203,7 +203,7 @@ class AdminReservationService(
             throw ApiException.conflict("RESERVATION_EXPIRED", "已超過保留時間，請改登記候位")
         }
 
-        val table = tableRepo.findByIdForUpdate(tableId) ?: throw ApiException.notFound("找不到這張桌")
+        val table = tableRepo.findByIdForUpdate(tableId).orElse(null) ?: throw ApiException.notFound("找不到這張桌")
         if (table.status != TABLE_AVAILABLE) {
             throw ApiException.conflict("TABLE_OCCUPIED", "${table.tableNo} 使用中，請換一張桌")
         }

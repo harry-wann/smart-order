@@ -2,12 +2,17 @@
 package tw.ispan.smartorder.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
 
 @Entity
 @Table(name = "cart_item")
+@Getter
+@Setter
+@NoArgsConstructor
 public class CartItemEntity {
 
     @Id
@@ -26,7 +31,6 @@ public class CartItemEntity {
     @JoinColumn(name = "added_by_guest_id")
     private DiningSessionGuestEntity addedByGuest;
 
-    @Setter
     @Column(name = "quantity")
     private Integer quantity;
 
@@ -35,33 +39,4 @@ public class CartItemEntity {
 
     @Column(name = "note")
     private String note;
-
-    public Long getId() {
-        return id;
-    }
-
-    public DiningSessionEntity getDiningSession() {
-        return diningSession;
-    }
-
-    public MenuItemEntity getMenuItem() {
-        return menuItem;
-    }
-
-    public DiningSessionGuestEntity getAddedByGuest() {
-        return addedByGuest;
-    }
-
-    public Integer getQuantity() {
-        return quantity;
-    }
-
-    public BigDecimal getUnitPrice() {
-        return unitPrice;
-    }
-
-    public String getNote() {
-        return note;
-    }
-
 }

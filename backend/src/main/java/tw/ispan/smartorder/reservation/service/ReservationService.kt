@@ -11,12 +11,12 @@ import tw.ispan.smartorder.reservation.dto.response.ReservationCreatedResponse
 import tw.ispan.smartorder.reservation.dto.response.ReservationDetailResponse
 import tw.ispan.smartorder.reservation.dto.response.SlotResponse
 import tw.ispan.smartorder.entity.DiningTableEntity
-import tw.ispan.smartorder.reservation.entity.ReservationEntity
+import tw.ispan.smartorder.entity.ReservationEntity
 import tw.ispan.smartorder.common.exception.ApiException
 import tw.ispan.smartorder.reservation.repository.ReservationRepository
 import tw.ispan.smartorder.reservation.enums.CancelSource
 import tw.ispan.smartorder.reservation.enums.ReservationStatus
-import tw.ispan.smartorder.reservation.repository.ReservationTableRepository
+import tw.ispan.smartorder.repository.DiningTableRepository
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.time.Clock
@@ -29,7 +29,7 @@ import java.time.format.DateTimeFormatter
 @Service
 class ReservationService(
     private val reservationRepo: ReservationRepository,
-    private val tableRepo: ReservationTableRepository,
+    private val tableRepo: DiningTableRepository,
     private val properties: ReservationProperties,
     private val clock: Clock,
 ) {
@@ -75,16 +75,16 @@ class ReservationService(
             .minWithOrNull(compareBy<DiningTableEntity>({ it.seats }, { it.tableNo }))
             ?: throw ApiException.conflict("SLOT_UNAVAILABLE", "這個時段已經客滿了，請改選其他時段")
 
-        val reservation = ReservationEntity(
-            memberId = memberId,
-            startTime = start,
-            endTime = end,
-            adultCount = adultCount,
-            childCount = childCount,
-            partySize = partySize,
-            tableId = table.id,
-            accessToken = newAccessToken(),
-        )
+        val reservation = ReservationEntity().apply {
+            this.memberId = memberId
+            startTime = start
+            endTime = end
+            this.adultCount = adultCount
+            this.childCount = childCount
+            this.partySize = partySize
+            tableId = table.id
+            accessToken = newAccessToken()
+        }
         fillContact(reservation, request, memberId)
 
         try {

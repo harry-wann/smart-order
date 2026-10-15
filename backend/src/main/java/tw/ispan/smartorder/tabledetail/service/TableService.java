@@ -159,6 +159,7 @@ public class TableService {
         String time = ticket.getPlacedAt() == null ? "" : ticket.getPlacedAt().format(TIME_FORMAT);
 
         return new TableDetailResponse.OrderDto(
+                ticket.getId(),
                 ticket.getSequenceNo(),
                 ticket.getStatus(),
                 time,
@@ -246,7 +247,7 @@ public class TableService {
 
         // 鎖定目前 用餐紀錄
         List<DiningSessionEntity> sessions = sessionRepository
-                .findByTableIdAndStatus(
+                .findWithLockByTableIdAndStatus(
                         table.getId(),
                         "OPEN"
                 );
@@ -278,11 +279,12 @@ public class TableService {
         }
 
         // 新增付款紀錄
-        PaymentEntity payment = new PaymentEntity(
-                session.getId(),
-                method,
-                amount
-        );
+        PaymentEntity payment = new PaymentEntity();
+        payment.setDiningSessionId(session.getId());
+        payment.setMethod(method);
+        payment.setAmount(amount);
+        payment.setStatus("SUCCESS");
+        payment.setPaidAt(LocalDateTime.now());
 
         paymentRepository.save(payment);
 

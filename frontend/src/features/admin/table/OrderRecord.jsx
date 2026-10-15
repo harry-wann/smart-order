@@ -21,7 +21,7 @@ function OrderCard({ order }) {
       {/* 訂單標題 */}
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2">
-          <h3>第 {order.id} 單</h3>
+          <h3>第 {order.sequenceNo} 單</h3>
           <span className="rounded-pill border border-warning-line bg-accent-100 px-2 py-1 text-[10px] text-hold-ink">
             {order.status}
           </span>

@@ -10,9 +10,9 @@ import tw.ispan.smartorder.entity.DiningSessionEntity;
 import tw.ispan.smartorder.entity.DiningSessionGuestEntity;
 import tw.ispan.smartorder.entity.DiningTableEntity;
 import tw.ispan.smartorder.exception.TableNoFoundException;
-import tw.ispan.smartorder.repository.DingingSessionRepository;
+import tw.ispan.smartorder.repository.DiningSessionRepository;
 import tw.ispan.smartorder.repository.DiningSessionGuestRepository;
-import tw.ispan.smartorder.repository.DinnerTableRepository;
+import tw.ispan.smartorder.repository.DiningTableRepository;
 import tw.ispan.smartorder.util.JwtToken;
 
 import java.time.LocalDateTime;
@@ -23,9 +23,9 @@ public class DinnerService {
 	private static final String OPEN="OPEN";
 
 	@Autowired
-	private DingingSessionRepository diningSessionRepo;
+	private DiningSessionRepository diningSessionRepo;
 	@Autowired
-	private DinnerTableRepository dinnerTableRepo;
+	private DiningTableRepository dinnerTableRepo;
 	@Autowired
 	private DiningSessionGuestRepository diningSessionGuestRepo;
 
@@ -36,7 +36,7 @@ public class DinnerService {
 	public TableStatusResponse status(String tableNo,String deviceId){
 		DiningTableEntity table = findTable(tableNo);
 
-		Optional<DiningSessionEntity> session=diningSessionRepo.findByTableIdAndStatus(table.getId(),OPEN);
+		Optional<DiningSessionEntity> session=diningSessionRepo.findFirstByTableIdAndStatusOrderByOpenedAtDesc(table.getId(),OPEN);
 		if(session.isEmpty()){
 			return new TableStatusResponse(table.getTableNo(),false,false,null);
 		}
@@ -58,7 +58,7 @@ public class DinnerService {
 	public JoinTableResponse join(String tableNo, String deviceId) {
 		DiningTableEntity table = findTable(tableNo);
 
-		DiningSessionEntity session = diningSessionRepo.findByTableIdAndStatus(table.getId(), OPEN)
+		DiningSessionEntity session = diningSessionRepo.findFirstByTableIdAndStatusOrderByOpenedAtDesc(table.getId(), OPEN)
 						.orElseThrow(() -> new IllegalArgumentException("這桌尚未開桌，請洽櫃檯"));
 
 		if (!diningSessionGuestRepo.existsByDiningSessionIdAndDeviceId(session.getId(), deviceId)) {

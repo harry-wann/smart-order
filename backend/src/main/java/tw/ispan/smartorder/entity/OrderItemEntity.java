@@ -1,14 +1,17 @@
 package tw.ispan.smartorder.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
 
 @Entity
-@Data
 @Table(name = "order_item")
+@Getter
+@Setter
+@NoArgsConstructor
 public class OrderItemEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,10 +29,8 @@ public class OrderItemEntity {
     @Column(name = "unit_price_snapshot")
     private BigDecimal unitPriceSnapshot;
 
-
     @Column(name = "options_price")
     private BigDecimal optionsPrice;
-
 
     @Column(name = "quantity")
     private Integer quantity;
@@ -42,5 +43,4 @@ public class OrderItemEntity {
 
     @Column(name = "line_total")
     private BigDecimal lineTotal;
-
 }

@@ -1,14 +1,18 @@
 package tw.ispan.smartorder.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Data
 @Table(name = "order_item_option")
+@Getter
+@Setter
+@NoArgsConstructor
 public class OrderItemOptionEntity {
 
     @Id
@@ -47,5 +51,4 @@ public class OrderItemOptionEntity {
     // 更新時間
     @Column(name = "updated_at", insertable = false, updatable = false)
     private LocalDateTime updatedAt;
-
 }
