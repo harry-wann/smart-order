@@ -12,7 +12,7 @@ import tw.ispan.smartorder.reservation.dto.response.ReservationDetailResponse
 import tw.ispan.smartorder.reservation.dto.response.SlotResponse
 import tw.ispan.smartorder.reservation.entity.DiningTableEntity
 import tw.ispan.smartorder.reservation.entity.ReservationEntity
-import tw.ispan.smartorder.reservation.exception.ApiException
+import tw.ispan.smartorder.common.exception.ApiException
 import tw.ispan.smartorder.reservation.repository.ReservationRepository
 import tw.ispan.smartorder.reservation.enums.CancelSource
 import tw.ispan.smartorder.reservation.enums.ReservationStatus
