@@ -11,9 +11,9 @@ import {
   updateCartQuantity,
   deleteCartItem,
   submitOrder,
-} from '@/api/cartApi'
+} from '@/services/api/cart/cartApi'
 
-import useCartWebSocket from '@/api/useCartWebSocket'
+import useCartWebSocket from '@/services/realtime/useCartWebSocket'
 
 export default function OrderCart() {
   const navigate = useNavigate()

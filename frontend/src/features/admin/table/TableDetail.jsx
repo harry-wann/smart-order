@@ -6,7 +6,7 @@ import Checkout from './Checkout'
 import PaymentProcessing from './PaymentProcessing'
 import TopBar from '../../../components/dashboard/TopBar.tsx'
 
-import { getTableDetail, checkoutTable } from '@/api/tableApi'
+import { getTableDetail, checkoutTable } from '@/services/api/table/tableApi'
 
 export default function TableDetail() {
     // 從網址取得桌號
