@@ -222,7 +222,11 @@ function ReservationManagement() {
                   onCheckIn={() => openSeatDialog(reservation)}
                   onCancel={() => setCancelTarget(reservation)}
                   onRegisterWaitlist={() => navigate('/admin/waitlist')}
-                  onViewTable={() => navigate('/admin/table/detail')}
+                  onViewTable={() => {
+                    if (reservation.seatedTableNo) {
+                      navigate(`/admin/table/${encodeURIComponent(reservation.seatedTableNo)}`)
+                    }
+                  }}
                   onDetails={() => setDetailTarget(reservation)}
                 />
               ))}

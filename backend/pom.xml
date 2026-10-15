@@ -162,6 +162,13 @@
             <version>0.11.5</version>
         </dependency>
 
+        <!-- jjwt 簽發與解析 JWT 時要用的 JSON 實作，少了它簽 token 會丟 UnknownClassException -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>0.11.5</version>
+            <scope>runtime</scope>
+        </dependency>
     </dependencies>
 
     <build>
