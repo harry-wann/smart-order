@@ -53,6 +53,7 @@ public class SecurityConfig {
                     // 員工登入；以下店家端規則都要放在 /api/** 之前
                     authorize.requestMatchers(HttpMethod.POST, "/api/admin/auth/login").permitAll();
                     authorize.requestMatchers("/api/admin/reservations/**").hasAnyRole("COUNTER", "MANAGER");
+                    authorize.requestMatchers("/api/admin/scheduler/**").hasRole("MANAGER");
 
                     authorize
                             .requestMatchers(

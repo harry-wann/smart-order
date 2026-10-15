@@ -1,10 +1,13 @@
 package tw.ispan.smartorder.reservation.repository
 
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 import tw.ispan.smartorder.reservation.entity.ReservationEntity
+import tw.ispan.smartorder.reservation.enums.ReservationStatus
 import tw.ispan.smartorder.reservation.projection.MemberContactProjection
+import tw.ispan.smartorder.reservation.projection.SeatedTableProjection
 import java.time.LocalDateTime
 
 @Repository
@@ -30,6 +33,38 @@ interface ReservationRepository : JpaRepository<ReservationEntity, Long> {
     fun findByIdForUpdate(id: Long): ReservationEntity?
 
     fun findByMemberIdOrderByStartTimeDesc(memberId: Long): List<ReservationEntity>
+
+    fun findByStartTimeGreaterThanEqualAndStartTimeLessThanOrderByStartTimeAscIdAsc(
+        from: LocalDateTime,
+        to: LocalDateTime,
+    ): List<ReservationEntity>
+
+    fun findByStatusAndStartTimeGreaterThanEqualAndStartTimeLessThan(
+        status: ReservationStatus,
+        from: LocalDateTime,
+        to: LocalDateTime,
+    ): List<ReservationEntity>
+
+    // 報到後客人實際坐哪張桌記在 dining_session，不在 reservation.table_id
+    @Query(
+        nativeQuery = true,
+        value = """
+        select s.reservation_id as reservationId, t.table_no as tableNo
+        from dining_session s join dining_table t on t.id = s.table_id
+        where s.reservation_id in (:reservationIds)
+        """
+    )
+    fun findSeatedTables(reservationIds: Collection<Long>): List<SeatedTableProjection>
+
+    // 過了保留時間還沒報到；桌位不用動，保留是算出來的，時間一過就自己消失
+    @Modifying
+    @Query(
+        """
+        update ReservationEntity r set r.status = :noShow
+        where r.status = :confirmed and r.startTime < :cutoff
+        """
+    )
+    fun markNoShowBefore(cutoff: LocalDateTime, confirmed: ReservationStatus, noShow: ReservationStatus): Int
 
     @Query(
         nativeQuery = true,

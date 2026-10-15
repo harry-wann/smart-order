@@ -1,15 +1,24 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import SeatDialog, { type SeatTable } from '@/components/dashboard/SeatDialog'
 import TopBar from '@/components/dashboard/TopBar'
 import CancelReservationDialog from '@/features/admin/reservation/CancelReservationDialog'
-
-type ReservationStatus = 'CONFIRMED' | 'SEATED' | 'CANCELLED'
+import {
+  useAdminReservations,
+  useCancelReservationByStaff,
+} from '@/hooks/reservation/useAdminReservations'
+import type { AdminReservation } from '@/services/api/reservation/adminReservationApi'
+import type { ReservationStatus } from '@/services/api/reservation/types'
+import { fetchSeats } from '@/services/api/seatApi'
+import { queryScope } from '@/services/client/queryClient'
 
 type Reservation = {
   id: number
   startAt: Date
+  checkInFrom: Date
+  checkInUntil: Date
   name: string
   phone: string
   isMember: boolean
@@ -27,11 +36,21 @@ function ReservationManagement() {
   const navigate = useNavigate()
   const [now, setNow] = useState(() => new Date())
   const [selectedDate, setSelectedDate] = useState(() => new Date())
-  const [reservations, setReservations] = useState(() => createReservations(new Date(), new Date()))
-  const [tables, setTables] = useState(INITIAL_TABLES)
   const [seatingTarget, setSeatingTarget] = useState<Reservation | null>(null)
   const [cancelTarget, setCancelTarget] = useState<Reservation | null>(null)
   const [detailTarget, setDetailTarget] = useState<Reservation | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
+  const reservationsQuery = useAdminReservations(toDateParam(selectedDate))
+  const cancelByStaff = useCancelReservationByStaff()
+  // 「18 桌中開放 13 桌」：座位設定的 API 已經有了，直接拿來算
+  const seatsQuery = useQuery({
+    queryKey: [...queryScope.employee, 'seats'],
+    queryFn: ({ signal }) => fetchSeats(signal),
+  })
+  const reservations = (reservationsQuery.data ?? []).map(toReservation)
+  const tables = INITIAL_TABLES
+  const totalTables = seatsQuery.data?.length ?? 0
+  const reservableTables = seatsQuery.data?.filter((seat) => seat.reservable).length ?? 0
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 30000)
@@ -46,35 +65,24 @@ function ReservationManagement() {
   const overdueCount = rowStates.filter((state) => state === 'OVERDUE').length
   const preorderCount = reservations.filter((reservation) => reservation.preorder).length
 
-  function updateReservation(id: number, changes: Partial<Reservation>) {
-    setReservations((prev) => prev.map((r) => (r.id === id ? { ...r, ...changes } : r)))
-  }
-
   function changeDate(days: number) {
     const nextDate = new Date(selectedDate)
     nextDate.setDate(nextDate.getDate() + days)
     setSelectedDate(nextDate)
-    setReservations(createReservations(nextDate, now))
-    setTables(INITIAL_TABLES)
+    setNotice(null)
   }
 
-  function handleSeat(tableNo: string) {
-    if (!seatingTarget) return
-    updateReservation(seatingTarget.id, { status: 'SEATED', seatedTableNo: tableNo })
-    setTables((prev) => prev.map((t) => (t.tableNo === tableNo ? { ...t, status: 'OCCUPIED' } : t)))
+  // 報到開桌在 S-07b 串接後端，這裡先只關掉對話框
+  function handleSeat() {
     setSeatingTarget(null)
   }
 
   function handleCancel() {
     if (!cancelTarget) return
-    updateReservation(cancelTarget.id, {
-      status: 'CANCELLED',
-      tableNo: undefined,
-      seatedTableNo: undefined,
-      preorder: undefined,
-      cancelledBy: STAFF_NAME,
-    })
+    const target = cancelTarget
     setCancelTarget(null)
+    setNotice(null)
+    cancelByStaff.mutate({ id: target.id }, { onError: (error) => setNotice(error.message) })
   }
 
   return (
@@ -120,10 +128,18 @@ function ReservationManagement() {
           <Stat value={overdueCount} label="逾時未到" valueClass="text-danger" />
           <Divider />
           <Stat value={preorderCount} label="已預先點餐" />
-          <span className="ml-auto type-caption text-ink-600">
-            可預約比例 70%・18 桌中開放 13 桌
-          </span>
+          {totalTables > 0 && (
+            <span className="ml-auto type-caption text-ink-600">
+              可預約比例 {Math.round((reservableTables / totalTables) * 100)}%・{totalTables} 桌中開放{' '}
+              {reservableTables} 桌
+            </span>
+          )}
         </section>
+
+        {notice && <p className="type-body-sm text-danger">{notice}</p>}
+        {reservationsQuery.isError && (
+          <p className="type-body-sm text-danger">{reservationsQuery.error.message}</p>
+        )}
 
         <div className="overflow-x-auto rounded-card border border-line bg-surface">
           <table className="w-full type-body-sm">
@@ -140,6 +156,20 @@ function ReservationManagement() {
               </tr>
             </thead>
             <tbody>
+              {reservationsQuery.isPending && (
+                <tr>
+                  <td colSpan={COLUMNS.length} className="px-4 py-8 text-center text-ink-600">
+                    載入中…
+                  </td>
+                </tr>
+              )}
+              {reservationsQuery.isSuccess && reservations.length === 0 && (
+                <tr>
+                  <td colSpan={COLUMNS.length} className="px-4 py-8 text-center text-ink-600">
+                    這天沒有訂位
+                  </td>
+                </tr>
+              )}
               {reservations.map((reservation) => (
                 <ReservationRow
                   key={reservation.id}
@@ -206,7 +236,6 @@ const CHECK_IN_EARLY_MINUTES = 30
 const OVERDUE_MINUTES = 10
 const UPCOMING_WINDOW_MINUTES = 115
 const MINUTE_MS = 60000
-const STAFF_NAME = '小美'
 const WEEKDAYS = '日一二三四五六'
 
 const COLUMNS = [
@@ -232,105 +261,38 @@ const INITIAL_TABLES: SeatTable[] = [
   { tableNo: 'C02', capacity: 8, area: 'C 包廂', status: 'AVAILABLE' },
 ]
 
-function createReservations(selectedDate: Date, now: Date): Reservation[] {
-  const startAfter = (minutes: number) => {
-    const date = new Date(selectedDate)
-    date.setHours(now.getHours(), now.getMinutes() + minutes, 0, 0)
-    return date
+function toReservation(row: AdminReservation): Reservation {
+  return {
+    id: row.reservationId,
+    startAt: new Date(row.startTime),
+    checkInFrom: new Date(row.checkInFrom),
+    checkInUntil: new Date(row.checkInUntil),
+    name: row.contactName,
+    phone: row.contactPhone,
+    isMember: row.member,
+    partySize: row.partySize,
+    tableNo: row.assignedTableNo ?? undefined,
+    seatedTableNo: row.seatedTableNo ?? undefined,
+    status: row.status,
+    // 只有櫃檯代客取消才顯示「店家代取消・小美」
+    cancelledBy: row.cancelSource === 'STAFF' ? (row.cancelledByStaffName ?? undefined) : undefined,
   }
-
-  return [
-    {
-      id: 1,
-      startAt: startAfter(-66),
-      name: '王大明',
-      phone: '0912345678',
-      isMember: true,
-      partySize: 2,
-      tableNo: 'A01',
-      status: 'SEATED',
-    },
-    {
-      id: 2,
-      startAt: startAfter(-36),
-      name: '鄭文彬',
-      phone: '0916123728',
-      isMember: false,
-      partySize: 2,
-      tableNo: 'B02',
-      status: 'CONFIRMED',
-    },
-    {
-      id: 3,
-      startAt: startAfter(-6),
-      name: '張小雯',
-      phone: '0921456037',
-      isMember: true,
-      partySize: 2,
-      status: 'CANCELLED',
-      cancelledBy: STAFF_NAME,
-    },
-    {
-      id: 4,
-      startAt: startAfter(25),
-      name: '陳怡君',
-      phone: '0933789210',
-      isMember: true,
-      partySize: 4,
-      tableNo: 'A08',
-      preorder: { itemCount: 4, estimated: 1980 },
-      status: 'CONFIRMED',
-    },
-    {
-      id: 5,
-      startAt: startAfter(45),
-      name: '林家豪',
-      phone: '0935123806',
-      isMember: false,
-      partySize: 2,
-      tableNo: 'B02',
-      status: 'CONFIRMED',
-    },
-    {
-      id: 6,
-      startAt: startAfter(60),
-      name: '吳美玲',
-      phone: '0987654553',
-      isMember: true,
-      partySize: 8,
-      tableNo: 'C02',
-      preorder: { itemCount: 7, estimated: 3240 },
-      status: 'CONFIRMED',
-    },
-    {
-      id: 7,
-      startAt: startAfter(90),
-      name: '黃先生',
-      phone: '0955321192',
-      isMember: false,
-      partySize: 4,
-      tableNo: 'A04',
-      status: 'CONFIRMED',
-    },
-    {
-      id: 8,
-      startAt: startAfter(120),
-      name: '劉品妤',
-      phone: '0978123361',
-      isMember: false,
-      partySize: 4,
-      status: 'CANCELLED',
-    },
-  ]
 }
 
+function toDateParam(date: Date) {
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${date.getFullYear()}-${month}-${day}`
+}
+
+// 報到時間窗由後端給；過了窗還沒報到就算逾時，不等 NO_SHOW 排程
 function getRowState(reservation: Reservation, now: Date): RowState {
   if (reservation.status === 'SEATED') return 'SEATED'
   if (reservation.status === 'CANCELLED') return 'CANCELLED'
+  if (reservation.status === 'NO_SHOW') return 'OVERDUE'
 
-  const minutesToStart = (reservation.startAt.getTime() - now.getTime()) / MINUTE_MS
-  if (minutesToStart > CHECK_IN_EARLY_MINUTES) return 'NOT_YET'
-  if (minutesToStart < -OVERDUE_MINUTES) return 'OVERDUE'
+  if (now < reservation.checkInFrom) return 'NOT_YET'
+  if (now > reservation.checkInUntil) return 'OVERDUE'
   return 'CHECKIN_OPEN'
 }
 
