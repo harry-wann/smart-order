@@ -1,33 +1,51 @@
 import { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router'
+import { useLocation, useNavigate, useParams } from 'react-router'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import SOButton from '@/components/SOButton'
-import { addDays, formatDateWithWeekday, parseLocalDate, startOfToday } from '@/utils/reservationDate'
-import type { ReservationConfirmation, ReservationRouteState } from './reservation.types'
+import { useReservation } from '@/hooks/reservation/useReservationQueries'
+import type { ReservationDetail } from '@/services/api/reservation/types'
 import { addReservation, loadReservations, saveReservations } from '@/utils/guestReservation'
+import { formatDateWithWeekday, parseLocalDate } from '@/utils/reservationDate'
+import type { ReservationConfirmation, ReservationContact, ReservationRouteState } from './reservation.types'
 
 function Done() {
   const navigate = useNavigate()
   const location = useLocation()
-  const reservation =
-    (location.state as ReservationRouteState | null)?.reservation ?? createDemoReservation()
+  const reservationId = Number(useParams().reservationId)
+  const routeReservation = (location.state as ReservationRouteState | null)?.reservation
+  // 剛訂完會從 C-16c 帶過來；重新整理或之後再進來，就從這支手機記住的訂位裡找
+  const accessToken = routeReservation?.accessToken ?? findGuestToken(reservationId)
+  const { data: reservation, isPending, isError, error } = useReservation(reservationId, accessToken)
   const [copied, setCopied] = useState(false)
-  const date = parseLocalDate(reservation.date)
-  const rows = [
-    { label: '日期時段', value: `${formatDateWithWeekday(date)} ${reservation.time}` },
-    { label: '人數', value: `${reservation.partySize} 位` },
-    { label: '桌號', value: formatTable(reservation.tableNo, reservation.partySize) },
-  ]
 
   useEffect(() => {
-    if (!reservation.contact) return
-    const type = reservation.reservationType ?? 'GUEST'
-    saveReservations(type, addReservation(loadReservations(type), reservation, type))
-  }, [reservation])
+    // 匿名訂位只記在這支手機，C-19 靠這份清單找回來
+    if (!reservation || reservation.member || !accessToken) return
+    const confirmation = toConfirmation(reservation, accessToken, routeReservation?.contact)
+    saveReservations('GUEST', addReservation(loadReservations('GUEST'), confirmation, 'GUEST'))
+  }, [reservation, accessToken, routeReservation])
+
+  if (isPending || isError) {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-paper px-page text-center">
+        <p className="type-body text-ink-600">{isError ? error.message : '訂位資料載入中…'}</p>
+        {isError && (
+          <SOButton height="h-12" variant="secondary" text="回到訂位首頁" onClick={() => navigate('/reserve')} />
+        )}
+      </div>
+    )
+  }
+
+  const [date, time] = splitStartTime(reservation.startTime)
+  const rows = [
+    { label: '日期時段', value: `${formatDateWithWeekday(parseLocalDate(date))} ${time}` },
+    { label: '人數', value: `${reservation.partySize} 位` },
+    { label: '桌號', value: reservation.tableNo ? `${reservation.tableNo}・${reservation.area}` : '—' },
+  ]
 
   async function handleCopy() {
     try {
-      await navigator.clipboard.writeText(reservation.reservationNo)
+      await navigator.clipboard.writeText(reservation!.reservationNo)
       setCopied(true)
       window.setTimeout(() => setCopied(false), 1500)
     } catch {
@@ -83,7 +101,7 @@ function Done() {
               訂位時間前 30 分鐘都可以在「我的預約」<b className="text-ink-900">取消訂位</b>；之後請來電 02-2591-xxxx。
             </p>
             <p className="font-bold text-ink-900">訂位保留 10 分鐘，逾時視同未到，需現場候位。</p>
-            {reservation.contact && (
+            {!reservation.member && (
               <p>這支手機記住了你的訂位，換手機或清除瀏覽資料後要查詢請來電。</p>
             )}
           </div>
@@ -96,12 +114,7 @@ function Done() {
           variant="secondary"
           text="查看我的預約"
           onClick={() =>
-            navigate(
-              reservation.reservationType === 'MEMBER'
-                ? '/member/reservations?view=member'
-                : '/member/reservations',
-              { state: { reservation } },
-            )
+            navigate(reservation.member ? '/member/reservations?view=member' : '/member/reservations')
           }
         />
       </div>
@@ -111,21 +124,32 @@ function Done() {
 
 export default Done
 
-function createDemoReservation(): ReservationConfirmation {
-  const date = addDays(startOfToday(), 6)
-  const dateValue = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-
-  return {
-    id: 'RS-DEMO-0043',
-    reservationNo: 'R-DEMO-0043',
-    date: dateValue,
-    time: '18:00',
-    partySize: 4,
-    tableNo: 'A08',
-  }
+function findGuestToken(reservationId: number) {
+  return loadReservations('GUEST').find((record) => record.reservation.id === String(reservationId))
+    ?.reservation.accessToken
 }
 
-function formatTable(tableNo: string, partySize: number) {
-  const area = tableNo.startsWith('C') ? '包廂' : tableNo.startsWith('A') ? '窗邊' : '座位區'
-  return `${tableNo}・${area} ${partySize} 人桌`
+// "2026-11-09T18:00:00+08:00" → ["2026-11-09", "18:00"]，時間本來就是店家時區，不換算
+function splitStartTime(startTime: string) {
+  const [date, rest] = startTime.split('T')
+  return [date, rest.slice(0, 5)] as const
+}
+
+function toConfirmation(
+  reservation: ReservationDetail,
+  accessToken: string,
+  contact?: ReservationContact,
+): ReservationConfirmation {
+  const [date, time] = splitStartTime(reservation.startTime)
+  return {
+    id: String(reservation.reservationId),
+    reservationNo: reservation.reservationNo,
+    accessToken,
+    date,
+    time,
+    partySize: reservation.partySize,
+    tableNo: reservation.tableNo ?? '',
+    reservationType: 'GUEST',
+    contact: contact ?? { name: reservation.contactName, phone: '' },
+  }
 }

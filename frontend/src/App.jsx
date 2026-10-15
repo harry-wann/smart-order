@@ -86,7 +86,6 @@ function App() {
           <Route index element={<Reservation />} />
           <Route path="guest" element={<Guest />} />
           <Route path="datetime" element={<DateTime />} />
-          <Route path="done" element={<Done />} />
           <Route path=":reservationId/done" element={<Done />} />
         </Route>
       </Route>

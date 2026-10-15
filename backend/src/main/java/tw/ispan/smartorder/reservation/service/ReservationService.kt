@@ -7,12 +7,15 @@ import tw.ispan.smartorder.reservation.config.ReservationProperties
 import tw.ispan.smartorder.reservation.dto.request.CreateReservationRequest
 import tw.ispan.smartorder.reservation.dto.response.AvailabilityResponse
 import tw.ispan.smartorder.reservation.dto.response.ReservationCreatedResponse
+import tw.ispan.smartorder.reservation.dto.response.ReservationDetailResponse
 import tw.ispan.smartorder.reservation.dto.response.SlotResponse
 import tw.ispan.smartorder.reservation.entity.DiningTableEntity
 import tw.ispan.smartorder.reservation.entity.ReservationEntity
 import tw.ispan.smartorder.reservation.exception.ApiException
 import tw.ispan.smartorder.reservation.repository.ReservationRepository
+import tw.ispan.smartorder.reservation.enums.ReservationStatus
 import tw.ispan.smartorder.reservation.repository.ReservationTableRepository
+import java.security.MessageDigest
 import java.security.SecureRandom
 import java.time.Clock
 import java.time.LocalDate
@@ -92,6 +95,56 @@ class ReservationService(
         reservation.reservationNo = "R-%s-%04d".format(start.format(YYMMDD), reservation.id!! % 10000)
 
         return toCreatedResponse(reservation, table)
+    }
+
+    @Transactional(readOnly = true)
+    fun detail(id: Long, accessToken: String?, memberId: Long?): ReservationDetailResponse {
+        val reservation = findAccessible(id, accessToken, memberId)
+        val table = reservation.tableId?.let { tableRepo.findById(it).orElse(null) }
+        return toDetailResponse(reservation, table)
+    }
+
+    // 會員看自己的、匿名憑訂位時拿到的 accessToken；只憑 id 不能看別人的訂位
+    private fun findAccessible(id: Long, accessToken: String?, memberId: Long?): ReservationEntity {
+        if (accessToken.isNullOrBlank() && memberId == null) {
+            throw ApiException.unauthorized("請登入會員，或用訂位時的這支手機查詢")
+        }
+        val reservation = reservationRepo.findById(id).orElse(null)
+        val allowed = reservation != null &&
+            ((memberId != null && reservation.memberId == memberId) || sameToken(reservation.accessToken, accessToken))
+        // 不是自己的也回 404，不讓人用猜 id 的方式確認訂位存不存在
+        if (!allowed) throw ApiException.notFound("找不到這筆訂位")
+        return reservation!!
+    }
+
+    private fun sameToken(expected: String?, actual: String?): Boolean {
+        if (expected == null || actual.isNullOrBlank()) return false
+        return MessageDigest.isEqual(expected.toByteArray(), actual.toByteArray())
+    }
+
+    private fun toDetailResponse(reservation: ReservationEntity, table: DiningTableEntity?): ReservationDetailResponse {
+        val start = reservation.startTime!!
+        val cancellableUntil = start.minusMinutes(properties.holdBeforeMinutes)
+        return ReservationDetailResponse(
+            reservationId = reservation.id!!,
+            reservationNo = reservation.reservationNo!!,
+            status = reservation.status,
+            startTime = toOffset(start),
+            endTime = toOffset(reservation.endTime!!),
+            adultCount = reservation.adultCount,
+            childCount = reservation.childCount,
+            partySize = reservation.partySize,
+            tableNo = table?.tableNo,
+            seats = table?.seats,
+            area = table?.area,
+            contactName = reservation.contactName!!,
+            member = reservation.memberId != null,
+            cancellableUntil = toOffset(cancellableUntil),
+            cancellable = reservation.status == ReservationStatus.CONFIRMED && LocalDateTime.now(clock) < cancellableUntil,
+            cancelSource = reservation.cancelSource,
+            cancelledAt = reservation.cancelledAt?.let { toOffset(it) },
+            hasPreorder = false,
+        )
     }
 
     private fun fillContact(reservation: ReservationEntity, request: CreateReservationRequest, memberId: Long?) {

@@ -22,6 +22,29 @@ export type CreateReservationInput = {
   contactEmail?: string | null
 }
 
+export type CancelSource = 'CUSTOMER' | 'STAFF'
+
+export type ReservationDetail = {
+  reservationId: number
+  reservationNo: string
+  status: ReservationStatus
+  startTime: string
+  endTime: string
+  adultCount: number
+  childCount: number
+  partySize: number
+  tableNo: string | null
+  seats: number | null
+  area: string | null
+  contactName: string
+  member: boolean
+  cancellableUntil: string
+  cancellable: boolean
+  cancelSource: CancelSource | null
+  cancelledAt: string | null
+  hasPreorder: boolean
+}
+
 export type ReservationCreated = {
   reservationId: number
   reservationNo: string
