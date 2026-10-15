@@ -35,7 +35,6 @@ export default function MenuOptions() {
         const fetchedGroups = data.map(group => ({
           id: String(group.id),
           name: group.name,
-          typeDescription: '選項群組',
           minSelect: null,
           maxSelect: null,
           sortOrder: null,
