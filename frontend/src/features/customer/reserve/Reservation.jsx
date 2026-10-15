@@ -1,4 +1,6 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router'
+import { customerTokens } from '@/services/client/tokenStore'
 import CustomerTopBar from '@/components/CustomerTopBar'
 import SOFormInput, { SOFormInputType } from '../../../components/input/SOFormInput'
 import SOButton from '../../../components/SOButton'
@@ -13,6 +15,18 @@ import { SvgIconMap } from '@/assets/SvgIconMap'
 // 原檔名 reservation.jsx
 
 export function Reservation() {
+  const navigate = useNavigate()
+
+  // 已登入會員就直接選時段；會員登入（工作包 A）完成前先導到登入頁。
+  // 只看有沒有存 token，有沒有效交給 API 判斷；returnTo 讓驗證碼頁通過後直接回來選時段
+  function handleMember() {
+    if (customerTokens.member.get()) {
+      navigate('/reserve/datetime', { state: { reservationType: 'MEMBER' } })
+    } else {
+      navigate('/member/login', { state: { returnTo: '/reserve/datetime', reservationType: 'MEMBER' } })
+    }
+  }
+
   const cardData = [
     {
       justify: 'between',
@@ -73,6 +87,7 @@ export function Reservation() {
           height="h-12"
           text="登入／註冊會員"
           disabled={false}
+          onClick={handleMember}
         />
       </div>
     ],
@@ -87,7 +102,7 @@ export function Reservation() {
           'other',
           <div className="flex">
             <SvgIconMap.CartTime />
-            <h2 className="type-h2">用會員訂</h2>
+            <h2 className="type-h2">直接訂位</h2>
           </div>,
         ],
       ],
@@ -109,8 +124,9 @@ export function Reservation() {
         <SOButton
           height="h-12"
           variant = 'secondary'
-          text="登入／註冊會員"
+          text="直接訂位"
           disabled={false}
+          onClick={() => navigate('/reserve/guest')}
         />
       </div>
     ],

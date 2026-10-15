@@ -1,5 +1,11 @@
 # tools — 設計系統對帳、設計稿檢查與 Figma 匯入
 
+> **2026-10-14 修訂採新增副本**：服務鈴移出功能範圍，購物車改為僅編輯本人加入的餐點、送出整桌。
+> 新版 HTML 在 `revisions/2026-10-14/`，匯成「原畫框名・修訂 2026-10-14」的新畫框，各頁最下面另成「修訂 2026-10-14」一列；
+> 原 HTML、原畫框、頁首工作包圖例都不動。外掛面板預設只勾「修訂稿」，**不要勾原稿那幾組重匯**
+> （`13-畫框註解.md` 已經是新版內容，重匯原稿會把新說明卡套到舊畫框上）。做法見下方〈修訂稿〉。
+
+
 ```
 tools/
 ├─ check_tokens.py        ★ 對帳：文件講的設計系統有沒有跟前端的 token 對上
@@ -101,7 +107,7 @@ python3 docs/ui/mockups/tools/check_tokens.py
 1. 確認檔案裡有名為 **`01 Design System`**、**`02 顧客端`**、**`03 店家端`** 的 page
    （外掛只會找現有的 page，不會新建 — Starter 方案每檔最多 3 個 page）
 2. **Plugins → Development → 火鍋點餐系統 — 設計稿匯入**
-3. 勾要匯入的組別，按「開始匯入」
+3. 勾要匯入的組別，按「開始匯入」（面板預設只勾「修訂稿」）
 
 外掛會把畫框排成格狀放進對應的 page，**接在既有內容下方**，不會蓋掉已經有的東西。
 **同名畫框會沿用**（內容重建，節點 id 不變），所以已經貼出去的 Figma 連結不會失效。
@@ -155,6 +161,62 @@ node docs/ui/mockups/tools/figma-plugin/test_plugin.js \
 然後在 Figma 裡重跑一次外掛。**同名畫框、它的標題與說明卡、以及這次會重畫的
 那幾列的列標題與底板，外掛會自己清掉再重建**，不用手動全選刪除；
 已經從清單裡消失的畫面（例如被砍掉的功能）也會一起清掉。
+
+---
+
+## 修訂稿（revisions/）
+
+規格改了、但原畫框要留作歷史時，新版 HTML 放 `revisions/<日期>/`（同檔名，`<title>` 可帶「・離線修訂稿（日期）」，打包時會拿掉），
+`figma_prep.py` 會把它們打成 `rev-<日期>` 批次，畫框名後面加「・修訂 <日期>」，排在各頁最下面自成一列：
+
+- 說明卡沿用 `13-畫框註解.md` 裡**原畫框名**那一段，所以 13 要寫成新版的內容
+- 狀態示範（C-04、S-02 的狀態）一樣放 `01 Design System`；顧客端可捲動的畫面一樣會多一張「・整頁展開」
+- 外掛只匯修訂稿時，原畫框、原稿的標題與說明卡、頁首工作包圖例都不碰；同名的修訂畫框重跑會沿用（id 不變）
+- 之後若又勾了原稿組別，同一頁的修訂畫框會一起重排，修訂列仍在最下面、圖例仍在頁首
+- 沿用的同名畫框會先關掉 auto layout，手動或用 MCP 先建過同名畫框也能直接蓋過
+- 清理規則照舊：頁面上名稱像 `C-04｜…`、`標題｜…`、`說明｜…` 但不在清單裡的**頂層**節點會被當成上一輪的殘留刪掉，手動建的節點不要用這種命名
+- 日期寫在 `figma_prep.py` 的 `REVISION`，下一次修訂改這裡
+
+只量修訂稿、併進既有的 `layout.json`（原稿那 59 個畫框保持上次匯入時的量測結果）：
+
+```bash
+python3 docs/ui/mockups/tools/figma_prep.py
+python3 docs/ui/mockups/tools/extract_layout.py \
+        "$PWD/docs/ui/mockups/dist/B-inlined" \
+        "$PWD/docs/ui/mockups/tools/figma-plugin/layout.json" \
+        "$PWD/docs/ui/mockups/dist/frames.json" \
+        --glob 'rev-*.html' --merge
+python3 docs/ui/mockups/tools/figma-plugin/build_plugin.py
+node docs/ui/mockups/tools/figma-plugin/test_plugin.js docs/ui/mockups/tools/figma-plugin/code.js
+```
+
+`extract_layout.py` 的資料夾參數要給**絕對路徑**（它用 `file://` 開檔）。
+`test_plugin.js` 會在原稿跑完之後只勾修訂稿再跑兩次，檢查原稿的頂層節點一個都沒被刪或搬動。
+
+**macOS 量測**：`fetch_fonts.py` 是裝到 Linux 的 fontconfig，Mac 用不到。不想把字型裝進系統時，
+把兩個字型檔轉成 `data:` URI 的 `@font-face`，接在 `fontfix.css` 前面另存一份，用 `FONTFIX=<那份 css>` 指過去；
+`extract_layout.py` 量測前會等 `document.fonts` 載完。Playwright 沒自帶瀏覽器時用 `CHROMIUM_PATH` 指到現成的 Chromium。
+2026-10-14 在 Mac 上用這個方式重量 C-06、S-02b 兩張原稿，跟原本的量測結果差距在 0.1px 內。
+
+匯入後一樣按「複製畫框 id」貼進 `node-ids.json` 再跑 `figma_links.py`：
+修訂畫框的連結寫回 `revisions/<日期>/` 的 HTML；`spec/05` §1.4.3 有修訂的畫面改連修訂畫框，總覽頁卡片仍連原稿。
+
+---
+
+## 外掛選單指令
+
+`Plugins → Development → 火鍋點餐系統 — 設計稿匯入` 底下有三個指令，後兩個不用在面板上點：
+
+| 指令 | 做什麼 |
+|---|---|
+| 開啟匯入面板 | 原本的面板，勾組別再按「開始匯入」；最下面可複製畫框 id |
+| 只匯入修訂稿 | 等於只勾「修訂稿」按開始匯入 |
+| 更新工作包標示（圖例與標籤） | 只在原位重畫每頁的工作包圖例（白底卡片）與每張畫框旁的工作包標籤，畫框與說明卡不動 |
+
+工作包的主題、識別色、**認領人**在 `build_plugin.py` 建外掛時從 `spec/05` §1.4.2 讀，
+不必重量 `layout.json`。§1.4.2 填好認領人 → `build_plugin.py` → 跑「更新工作包標示」，
+標籤會變成「工作包 A・主題・名字」，圖例沒認領的顯示「（未認領）」。
+`figma_links.py` 也會把名字寫進總覽頁的圖例與卡片。
 
 ---
 

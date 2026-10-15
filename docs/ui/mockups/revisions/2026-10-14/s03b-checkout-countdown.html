@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>S-03b｜櫃檯結帳・付款倒數・離線修訂稿（2026-10-14）</title>
+<link rel="stylesheet" href="../../_shared.css">
+<!-- 2026-10-14 offline review variant; not synced to Figma. -->
+</head>
+<body>
+<!-- #thumbmode：總覽頁用 iframe 取縮圖時，只留第一個畫框 -->
+<span id="thumbmode"></span>
+<div class="stage">
+
+<div>
+  <p class="meta"><b>S-03b｜櫃檯結帳・付款倒數</b><code>1280 × 800</code><code>對話框，疊在 S-03 上</code><code>信用卡・倒數 3</code><a class="flink" href="https://www.figma.com/design/AFqSmBl4P5HUHTI7oKAPZt/%E7%81%AB%E9%8D%8B%E9%BB%9E%E9%A4%90%E7%B3%BB%E7%B5%B1?node-id=1233-3066" target="_blank" rel="noopener">在 Figma 開啟 ↗</a></p>
+  <div class="frame f-desk">
+    <!-- 底下是 S-03 桌位詳情（被遮罩壓暗） -->
+    <div class="admin">
+        <aside class="side">
+        <div class="brand">鼎沸鍋物<small>SMART ORDER</small></div>
+        <div class="nav-item on"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5"/></svg>桌況總覽</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M17 21H7V12.6a4.5 4.5 0 1 1 2.5-8.2 4 4 0 0 1 5 0A4.5 4.5 0 1 1 17 12.6z"/><path d="M7 17h10"/></svg>出菜看板</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="17" rx="2"/><path d="M3 10h18M8 2.5v4M16 2.5v4"/></svg>預約管理</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>候位管理</div>
+        <div class="nav-sep">菜　單</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>菜單管理</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>選項群組</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>庫存管理</div>
+        <div class="nav-sep">設　定</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>座位管理</div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M3 3v18h18M18 17V9M13 17V5M8 17v-3"/></svg>報表</div>
+        <div class="fill"></div>
+        <div class="nav-item"><svg class="ic" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>小美・外場</div>
+        </aside>
+      <div class="main">
+        <header class="topbar"><button class="iconbtn"><svg class="ic" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+          <div class="h2">A03 桌</div>
+          <span class="badge b-plain">4 人桌・窗邊區</span>
+          <span class="badge b-rec">用餐中</span>
+          <span class="fill"></span>
+          <span class="t-cap num">18:32 入座・已 47 分鐘</span>
+          </header>
+        <div class="content"><div class="r g24" style="height:100%;align-items:flex-start">
+
+          <div class="fill c g12" style="min-width:0;height:100%">
+            <div class="r g8">
+              <span class="h3 fill">點餐紀錄　2 張單</span>
+              <button class="btn btn-secondary btn-md">代客加點</button>
+            </div>
+
+            <div class="card card-tight">
+              <div class="r g8">
+                <span class="h3">第 2 單</span><span class="badge b-wait">製作中</span>
+                <span class="fill"></span><span class="t-cap num">18:51 送出</span>
+                <span class="num" style="font-weight:700">NT$ 460</span>
+              </div>
+              <div class="tick"><svg class="ic st" viewBox="0 0 24 24" style="color:var(--warning)"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5.2l3.2 1.8"/></svg><div class="fill"><div class="nm">安格斯霜降牛五花 ×1</div><div class="op">全份・加蔥花・備註：不要太生</div></div><span class="badge b-wait">製作中</span></div>
+              <div class="tick"><svg class="ic st" viewBox="0 0 24 24" style="color:var(--warning)"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5.2l3.2 1.8"/></svg><div class="fill"><div class="nm">白飯 ×2</div><div class="op">免費續加・不扣庫存</div></div><span class="badge b-wait">製作中</span></div>
+            </div>
+
+            <div class="card card-tight">
+              <div class="r g8">
+                <span class="h3">第 1 單</span><span class="badge b-wait">部分出餐</span>
+                <span class="fill"></span><span class="t-cap num">18:32 送出</span>
+                <span class="num" style="font-weight:700">NT$ 960</span>
+              </div>
+              <div class="tick"><svg class="ic st" viewBox="0 0 24 24" style="color:var(--success)"><circle cx="12" cy="12" r="9.5"/><path d="m8 12.2 2.8 2.8L16 9.8"/></svg><div class="fill"><div class="nm">招牌麻辣鍋底 ×1</div></div><span class="badge b-done">已出餐</span></div>
+              <div class="tick"><svg class="ic st" viewBox="0 0 24 24" style="color:var(--success)"><circle cx="12" cy="12" r="9.5"/><path d="m8 12.2 2.8 2.8L16 9.8"/></svg><div class="fill"><div class="nm">伊比利豬梅花 ×1</div></div><span class="badge b-done">已出餐</span></div>
+              <div class="tick"><svg class="ic st" viewBox="0 0 24 24" style="color:var(--warning)"><circle cx="12" cy="12" r="9.5"/><path d="M12 7v5.2l3.2 1.8"/></svg><div class="fill"><div class="nm">高麗菜 ×1</div></div><span class="badge b-wait">製作中</span></div>
+            </div>
+
+            <span class="fill"></span>
+            <!-- 取消該次用餐：僅店長，而且只在這桌還沒送出過點餐時能按。這桌已經點過，所以停用 -->
+            <div class="card card-tight card-flat r g12" style="background:var(--surface-2)">
+              <div class="fill">
+                <div class="r g8"><b>客人沒點餐就離開</b><span class="badge b-plain">僅店長</span></div>
+                <div class="t-cap">這桌已經送出過點餐，不能取消，請改用結帳</div>
+              </div>
+              <button class="btn btn-secondary btn-sm" disabled>取消該次用餐</button>
+            </div>
+          </div>
+
+          <div class="c g12" style="width:360px;flex:none">
+            <div class="card">
+              <div class="r g8">
+                <span class="h3 fill">結帳</span>
+                <span class="t-cap">客人到櫃檯付款</span>
+              </div>
+              <div class="sumrow"><span class="k">小計　6 項</span><span class="v num">NT$ 1,420</span></div>
+              <div class="sumrow"><span class="k">服務費 10%</span><span class="v num">NT$ 142</span></div>
+              <div class="sumrow total" style="margin-top:0"><span class="k">合計</span><span class="v num">NT$ 1,562</span></div>
+              <div class="r g8 mt4" style="padding:8px 12px;background:var(--surface-2);border-radius:8px">
+                <svg class="ic ic-sm" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="t-sm" style="margin:0">2 大 1 小</span>
+                <span class="fill"></span><span class="t-cap">均分每人約 NT$ 521</span>
+              </div>
+
+              <!-- 進階 A1／A6 的前提（M8 8.10 櫃檯入口）：沒做 A1、A6 就整塊拿掉 -->
+              <div class="mt12" style="padding:12px;border:1px dashed var(--accent-500);border-radius:8px">
+                <div class="r g8">
+                  <span style="font-size:14px;font-weight:700;color:var(--text-600)">會員（選填）</span>
+                  <span class="fill"></span>
+                  <span class="badge b-wait">進階 A1／A6</span>
+                </div>
+                <div class="r g8 mt8">
+                  <div class="input on num fill" style="height:44px;display:flex;align-items:center;letter-spacing:.04em">0912345678</div>
+                  <button class="btn btn-secondary btn-md">查詢</button>
+                </div>
+                <div class="mt8" style="padding:8px 12px;background:var(--accent-100);border-radius:8px">
+                  <div class="r g8">
+                    <b class="num" style="font-size:17px">陳小美・1998/04/21</b>
+                    <span class="fill"></span>
+                    <span class="t-cap">唸給客人確認</span>
+                  </div>
+                  <div class="r g8 mt4">
+                    <button class="btn btn-secondary btn-sm fill">確認是本人</button>
+                    <button class="btn btn-ghost btn-sm">不是</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="r g8 mt16">
+                <span style="font-size:14px;font-weight:700;color:var(--text-600)">收款方式</span>
+                <span class="fill"></span>
+                <span class="t-cap">按下後倒數 5 秒才送出</span>
+              </div>
+              <div class="gr3 mt8">
+                <button class="btn btn-primary btn-lg" disabled>現金</button>
+                <button class="btn btn-primary btn-lg" disabled>信用卡</button>
+                <button class="btn btn-primary btn-lg" disabled>條碼</button>
+              </div>
+            </div>
+          </div>
+
+        </div></div>
+      </div>
+    </div>
+    <!-- 付款倒數對話框：現金／信用卡／條碼三顆共用，標題帶付款方式 -->
+    <div class="scrim"></div>
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+      <div class="card c" style="width:440px;padding:32px;align-items:center;text-align:center">
+        <div class="r g8 t-cap">
+          <svg class="ic ic-sm" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>
+          <span>A03 桌・櫃檯結帳</span>
+        </div>
+        <h2 class="h1 mt8">信用卡付款中</h2>
+
+        <div class="countdown mt24">
+          <svg viewBox="0 0 152 152"><circle cx="76" cy="76" r="68" stroke="#FBE8E3" stroke-width="8"/><circle cx="76" cy="76" r="68" stroke="#C8442E" stroke-width="8" stroke-linecap="round" stroke-dasharray="256.35 427.26" transform="rotate(-90 76 76)"/></svg>
+          <div class="n">3</div>
+        </div>
+        <p class="t-sm mt12" style="margin-bottom:0">秒後送出，按錯付款方式請按取消</p>
+
+        <div class="display mt16" style="color:var(--text-900)">NT$ 1,562</div>
+        <div class="t-cap">小計 1,420＋服務費 142</div>
+
+        <div class="infobox ib-quiet mt24" style="width:100%;text-align:left">
+          <svg class="ic ic-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 16v-4.5M12 8h.01"/></svg>
+          <div>本系統為教學專題，付款為模擬流程</div>
+        </div>
+        <button class="btn btn-ghost btn-lg btn-block mt8">取消</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sidenote">
+  <b>收款前留 5 秒反悔</b>
+  <dl style="margin:0">
+    <dt>怎麼進來</dt>
+    <dd>S-03 按現金、信用卡、條碼任一顆，<br>
+        三顆都跳這個對話框。不是獨立路由</dd>
+    <dt>標題跟著付款方式</dt>
+    <dd>現金「收款中，請把現金放進收銀機」<br>
+        信用卡「信用卡付款中」（這張畫的）<br>
+        條碼「條碼付款中」</dd>
+    <dt>倒數 5 → 0</dt>
+    <dd>每秒跳一格，到 0 才送：<br>
+        POST /api/admin/dining-sessions/{id}/settle<br>
+        { method: CARD, expectedTotal: 1562.00,<br>
+        &nbsp;&nbsp;memberId: 12 | null }</dd>
+    <dt>取消（ghost）</dt>
+    <dd>倒數中隨時可按，什麼都不送，回到 S-03。<br>
+        避免櫃檯按錯付款方式就直接結清</dd>
+    <dt>教學專題聲明</dt>
+    <dd>三種付款都是模擬，不串刷卡機、掃碼槍。<br>
+        櫃檯結帳不做失敗機率<br>
+        （線上 A5 的 95% 成功率照舊）</dd>
+  </dl>
+  <b class="mt16" style="display:block">送出之後</b>
+  <dl style="margin:0">
+    <dt>倒數到 0</dt>
+    <dd>「取消」停用、顯示送出中，不能重複送</dd>
+    <dt>成功：自動關閉</dt>
+    <dd>對話框換成勾勾「結帳完成」，<br>
+        約 1.5 秒後自己關掉、回 S-02，<br>
+        這桌變待清理，不用按任何按鈕。<br>
+        同桌手機收到 SESSION_CLOSED（PAID），<br>
+        沒送出的購物車品項一起捨棄</dd>
+    <dt>409 BILL_CHANGED</dt>
+    <dd>對話框關閉、S-03 帳單刷新，提示<br>
+        「剛剛有人加點，金額更新了」，<br>
+        跟客人確認後再選一次付款方式</dd>
+    <dt>409 SESSION_CLOSED</dt>
+    <dd>客人已經在手機上付完（進階 A5），<br>
+        對話框關閉、S-03 轉成已結清，不會重複收款</dd>
+  </dl>
+</div>
+
+</div>
+</body>
+</html>

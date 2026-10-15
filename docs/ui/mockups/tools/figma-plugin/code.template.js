@@ -71,6 +71,9 @@ function makeFrame(n, reuse) {
     f.rotation = 0;
     f.topLeftRadius = 0; f.topRightRadius = 0;
     f.bottomRightRadius = 0; f.bottomLeftRadius = 0;
+    // 同名畫框不一定是外掛建的（例如手動或用 MCP 先建過），auto layout 會讓子節點的 x/y 失效
+    if (f.layoutMode && f.layoutMode !== 'NONE') f.layoutMode = 'NONE';
+    f.layoutGrids = [];
   } else {
     f = figma.createFrame();
   }
@@ -231,6 +234,9 @@ const PKG_PREFIX = '工作包｜';
 const PKG_BAR_PREFIX = '工作包色條｜';
 const PKG_LEGEND_PREFIX = '工作包圖例｜';
 const OWNED_PREFIX = /^(標題|副標|說明|陰影|級別|進階底|工作包|工作包色條)｜(.+)$/;
+// 修訂稿批次（figma_prep 的 REV_BATCH）：畫框名帶「・修訂 <日期>」，排在各頁最下面自成一列
+const REV_BATCH_PREFIX = 'rev-';
+const isRev = f => f.batch.indexOf(REV_BATCH_PREFIX) === 0;
 
 // ── 版面尺寸 ────────────────────────────────────────────────────────────────
 // Figma 自己畫在畫框上方的那行圖層名是固定的螢幕字級，縮到看得見整列時
@@ -396,7 +402,7 @@ function makeNotePanel(note, frameName, ox, oy, page) {
 // 標題旁邊的級別膠囊。做成 group 不是 frame，理由同說明卡：頂層畫框會多一行圖層名。
 function makeLevelPill(f, page, ox, oy) {
   const adv = f.level === '進階';
-  const label = adv ? '進階・有空才做' : '基礎必做';
+  const label = adv ? '進階・有空才做' : f.level === '已移除' ? '已移除・歷史稿' : '基礎必做';
   const t = uiText({ s: label, fs: 22, bold: true,
                      col: adv ? '#6B4A12' : C_SUB, lh: 30 });
   const padX = 18, h = 40;
@@ -413,10 +419,15 @@ function makeLevelPill(f, page, ox, oy) {
   return g;
 }
 
+// 「工作包 A・主題・認領人」；還沒認領就不寫名字
+function pkgLabel(k) {
+  return '工作包 ' + k.id + '・' + k.name + (k.owner ? '・' + k.owner : '');
+}
+
 // 工作包標籤：分工的識別色（來源 spec/05 §1.4）。跟級別膠囊並排。
 function makePkgTag(f, page, ox, oy) {
   const k = f.pkg;
-  const t = uiText({ s: '工作包 ' + k.id + '・' + k.name, fs: 22, bold: true, col: '#FFFFFF', lh: 30 });
+  const t = uiText({ s: pkgLabel(k), fs: 22, bold: true, col: '#FFFFFF', lh: 30 });
   const padX = 18, h = 40;
   const bg = figma.createRectangle();
   bg.name = '膠囊底';
@@ -444,9 +455,10 @@ function makePkgBar(f, page, ox, oy, w) {
 }
 
 // 每頁左上角一張工作包圖例。回傳高度，排版時把整頁往下推。
+// 圖例墊一張白色卡片：Figma 畫布在深色模式是深灰，深色字直接放上去會看不到。
 function makePkgLegend(page, pageName, ox, oy) {
-  const seen = {};
-  DATA.frames.forEach(f => { if (f.pkg) seen[f.pkg.id] = f.pkg; });
+  const seen = Object.assign({}, DATA.pkgs || {});
+  DATA.frames.forEach(f => { if (f.pkg && !seen[f.pkg.id]) seen[f.pkg.id] = f.pkg; });
   const ks = Object.keys(seen).sort();
   if (!ks.length) return 0;
   const kids = [];
@@ -461,12 +473,27 @@ function makePkgLegend(page, pageName, ox, oy) {
     sw.strokes = [];
     sw.cornerRadius = 10;
     page.appendChild(sw); sw.x = x; sw.y = y; kids.push(sw);
-    const t = uiText({ s: k + '　' + seen[k].name, fs: 30, bold: true, col: C_INK, lh: 44 });
+    const t = uiText({ s: k + '　' + seen[k].name + (seen[k].owner ? '　' + seen[k].owner : '　（未認領）'),
+                       fs: 30, bold: true, col: C_INK, lh: 44 });
     page.appendChild(t); t.x = x + 60; t.y = y; kids.push(t);
     x += 60 + Math.max(t.width, widthUnits(t.characters) * 30) + 72;
   }
   const hint = uiText({ s: '金黃虛線底板＝進階，還沒分工', fs: 26, col: C_SUB, lh: 40 });
   page.appendChild(hint); hint.x = ox; hint.y = y + 72; kids.push(hint);
+  const pad = 40;
+  let right = ox;
+  kids.forEach(k => { right = Math.max(right, k.x + Math.max(k.width, widthUnits(k.characters || '') * (k.fontSize || 0))); });
+  const card = figma.createRectangle();
+  card.name = '圖例底';
+  card.resize(right - ox + pad * 2, (hint.y + 40) - oy + pad * 2);
+  card.fills = [{ type: 'SOLID', color: hex(C_CARD) }];
+  card.strokes = [{ type: 'SOLID', color: hex(C_LINE) }];
+  card.strokeAlign = 'INSIDE';
+  card.strokeWeight = 2;
+  card.cornerRadius = 24;
+  page.insertChild(page.children.indexOf(kids[0]), card);
+  card.x = ox - pad; card.y = oy - pad;
+  kids.unshift(card);
   const g = figma.group(kids, page);
   g.name = PKG_LEGEND_PREFIX + pageName;
   return 80 + 72 + 40;
@@ -586,7 +613,8 @@ async function run(groups) {
   await figma.loadAllPagesAsync();
 
   const picked = DATA.frames.filter(f => groups.indexOf(f.batch) >= 0 ||
-    (groups.indexOf('states') >= 0 && f.batch.indexOf('states') >= 0));
+    (groups.indexOf('states') >= 0 && f.batch.indexOf('states') >= 0) ||
+    (groups.indexOf('rev') >= 0 && isRev(f)));
   if (!picked.length) { log('沒有選到任何畫框'); figma.ui.postMessage({type:'done'}); return; }
 
   TOTAL_NODES = picked.reduce((a, f) => a + countNodes(f.root), 0);
@@ -609,12 +637,23 @@ async function run(groups) {
   // 依目標頁分組
   const byPage = {};
   picked.forEach(f => { (byPage[f.page] = byPage[f.page] || []).push(f); });
+  // 只勾原稿組別時，頁面上已經有的修訂列會被算進「目前最底下」，原稿與圖例就排到修訂列下面去。
+  // 所以這一頁只要有原稿要重畫，同頁的修訂畫框也一起重排（同名沿用，id 不變）。
+  for (const pageName of Object.keys(byPage)) {
+    if (byPage[pageName].every(isRev)) continue;
+    DATA.frames.forEach(f => {
+      if (f.page === pageName && isRev(f) && byPage[pageName].indexOf(f) < 0) byPage[pageName].push(f);
+    });
+  }
+  TOTAL_NODES = Object.keys(byPage).reduce((a, k) => a + byPage[k].reduce((b, f) => b + countNodes(f.root), 0), 0);
 
   const made = [];
   for (const pageName of Object.keys(byPage)) {
     const page = findPage(pageName);
     if (!page) { log('找不到頁面「' + pageName + '」，這批跳過'); continue; }
     const list = byPage[pageName];
+    // 只匯修訂稿時，頁首的工作包圖例屬於原稿那一輪，不動它（重畫會把它搬到頁底）
+    const revOnly = list.every(isRev);
 
     // 重跑時先清掉上一輪的同名畫框，讓匯入可以重複執行，不必每次手動全選刪除。
     // 只刪名字對得上的，頁面上其他東西一律不碰。
@@ -632,8 +671,10 @@ async function run(groups) {
     if (kept) log('「' + pageName + '」沿用上一輪 ' + kept + ' 個同名畫框（id 不變，內容重建）');
     if (removed) log('「' + pageName + '」清掉 ' + removed + ' 個重複的畫框');
     // 圖例每次重畫
-    for (const c of page.children.slice()) {
-      if (c.name === PKG_LEGEND_PREFIX + pageName) c.remove();
+    if (!revOnly) {
+      for (const c of page.children.slice()) {
+        if (c.name === PKG_LEGEND_PREFIX + pageName) c.remove();
+      }
     }
 
     // 畫面被刪掉時（例如 C-02b 隨開桌碼功能移除），上一輪留下的畫框不會有人來蓋掉，
@@ -671,7 +712,7 @@ async function run(groups) {
     if (oldLbl) log('「' + pageName + '」清掉上一輪 ' + oldLbl + ' 個列標題與底板');
 
     let y = nextFreeY(page, keep);
-    if (list.some(f => f.pkg)) {
+    if (!revOnly && list.some(f => f.pkg)) {
       y += makePkgLegend(page, pageName, LABEL_X, y) + ROW_GAP;
     }
 
@@ -787,6 +828,53 @@ async function run(groups) {
   sendIds();
 }
 
+// ── 更新工作包標示 ──────────────────────────────────────────────────────────
+// 改了認領人或圖例樣式時用：只在原位重畫每頁的工作包圖例、每張畫框旁的工作包標籤
+// （色條不夠長就拉長），畫框、說明卡、列底板都不動。
+async function refreshPkg() {
+  await figma.loadAllPagesAsync();
+  if (!(await loadUiFonts())) {
+    log('載不到 ' + UI_FAMILY + '，停止');
+    figma.ui.postMessage({ type: 'done', error: true });
+    return;
+  }
+  const byName = {};
+  DATA.frames.forEach(f => { byName[f.name] = f; });
+  let legends = 0, tags = 0;
+  for (const page of figma.root.children) {
+    if (page.type !== 'PAGE') continue;
+    const old = page.children.find(c => c.name.indexOf(PKG_LEGEND_PREFIX) === 0);
+    if (old) {
+      // 新版圖例有一張往外留 40px 的白底卡，舊版沒有：都換算回標題的左上角
+      const card = old.children && old.children.find(c => c.name === '圖例底');
+      const ox = card ? card.x + 40 : old.x, oy = card ? card.y + 40 : old.y;
+      const name = old.name.slice(PKG_LEGEND_PREFIX.length);
+      old.remove();
+      makePkgLegend(page, name, ox, oy);
+      const g = page.children.find(c => c.name === PKG_LEGEND_PREFIX + name);
+      if (g) log('圖例 ' + name + ' → ' + g.id);
+      legends++;
+    }
+    const top = page.children.slice();
+    // 刪掉的節點再讀 name 會直接丟錯，一定要先看 removed
+    const find = n => top.find(c => !c.removed && c.name === n);
+    for (const c of top) {
+      if (c.removed) continue;
+      if (c.type !== 'FRAME' || !byName[c.name] || !byName[c.name].pkg) continue;
+      const oldTag = find(PKG_PREFIX + c.name);
+      if (!oldTag) continue;
+      const x = oldTag.x, y = oldTag.y;
+      oldTag.remove();
+      const tag = makePkgTag(byName[c.name], page, x, y);
+      const bar = find(PKG_BAR_PREFIX + c.name);
+      if (bar && tag.x + tag.width > bar.x + bar.width) bar.resize(tag.x + tag.width - bar.x, bar.height);
+      tags++;
+    }
+  }
+  log('工作包圖例重畫 ' + legends + ' 張、標籤 ' + tags + ' 個');
+  figma.ui.postMessage({ type: 'done' });
+}
+
 // ── 放大檢視 ────────────────────────────────────────────────────────────────
 // 匯入後要看某個元件長怎樣時用這個：用文字找到節點，選取它的父層（通常是
 // 按鈕或輸入框那層）再把畫布縮放過去。背景自動化沒辦法在 Figma 畫布上點選，
@@ -844,6 +932,9 @@ figma.ui.onmessage = async msg => {
   } else if (msg.type === 'focus') {
     try { await focusOn(msg.q); }
     catch (e) { log('放大檢視失敗：' + e.message); }
+  } else if (msg.type === 'refresh-pkg') {
+    try { await refreshPkg(); }
+    catch (e) { log('錯誤：' + e.message); figma.ui.postMessage({ type: 'done', error: true }); }
   } else if (msg.type === 'cancel') {
     cancelled = true;
   } else if (msg.type === 'close') {
@@ -860,4 +951,11 @@ figma.loadAllPagesAsync().then(() => {
   figma.ui.postMessage({ type: 'init', groups: groups, pages: pages,
                          total: DATA.frames.length });
   sendIds();
+  // 選單「只匯入修訂稿」：不用在面板上勾選，開起來直接跑修訂稿組別（log 一樣顯示在面板）
+  if (figma.command === 'refresh-pkg') {
+    refreshPkg().catch(e => { log('錯誤：' + e.message); figma.ui.postMessage({ type: 'done', error: true }); });
+  }
+  if (figma.command === 'import-rev') {
+    run(['rev']).catch(e => { log('錯誤：' + e.message); figma.ui.postMessage({ type: 'done', error: true }); });
+  }
 });

@@ -1,105 +1,94 @@
 import { useEffect, useState } from 'react'
-import { useLocation, useNavigate, useSearchParams } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import CustomerTopBar from '@/components/CustomerTopBar'
 import InfoBox from '@/components/InfoBox'
 import SOButton from '@/components/SOButton'
+import { useCancelReservation } from '@/hooks/reservation/useReservationMutations'
+import { useGuestReservations, useMyReservations } from '@/hooks/reservation/useReservationQueries'
+import type { CancelSource, ReservationDetail, ReservationStatus } from '@/services/api/reservation/types'
+import { customerTokens } from '@/services/client/tokenStore'
+import { loadReservations } from '@/utils/guestReservation'
 import {
-  addReservation,
-  loadReservations,
-  saveReservations,
-  type ReservationType,
-  type ReservationStatus,
-  type SavedReservation,
-} from '@/utils/guestReservation'
-import {
-  addDays,
-  formatDateCode,
   formatDateWithWeekday,
   formatShortDate,
   getDayOffset,
   parseLocalDate,
-  startOfToday,
 } from '@/utils/reservationDate'
-import type { ReservationRouteState } from '@/features/customer/reserve/reservation.types'
 
 function Reservations() {
   const navigate = useNavigate()
-  const location = useLocation()
   const [searchParams] = useSearchParams()
-  const routeReservation = (location.state as ReservationRouteState | null)?.reservation
-  const routeReservationType: ReservationType | undefined =
-    routeReservation?.reservationType ?? (routeReservation?.contact ? 'GUEST' : undefined)
-  const isMemberView = searchParams.get('view') === 'member' || routeReservationType === 'MEMBER'
+  // 匿名訂位只記在這支手機：每筆存 id 和 accessToken，狀態一律向後端查。
+  // 進頁讀一次就好，取消只改後端的狀態，id 和 token 不會變，不用跟 localStorage 同步
+  const [guestRecords] = useState(loadGuestRecords)
+  const hasMemberToken = Boolean(customerTokens.member.get())
+  // 會員檢視：網址帶 ?view=member（會員訂完從 Done 過來），或這支手機沒有匿名訂位但有會員 token。
+  // 另一邊的查詢不發（會員檢視不查匿名的，匿名檢視不打 /members/me）
+  const isMemberView =
+    searchParams.get('view') === 'member' || (guestRecords.length === 0 && hasMemberToken)
+  const memberQuery = useMyReservations(isMemberView && hasMemberToken)
+  const guestQuery = useGuestReservations(isMemberView ? [] : guestRecords)
+  const cancelReservation = useCancelReservation()
+  // 取消期限拿 cancellableUntil 跟 now 比，now 每 30 秒更新，頁面放著不動按鈕也會自己停用
   const [now, setNow] = useState(() => new Date())
-  const [guestRecords, setGuestRecords] = useState(() => {
-    const saved = loadReservations('GUEST')
-    return routeReservation?.contact && routeReservationType === 'GUEST'
-      ? addReservation(saved, routeReservation, 'GUEST')
-      : saved
-  })
-  const [memberRecords, setMemberRecords] = useState(() => {
-    const saved = loadReservations('MEMBER')
-    return routeReservation?.contact && routeReservationType === 'MEMBER'
-      ? addReservation(saved, routeReservation, 'MEMBER')
-      : saved
-  })
-  const isGuestReservationView = !isMemberView && guestRecords.length > 0
-  const [memberReservations, setMemberReservations] = useState(INITIAL_RESERVATIONS)
   const [activeTab, setActiveTab] = useState<TabKey>('upcoming')
   const [cancelTarget, setCancelTarget] = useState<Reservation | null>(null)
-  const reservations = isGuestReservationView
-    ? guestRecords.map(createSavedReservation)
-    : [...memberRecords.map(createSavedReservation), ...memberReservations]
+  const [notice, setNotice] = useState<string | null>(null)
+
+  const details = isMemberView ? (memberQuery.data ?? []) : guestQuery.data
+  const reservations = details.map((detail) => toReservation(detail, guestRecords))
+  const isLoading = isMemberView ? hasMemberToken && memberQuery.isPending : guestQuery.isPending
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 30000)
     return () => window.clearInterval(timer)
   }, [])
 
-  useEffect(() => {
-    saveReservations('GUEST', guestRecords)
-  }, [guestRecords])
-
-  useEffect(() => {
-    saveReservations('MEMBER', memberRecords)
-  }, [memberRecords])
-
   const getTabReservations = (tab: TabKey) =>
-    reservations.filter(({ status }) => TAB_STATUSES[tab].includes(status))
-  const visibleReservations = isGuestReservationView
-    ? reservations
-    : getTabReservations(activeTab)
+    sortForTab(
+      reservations.filter(({ status }) => TAB_STATUSES[tab].includes(status)),
+      tab,
+    )
+  const visibleReservations = isMemberView ? getTabReservations(activeTab) : sortForTab(reservations, 'upcoming')
 
-  const handleConfirmCancel = () => {
+  function handleConfirmCancel() {
     if (!cancelTarget) return
-    if (isCancellationDeadlinePassed(cancelTarget, new Date())) {
-      setNow(new Date())
-      setCancelTarget(null)
-      return
-    }
-    const reservationId = cancelTarget.id
-    if (reservationId && guestRecords.some(({ reservation }) => reservation.id === reservationId)) {
-      setGuestRecords((current) => updateSavedReservation(current, reservationId))
-    } else if (
-      reservationId &&
-      memberRecords.some(({ reservation }) => reservation.id === reservationId)
-    ) {
-      setMemberRecords((current) => updateSavedReservation(current, reservationId))
-    } else {
-      setMemberReservations((current) => [
-        { ...cancelTarget, status: 'CANCELLED', cancelSource: 'CUSTOMER' },
-        ...current.filter(({ serial }) => serial !== cancelTarget.serial),
-      ])
-    }
+    const target = cancelTarget
+    // 先關確認框再送出，送出中的狀態顯示在那張卡片的按鈕上（cancelling）。
+    // 成功不用手動改畫面，hook 會 invalidate 清單，重抓後那筆就變成已取消；
+    // 被後端擋下來（例如過了期限）的訊息顯示在清單上方
     setCancelTarget(null)
+    setNotice(null)
+    cancelReservation.mutate(
+      { id: target.id, accessToken: target.accessToken },
+      { onError: (error) => setNotice(error.message) },
+    )
+  }
+
+  if (isMemberView && !hasMemberToken) {
+    return (
+      <div className="flex min-h-full w-full flex-col">
+        <CustomerTopBar title="我的預約" showBackButton={true} />
+        <div className="flex flex-col items-center gap-4 p-page pt-16 text-center">
+          <p className="type-body text-ink-600">登入會員後，就能看到用會員訂的所有預約。</p>
+          <SOButton
+            height="h-12"
+            text="登入／註冊會員"
+            onClick={() =>
+              navigate('/member/login', { state: { returnTo: '/member/reservations?view=member' } })
+            }
+          />
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="flex min-h-full w-full flex-col">
       <CustomerTopBar title="我的預約" showBackButton={true} />
 
-      {!isGuestReservationView && (
+      {isMemberView && (
         <div role="tablist" className="flex gap-6 border-b border-line bg-surface px-page">
           {TABS.map(({ key, label }) => (
             <button
@@ -122,9 +111,8 @@ function Reservations() {
       )}
 
       <div className="flex flex-col gap-3 p-page pb-28">
-        {((isGuestReservationView &&
-          visibleReservations.some(({ status }) => status === 'CONFIRMED')) ||
-          (!isGuestReservationView && activeTab === 'upcoming')) && (
+        {((!isMemberView && visibleReservations.some(({ status }) => status === 'CONFIRMED')) ||
+          (isMemberView && activeTab === 'upcoming')) && (
           <div className="[&>br]:hidden">
             <InfoBox
               outicon={SvgIconMap.TicketTime}
@@ -135,21 +123,28 @@ function Reservations() {
           </div>
         )}
 
-        {visibleReservations.length === 0 && (
+        {notice && <p className="text-center type-body-sm text-danger">{notice}</p>}
+
+        {isLoading && <p className="py-12 text-center type-body-sm text-ink-600">預約載入中…</p>}
+
+        {!isLoading && memberQuery.isError && isMemberView && (
+          <p className="py-12 text-center type-body-sm text-danger">{memberQuery.error.message}</p>
+        )}
+
+        {!isLoading && !memberQuery.isError && visibleReservations.length === 0 && (
           <p className="py-12 text-center type-body-sm text-ink-600">目前沒有預約</p>
         )}
 
         {visibleReservations.map((reservation) => (
           <ReservationCard
-            key={reservation.id ?? reservation.serial}
+            key={reservation.id}
             reservation={reservation}
             now={now}
+            cancelling={cancelReservation.isPending && cancelReservation.variables?.id === reservation.id}
             onCancel={() => {
-              if (!isCancellationDeadlinePassed(reservation, new Date())) {
-                setCancelTarget(reservation)
-              } else {
-                setNow(new Date())
-              }
+              // now 最多慢 30 秒，按下去的當下再用現在的時間確認一次期限
+              setNow(new Date())
+              if (!isCancellationDeadlinePassed(reservation, new Date())) setCancelTarget(reservation)
             }}
           />
         ))}
@@ -166,7 +161,7 @@ function Reservations() {
 
       {cancelTarget && (
         <CancelSheet
-          date={formatShortDate(getReservationDate(cancelTarget))}
+          date={formatShortDate(parseLocalDate(cancelTarget.date))}
           onConfirm={handleConfirmCancel}
           onClose={() => setCancelTarget(null)}
         />
@@ -180,22 +175,22 @@ export default Reservations
 type ReservationCardProps = {
   reservation: Reservation
   now: Date
+  cancelling: boolean
   onCancel: () => void
 }
 
-function ReservationCard({ reservation, now, onCancel }: ReservationCardProps) {
-  const { serial, time, people, table, status } = reservation
-  const date = getReservationDate(reservation)
+function ReservationCard({ reservation, now, cancelling, onCancel }: ReservationCardProps) {
+  const { time, people, table, status } = reservation
+  const date = parseLocalDate(reservation.date)
   const dayOffset = getDayOffset(date)
   const cancelDeadlinePassed = isCancellationDeadlinePassed(reservation, now)
-  const reservationWithDeadline = { ...reservation, cancelDeadlinePassed }
   const note = getNote(status)
   const isUpcoming = status === 'CONFIRMED'
 
   return (
     <article className="rounded-card border border-line bg-surface p-card shadow-card">
       <div className="flex items-center gap-2">
-        {getPills(reservationWithDeadline).map(({ text, tone }) => (
+        {getPills(reservation, cancelDeadlinePassed).map(({ text, tone }) => (
           <StatusPill key={text} text={text} tone={tone} />
         ))}
         {isUpcoming && (
@@ -208,10 +203,10 @@ function ReservationCard({ reservation, now, onCancel }: ReservationCardProps) {
         {time}
       </h3>
       <p className="mt-1 type-body-sm text-ink-600">
-        {people} 位・{table}
+        {people} 位{table && `・${table}`}
       </p>
       <p className="type-body-sm text-ink-600">
-        預約編號 <span className="tabular-nums">{formatCode(date, serial, reservation.reservationNo)}</span>
+        預約編號 <span className="tabular-nums">{reservation.reservationNo}</span>
       </p>
 
       {isUpcoming && (
@@ -219,14 +214,14 @@ function ReservationCard({ reservation, now, onCancel }: ReservationCardProps) {
           <SOButton
             height="h-11"
             variant="ghost"
-            disabled={cancelDeadlinePassed}
-            text={<span className="text-danger">取消訂位</span>}
+            disabled={cancelDeadlinePassed || cancelling}
+            text={<span className="text-danger">{cancelling ? '取消中…' : '取消訂位'}</span>}
             onClick={onCancel}
           />
           <p className="text-center type-caption text-ink-600">
             {cancelDeadlinePassed
               ? '請來電 02-2591-xxxx'
-              : `取消訂位到 ${formatShortDate(date)} ${getCancelDeadline(time)}，之後請來電 02-2591-xxxx`}
+              : `取消訂位到 ${formatShortDate(date)} ${reservation.cancellableUntil.slice(11, 16)}，之後請來電 02-2591-xxxx`}
           </p>
         </div>
       )}
@@ -292,17 +287,17 @@ type TabKey = 'upcoming' | 'completed' | 'cancelled'
 type PillTone = 'confirmed' | 'warning' | 'plain' | 'danger'
 
 type Reservation = {
-  serial: number
-  id?: string
-  date?: string
-  reservationNo?: string
-  dayOffset: number
+  id: number
+  accessToken?: string
+  reservationNo: string
+  date: string
   time: string
+  startTime: string
   people: number
-  table: string
+  table: string | null
   status: ReservationStatus
-  cancelSource?: 'CUSTOMER' | 'STAFF'
-  cancelDeadlinePassed?: boolean
+  cancelSource: CancelSource | null
+  cancellableUntil: string
 }
 
 type Pill = {
@@ -315,8 +310,6 @@ type Tab = {
   label: string
 }
 
-const CANCEL_BEFORE_MINUTES = 30
-
 const UPCOMING_NOTICE =
   '訂位時間前 30 分鐘都可以在這裡取消；之後請來電。訂位保留 10 分鐘，逾時視同未到，需現場候位，並移到「已取消」。'
 
@@ -326,9 +319,10 @@ const TABS: Tab[] = [
   { key: 'cancelled', label: '已取消' },
 ]
 
+// 已報到入座（SEATED）就算完成
 const TAB_STATUSES: Record<TabKey, ReservationStatus[]> = {
   upcoming: ['CONFIRMED'],
-  completed: ['COMPLETED'],
+  completed: ['SEATED'],
   cancelled: ['CANCELLED', 'NO_SHOW'],
 }
 
@@ -339,85 +333,43 @@ const PILL_TONE_CLASS: Record<PillTone, string> = {
   danger: 'border-transparent bg-danger text-surface',
 }
 
-const INITIAL_RESERVATIONS: Reservation[] = [
-  {
-    serial: 52,
-    dayOffset: 0,
-    time: '18:30',
-    people: 2,
-    table: 'B02 吧台 2 人桌',
-    status: 'CONFIRMED',
-    cancelDeadlinePassed: true,
-  },
-  {
-    serial: 38,
-    dayOffset: 1,
-    time: '18:30',
-    people: 2,
-    table: 'B05 靠窗 2 人桌',
-    status: 'CONFIRMED',
-  },
-  {
-    serial: 43,
-    dayOffset: 6,
-    time: '18:00',
-    people: 4,
-    table: 'A08 窗邊 4 人桌',
-    status: 'CONFIRMED',
-  },
-  {
-    serial: 61,
-    dayOffset: 13,
-    time: '19:00',
-    people: 6,
-    table: 'C01 包廂',
-    status: 'CONFIRMED',
-  },
-  {
-    serial: 27,
-    dayOffset: -4,
-    time: '12:00',
-    people: 3,
-    table: 'A03 4 人桌',
-    status: 'CANCELLED',
-    cancelSource: 'CUSTOMER',
-  },
-  {
-    serial: 19,
-    dayOffset: -9,
-    time: '18:30',
-    people: 4,
-    table: 'A05 4 人桌',
-    status: 'CANCELLED',
-    cancelSource: 'STAFF',
-  },
-  {
-    serial: 14,
-    dayOffset: -15,
-    time: '19:00',
-    people: 2,
-    table: 'B01 2 人桌',
-    status: 'NO_SHOW',
-  },
-  {
-    serial: 22,
-    dayOffset: -7,
-    time: '18:00',
-    people: 4,
-    table: 'A02 窗邊 4 人桌',
-    status: 'COMPLETED',
-  },
-  {
-    serial: 9,
-    dayOffset: -21,
-    time: '12:30',
-    people: 2,
-    table: 'B03 2 人桌',
-    status: 'COMPLETED',
-  },
-]
+function loadGuestRecords() {
+  return loadReservations('GUEST').flatMap(({ reservation }) =>
+    reservation.accessToken ? [{ id: Number(reservation.id), accessToken: reservation.accessToken }] : [],
+  )
+}
 
-function getPills({ status, cancelSource, cancelDeadlinePassed }: Reservation): Pill[] {
+function toReservation(
+  detail: ReservationDetail,
+  guestRecords: { id: number; accessToken: string }[],
+): Reservation {
+  const [date, rest] = detail.startTime.split('T')
+  return {
+    id: detail.reservationId,
+    // 只有匿名訂位找得到 token；會員清單這欄是 undefined，取消時就改用會員身分
+    accessToken: guestRecords.find(({ id }) => id === detail.reservationId)?.accessToken,
+    reservationNo: detail.reservationNo,
+    date,
+    time: rest.slice(0, 5),
+    startTime: detail.startTime,
+    people: detail.partySize,
+    // 取消後後端會釋放配到的桌，就不顯示桌號
+    table: detail.tableNo && `${detail.tableNo}・${detail.area}`,
+    status: detail.status,
+    cancelSource: detail.cancelSource,
+    cancellableUntil: detail.cancellableUntil,
+  }
+}
+
+// 即將到來由近到遠，其他由新到舊
+function sortForTab(reservations: Reservation[], tab: TabKey) {
+  const direction = tab === 'upcoming' ? 1 : -1
+  return [...reservations].sort(
+    (a, b) => direction * (Date.parse(a.startTime) - Date.parse(b.startTime)),
+  )
+}
+
+function getPills({ status, cancelSource }: Reservation, cancelDeadlinePassed: boolean): Pill[] {
   switch (status) {
     case 'CONFIRMED': {
       const confirmed: Pill = { text: '已確認', tone: 'confirmed' }
@@ -425,7 +377,7 @@ function getPills({ status, cancelSource, cancelDeadlinePassed }: Reservation): 
         ? [confirmed, { text: '已超過取消時間', tone: 'warning' }]
         : [confirmed]
     }
-    case 'COMPLETED':
+    case 'SEATED':
       return [{ text: '已完成', tone: 'plain' }]
     case 'CANCELLED':
       return [{ text: cancelSource === 'STAFF' ? '店家已代為取消' : '已取消', tone: 'plain' }]
@@ -441,56 +393,12 @@ function getNote(status: ReservationStatus) {
 }
 
 function getDaysLabel(dayOffset: number) {
-  if (dayOffset === 0) return '今天'
+  if (dayOffset <= 0) return '今天'
   if (dayOffset === 1) return '明天'
   return `還有 ${dayOffset} 天`
 }
 
-function getCancelDeadline(time: string) {
-  const [hour, minute] = time.split(':').map(Number)
-  const totalMinutes = hour * 60 + minute - CANCEL_BEFORE_MINUTES
-  return [Math.floor(totalMinutes / 60), totalMinutes % 60]
-    .map((part) => String(part).padStart(2, '0'))
-    .join(':')
-}
-
-function formatCode(date: Date, serial: number, reservationNo?: string) {
-  if (reservationNo) return reservationNo
-  return `R-${formatDateCode(date)}-${String(serial).padStart(4, '0')}`
-}
-
-function createSavedReservation({ reservation, status, cancelSource }: SavedReservation): Reservation {
-  const date = parseLocalDate(reservation.date)
-  const dayOffset = getDayOffset(date)
-  return {
-    serial: Number(reservation.reservationNo.replace(/\D/g, '').slice(-4)) || 1,
-    id: reservation.id,
-    date: reservation.date,
-    reservationNo: reservation.reservationNo,
-    dayOffset,
-    time: reservation.time,
-    people: reservation.partySize,
-    table: `${reservation.tableNo} ${reservation.partySize} 人桌`,
-    status,
-    cancelSource,
-  }
-}
-
-function updateSavedReservation(current: SavedReservation[], id: string) {
-  return current.map((record) =>
-    record.reservation.id === id
-      ? { ...record, status: 'CANCELLED' as const, cancelSource: 'CUSTOMER' as const }
-      : record,
-  )
-}
-
-function getReservationDate({ date, dayOffset }: Reservation) {
-  return date ? parseLocalDate(date) : addDays(startOfToday(), dayOffset)
-}
-
+// 期限用後端給的 cancellableUntil，前端不自己算「前 30 分鐘」，規則只留一份在後端
 function isCancellationDeadlinePassed(reservation: Reservation, now: Date) {
-  const startAt = getReservationDate(reservation)
-  const [hours, minutes] = reservation.time.split(':').map(Number)
-  startAt.setHours(hours, minutes, 0, 0)
-  return now.getTime() >= startAt.getTime() - CANCEL_BEFORE_MINUTES * 60000
+  return now.getTime() >= Date.parse(reservation.cancellableUntil)
 }

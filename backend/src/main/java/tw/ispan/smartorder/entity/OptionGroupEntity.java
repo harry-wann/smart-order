@@ -5,6 +5,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
 @Table(name = "option_group")
 @Getter
 @Setter
+@NoArgsConstructor
 public class OptionGroupEntity {
     @Id
     private Long id;

@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import tw.ispan.smartorder.entity.embeddable.MenuOptionEntity;
 
@@ -12,6 +13,7 @@ import tw.ispan.smartorder.entity.embeddable.MenuOptionEntity;
 @Table( name = "menu_item_option_group")
 @Getter
 @Setter
+@NoArgsConstructor
 public class MenuItemOptionGroupEntity {
     @EmbeddedId
     private MenuOptionEntity id;

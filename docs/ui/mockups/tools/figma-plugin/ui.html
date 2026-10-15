@@ -37,14 +37,16 @@
 
 <div id="pagewarn" class="warn" style="display:none"></div>
 
-<label id="l-d"><input type="checkbox" id="g-d" checked>
+<label id="l-d"><input type="checkbox" id="g-d">
   <span><b>設計系統</b> <span id="n-d"></span><br><span class="d">1280 × 1200 元件總表，含各種狀態</span></span></label>
-<label id="l-c"><input type="checkbox" id="g-c" checked>
+<label id="l-c"><input type="checkbox" id="g-c">
   <span><b>顧客端</b> <span id="n-c"></span><br><span class="d">375px 手機畫面，含可捲動內容的整頁展開版本</span></span></label>
-<label id="l-s"><input type="checkbox" id="g-s" checked>
+<label id="l-s"><input type="checkbox" id="g-s">
   <span><b>店家端</b> <span id="n-s"></span><br><span class="d">1280 × 800 橫式（含 S-04 KDS 1920）</span></span></label>
 <label id="l-t"><input type="checkbox" id="g-t">
   <span><b>狀態示範</b> <span id="n-t"></span><br><span class="d">C-04 的載入中／空資料／錯誤／已結帳、S-02 的待清理確認框與三態，放在 01 Design System</span></span></label>
+<label id="l-r"><input type="checkbox" id="g-r" checked>
+  <span><b>修訂稿</b> <span id="n-r"></span><br><span class="d">revisions/ 底下的新版，畫框名帶「・修訂 日期」，各頁最下面另成一列；原畫框與頁首圖例不動</span></span></label>
 
 <div class="row">
   <button id="go">開始匯入</button>
@@ -77,11 +79,13 @@ onmessage = e => {
     const cust = ['01-customer-375'];
     const admin = ['03-admin-1280','04-admin-1920'];
     const states = Object.keys(m.groups).filter(k => k.indexOf('states') >= 0);
+    const rev = Object.keys(m.groups).filter(k => k.indexOf('rev-') === 0);
     const sum = ks => ks.reduce((a,k) => a + (m.groups[k]||0), 0);
     $('n-d').textContent = sum(ds) + ' 張';
     $('n-c').textContent = sum(cust) + ' 張';
     $('n-s').textContent = sum(admin) + ' 張';
     $('n-t').textContent = sum(states) + ' 張';
+    $('n-r').textContent = sum(rev) + ' 張';
     const bad = Object.keys(m.pages).filter(p => !m.pages[p]);
     if (bad.length) {
       $('pagewarn').style.display = 'block';
@@ -112,6 +116,7 @@ $('go').onclick = () => {
   if ($('g-c').checked) groups.push('01-customer-375');
   if ($('g-s').checked) groups.push('03-admin-1280','04-admin-1920');
   if ($('g-t').checked) groups.push('states');
+  if ($('g-r').checked) groups.push('rev');
   if (!groups.length) return;
   $('go').disabled = true;
   $('cancel').style.display = 'block';

@@ -172,7 +172,7 @@ flowchart TD
 | `--color-table-available` | `var(--color-line)` | 空桌 |
 | `--color-table-occupied` | `var(--color-brand-600)` | 用餐中，白字 |
 | `--color-table-cleaning` | `var(--color-ink-400)` | 待清理，白字 |
-| `--color-wood` | `#8A5A3B` | 手寫感木牌底（C-04／C-04b／C-04c／C-21） |
+| `--color-wood` | `#8A5A3B` | 手寫感木牌底（C-04／C-04b／C-04c） |
 | `--color-wood-ink` | `#FFF3E2` | 木牌上的字 |
 
 桌況的第四種「**預約保留**」不另開色票：`accent-100` 底 + `accent-500` 1.5px inset 邊框，理由見 [11-設計系統.md](11-設計系統.md) §2.5。
@@ -343,7 +343,7 @@ token 檔一律小寫完整六碼。
 
 | 工作包 | 識別色 | 主題 |
 |---|---|---|
-| A | 藍 `#2F6FB0` | 顧客入口＋會員＋服務鈴 |
+| A | 藍 `#2F6FB0` | 顧客入口＋會員 |
 | B | 綠 `#3C8A4E` | 菜單＋出菜看板 |
 | C | 紫 `#7B4FA6` | 點餐交易＋櫃檯結帳 |
 | D | 青 `#1F8A8A` | 桌位開桌＋候位 |

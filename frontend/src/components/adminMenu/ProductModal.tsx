@@ -9,11 +9,10 @@ export interface Category {
 export interface Product {
   id: number;
   name: string;
-  category: string;
+  categoryId: string;
   price: number;
   stock: number;
   status: 'active' | 'inactive';
-  isPopular?: boolean; 
   imageText: string;
 }
 
@@ -37,16 +36,16 @@ export default function ProductModal({
   const [formData, setFormData] = useState<Partial<Product>>({});
 
   // 動態抓取第一個有效的分類作為預設值
-  const defaultCategory = categories.find(c => c.id !== 'all')?.name || '';
+  const defaultCategoryId = categories.find(category => category.id !== 'all')?.id || '';
 
   useEffect(() => {
     if (isOpen) {
       setFormData({
         ...initialData,
-        category: initialData.category || defaultCategory
+        categoryId: initialData.categoryId || defaultCategoryId
       });
     }
-  }, [isOpen, initialData, defaultCategory]);
+  }, [isOpen, initialData, defaultCategoryId]);
 
   if (!isOpen) return null;
 
@@ -90,12 +89,12 @@ export default function ProductModal({
             <div>
               <label className="block text-xs font-medium text-ink-600 mb-1">商品分類 <span className="text-danger">*</span></label>
               <select 
-                value={formData.category || defaultCategory}
-                onChange={e => setFormData({ ...formData, category: e.target.value })}
+                value={formData.categoryId || defaultCategoryId}
+                onChange={e => setFormData({ ...formData, categoryId: e.target.value })}
                 className="w-full px-3 py-2 text-sm border border-line rounded-lg focus:outline-none focus:border-brand-600 bg-surface cursor-pointer"
               >
                 {categories.filter(c => c.id !== 'all').map(cat => (
-                  <option key={cat.id} value={cat.name}>{cat.name}</option>
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
               </select>
             </div>
@@ -139,18 +138,6 @@ export default function ProductModal({
                 className="w-full px-3 py-2 text-sm border border-line rounded-lg focus:outline-none focus:border-brand-600 bg-surface"
               />
             </div>
-          </div>
-          
-          <div className="pt-2">
-            <label className="inline-flex items-center gap-2 text-sm text-ink-900 cursor-pointer group">
-              <input 
-                type="checkbox" 
-                checked={formData.isPopular || false}
-                onChange={e => setFormData({ ...formData, isPopular: e.target.checked })}
-                className="w-4 h-4 text-brand-600 border-line rounded focus:ring-brand-500 cursor-pointer"
-              />
-              <span className="group-hover:text-brand-700 transition-colors">設定為人氣商品</span>
-            </label>
           </div>
 
           <div className="flex justify-end gap-3 pt-6 mt-2 border-t border-line">

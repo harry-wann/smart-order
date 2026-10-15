@@ -10,14 +10,15 @@ import java.util.List;
 @Table(name = "menu_category")
 @Getter
 @Setter
+@NoArgsConstructor
 public class MenuCategoryEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String name;
-    private String sortOrder;
-    private String active;
+    private Integer sortOrder;
+    private Boolean active;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

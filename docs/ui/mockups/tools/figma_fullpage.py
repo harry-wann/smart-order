@@ -6,6 +6,8 @@ from copy import deepcopy
 
 FULLPAGE_SUFFIX = '・整頁展開'
 CUSTOMER_BATCH = '01-customer-375'
+REV_BATCH_PREFIX = 'rev-'          # figma_prep 的修訂稿批次；顧客端那幾張也要有整頁版
+CUSTOMER_PAGE = '02 顧客端'
 MIN_OVERFLOW = 1.0
 
 
@@ -20,7 +22,10 @@ def add_fullpage_variants(data):
     variants = []
 
     for source in base_frames:
-        if source.get('batch') != CUSTOMER_BATCH:
+        batch = source.get('batch', '')
+        rev_customer = (batch.startswith(REV_BATCH_PREFIX)
+                        and source.get('page') == CUSTOMER_PAGE)
+        if batch != CUSTOMER_BATCH and not rev_customer:
             continue
 
         root = source.get('root', {})

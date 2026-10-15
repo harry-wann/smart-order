@@ -3,6 +3,7 @@ package tw.ispan.smartorder.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import tw.ispan.smartorder.dto.AdminMenuItemDto;
 import tw.ispan.smartorder.dto.MenuItemOptionDetailRow;
 import tw.ispan.smartorder.entity.MenuItemEntity;
 
@@ -10,6 +11,30 @@ import java.util.List;
 
 public interface MenuItemRepository extends JpaRepository<MenuItemEntity,Long> {
     List<MenuItemEntity> findByCategory_Id(Long categoryId);
+    @Query("""
+    SELECT new tw.ispan.smartorder.dto.AdminMenuItemDto(mi.imageUrl, mi.name, mi.price, mi.category.id)
+    FROM MenuItemEntity mi
+    WHERE mi.category.id = :categoryId
+    ORDER BY mi.sortOrder
+    """)
+    List<AdminMenuItemDto> findAdminMenuItemsByCategoryId(@Param("categoryId") Long categoryId);
+
+    @Query("""
+    SELECT new tw.ispan.smartorder.dto.AdminMenuItemDto(mi.imageUrl, mi.name, mi.price, mi.category.id)
+    FROM MenuItemEntity mi
+    ORDER BY mi.sortOrder
+    """)
+    List<AdminMenuItemDto> findAllAdminMenuItems();
+
+    @Query("""
+    SELECT new tw.ispan.smartorder.dto.AdminMenuItemDto(mi.imageUrl, mi.name, mi.price, mi.category.id)
+    FROM MenuItemEntity mi
+    WHERE LOWER(mi.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+       OR LOWER(mi.description) LIKE LOWER(CONCAT('%', :keyword, '%'))
+    ORDER BY mi.sortOrder
+    """)
+    List<AdminMenuItemDto> searchAdminMenuItemsByKeyword(@Param("keyword") String keyword);
+
     List<MenuItemEntity> findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
             String name, String description
     );

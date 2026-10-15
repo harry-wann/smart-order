@@ -11,7 +11,7 @@ import tw.ispan.northwind.dto.ProductPageResponse;
 import tw.ispan.northwind.dto.ProductPatchRequest;
 import tw.ispan.northwind.dto.ProductResponse;
 import tw.ispan.northwind.dto.ProductUpdateRequest;
-import tw.ispan.northwind.entity.Product;
+import tw.ispan.northwind.entity.ProductEntity;
 import tw.ispan.northwind.exception.CategoryNotFoundException;
 import tw.ispan.northwind.exception.ProductNotFoundException;
 import tw.ispan.northwind.repository.CategoryRepository;
@@ -44,19 +44,18 @@ public class ProductService {
     @Transactional(NorthwindDataSourceConfig.TRANSACTION_MANAGER)
     public ProductResponse create(ProductCreateRequest request) {
         requireCategory(request.categoryId());
-        Product product = new Product(
-                request.productName(),
-                request.unitPrice(),
-                request.unitsInStock(),
-                request.discontinued(),
-                request.categoryId()
-        );
+        ProductEntity product = new ProductEntity();
+        product.setProductName(request.productName());
+        product.setUnitPrice(request.unitPrice());
+        product.setUnitsInStock(request.unitsInStock());
+        product.setDiscontinued(request.discontinued());
+        product.setCategoryId(request.categoryId());
         return ProductResponse.from(products.save(product));
     }
 
     @Transactional(NorthwindDataSourceConfig.TRANSACTION_MANAGER)
     public ProductResponse replace(Integer id, ProductUpdateRequest request) {
-        Product product = required(id);
+        ProductEntity product = required(id);
         requireCategory(request.categoryId());
         product.setProductName(request.productName());
         product.setUnitPrice(request.unitPrice());
@@ -72,7 +71,7 @@ public class ProductService {
             throw new IllegalArgumentException("PATCH 至少要提供一個要修改的欄位");
         }
 
-        Product product = required(id);
+        ProductEntity product = required(id);
         if (request.productName() != null) {
             if (request.productName().isBlank()) {
                 throw new IllegalArgumentException("productName 不可空白");
@@ -97,11 +96,11 @@ public class ProductService {
 
     @Transactional(NorthwindDataSourceConfig.TRANSACTION_MANAGER)
     public void delete(Integer id) {
-        Product product = required(id);
+        ProductEntity product = required(id);
         products.delete(product);
     }
 
-    private Product required(Integer id) {
+    private ProductEntity required(Integer id) {
         return products.findById(id).orElseThrow(() -> new ProductNotFoundException(id));
     }
 

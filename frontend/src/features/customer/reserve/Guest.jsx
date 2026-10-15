@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router'
 import CustomerTopBar from '../../../components/CustomerTopBar'
 import SOFormInput, { SOFormInputType } from '../../../components/input/SOFormInput'
 import SOButton from '../../../components/SOButton'
@@ -11,7 +12,28 @@ import Badge from '../../../components/Badge'
 
 // 原檔名 guest.jsx
 
+// 跟後端 CreateReservationRequest 同一條規則，前端先擋掉明顯打錯的，後端還是會再驗一次
+const PHONE_PATTERN = /^09\d{8}$/
+// 跟後端 @Email 一樣寬鬆：有 @、兩邊都有字就好
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+$/
+
 export function Guest() {
+  const navigate = useNavigate()
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [email, setEmail] = useState('')
+  const [error, setError] = useState('')
+
+  // 聯絡資料帶到下一頁（C-16c），在那裡跟時段一起送出。
+  // 手機欄位給的值是 0912-345-678 這種帶連字號的格式，驗證和送出前先只留數字
+  function handleNext() {
+    const contact = { name: name.trim(), phone: phone.replace(/\D/g, ''), email: email.trim() }
+    if (!contact.name) return setError('請填寫姓名')
+    if (!PHONE_PATTERN.test(contact.phone)) return setError('手機號碼格式為 09 開頭共 10 碼')
+    if (contact.email && !EMAIL_PATTERN.test(contact.email)) return setError('電子信箱格式不正確')
+    navigate('/reserve/datetime', { state: { contact, reservationType: 'GUEST' } })
+  }
+
   return (
     <div className="flex h-full w-full flex-col">
     <CustomerTopBar
@@ -34,7 +56,7 @@ export function Guest() {
               // icon={SearchIcon} // 不需要icon的時候這列直接註解掉
               defaultValue=""
               placeholder="請輸入姓名"
-              onChange={(e) => console.log(e.target.value)}
+              onChange={setName}
             />
           </div >
           <p className='text-ink-600'>到店時服務生會叫這個名字</p>
@@ -49,7 +71,7 @@ export function Guest() {
               type={SOFormInputType.PHONE}
               defaultValue=""
               placeholder="請輸入手機號碼"
-              onChange={(e) => console.log(e.target.value)}
+              onChange={setPhone}
             />
           </div >
           <p className='text-ink-600'>到店報這支號碼查訂位</p>
@@ -65,7 +87,7 @@ export function Guest() {
               // icon={SearchIcon} // 不需要icon的時候這列直接註解掉
               defaultValue=""
               placeholder="請輸入電子信箱"
-              onChange={(e) => console.log(e.target.value)}
+              onChange={setEmail}
             />
           </div >
         </div>
@@ -84,15 +106,16 @@ export function Guest() {
       </div>
 
       <div className="fixed bottom-0 flex w-full flex-col justify-center bg-surface px-3 pt-2 pb-8 type-caption">
+        {error && <p className="pb-2 text-center type-body-sm text-danger">{error}</p>}
         <SOButton
         height="h-12"
           text="下一步，選時間"
           disabled={false}
-          onClick={() => {
-            console.log('TEST')
-          }}
+          onClick={handleNext}
         />
-        <a className="flex w-full justify-center py-2 type-body">改用會員身分訂</a>
+        <button type="button" onClick={() => navigate('/reserve')} className="flex w-full justify-center py-2 type-body">
+          改用會員身分訂
+        </button>
       </div>
     </div>
   )

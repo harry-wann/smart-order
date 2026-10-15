@@ -25,11 +25,13 @@ export type Props = {
   seats: number
   holdId: number | null
   openLabel: string
+  // 報到或取消送出中，按鈕先停用，避免連點
+  busy?: boolean
   onOpen: (payload: OpenPayload) => void
   onCancel: (id: number) => void
 }
 
-function ReservationTab({ list, tableNo, seats, holdId, openLabel, onOpen, onCancel }: Props) {
+function ReservationTab({ list, tableNo, seats, holdId, openLabel, busy = false, onOpen, onCancel }: Props) {
   const [cancelTarget, setCancelTarget] = useState<Reservation | null>(null)
 
   const held = list.find((item) => item.id === holdId)
@@ -56,6 +58,7 @@ function ReservationTab({ list, tableNo, seats, holdId, openLabel, onOpen, onCan
               item={item}
               isHeld={item === held}
               isBlocked={held !== undefined && item !== held}
+              busy={busy}
               openLabel={openLabel}
               onOpen={() =>
                 onOpen({ type: 'reservation', reservationId: item.id, people: item.people })
@@ -105,6 +108,7 @@ type ReservationRowProps = {
   item: Reservation
   isHeld: boolean
   isBlocked: boolean
+  busy: boolean
   openLabel: string
   onOpen: () => void
   onCancel: () => void
@@ -114,6 +118,7 @@ function ReservationRow({
   item,
   isHeld,
   isBlocked,
+  busy,
   openLabel,
   onOpen,
   onCancel,
@@ -148,15 +153,15 @@ function ReservationRow({
       {isHeld ? (
         <div className="flex gap-2">
           <div className="w-32">
-            <SOButton text="取消訂位" variant="secondary" height="h-9" onClick={onCancel} />
+            <SOButton text="取消訂位" variant="secondary" height="h-9" disabled={busy} onClick={onCancel} />
           </div>
           <div className="w-32">
-            <SOButton text="報到開桌" height="h-9" onClick={onOpen} />
+            <SOButton text="報到開桌" height="h-9" disabled={busy} onClick={onOpen} />
           </div>
         </div>
       ) : (
         <div className="flex w-32 flex-col items-end gap-1">
-          <SOButton text={openLabel} height="h-9" onClick={onOpen} disabled={isBlocked} />
+          <SOButton text={openLabel} height="h-9" onClick={onOpen} disabled={isBlocked || busy} />
           {isBlocked && <span className="type-caption text-ink-600">這張桌保留中</span>}
         </div>
       )}

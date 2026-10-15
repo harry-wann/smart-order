@@ -4,7 +4,11 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+// 原檔名 Category.java
 // 原路徑 tw.ispan.smartorder.entity
 
 /**
@@ -14,7 +18,10 @@ import jakarta.persistence.Table;
  */
 @Entity
 @Table(name = "Categories")
-public class Category {
+@Getter
+@Setter
+@NoArgsConstructor
+public class CategoryEntity {
 
     @Id
     @Column(name = "CategoryID")
@@ -22,16 +29,4 @@ public class Category {
 
     @Column(name = "CategoryName", nullable = false, length = 15)
     private String name;
-
-    protected Category() {
-        // JPA 需要無參數建構子來建立 Entity。
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
 }

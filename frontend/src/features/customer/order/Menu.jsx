@@ -6,18 +6,32 @@ import { SvgIconMap } from '@/assets/SvgIconMap'
 import CustomerTopBar from '@/components/CustomerTopBar'
 import SOButton from '@/components/SOButton'
 import ServiceBell from '@/features/customer/order/ServiceBell'
+import { getCurrentDining } from '@/services/api/dining/diningApi'
 
 import { Link, useNavigate } from "react-router";
 
 import axios from "axios";
 
 export default function Menu() {
+  // 商品類別
   const [category,setCategory]=useState([]);
+  // 選取項目 card
   const [items,setItems]=useState([]);
+  // 依類別觸發取得 id 拿 list
   const [activeCategoryId,setActiveCategoryId]=useState(null);
+  // 搜尋關鍵字拿 list
   const [searchKeyword,setSearchKeyword]=useState('');
+  // 
   const [isBellOpen, setIsBellOpen] = useState(false);
+  // 購物車路徑要帶用餐場次 id
+  const [sessionId, setSessionId] = useState(null);
   const navigate = useNavigate("");
+
+  useEffect(() => {
+    getCurrentDining()
+      .then((dining) => setSessionId(dining.sessionId))
+      .catch((error) => console.error(error));
+  }, []);
 
   useEffect(() => {
     async function loadCategories() {
@@ -37,9 +51,7 @@ export default function Menu() {
 
   useEffect(() => {
     if (activeCategoryId == null) return;
-
     let isCurrentRequest = true;
-    const timeoutId = setTimeout(() => {
     async function loadItems() {
       try {
         const response = await axios.get('http://localhost:8080/api/order/items', {
@@ -56,13 +68,10 @@ export default function Menu() {
         }
       }
     }
-
     loadItems();
-    }, 300);
-
+    
     return () => {
       isCurrentRequest = false;
-      clearTimeout(timeoutId);
     };
   }, [activeCategoryId, searchKeyword]);
 
@@ -111,7 +120,12 @@ export default function Menu() {
         </main>
 
         <div className="fixed bottom-0 left-0 h-23.25 w-full border-t border-line bg-surface px-4 py-4">
-          <Link to="/order/cart">
+          <Link
+            to={`/order/cart/${sessionId ?? ''}`}
+            onClick={(event) => {
+              if (!sessionId) event.preventDefault();
+            }}
+          >
             <SOButton
                 height="h-[56px]"
                 content={[
