@@ -4,16 +4,16 @@ import { SvgIconMap } from '@/assets/SvgIconMap'
 
 // 原路徑 src/components/MenuOptions
 
-export default function OptionGroupDetail({ currentGroup, onOpenGroupNameModal, onOpenItemModal }) {
+export default function OptionGroupDetail({ currentGroup, isLoading, onOpenGroupNameModal, onOpenItemModal }) {
   return (
-    <div className="bg-surface p-[var(--spacing-card)] rounded-[var(--radius-card)] border border-line shadow-[var(--shadow-card)]">
+    <div className="bg-surface p-(--spacing-card) rounded-(--radius-card) border border-line shadow-(--shadow-card)">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
           <h2 className="type-h1">{currentGroup.name}</h2>
         </div>
         <button 
           onClick={onOpenGroupNameModal}
-          className="flex items-center gap-1 type-body-sm text-ink-600 hover:text-ink-900 border border-line px-3.5 py-1.5 rounded-[var(--radius-btn)] transition-colors hover:bg-surface-2"
+          className="flex items-center gap-1 type-body-sm text-ink-600 hover:text-ink-900 border border-line px-3.5 py-1.5 rounded-(--radius-btn) transition-colors hover:bg-surface-2"
         >
           <SvgIconMap.OptionsEdit />
           改名
@@ -22,7 +22,7 @@ export default function OptionGroupDetail({ currentGroup, onOpenGroupNameModal, 
 
 
       {/* 數值設定區 */}
-      <div className="grid grid-cols-3 gap-4 mb-8 bg-surface-2 p-4 rounded-[var(--radius-btn)] border border-line">
+      <div className="grid grid-cols-3 gap-4 mb-8 bg-surface-2 p-4 rounded-(--radius-btn) border border-line">
         <div>
           <div className="type-caption text-ink-400 mb-1">至少要選</div>
           <div className="type-price">{currentGroup.minSelect ?? '—'}</div>
@@ -66,13 +66,17 @@ export default function OptionGroupDetail({ currentGroup, onOpenGroupNameModal, 
             </tr>
           </thead>
           <tbody className="divide-y divide-line text-sm">
-            {currentGroup.items.length > 0 ? currentGroup.items.map(item => (
+            {isLoading ? (
+              <tr>
+                <td colSpan={5} className="py-4 text-center text-ink-400">載入選項值中...</td>
+              </tr>
+            ) : currentGroup.items.length > 0 ? currentGroup.items.map(item => (
               <tr key={item.id} className="hover:bg-surface-2/50">
                 <td className="py-4 type-body font-medium">{item.name}</td>
                 <td className="py-4 type-body text-ink-600">+{item.priceDiff}</td>
                 <td className="py-4 type-body text-ink-600">{item.sortOrder}</td>
                 <td className="py-4">
-                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-[var(--radius-pill)] type-dashboard-top-bar-tag ${
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-pill type-dashboard-top-bar-tag ${
                     item.status === 'active' 
                       ? 'bg-success-bg text-success-ink' 
                       : 'bg-surface-2 text-ink-400'
@@ -84,7 +88,7 @@ export default function OptionGroupDetail({ currentGroup, onOpenGroupNameModal, 
                 <td className="py-4 text-right">
                   <button 
                     onClick={() => onOpenItemModal(item)}
-                    className="p-1.5 text-ink-400 hover:text-ink-900 rounded-[var(--radius-btn)] hover:bg-surface-2 transition-colors"
+                    className="p-1.5 text-ink-400 hover:text-ink-900 rounded-(--radius-btn) hover:bg-surface-2 transition-colors"
                   >
                     <SvgIconMap.OptionsEdit />
                   </button>
@@ -93,7 +97,7 @@ export default function OptionGroupDetail({ currentGroup, onOpenGroupNameModal, 
             )) : (
               <tr>
                 <td colSpan={5} className="py-4 text-center text-ink-400">
-                  此 API 尚未提供選項值資料
+                  目前沒有選項值
                 </td>
               </tr>
             )}

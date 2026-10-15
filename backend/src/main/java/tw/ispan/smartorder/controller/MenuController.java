@@ -1,12 +1,16 @@
 package tw.ispan.smartorder.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 import tw.ispan.smartorder.dto.AdminMenuCategoryDto;
 import tw.ispan.smartorder.dto.AdminMenuItemDto;
-import tw.ispan.smartorder.dto.GetOptionByIdDto;
+import tw.ispan.smartorder.dto.AdminOptionGroupDetailDto;
+import tw.ispan.smartorder.dto.AdminOptionGroupDto;
 import tw.ispan.smartorder.dto.MenuItemOptionDetailDto;
+import tw.ispan.smartorder.dto.request.CreateOptionGroupRequest;
 import tw.ispan.smartorder.entity.MenuCategoryEntity;
 import tw.ispan.smartorder.entity.MenuItemEntity;
 import tw.ispan.smartorder.service.MenuCategoryService;
@@ -93,9 +97,24 @@ public class MenuController {
 
     // MenuOptions 畫面 提取所有選項群組資訊
     @GetMapping("/admin/optionGroups")
-    public ResponseEntity<List<GetOptionByIdDto>> getOptionGroups() {
+    public ResponseEntity<List<AdminOptionGroupDto>> getOptionGroups() {
         return ResponseEntity.ok(optionGroupService.getAllOptionGroups());
     }
 
-    public ResponseEntity<List<>>
+    // MenuOptions 畫面 修改選項群組資訊
+    @PostMapping("/admin/optionGroups")
+    public ResponseEntity<AdminOptionGroupDto> createOptionGroup(
+            @Valid @RequestBody CreateOptionGroupRequest request
+    ) {
+        AdminOptionGroupDto createdGroup = optionGroupService.createOptionGroup(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdGroup);
+    }
+
+    // MenuOptions 畫面 依照 optionGroupId 提取選項群組詳細資訊
+    @GetMapping("/admin/optionGroups/{optionGroupId}")
+    public ResponseEntity<AdminOptionGroupDetailDto> getOptionGroupDetail(
+            @PathVariable Long optionGroupId
+    ) {
+        return ResponseEntity.ok(optionGroupService.getOptionGroupDetail(optionGroupId));
+    }
 }
