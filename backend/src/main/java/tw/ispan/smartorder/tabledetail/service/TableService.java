@@ -159,6 +159,7 @@ public class TableService {
         String time = ticket.getPlacedAt() == null ? "" : ticket.getPlacedAt().format(TIME_FORMAT);
 
         return new TableDetailResponse.OrderDto(
+                ticket.getId(),
                 ticket.getSequenceNo(),
                 ticket.getStatus(),
                 time,
