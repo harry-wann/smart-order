@@ -18,12 +18,13 @@ import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
 
 /**
- * 專題本身的資料庫（smartorder）。Entity 放 tw.ispan.smartorder.entity、Repository 放 tw.ispan.smartorder.repository 才會被這一組管理。
+ * 專題本身的資料庫（smartorder）。Entity 放 tw.ispan.smartorder.entity、Repository 放 tw.ispan.smartorder.repository 才會被這一組管理；
+ * 用功能分套件的（例如 reservation）要把它的 entity、repository 套件加進下面兩處。
  * 設成 @Primary：沒有特別指定的 @Transactional、Flyway 都用這一組。
  */
 @Configuration
 @EnableJpaRepositories(
-        basePackages = "tw.ispan.smartorder.repository",
+        basePackages = {"tw.ispan.smartorder.repository", "tw.ispan.smartorder.reservation.repository"},
         entityManagerFactoryRef = SmartOrderDataSourceConfig.ENTITY_MANAGER_FACTORY,
         transactionManagerRef = SmartOrderDataSourceConfig.TRANSACTION_MANAGER,
         nameGenerator = FullyQualifiedAnnotationBeanNameGenerator.class
@@ -53,7 +54,7 @@ public class SmartOrderDataSourceConfig {
             @Qualifier("smartOrderDataSource") DataSource dataSource) {
         LocalContainerEntityManagerFactoryBean factory = new LocalContainerEntityManagerFactoryBean();
         factory.setDataSource(dataSource);
-        factory.setPackagesToScan("tw.ispan.smartorder.entity");
+        factory.setPackagesToScan("tw.ispan.smartorder.entity", "tw.ispan.smartorder.reservation.entity");
         factory.setPersistenceUnitName("smartorder");
         factory.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
         // 資料表由 Flyway 管理，Hibernate 不自動改表；欄位用 snake_case
