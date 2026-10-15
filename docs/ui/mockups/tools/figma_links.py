@@ -29,7 +29,6 @@ FRAMES_JSON = ROOT / 'dist' / 'frames.json'
 INDEX = ROOT / 'index.html'
 PLAN_MD = ROOT.parent.parent / 'spec' / '05-開發流程與分工.md'
 
-STATES_SUFFIX = ('states-375', 'states-1280')   # figma_prep 的狀態示範批次
 FULLPAGE_SUFFIX = '・整頁展開'
 FILE_URL = ('https://www.figma.com/design/AFqSmBl4P5HUHTI7oKAPZt/'
             '%E7%81%AB%E9%8D%8B%E9%BB%9E%E9%A4%90%E7%B3%BB%E7%B5%B1')
@@ -62,15 +61,26 @@ def load():
 
     # 一個 HTML 檔 → 依出現順序的畫框名（本體在前，狀態示範接在後面）
     # 狀態示範另成一個 entry（file 是「原檔名-states.html」），畫框接在本體後面
-    by_file, main = {}, {}
-    for e in sorted(entries, key=lambda e: e['batch'].endswith(STATES_SUFFIX)):
-        if e['batch'].endswith(STATES_SUFFIX):
+    # 修訂稿的 entry 帶 source（revisions/<日期>/xxx.html），連結寫回那份修訂稿
+    # main：代號 → 原稿主畫框（總覽頁的卡片是原稿）；current：有修訂的換成修訂畫框（給 05）
+    by_file, main, current = {}, {}, {}
+    for e in sorted(entries, key=lambda e: bool(e.get('states'))):
+        states = bool(e.get('states'))
+        if e.get('source'):
+            src = e['source']
+        elif states:
             src = e['file'][:-len('-states.html')] + '.html'
         else:
             src = e['file']
-            main[code_of(e['frames'][0])] = e['frames'][0]   # 代號 → 主畫框名
+        if not states:
+            code = code_of(e['frames'][0])
+            if e.get('source'):
+                current[code] = e['frames'][0]
+            else:
+                main[code] = e['frames'][0]
         by_file.setdefault(src, []).extend(e['frames'])
-    return ids, by_file, main
+    current = dict(main, **current)
+    return ids, by_file, main, current
 
 
 # ── 1. 每張設計稿 ──────────────────────────────────────────────────────────
@@ -129,7 +139,9 @@ LEGEND_ANCHOR = '\n  <div class="r g16 wrap mt24" style="align-items:stretch">'
 
 def legend(pkgs):
     items = ''.join(
-        '<span class="pkg" style="--pc:%s">%s・%s</span>' % (p['color'], k, html.escape(p['name']))
+        '<span class="pkg" style="--pc:%s">%s・%s%s</span>'
+        % (p['color'], k, html.escape(p['name']),
+           '・' + html.escape(p['owner']) if p.get('owner') else '')
         for k, p in sorted(pkgs.items()))
     return ('\n  <!-- figma_links:legend -->\n'
             '  <div class="pkg-legend mt16">\n'
@@ -154,7 +166,8 @@ def patch_index(ids, main, pkg_of, pkgs):
         foot = ''
         if code in pkg_of:
             p = pkgs[pkg_of[code]]
-            foot += '<span class="pkg" style="--pc:%s">工作包 %s</span>' % (p['color'], p['id'])
+            foot += '<span class="pkg" style="--pc:%s">工作包 %s%s</span>' % (
+                p['color'], p['id'], '・' + html.escape(p['owner']) if p.get('owner') else '')
         elif code.startswith(('C-', 'S-')):
             foot += '<span class="pkg adv">進階</span>'
         else:
@@ -204,7 +217,7 @@ def patch_plan(ids, main):
 
 
 def main_():
-    ids, by_file, main = load()
+    ids, by_file, main, current = load()
     pkg_of, pkgs = load_packages()
     known_names = {n for fs in by_file.values() for n in fs}
     unknown = sorted(name for name in set(ids) - known_names
@@ -212,7 +225,9 @@ def main_():
                              and name[:-len(FULLPAGE_SUFFIX)] in known_names))
     changed, miss_pages = patch_pages(ids, by_file)
     miss_index = patch_index(ids, main, pkg_of, pkgs)
-    rows, miss_plan = patch_plan(ids, main)
+    # 修訂畫框還沒拿到 id（還沒匯入）時，05 先維持連原稿，不要整列變成「—」
+    plan_map = {c: (n if n in ids else main.get(c)) for c, n in current.items()}
+    rows, miss_plan = patch_plan(ids, plan_map)
     total = sum(len(v) for v in by_file.values())
     print('畫框 id：%d 個（設計稿共 %d 個畫框）' % (len(ids), total))
     print('設計稿：%d 個檔案更新' % changed)

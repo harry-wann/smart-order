@@ -33,6 +33,15 @@ DIST = ROOT / 'dist'
 SHARED_CSS = ROOT / '_shared.css'
 SKIP = {'index.html'}
 
+# 修訂稿：新版放在 revisions/<日期>/，匯成「原畫框名・修訂 <日期>」的新畫框，排在各頁最下面
+# 自成一列。原稿與原畫框留著當歷史，不覆寫；說明卡沿用 13 裡原畫框名的那一段（13 寫的是現行版）。
+REVISION = '2026-10-14'
+REV_DIR = ROOT / 'revisions' / REVISION
+REV_SUFFIX = '・修訂 ' + REVISION
+REV_BATCH = 'rev-' + REVISION
+REV_FLOW = '修訂 ' + REVISION
+REV_TITLE_RE = re.compile(r'・離線修訂稿（[^）]*）$')
+
 NOTES_MD = ROOT.parent / '13-畫框註解.md'
 UIUX_MD = ROOT.parent / '10-UI-UX規格.md'
 # 工作包分工（誰負責哪張畫面、每包的識別色）的唯一來源
@@ -251,9 +260,9 @@ def lint_spacing(text, where, res, is_css):
                 res.fail('8px 刻度', '%s %s → %s' % (where, decl, bad))
 
 
-def lint_file(path, css):
+def lint_file(path, css, label=None):
     src = path.read_text(encoding='utf-8')
-    res = Result(path.name)
+    res = Result(label or path.name)
 
     # 1 畫框寬度寫死
     frames = extract_frames(src)
@@ -358,11 +367,14 @@ def run_lint():
     if '--bg:#FBF7F0' not in css:
         cres.fail('色票', '--bg 不是 #FBF7F0')
 
+    # 修訂稿的 key 是相對 mockups/ 的路徑（revisions/<日期>/xxx.html），原稿是檔名
     results, frames_by_file = [cres], {}
-    for p in files:
-        r, fr = lint_file(p, css)
+    rev_files = sorted(p for p in REV_DIR.glob('*.html') if p.name not in SKIP)
+    for p in files + rev_files:
+        key = p.relative_to(ROOT).as_posix()
+        r, fr = lint_file(p, css, key)
         results.append(r)
-        frames_by_file[p.name] = fr
+        frames_by_file[key] = fr
     return results, frames_by_file
 
 
@@ -381,17 +393,22 @@ def build_page(title, blocks, inline_css=None):
 def plan(frames_by_file):
     css = SHARED_CSS.read_text(encoding='utf-8')
     items = []
-    for name in sorted(frames_by_file):
-        src = (ROOT / name).read_text(encoding='utf-8')
-        title = TITLE_RE.search(src).group(1)
-        frames = frames_by_file[name]
+    for key in sorted(frames_by_file):
+        name = key.rsplit('/', 1)[-1]
+        rev = key != name
+        src = (ROOT / key).read_text(encoding='utf-8')
+        title = REV_TITLE_RE.sub('', TITLE_RE.search(src).group(1))
+        frames = frames_by_file[key]
         cls = frames[0][0]
         states = frame_states(src, len(frames))
         page = ('01 Design System' if name.startswith('ds')
                 else '03 店家端' if name.startswith('s') else '02 顧客端')
         stem = name[:-5]
+        sfx = REV_SUFFIX if rev else ''
 
-        if name.startswith('ds'):
+        if rev:
+            batch = REV_BATCH
+        elif name.startswith('ds'):
             batch = '00-design-system'
         elif cls == 'f-mobile':
             batch = '01-customer-375'
@@ -402,23 +419,39 @@ def plan(frames_by_file):
         else:
             batch = '03-admin-1280'
 
-        items.append(dict(stem=stem, src=name, title=title, page=page, batch=batch,
-                          cls=cls, blocks=[frames[0][1]], frame_names=[title]))
+        items.append(dict(stem=('rev-' if rev else '') + stem, src=key, title=title + sfx,
+                          page=page, batch=batch, cls=cls, blocks=[frames[0][1]],
+                          frame_names=[title + sfx], flow=flow_of(name, rev)))
         if len(frames) > 1:
             # 只留「編號｜狀態」：Figma 的畫框名是固定字級，手機框只有 375 寬，
             # 縮小檢視時長名字會被截成「C-04｜菜單主…」，四張狀態看起來一模一樣。
             # 把辨識用的狀態名往前挪，截斷也還認得出是哪一張。
             code = title.split('｜')[0]
-            extra = ['%s｜%s' % (code, s or '狀態%d' % (i + 2))
+            extra = ['%s｜%s%s' % (code, s or '狀態%d' % (i + 2), sfx)
                      for i, s in enumerate(states[1:])]
             # 三態檔的 viewport 要跟本體一樣，不能混在同一批
-            sb = '05-states-375' if cls == 'f-mobile' else '06-states-1280'
+            sb = REV_BATCH if rev else '05-states-375' if cls == 'f-mobile' else '06-states-1280'
             # 狀態示範是規格材料不是畫面，跟元件總表一起放 01 Design System，
             # 顧客端／店家端那兩頁只留真正的畫面
-            items.append(dict(stem=stem + '-states', src=name, title='%s・狀態' % title,
+            items.append(dict(stem=('rev-' if rev else '') + stem + '-states', src=key,
+                              title='%s・狀態%s' % (title, sfx),
                               page='01 Design System', batch=sb, cls=cls,
-                              blocks=[b for _, b in frames[1:]], frame_names=extra))
+                              blocks=[b for _, b in frames[1:]], frame_names=extra,
+                              flow=flow_of(stem + '-states.html', rev), states=True))
     return items, css
+
+
+def flow_of(name, rev):
+    """(列序, 列名, 列內順序)。修訂稿各頁集中成最後一列，列內照原稿的流程順序排。"""
+    fl = FLOW_OF.get(name)
+    if not rev or not fl:
+        return fl
+    return (len(FLOW), REV_FLOW, fl[0] * 100 + fl[2])
+
+
+def note_key(frame_name):
+    """修訂畫框的說明卡用原畫框名那一段（13 寫的是現行版）。"""
+    return frame_name[:-len(REV_SUFFIX)] if frame_name.endswith(REV_SUFFIX) else frame_name
 
 
 def build(items, css):
@@ -464,10 +497,13 @@ BATCH_META = {
     '04-admin-1920':      ('03 店家端', 1920, 'S-04 KDS 固定大螢幕，尺寸例外'),
     '05-states-375':    ('01 Design System', 375,  'C-04 菜單主頁的載入中／空資料／錯誤／已結帳'),
     '06-states-1280':   ('01 Design System', 1280, 'S-02 桌況總覽的待清理確認框／載入中／空資料／錯誤'),
+    REV_BATCH:          ('原畫面所在頁', '375／1280', '%s 修訂稿（%s），各頁最下面另成一列，原畫框不動。'
+                         '這批混了不同頁與寬度，只走外掛，不適用 A-zip 手動上傳'
+                         % (REVISION, REV_DIR.relative_to(ROOT).as_posix())),
 }
 ORDER = ['00-design-system', '01-customer-375', '02-customer-1280', '03-admin-1280',
-         '04-admin-1920', '05-states-375', '06-states-1280']
-OPTIONAL = {'05-states-375', '06-states-1280'}
+         '04-admin-1920', '05-states-375', '06-states-1280', REV_BATCH]
+OPTIONAL = {'05-states-375', '06-states-1280', REV_BATCH}
 
 
 def write_import_guide(items):
@@ -503,7 +539,7 @@ def write_import_guide(items):
         n_frames = sum(len(i['frame_names']) for i in group)
         L += ['### 第 %d 批　`%s`\n' % (bi, batch),
               '- **匯入到**：`%s` 頁' % page,
-              '- **畫框寬度**：`%d`' % vw,
+              '- **畫框寬度**：`%s`' % vw,
               '- **檔案**：%d 個 → **%d 個 frame**' % (len(group), n_frames),
               '- **說明**：%s\n' % why,
               '| # | 檔案 | frame 名稱 |\n|---|---|---|']
@@ -561,11 +597,11 @@ def write_name_table(items):
 # 唯一來源是 10-UI-UX規格.md 兩張頁面表的「級別」欄。這裡只讀不寫，
 # 要改分層就去改那兩張表，設計稿、註解與 Figma 會一起跟著變。
 LEVEL_ROW_RE = re.compile(
-    r'^\|\s*((?:DS|[CS])-\d{2}[a-z]?)\s*\|[^|]*\|\s*\*{0,2}(基礎|進階)\*{0,2}\s*\|')
+    r'^\|\s*((?:DS|[CS])-\d{2}[a-z]?)\s*\|[^|]*\|\s*\*{0,2}(基礎|進階|已移除)\*{0,2}\s*\|')
 
 
 def load_levels():
-    """回傳 {代號: '基礎'|'進階'}。"""
+    """回傳 {代號: '基礎'|'進階'|'已移除'}。已移除＝原畫框留作歷史稿，不實作。"""
     if not UIUX_MD.exists():
         return {}
     out = {}
@@ -590,7 +626,9 @@ PKG_SCREEN_RE = re.compile(r'^\|\s*([CS]-\d{2}[a-z]?)\s*\|[^|]*\|\s*([A-E])\s*\|
 
 
 def load_packages():
-    """回傳 ({代號: 'A'…}, {'A': {'id','color','name','colorName'}})。"""
+    """回傳 ({代號: 'A'…}, {'A': {'id','color','name','colorName','owner'}})。
+
+    owner 是 §1.4.2 最後一欄「認領人」，還沒認領（空白或底線）時是空字串。"""
     if not PLAN_MD.exists():
         return {}, {}
     screens, pkgs = {}, {}
@@ -598,8 +636,10 @@ def load_packages():
         line = line.strip()
         m = PKG_ROW_RE.match(line)
         if m:
+            owner = line.strip().strip('|').split('|')[-1].strip().strip('＿_').strip()
             pkgs[m.group(1)] = {'id': m.group(1), 'colorName': m.group(2).strip(),
-                                'color': m.group(3).upper(), 'name': m.group(4).strip()}
+                                'color': m.group(3).upper(), 'name': m.group(4).strip(),
+                                'owner': owner}
             continue
         m = PKG_SCREEN_RE.match(line)
         if m:
@@ -661,10 +701,14 @@ def write_frames_json(items):
              'batch': it['batch'], 'cls': it['cls'],
              'w': FRAME_SPEC[it['cls']][0], 'h': FRAME_SPEC[it['cls']][1],
              'frames': it['frame_names'],
-             'notes': [notes.get(fn, blank) for fn in it['frame_names']],
+             'notes': [notes.get(note_key(fn), blank) for fn in it['frame_names']],
              'levels': [levels.get(code_of(fn), '基礎') for fn in it['frame_names']],
              'pkgs': [pkgs.get(pkg_of.get(code_of(fn), ''), None) for fn in it['frame_names']]}
-        fl = FLOW_OF.get(it['stem'] + '.html')
+        if it['src'] != it['src'].rsplit('/', 1)[-1]:
+            e['source'] = it['src']
+        if it.get('states'):
+            e['states'] = True          # 狀態示範：畫框接在同一份 HTML 本體的後面
+        fl = it['flow']
         if fl:
             e['flow'], e['flow_name'], e['flow_i'] = fl[0], fl[1], fl[2]
         data.append(e)
@@ -766,14 +810,13 @@ def verify(items):
 
     # 每張都要歸在某一條流程，不然外掛排版時會掉進「其他」那一列
     for it in items:
-        f = it['stem'] + '.html'
-        if f not in FLOW_OF:
-            problems.append('%s 沒有歸到任何一條流程，請加進 figma_prep.py 的 FLOW' % f)
+        if not it['flow']:
+            problems.append('%s 沒有歸到任何一條流程，請加進 figma_prep.py 的 FLOW' % it['src'])
     notes = load_notes()
     if not notes:
         problems.append('找不到 %s，右側說明卡會全部空白' % NOTES_MD.name)
     for fn in names:
-        n = notes.get(fn)
+        n = notes.get(note_key(fn))
         if not n:
             problems.append('%s 在 %s 裡沒有註解段落' % (fn, NOTES_MD.name))
             continue
@@ -788,7 +831,7 @@ def verify(items):
             if len(line) > 70:
                 problems.append('%s 的註解有一條 %d 字，太長了（上限 70）：%s…'
                                 % (fn, len(line), line[:24]))
-    for fn in sorted(set(notes) - set(names)):
+    for fn in sorted(set(notes) - {note_key(n) for n in names}):
         problems.append('%s 裡的「%s」已經沒有對應畫框，請移除' % (NOTES_MD.name, fn))
 
     levels = load_levels()
@@ -827,7 +870,7 @@ def verify(items):
         print('  工作包：%s' % '、'.join('%s %d 張' % (k, cnt.get(k, 0)) for k in sorted(pkgs)))
 
     known = {f for _, fs in FLOW for f in fs}
-    have = {it['stem'] + '.html' for it in items}
+    have = {it['stem'] + '.html' for it in items if it['batch'] != REV_BATCH}
     for f in sorted(known - have):
         problems.append('FLOW 裡的 %s 已經不存在，請從 FLOW 移除' % f)
     return problems
@@ -878,15 +921,18 @@ def main():
     print('  ' + ('全部通過' if not problems else '%d 個問題' % len(problems)))
 
     main_n = sum(len(i['frame_names']) for i in items if i['batch'] not in OPTIONAL)
-    opt_n = sum(len(i['frame_names']) for i in items if i['batch'] in OPTIONAL)
+    opt_n = sum(len(i['frame_names']) for i in items
+                if i['batch'] in OPTIONAL and i['batch'] != REV_BATCH)
+    rev_n = sum(len(i['frame_names']) for i in items if i['batch'] == REV_BATCH)
     main_pages = Counter()
     for i in items:
         if i['batch'] not in OPTIONAL:
             main_pages[i['page']] += len(i['frame_names'])
     # 數字別寫死，不然改畫面時這行會偷偷變成假的
-    print('\n主批 %d 個 frame（設計系統 %d + 顧客端 %d + 店家端 %d），選配狀態 %d 個'
+    print('\n主批 %d 個 frame（設計系統 %d + 顧客端 %d + 店家端 %d），選配狀態 %d 個，修訂 %s %d 個'
           % (main_n, main_pages.get('01 Design System', 0),
-             main_pages.get('02 顧客端', 0), main_pages.get('03 店家端', 0), opt_n))
+             main_pages.get('02 顧客端', 0), main_pages.get('03 店家端', 0), opt_n,
+             REVISION, rev_n))
     print('輸出：%s' % DIST)
     return 1 if (n_fail or problems) else 0
 

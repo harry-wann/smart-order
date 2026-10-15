@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DS-08｜店家端元件・離線修訂稿（2026-10-14）</title>
+<link rel="stylesheet" href="../../_shared.css">
+</head>
+<body>
+<!-- 2026-10-14 offline review variant; not synced to Figma. -->
+<!-- #thumbmode：總覽頁用 iframe 取縮圖時，只留第一個畫框 -->
+<span id="thumbmode"></span>
+<div class="stage">
+
+<div>
+  <p class="meta"><b>DS-08｜店家端元件</b><code>1280 × 1200</code><code>桌位磚、統計條、出菜看板卡</code><a class="flink" href="https://www.figma.com/design/AFqSmBl4P5HUHTI7oKAPZt/%E7%81%AB%E9%8D%8B%E9%BB%9E%E9%A4%90%E7%B3%BB%E7%B5%B1?node-id=1236-8" target="_blank" rel="noopener">在 Figma 開啟 ↗</a></p>
+  <div class="frame f-ds">
+    <div class="sp">
+      <div class="sp-hd"><span class="t">店家端元件</span><span class="s">桌況四種樣子與 KDS 卡片狀態</span></div>
+      <div class="sp-grid" style="grid-template-columns:1.1fr 1fr">
+        <div class="sp-col">
+          <div class="sp-sec"><div class="t">桌位磚　三種桌態＋預約保留＋超時</div>
+            <div class="gr3">
+            <div class="tt tt-av"><span class="lb">空桌</span><span class="no">A01</span><span class="mt">2 人桌・窗邊</span></div>
+            <div class="tt tt-oc"><span class="lb">用餐中</span><span class="no">A03</span><span class="mt">47 分・NT$ 1,420</span></div>
+            <div class="tt tt-cl"><span class="lb">待清理</span><span class="no">A05</span><span class="mt">18:30 結清</span></div>
+            <div class="tt tt-rs"><span class="lb">預約保留</span><span class="no">A08</span><span class="mt">18:30 陳○君 4 位</span></div>
+            </div>
+            <div class="gr2" style="margin-top:8px">
+            <div class="tt tt-oc over"><span class="lb">用餐中・超時</span><span class="no">B01</span><span class="mt">108 分・NT$ 2,310</span></div>
+            </div>
+            <span class="sp-lb">預約保留是算出來的顯示狀態（accent-100 底＋accent-500 框），不是第四種桌態。超過 100 分鐘自動轉紅框。顏色之外一定有文字標籤</span>
+          </div>
+          <div class="sp-sec"><div class="t">統計條　數字旁的小方塊兼圖例</div>
+            <div class="statstrip">
+              <!-- 跟 S-02 一樣：桌況四個數字一組不加分隔線，後面才接預約提醒 -->
+              <div class="st"><span class="v">5</span><span class="k"><i class="sw sw-av"></i>空桌</span></div>
+              <div class="st"><span class="v">12</span><span class="k"><i class="sw sw-oc"></i>用餐中</span></div>
+              <div class="st"><span class="v">3</span><span class="k"><i class="sw sw-cl"></i>待清理</span></div>
+              <div class="st"><span class="v">2</span><span class="k"><i class="sw sw-rs"></i>預約保留</span></div><div class="vr"></div>
+              <div class="st"><span class="v">4</span><span class="k">待報到預約</span></div>
+            </div>
+          </div>
+          
+        </div>
+        <div class="sp-sec" style="background:var(--kds-bg);border-color:var(--kds-line)">
+          <div class="t" style="color:var(--kds-text);opacity:.6">出菜看板卡　唯一的深色介面</div>
+          <div class="gr2">
+            <div class="kcard">
+              <div class="r"><span class="kno" style="color:var(--kds-text)">A03</span><span class="fill"></span><span class="badge b-wait">2 分</span></div>
+              <div class="kitem" style="color:var(--kds-text)">招牌麻辣鍋底 ×2</div>
+              <div class="kopt">小辣・不要香菜</div>
+              <button class="btn btn-primary btn-md btn-block">整單出完</button>
+            </div>
+            <div class="kcard pri">
+              <div class="r"><span class="kno" style="color:var(--kds-text)">A05</span><span class="fill"></span><span class="badge b-pri">預約優先</span></div>
+              <div class="kitem" style="color:var(--kds-text)">海鮮拼盤 ×1</div>
+              <div class="kopt">不要蛤蜊</div>
+              <button class="btn btn-primary btn-md btn-block">整單出完</button>
+            </div>
+            <div class="kcard late">
+              <div class="r"><span class="kno" style="color:var(--kds-text)">B03</span><span class="fill"></span><span class="badge b-sold">18 分</span></div>
+              <div class="kitem" style="color:var(--kds-text)">白飯 ×2</div>
+              <div class="kopt">超過 15 分鐘自動轉紅框</div>
+              <button class="btn btn-primary btn-md btn-block">整單出完</button>
+            </div>
+            <div class="kcard done">
+              <div class="r"><span class="kno" style="color:var(--kds-text)">C01</span><span class="fill"></span><span class="badge b-done">已出餐</span></div>
+              <div class="kitem" style="color:var(--kds-text)">松阪豬 ×1</div>
+              <div class="kopt">出完後淡出，留 30 秒可復原</div>
+              <button class="btn btn-primary btn-md btn-block">整單出完</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sidenote">
+  <b>店家端元件</b>
+  <dl style="margin:0">
+    <dt>桌況不能只靠顏色</dt>
+    <dd>每一塊都有文字標籤。<br>外場的燈光與角度<br>比手機難判讀得多。</dd>
+    <dt>預約保留（暖黃）</dt>
+    <dd>空桌進入保留窗（開始前 30 分～<br>後 10 分）時查詢算出來的，<br>不存進桌位狀態。格內寫時間、<br>遮一個字的姓名、人數</dd>
+    <dt>只有訂位會鎖桌</dt>
+    <dd>預約保留是唯一「還空著但開不了」的桌；<br>候位不鎖桌，桌位也沒有其他保留狀態。<br>櫃檯代客取消訂位後，桌格就地變回空桌</dd>
+    <dt>超時自動轉紅框</dt>
+    <dd>不是換底色而是加外框 ——<br>底色還要留給桌況本身。</dd>
+    <dt>KDS 是唯一深色</dt>
+    <dd>廚房的螢幕整天亮著，<br>深色底比較不刺眼，<br>也讓桌號的白字跳出來。</dd>
+  </dl>
+</div>
+
+</div>
+</body>
+</html>

@@ -1,8 +1,12 @@
 import { useState } from 'react'
-import { useLocation, useNavigate } from 'react-router'
+import { Navigate, useLocation, useNavigate } from 'react-router'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import CustomerTopBar from '@/components/CustomerTopBar'
 import SOButton from '@/components/SOButton'
+import { useCreateReservation } from '@/hooks/reservation/useReservationMutations'
+import { useAvailability } from '@/hooks/reservation/useReservationQueries'
+import type { ReservationCreated } from '@/services/api/reservation/types'
+import { isApiError } from '@/services/client/ApiError'
 import { addDays, formatDateWithWeekday, startOfToday } from '@/utils/reservationDate'
 import type { ReservationContact, ReservationRouteState } from './reservation.types'
 
@@ -10,13 +14,20 @@ function DateTime() {
   const navigate = useNavigate()
   const location = useLocation()
   const [dayOffset, setDayOffset] = useState(1)
-  const [time, setTime] = useState<string | null>('18:00')
+  const [time, setTime] = useState<string | null>(null)
   const [people, setPeople] = useState(4)
+  const [notice, setNotice] = useState<string | null>(null)
+  const createReservation = useCreateReservation()
 
   const today = startOfToday()
-  const fullSlots = getFullSlots(dayOffset)
-  const summary = time
-    ? `${formatDateWithWeekday(addDays(today, dayOffset))}${time}・${people} 位`
+  const date = toDateParam(addDays(today, dayOffset))
+  const availability = useAvailability(date, people)
+  const slots = availability.data?.slots ?? []
+  const fullSlots = slots.filter((slot) => !slot.available).map((slot) => slot.time)
+  // 換日期或人數後，原本選的時段可能變成已額滿，就當作還沒選
+  const selectedTime = time !== null && !fullSlots.includes(time) ? time : null
+  const summary = selectedTime
+    ? `${formatDateWithWeekday(addDays(today, dayOffset))}${selectedTime}・${people} 位`
     : '請選擇時段'
   const routeState = location.state as
     | { contact?: ReservationContact; reservationType?: 'GUEST' | 'MEMBER' }
@@ -24,32 +35,46 @@ function DateTime() {
   const contact = routeState?.contact
   const reservationType = routeState?.reservationType ?? (contact ? 'GUEST' : undefined)
 
-  const handleSelectDay = (offset: number) => {
+  // 沒有聯絡資料也不是會員，代表是直接打網址進來的，回到訂位入口重選
+  if (!reservationType) return <Navigate to="/reserve" replace />
+
+  function handleChangePeople(next: number) {
+    setPeople(next)
+    setNotice(null)
+  }
+
+  function handleSelectDay(offset: number) {
     setDayOffset(offset)
-    if (time && getFullSlots(offset).includes(time)) setTime(null)
+    setNotice(null)
   }
 
   function handleConfirm() {
-    if (!time) return
-    const selectedDate = addDays(today, dayOffset)
-    const date = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`
-    const id = crypto.randomUUID()
-    const accessToken = crypto.randomUUID()
-    const reservationNo = `RS${date.replaceAll('-', '')}${time.replace(':', '')}${id.slice(0, 8).toUpperCase()}`
-
-    const reservation: ReservationRouteState['reservation'] = {
-      id,
-      reservationNo,
-      accessToken,
-      date,
-      time,
-      partySize: people,
-      tableNo: people <= 4 ? 'A08' : 'C02',
-      reservationType,
-      contact,
-    }
-
-    navigate('/reserve/done', { state: { reservation } satisfies ReservationRouteState })
+    if (!selectedTime || !reservationType) return
+    setNotice(null)
+    createReservation.mutate(
+      {
+        asMember: reservationType === 'MEMBER',
+        startTime: `${date}T${selectedTime}:00+08:00`,
+        adultCount: people,
+        childCount: 0,
+        contactName: contact?.name,
+        contactPhone: contact?.phone,
+        contactEmail: contact?.email || null,
+      },
+      {
+        onSuccess: (created) => {
+          const reservation = toConfirmation(created, people, reservationType, contact)
+          navigate(`/reserve/${created.reservationId}/done`, {
+            state: { reservation } satisfies ReservationRouteState,
+          })
+        },
+        onError: (error) => {
+          // 客滿：留在本頁，時段重抓後會標成已額滿
+          if (isApiError(error, 'SLOT_UNAVAILABLE')) setTime(null)
+          setNotice(error.details[0]?.message ?? error.message)
+        },
+      },
+    )
   }
 
   return (
@@ -87,17 +112,26 @@ function DateTime() {
             <h2 className="type-h3 text-ink-900">時段</h2>
             <span className="type-caption text-ink-600">用餐時間 {DINING_MINUTES} 分鐘</span>
           </div>
-          <div className="flex gap-2">
-            {TIME_SLOTS.map((slot) => (
-              <TimeSlot
-                key={slot}
-                time={slot}
-                full={fullSlots.includes(slot)}
-                selected={slot === time}
-                onSelect={() => setTime(slot)}
-              />
-            ))}
-          </div>
+          {availability.isError ? (
+            <p className="type-body-sm text-danger">{availability.error.message}</p>
+          ) : availability.isPending ? (
+            <p className="type-body-sm text-ink-600">時段載入中…</p>
+          ) : (
+            <div className="grid grid-cols-4 gap-2">
+              {slots.map((slot) => (
+                <TimeSlot
+                  key={slot.time}
+                  time={slot.time}
+                  full={!slot.available}
+                  selected={slot.time === selectedTime}
+                  onSelect={() => {
+                    setTime(slot.time)
+                    setNotice(null)
+                  }}
+                />
+              ))}
+            </div>
+          )}
           {fullSlots.length > 0 && (
             <p className="type-caption text-ink-600">
               {fullSlots.join('、')} 已額滿。虛線框的時段不能點。
@@ -113,7 +147,7 @@ function DateTime() {
                 type="button"
                 aria-label="減少人數"
                 disabled={people <= MIN_PEOPLE}
-                onClick={() => setPeople((count) => count - 1)}
+                onClick={() => handleChangePeople(people - 1)}
                 className={STEP_BUTTON_CLASS}
               >
                 <SvgIconMap.CounterMinus aria-hidden="true" />
@@ -123,7 +157,7 @@ function DateTime() {
                 type="button"
                 aria-label="增加人數"
                 disabled={people >= MAX_PEOPLE}
-                onClick={() => setPeople((count) => count + 1)}
+                onClick={() => handleChangePeople(people + 1)}
                 className={STEP_BUTTON_CLASS}
               >
                 <SvgIconMap.CounterPlus aria-hidden="true" />
@@ -138,10 +172,11 @@ function DateTime() {
       </div>
 
       <div className="fixed bottom-0 w-full border-t border-line bg-surface px-page pt-3 pb-6">
+        {notice && <p className="pb-2 text-center type-body-sm text-danger">{notice}</p>}
         <SOButton
           height="h-13"
-          text={['確認訂位', summary]}
-          disabled={time === null}
+          text={createReservation.isPending ? '處理中…' : ['確認訂位', summary]}
+          disabled={selectedTime === null || createReservation.isPending}
           onClick={handleConfirm}
         />
       </div>
@@ -218,27 +253,43 @@ const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
 const BOOKABLE_DAYS = 30
 const DINING_MINUTES = 100
 const MIN_PEOPLE = 1
+// 開放線上訂位的桌最大是 8 人包廂
 const MAX_PEOPLE = 8
-const TIME_SLOTS = ['17:00', '17:30', '18:00', '18:30', '19:00']
-
-const FULL_SLOTS_BY_OFFSET: Record<number, string[]> = {
-  1: ['18:30'],
-  2: ['18:00', '18:30'],
-  4: TIME_SLOTS,
-  7: ['19:00'],
-}
+const TABLE_SIZES = [2, 4, 6, 8]
 
 const STEP_BUTTON_CLASS =
   'flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-[1.5px] border-brand-600 bg-surface disabled:cursor-not-allowed disabled:opacity-40'
 
-function getFullSlots(dayOffset: number) {
-  return FULL_SLOTS_BY_OFFSET[dayOffset] ?? []
+// 後端挑「坐得下的桌裡座位最少的」，畫面先用同樣的規則預告桌型
+function getTableLabel(people: number) {
+  const seats = TABLE_SIZES.find((size) => size >= people) ?? MAX_PEOPLE
+  return seats === MAX_PEOPLE ? `${seats} 人包廂` : `${seats} 人桌`
 }
 
-function getTableLabel(people: number) {
-  if (people <= 2) return '2 人桌・靠牆區'
-  if (people <= 4) return '4 人桌・窗邊區'
-  return '8 人包廂'
+function toDateParam(date: Date) {
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${date.getFullYear()}-${month}-${day}`
+}
+
+function toConfirmation(
+  created: ReservationCreated,
+  partySize: number,
+  reservationType: 'GUEST' | 'MEMBER',
+  contact?: ReservationContact,
+): ReservationRouteState['reservation'] {
+  const [date, rest] = created.startTime.split('T')
+  return {
+    id: String(created.reservationId),
+    reservationNo: created.reservationNo,
+    accessToken: created.accessToken,
+    date,
+    time: rest.slice(0, 5),
+    partySize,
+    tableNo: created.tableNo,
+    reservationType,
+    contact,
+  }
 }
 
 function getMonthLabel(today: Date) {

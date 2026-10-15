@@ -58,7 +58,9 @@
 | 400 | `OPTION_REQUIRED` | 必選群組沒選 | 標出是哪個群組 |
 | 401 | `UNAUTHORIZED` | 未登入或 JWT 失效 | 導回登入頁 |
 | 401 | `INVALID_SESSION_TOKEN` | 用餐權杖失效（已結帳或取消） | 清掉用餐權杖，導到 C-00 首頁（`/`）；客人再掃桌上 QR 時 C-01 依桌位狀態顯示 |
+| 401 | `INVALID_GUEST_TOKEN` | 需要 guest 身分的請求沒有有效 `X-Guest-Token`，或 token 不屬於該用餐 session | 重新掃碼加入以取得本桌 guest 權杖；不要退回用 `X-Device-Id` 判斷身分 |
 | 403 | `FORBIDDEN` | 角色權限不足 | 顯示「權限不足」 |
+| 403 | `CART_ITEM_FORBIDDEN` | 修改或刪除的購物車列不屬於目前 guest | 保留購物車，提示「只能修改自己加入的餐點」並重抓購物車 |
 | 404 | `NOT_FOUND` | 資源不存在 | 顯示查無資料 |
 | 404 | `MEMBER_NOT_FOUND` | 櫃檯用手機查會員，查無此人（進階 8.10） | S-03 會員欄下顯示「查無此會員」 |
 | 409 | `ITEM_SOLD_OUT` | 送出點餐時品項已售完（加入購物車時已標售完也回這個） | **標紅該品項，整張單未成立** |
@@ -86,8 +88,9 @@
 | 身分 | 標頭 | 取得方式 | 有效期 |
 |---|---|---|---|
 | 匿名顧客 | `X-Session-Token: <token>` | 掃碼加入時取得 | 到該次結帳為止 |
+| 同桌 guest | `X-Guest-Token: <random token>` | join 時伺服器簽發；原始值由顧客端保存，資料庫只存 SHA-256 雜湊並綁定該 session 與 guest | 到該次結帳為止 |
 | 匿名訂位 | `X-Reservation-Token: <token>` | 建立訂位時取得 | 到該筆訂位結束為止 |
-| 同桌裝置 | `X-Device-Id: <uuid>` | 前端第一次開啟時自己產生，存 localStorage | 不過期；**只用來標示「誰加的」，不是身分驗證** |
+| 裝置提示 | `X-Device-Id: <uuid>` | 客戶端提供，可偽造 | 只供顯示／診斷，不參與 guest 查找、身分驗證或授權 |
 | 會員 | `Authorization: Bearer <JWT>` | 手機驗證碼登入 | 7 天 |
 | 員工 | `Authorization: Bearer <JWT>` | 帳密登入 | 12 小時 |
 
@@ -104,26 +107,25 @@
 | 方法 | 路徑 | 說明 | 認證 |
 |---|---|---|---|
 | GET | `/api/tables/{tableNo}/status` | 查桌位狀態（決定掃碼後顯示什麼） | 無 |
-| POST | `/api/dining-sessions/join` | 掃碼加入用餐，取得權杖與同桌身分 `guest` | 無 |
+| POST | `/api/dining-sessions/join` | 掃碼加入用餐，取得 `sessionToken`、伺服器簽發的 `guestToken` 與同桌身分 `guest`；重入時可帶既有兩種 token 恢復 guest | 首次加入無；重入帶 Session + Guest |
 | GET | `/api/dining-sessions/me` | 目前用餐資訊 | Session |
 | GET | `/api/dining-sessions/me/cart` | **整桌共用購物車**（每列含 `addedBy`） | Session |
-| POST | `/api/dining-sessions/me/cart/items` | 加入購物車（body：`menuItemId`、`quantity`、`optionValueIds`、`note`） | Session |
-| PATCH | `/api/dining-sessions/me/cart/items/{id}` | 改數量／備註（同桌任何人都能改） | Session |
-| DELETE | `/api/dining-sessions/me/cart/items/{id}` | 從購物車刪除（同桌任何人都能刪） | Session |
+| POST | `/api/dining-sessions/me/cart/items` | 加入自己名下的新列（body：`menuItemId`、`quantity`、`optionValueIds`、`note`） | Session + Guest |
+| PATCH | `/api/dining-sessions/me/cart/items/{id}` | 改自己加入列的數量／備註；其他 guest 回 `403 CART_ITEM_FORBIDDEN` | Session + Guest |
+| DELETE | `/api/dining-sessions/me/cart/items/{id}` | 刪除自己加入的列；其他 guest 回 `403 CART_ITEM_FORBIDDEN` | Session + Guest |
 | GET | `/api/menu/categories` | 分類清單 | 無（公開讀取） |
 | GET | `/api/menu/items` | 品項清單（`?categoryId=`） | 無（公開讀取） |
 | GET | `/api/menu/items/{id}` | 品項詳情（含選項群組） | 無（公開讀取） |
 | GET | `/api/menu/recommendations` | 推薦（`?type=POPULAR\|HISTORY\|PROFILE&audience=ADULT\|CHILD`），**進階**：`POPULAR` 是 A7 人氣推薦，`HISTORY`／`PROFILE` 是 8.E3／8.E4 | `POPULAR` 無；`HISTORY`／`PROFILE` 要會員 JWT |
-| POST | `/api/dining-sessions/me/orders` | **送出整桌購物車 → 建立一張點餐單**（不帶品項） | Session |
+| POST | `/api/dining-sessions/me/orders` | **任何已驗證的同桌 guest 都可送出整桌購物車 → 建立一張點餐單**（不帶品項） | Session + Guest |
 | GET | `/api/dining-sessions/me/orders` | 本桌所有點餐單 | Session |
 | DELETE | `/api/dining-sessions/me/order-items/{id}` | 取消單品 | Session |
-| POST | `/api/service-calls` | **按服務鈴**（三種，沒有結帳） | Session |
 | GET | `/api/dining-sessions/me/bill` | 帳單明細（C-09，**進階 A5**） | Session |
 | POST | `/api/payments` | 模擬付款（C-10，**進階 A5**） | Session |
 | POST | `/api/dining-sessions/me/attach-member` | 這次消費記到會員（消費紀錄、集點用，**進階 8.10**） | Session + JWT |
 
-> **Session 認證的請求都要一起帶 `X-Device-Id`**（見 1.4），後端才知道購物車的每一列是誰加的、點餐單是誰送的。
-> 購物車的增刪改與送出點餐，session 不是 `OPEN` 都回 `409 SESSION_CLOSED`。
+> 購物車新增、修改、刪除與送出點餐都要帶 `X-Session-Token` 和 `X-Guest-Token`。後端用 guest token 決定 `addedBy`／提交者；`X-Device-Id` 可偽造，只作提示。修改或刪除時後端在資料庫驗證列 owner；非本人回 `403 CART_ITEM_FORBIDDEN`。任何有效 guest 送出時都會處理整桌所有人的購物車列。
+> 購物車寫入與送出點餐時，session 不是 `OPEN` 都回 `409 SESSION_CLOSED`。
 >
 > **沒有「要求結帳」與「取消結帳」這兩支。** 基礎是客人到櫃檯結帳（見 2.4 的 `settle`）；
 > 查帳單不會改任何狀態，防呆改成結清／付款時的金額比對（見 4.8）。
@@ -179,8 +181,6 @@
 | POST | `/api/admin/dining-sessions/{id}/settle` | **櫃檯結清**（`CASH`／`CARD`／`BARCODE`，帶 `expectedTotal`，可帶 `memberId`） | COUNTER, MANAGER |
 | POST | `/api/admin/dining-sessions/{id}/cancel` | 取消該次用餐（沒點過餐才可以，見 4.8b） | MANAGER |
 | GET | `/api/admin/members/lookup` | 櫃檯用手機查會員（`?phone=`，回暱稱與生日讓客人確認，**進階 8.10**，見 4.8a） | COUNTER, MANAGER |
-| GET | `/api/admin/service-calls` | 未處理的服務鈴 | COUNTER, MANAGER |
-| PATCH | `/api/admin/service-calls/{id}/ack` | 標記已處理 | COUNTER, MANAGER |
 | GET | `/api/admin/kitchen/tickets` | KDS 看板 | KITCHEN, MANAGER |
 | PATCH | `/api/admin/order-items/{id}/serve` | 勾選已出餐 | KITCHEN, MANAGER |
 | PATCH | `/api/admin/order-tickets/{id}/serve-all` | 整單出完 | KITCHEN, MANAGER |
@@ -238,6 +238,8 @@
 真正的檢查在 `ChannelInterceptor`——CONNECT 時驗身分（兩種都認），SUBSCRIBE 時照 3.2 檢查頻道權限，
 否則隔壁桌的人可以訂閱你這桌的頻道。
 
+`X-Guest-Token` 只給 HTTPS REST 請求驗證購物車 owner／點餐提交者，**不放進 WebSocket CONNECT、STOMP SEND、訂閱或任何事件 payload**。WebSocket 仍以 `X-Session-Token` 驗證同桌頻道；所有資料異動都由已驗證的 REST API 發起，後端 commit 後才推事件。
+
 ### 3.2 頻道
 
 | 頻道 | 訂閱者 | 權限 |
@@ -272,7 +274,6 @@
 | `SESSION_CLOSED` | session、counter | `{ sessionId, reason: "PAID" \| "CANCELLED" }` | `PAID`：顧客端 C-04 切到「已結帳」面板並清除權杖；`CANCELLED`：**不顯示任何面板**，清掉權杖直接導回 C-00（`/`）；櫃檯更新桌況 |
 | `MENU_SOLD_OUT` | menu | `{menuItemId, name}` | 菜單標灰 + 購物車標紅 |
 | `MENU_RESTOCKED` | menu | `{menuItemId, quantity}` | 恢復可點 |
-| `SERVICE_CALL` | counter | `{callId, tableNo, type}` | 跳出提示 + 音效 |
 | `TABLE_STATUS` | counter | `{tableId, tableNo, status, displayStatus, heldFor}` | 依 `displayStatus` 更新桌況色塊（四種）；開桌、結清、清潔、取消用餐、櫃檯代客取消訂位都會推 |
 | `TABLE_OVERTIME` | counter | `{tableId, tableNo, minutes}` | 標紅閃爍 |
 | `WAITLIST_CALLED` | waitlist | `{ticketNo, partySize}` | 候位螢幕顯示叫號 |
@@ -309,7 +310,7 @@
 購物車小（一桌幾十列）、而且同桌每支手機看到的內容一樣，所以推播直接把**整份**帶過去，
 前端收到就能畫，不用再打一次 `GET /me/cart`。代價是每次推播的 payload 大一點，可以接受。
 
-`version` 就是 `dining_session.cart_version`（見 [03](03-資料庫設計.md)），購物車每次異動 +1。
+`version` 就是 `dining_session.cart_version`（見 [03](03-資料庫設計.md)）。加入／修改／刪除各 +1；成功送出清空購物車，以及結清或取消時刪除尚未送出的列，也在同一交易內 +1。送出與結清後用 `NEW_TICKET`／`SESSION_CLOSED` 通知手機重抓購物車；GET 回傳的新版本必須高於本機版本，才能套用空車。
 前端記住最後套用過的版本，**只有比它大才套用**：
 
 ```js
@@ -397,6 +398,7 @@ X-Device-Id: 7f1c2a9e-4b6d-4e2a-9c1f-2d8e5a0b3c71
 {
   "sessionId": 1052,
   "sessionToken": "eyJ0IjoxMDUyLi4u",
+  "guestToken": "<server-generated-random-secret>",
   "tableNo": "A03",
   "adultCount": 2,
   "childCount": 1,
@@ -408,10 +410,9 @@ X-Device-Id: 7f1c2a9e-4b6d-4e2a-9c1f-2d8e5a0b3c71
 }
 ```
 
-`guest` 是這支手機在這桌的身分（`dining_session_guest`）：同一個 `X-Device-Id` 重複加入拿到同一筆，沒有就建立。
-有帶會員 JWT 加入、而且會員有填暱稱時 `displayName` 用暱稱，否則依加入順序給「客人 1」「客人 2」…
-**它只用來標示誰加的，不是身分驗證**——之後的請求仍然靠 `sessionToken`。
-前端把 `guest.id` 跟 `sessionToken` 一起存起來：收到 `CART_UPDATED`／`NEW_TICKET` 時拿它比對 `byGuestId`，自己的動作不跳通知（見 3.4）。
+`guest` 是這次用餐中的客人身分（`dining_session_guest`）。首次加入時後端建立 guest 並以安全亂數簽發 `guestToken`；資料庫只存 token 的 SHA-256 雜湊，並透過 guest 列綁定這個 session。會員有填暱稱時 `displayName` 用暱稱，否則依加入順序給「客人 1」「客人 2」…。
+前端把 `sessionToken`、`guestToken` 和 `guest.id` 一起存起來。新手機即使帶相同 `X-Device-Id` 也會建立新的 guest；只有同時帶本 session 的 `X-Session-Token` 與既有 `X-Guest-Token` 才恢復原 guest。收到 `CART_UPDATED`／`NEW_TICKET` 時用 `guest.id` 比對 `byGuestId`，自己的動作不跳通知（見 3.4）。
+`X-Device-Id` 可偽造，不參與身分認證。購物車新增、修改、刪除與送出點餐的 HTTPS 請求都帶 `X-Guest-Token`；token 僅用於 REST API，不放進 WebSocket CONNECT、訊息或事件 payload。
 
 `soupBaseOrdered` 只是資訊，**前端不會因此跳頁**：鍋底是 C-04 的一個分類頁籤，
 送出訂單時本桌還沒有鍋底，後端回 `400 SOUP_BASE_REQUIRED`（見 4.5）。
@@ -616,6 +617,7 @@ GET /api/menu/items/4
 ```http
 POST /api/dining-sessions/me/orders
 X-Session-Token: eyJ0IjoxMDUyLi4u
+X-Guest-Token: <server-generated-random-secret>
 X-Device-Id: 7f1c2a9e-4b6d-4e2a-9c1f-2d8e5a0b3c71
 
 （不帶 body：送出的是整桌購物車，內容以後端的 cart_item 為準）
@@ -660,16 +662,16 @@ X-Device-Id: 7f1c2a9e-4b6d-4e2a-9c1f-2d8e5a0b3c71
 **後端實作要點**
 
 1. 整個方法標 [`@Transactional`](../tech/database/27-交易Transaction.md)
-2. `SELECT ... FOR UPDATE` 鎖住這筆 `dining_session`，狀態必須 `OPEN`，否則 `409 SESSION_CLOSED`（跟櫃檯結清搶同一把鎖，見 4.8）
+2. 驗證 `X-Guest-Token` 綁定這個 `session`，取得提交者 guest；`SELECT ... FOR UPDATE` 鎖住這筆 `dining_session`，狀態必須 `OPEN`，否則 `409 SESSION_CLOSED`（跟櫃檯結清搶同一把鎖，見 4.8）
 3. **拿到鎖之後**才讀整桌 `cart_item`（含 `cart_item_option`）；一筆都沒有 → `409 CART_EMPTY`
 4. **鍋底規則**：本桌目前還沒有未取消的 `is_soup_base` 品項（含預點轉來的單），而這次購物車裡也沒有 → `400 SOUP_BASE_REQUIRED`（共鍋：**每桌至少一份**，不是每人一份）
 5. 驗證每個品項的必選群組都有選、複選不超過 `max_select`
 6. **依 `menuItemId` 排序後逐項扣庫存**（避免死鎖），`track_inventory=false` 的跳過
-7. 用條件式 UPDATE 判斷影響筆數，**任一項失敗整個交易 rollback**，不可以只成立一部分（購物車也原封不動，客人刪掉售完那項再送一次）
-8. 建立 ticket（`submitted_by_guest_id` = 按送出的那支手機）+ items + item options，**以菜單現價重算**並寫入名稱與價格快照（`cart_item.unit_price` 只給畫面看，不拿來算錢）
-9. **刪掉這批 `cart_item`**（同一個交易）
+7. 用條件式 UPDATE 判斷影響筆數，**任一項失敗整個交易 rollback**，不可以只成立一部分（購物車也原封不動；若售完列屬於自己，owner 可修改或刪除後重送；若屬於別人，由該列 owner 修改或刪除，不放寬 owner 權限）
+8. 建立 ticket（`submitted_by_guest_id` = 通過驗證、按送出的 guest）+ items + item options；不按 `added_by_guest_id` 篩購物車，每位 guest 都能送出全桌列。**以菜單現價重算**並寫入名稱與價格快照（`cart_item.unit_price` 只給畫面看，不拿來算錢）
+9. **刪掉這批 `cart_item` 並將 `dining_session.cart_version` +1**（同一個交易；即使只刪除也必須遞增，讓本機舊版本不會丟棄送出後的空車）
 10. 更新 `dining_session.subtotal`
-11. **交易提交後**才推 `NEW_TICKET`（帶 `byGuest`、`byGuestId`；`quantity` 是這張單的份數加總，C-04c「送出 N 項」用它）到 `/topic/session/{id}` 和 `/topic/kitchen`
+11. **交易提交後**才推 `NEW_TICKET`（帶 `byGuest`、`byGuestId`；`quantity` 是這張單的份數加總，C-04c「送出 N 項」用它）到 `/topic/session/{id}` 和 `/topic/kitchen`；前端收到後重抓 `/me/cart` 並套用較新的 `version`
 
 **兩個人同時按送出**：兩筆請求搶同一列的鎖。先到的把整桌購物車送出並刪掉；後到的拿到鎖時購物車已經空了 → `409 CART_EMPTY`，
 前端提示並重抓本桌訂單。所以不會送出兩張重複的單。**第 3 步一定要在第 2 步之後**，先讀再鎖的話兩邊讀到的是同一份。
@@ -678,11 +680,24 @@ X-Device-Id: 7f1c2a9e-4b6d-4e2a-9c1f-2d8e5a0b3c71
 > （`{ "items": [{ "menuItemId", "quantity", "optionValueIds", "note" }] }`），第 3 步改成讀 body、第 9 步不刪購物車，其他步驟共用同一段程式。
 > `source = STAFF`、`submitted_by_guest_id = NULL`，推 `NEW_TICKET` 時 `byGuest = "櫃檯"`、`byGuestId = null`。客人手機上的購物車不受影響。
 
+**非 owner 修改／刪除範例**：同桌 guest 2 對 guest 1 加入的列呼叫 `PATCH` 或 `DELETE`，回 `403`，不改資料：
+
+```json
+{
+  "timestamp": "2026-09-13T19:02:40+08:00",
+  "status": 403,
+  "code": "CART_ITEM_FORBIDDEN",
+  "message": "只能修改或刪除自己加入的購物車品項",
+  "path": "/api/dining-sessions/me/cart/items/501"
+}
+```
+
 ### 4.5b 共用購物車
 
 ```http
 POST /api/dining-sessions/me/cart/items
 X-Session-Token: eyJ0IjoxMDUyLi4u
+X-Guest-Token: <server-generated-random-secret>
 X-Device-Id: 7f1c2a9e-4b6d-4e2a-9c1f-2d8e5a0b3c71
 
 { "menuItemId": 12, "quantity": 1, "optionValueIds": [12, 41], "note": "不要太熟" }
@@ -709,15 +724,15 @@ GET /api/dining-sessions/me/cart
 }
 ```
 
-- **整桌一份**：同桌每支手機拿到的內容一樣；任何人都能改（`PATCH`，body `{ "quantity": 2, "note": "..." }`）或刪（`DELETE`）任何一列
-- 每次加入都是新的一列（誰加的才分得清楚），不跟既有的列合併
+- **整桌一份**：同桌每支手機拿到的內容一樣；只有加入該列的 guest 能改（`PATCH`，body `{ "quantity": 2, "note": "..." }`）或刪（`DELETE`），其他 guest 得到 `403 CART_ITEM_FORBIDDEN`
+- 每次加入都是新的一列；即使同品項與選項相同，也不跨 guest 合併，以保留 owner
 - 回傳固定是 `{ items, totalQuantity, subtotal, version }`：`totalQuantity` 是份數加總（購物車角標用），`addedBy` 是 `{ guestId, displayName }`（畫面上的「陳小美 加的」）
 - `version` 是 `dining_session.cart_version`，跟 `CART_UPDATED` 推的是同一個值；前端拿它擋掉過期資料（見 3.4.1）
 - `unitPrice`／`lineTotal`／`subtotal` 只是畫面上的參考（不含服務費），送單時以菜單現價重算
 - 加入時就先驗必選群組（`400 OPTION_REQUIRED`）與售完標記（`409 ITEM_SOLD_OUT`）；真正的庫存檢查仍在送出時
-- session 不是 `OPEN` → `409 SESSION_CLOSED`；要改的那一列已經不在（例如同桌剛送出）→ `404 NOT_FOUND`，前端重抓購物車
+- session 不是 `OPEN` → `409 SESSION_CLOSED`；目標列不屬於這個 session／已不存在 → `404 NOT_FOUND`；列存在但不是目前 guest 的 → `403 CART_ITEM_FORBIDDEN`，前端重抓購物車
 - `totalQuantity` 範例是 3：鴛鴦鍋底 ×1 ＋ 美國牛五花 ×2，**算份數不算列數**（2 列、3 項）
-- 每次寫入，`cart_version` +1，**交易提交後**推 `CART_UPDATED` 到 `/topic/session/{id}`，payload 帶 `version`＋整份 `cart`＋`change`（見 3.4.1）；其他手機用 `version` 比對後直接套用，**不用再打 `GET /me/cart`**；`change.action` 是 `ADDED` 時跳通知條「陳小美 加了一樣東西／安格斯霜降牛五花 ×1・全份」（`change.byGuestId` 是自己就不跳）
+- 每次寫入，`cart_version` +1，**交易提交後**推 `CART_UPDATED` 到 `/topic/session/{id}`，payload 帶 `version`＋整份 `cart`＋`change`（見 3.4.1）；其他手機用 `version` 比對後直接套用，**不用再打 `GET /me/cart`**；`change.action` 是 `ADDED` 時跳通知條（`change.byGuestId` 是自己就不跳）。事件不包含任何 raw guest token
 
 ### 4.6 本桌訂單
 
@@ -748,7 +763,9 @@ GET /api/dining-sessions/me/orders
 
 > **這支 API 有 WebSocket 還是要留**：進頁面時要抓一次，斷線重連後也要抓一次。
 
-### 4.7 服務鈴
+### 歷史設計（已移出本次範圍）：服務鈴
+
+以下端點與 payload 是舊版設計紀錄，不屬於現行 API 合約；本次沒有顧客呼叫、櫃檯處理或推播服務鈴的端點。
 
 ```http
 POST /api/service-calls
@@ -1157,7 +1174,7 @@ catch (err) {
 4. `GET /api/dining-sessions/me/orders` + WebSocket 推播
 5. `GET /api/admin/kitchen/tickets` + `PATCH .../serve`
 6. 櫃檯結清 `settle`（含列鎖與 `expectedTotal` 比對；送出點餐那邊的 `SESSION_CLOSED` 一起做）、取消該次用餐 `cancel`
-7. 服務鈴、候位、`GET /api/admin/tables/available`（一鍵開桌）
+7. 候位、`GET /api/admin/tables/available`（一鍵開桌）
 8. 訂位與排程（**先做到「訂位成立 → 報到開桌」這條線**，含 7.10 預約保留：`displayStatus`、`TABLE_RESERVED`、開桌強烈提醒的 115 分鐘窗；取消訂位兩支（客人 `DELETE`、櫃檯 `cancel`）；預點是後面的事）
 9. 會員
 10. （有餘力）預先點餐三支 API + 報到轉單（A2）

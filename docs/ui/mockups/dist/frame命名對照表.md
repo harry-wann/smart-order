@@ -67,6 +67,31 @@
 | `s02-tables-states.html` | `S-02｜載入中` | 01 Design System | 1280 × 800 |
 | `s02-tables-states.html` | `S-02｜空資料` | 01 Design System | 1280 × 800 |
 | `s02-tables-states.html` | `S-02｜錯誤` | 01 Design System | 1280 × 800 |
+| `rev-c04-menu.html` | `C-04｜菜單主頁・修訂 2026-10-14` | 02 顧客端 | 375 × 812 |
+| `rev-c04-menu-states.html` | `C-04｜載入中・修訂 2026-10-14` | 01 Design System | 375 × 812 |
+| `rev-c04-menu-states.html` | `C-04｜空資料・修訂 2026-10-14` | 01 Design System | 375 × 812 |
+| `rev-c04-menu-states.html` | `C-04｜錯誤・修訂 2026-10-14` | 01 Design System | 375 × 812 |
+| `rev-c04-menu-states.html` | `C-04｜已結帳・修訂 2026-10-14` | 01 Design System | 375 × 812 |
+| `rev-c04b-menu-notify.html` | `C-04b｜同桌通知・有人加購物車・修訂 2026-10-14` | 02 顧客端 | 375 × 812 |
+| `rev-c04c-menu-notify-order.html` | `C-04c｜同桌通知・有人送出訂單・修訂 2026-10-14` | 02 顧客端 | 375 × 812 |
+| `rev-c06-cart.html` | `C-06｜購物車・修訂 2026-10-14` | 02 顧客端 | 375 × 812 |
+| `rev-c08-tickets.html` | `C-08｜本桌訂單與出菜進度・修訂 2026-10-14` | 02 顧客端 | 375 × 812 |
+| `rev-ds08-admin.html` | `DS-08｜店家端元件・修訂 2026-10-14` | 01 Design System | 1280 × 1200 |
+| `rev-s02-tables.html` | `S-02｜桌況總覽・修訂 2026-10-14` | 03 店家端 | 1280 × 800 |
+| `rev-s02-tables-states.html` | `S-02｜待清理確認框・修訂 2026-10-14` | 01 Design System | 1280 × 800 |
+| `rev-s02-tables-states.html` | `S-02｜載入中・修訂 2026-10-14` | 01 Design System | 1280 × 800 |
+| `rev-s02-tables-states.html` | `S-02｜空資料・修訂 2026-10-14` | 01 Design System | 1280 × 800 |
+| `rev-s02-tables-states.html` | `S-02｜錯誤・修訂 2026-10-14` | 01 Design System | 1280 × 800 |
+| `rev-s02b-open-table.html` | `S-02b｜開桌・現場・修訂 2026-10-14` | 03 店家端 | 1280 × 800 |
+| `rev-s02c-open-waitlist.html` | `S-02c｜開桌・候位・修訂 2026-10-14` | 03 店家端 | 1280 × 800 |
+| `rev-s02d-open-reservation.html` | `S-02d｜開桌・預約・修訂 2026-10-14` | 03 店家端 | 1280 × 800 |
+| `rev-s03-table-detail.html` | `S-03｜桌位詳情・修訂 2026-10-14` | 03 店家端 | 1280 × 800 |
+| `rev-s03b-checkout-countdown.html` | `S-03b｜櫃檯結帳・付款倒數・修訂 2026-10-14` | 03 店家端 | 1280 × 800 |
+| `rev-s07-reservations.html` | `S-07｜預約管理・修訂 2026-10-14` | 03 店家端 | 1280 × 800 |
+| `rev-s07b-reservation-seat.html` | `S-07b｜預約報到・選桌開桌・修訂 2026-10-14` | 03 店家端 | 1280 × 800 |
+| `rev-s09-inventory.html` | `S-09｜庫存管理・修訂 2026-10-14` | 03 店家端 | 1280 × 800 |
+| `rev-s10-waitlist.html` | `S-10｜候位管理・修訂 2026-10-14` | 03 店家端 | 1280 × 800 |
+| `rev-s10b-waitlist-seat.html` | `S-10b｜候位報到・選桌開桌・修訂 2026-10-14` | 03 店家端 | 1280 × 800 |
 
 ## 圖片佔位的圖層名
 
