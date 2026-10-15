@@ -96,4 +96,6 @@ public class MenuController {
     public ResponseEntity<List<GetOptionByIdDto>> getOptionGroups() {
         return ResponseEntity.ok(optionGroupService.getAllOptionGroups());
     }
+
+    public ResponseEntity<List<>>
 }
