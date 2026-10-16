@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import TopBar from '@/components/dashboard/TopBar'
+import SOButton from '@/components/SOButton';
 import OptionGroupSidebar from '../../../components/menuOptions/OptionGroupSidebar';
 import OptionGroupDetail from '../../../components/menuOptions/OptionGroupDetail';
 import AssociatedProducts from '../../../components/menuOptions/AssociatedProducts';
@@ -329,15 +330,20 @@ export default function MenuOptions() {
           </span>
         }
         childrenRight={
-          <button
-            type="button"
-            onClick={handleOpenAddGroupModal}
-            disabled={isLoading}
-            className="flex h-9 items-center gap-1.5 rounded-(--radius-btn) bg-brand-600 px-3.5 type-body-sm text-white transition-colors hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <SvgIconMap.DashboardPlus aria-hidden="true" />
-            新增群組
-          </button>
+          <div className="w-fit">
+            <SOButton
+              type="button"
+              onClick={handleOpenAddGroupModal}
+              disabled={isLoading}
+              height="h-9"
+              content={
+                <span className="flex items-center gap-1.5">
+                  <SvgIconMap.DashboardPlus aria-hidden="true" />
+                  新增群組
+                </span>
+              }
+            />
+          </div>
         }
       />
       <div className="relative flex min-h-0 flex-1 gap-4 overflow-y-auto bg-paper px-6 py-5 font-sans text-ink-900">
