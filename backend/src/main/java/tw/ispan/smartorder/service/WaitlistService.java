@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import tw.ispan.smartorder.dto.RegisterWaitlistRequest;
 import tw.ispan.smartorder.dto.WaitlistResponse;
+import tw.ispan.smartorder.entity.DiningSessionEntity;
 import tw.ispan.smartorder.entity.WaitlistEntity;
 import tw.ispan.smartorder.repository.WaitlistRepository;
 
@@ -17,6 +18,9 @@ public class WaitlistService {
 
     @Autowired
     private WaitlistRepository waitlists;
+
+    @Autowired
+    private TableService tableService;
 
     // 候位管理頁：還在等的（等待中、已叫號），先來的在前面
     public List<WaitlistResponse> findActive() {
@@ -62,6 +66,25 @@ public class WaitlistService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "這組已經結束，不能放棄");
         }
         w.abandon();
+    }
+
+    // S-10b 報到開桌：用候位登記的人數開桌，候位改成已入座
+    @Transactional
+    public WaitlistResponse seat(Long id, Long tableId) {
+        WaitlistEntity waitlist = findOrThrow(id);
+        if (!"WAITING".equals(waitlist.getStatus()) && !"CALLED".equals(waitlist.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "這組已經結束，不能報到");
+        }
+
+        // 鎖桌、檢查空桌、建用餐紀錄，都在 openSession 裡（跟現場開桌同一套）
+        DiningSessionEntity session = tableService.openSession(
+                tableId, waitlist.getAdultCount(), waitlist.getChildCount());
+
+        // 兩邊互相記住對方：用餐紀錄知道是哪組候位來的，候位知道坐進哪筆用餐
+        session.setWaitlistId(waitlist.getId());
+        waitlist.seat(session.getId());
+
+        return WaitlistResponse.from(waitlist);
     }
 
     // 共用：用 id 找候位，找不到回 404
