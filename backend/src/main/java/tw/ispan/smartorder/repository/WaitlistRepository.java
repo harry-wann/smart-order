@@ -1,5 +1,6 @@
 package tw.ispan.smartorder.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,5 +14,14 @@ public interface WaitlistRepository extends JpaRepository<WaitlistEntity, Long> 
 
     // 取號用：找出最後一筆登記的候位（id 最大的），拿它的號碼 +1
     Optional<WaitlistEntity> findTopByOrderByIdDesc();
+
+    // 排程用：某個狀態、而且叫號時間早於某個時間點的組別
+    List<WaitlistEntity> findByStatusAndCalledAtBefore(String status, LocalDateTime time);
+
 }
+
+
+
+
+
 

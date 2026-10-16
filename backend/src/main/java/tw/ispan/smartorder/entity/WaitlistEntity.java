@@ -65,4 +65,9 @@ public class WaitlistEntity {
         this.diningSessionId = diningSessionId;
     }
 
+    // 過號：叫號後太久沒報到，排程自動標記
+    public void expire() {
+        this.status = "EXPIRED";
+    }
+
 }

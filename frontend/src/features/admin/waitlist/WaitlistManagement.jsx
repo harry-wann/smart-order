@@ -35,15 +35,23 @@ const STATUS_ORDER = { CALLED: 0, WAITING: 1, SEATED: 2, EXPIRED: 2, ABANDONED: 
 function WaitlistManagement() {
     const [waitlist, setWaitlist] = useState([])
 
-  // 畫面出現時，去後端拿候位清單
+  // 畫面出現時抓一次，之後每 30 秒重抓：過號是後端排程改的，不重抓畫面不會知道
   useEffect(() => {
     const controller = new AbortController()
-    fetchWaitlist(controller.signal)
-      .then((data) => setWaitlist(data.map(toWaitlistRow)))
-      .catch((err) => {
-        if (!controller.signal.aborted) alert(`候位清單載入失敗：${err.message}`)
-      })
-    return () => controller.abort()
+    function load(isFirst) {
+      fetchWaitlist(controller.signal)
+        .then((data) => setWaitlist(data.map(toWaitlistRow)))
+        .catch((err) => {
+          // 只有第一次失敗跳提示，之後的自動重抓失敗就安靜等下一次，免得每 30 秒跳一次
+          if (isFirst && !controller.signal.aborted) alert(`候位清單載入失敗：${err.message}`)
+        })
+    }
+    load(true)
+    const timer = setInterval(() => load(false), 30000)
+    return () => {
+      clearInterval(timer)
+      controller.abort()
+    }
   }, [])
 
   const [now, setNow] = useState(new Date())
@@ -75,9 +83,6 @@ function WaitlistManagement() {
       )
     : 0
 
-  // 下一個號碼：目前最大號 + 1
-  const maxNo = Math.max(0, ...waitlist.map((w) => Number(w.no.slice(1))))
-  const nextNo = `A${String(maxNo + 1).padStart(2, '0')}`
 
   const canSubmit = name.trim() !== '' && phoneLast4.length === 4
 
@@ -216,7 +221,7 @@ function WaitlistManagement() {
 
             <SOButton
               height="h-13"
-              text={`取號　下一號 ${nextNo}`}
+              text="取號"
               disabled={!canSubmit}
               onClick={handleTakeNumber}
             />
