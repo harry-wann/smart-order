@@ -1,5 +1,6 @@
 import React from 'react';
 import { SvgIconMap } from '@/assets/SvgIconMap'
+import SOButton from '@/components/SOButton';
 
 // 原路徑 src/components/MenuOptions
 
@@ -24,14 +25,17 @@ export default function OptionGroupDetail({
               {selectionRule}
             </span>
           </div>
-          <button
+          <SOButton
             type="button"
             onClick={onOpenEditGroupModal}
-            className="flex shrink-0 items-center gap-1 rounded-(--radius-btn) border border-line px-3 py-1.5 type-body-sm text-ink-600 transition-colors hover:bg-surface-2 hover:text-ink-900"
-          >
-            <SvgIconMap.OptionsEdit />
-            編輯
-          </button>
+            className="flex h-9 w-auto shrink-0 items-center justify-center gap-1 rounded-(--radius-btn) border border-line bg-transparent px-3 py-1.5 type-body-sm text-ink-600 transition-all duration-300 hover:bg-surface-2 hover:text-ink-900 active:scale-[0.98]"
+            content={
+              <span className="flex items-center gap-1">
+                <SvgIconMap.OptionsEdit />
+                編輯
+              </span>
+            }
+          />
         </div>
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-4 border-t border-line pt-3">
@@ -59,14 +63,17 @@ export default function OptionGroupDetail({
       <section>
         <div className="mb-2 flex items-center justify-between">
           <h3 className="type-body font-semibold text-ink-900">選項值</h3>
-          <button
+          <SOButton
             type="button"
             onClick={onOpenAddItemModal}
-            className="flex h-8 items-center gap-1.5 rounded-(--radius-btn) border border-brand-600 bg-surface px-3 type-caption font-medium text-brand-600 transition-colors hover:bg-brand-100"
-          >
-            <SvgIconMap.CounterPlus aria-hidden="true" />
-            新增選項
-          </button>
+            className="flex h-8 w-auto items-center justify-center gap-1.5 rounded-(--radius-btn) border border-brand-600 bg-surface px-3 type-caption font-medium text-brand-600 transition-all duration-300 hover:bg-brand-100 active:scale-[0.98]"
+            content={
+              <span className="flex items-center gap-1.5">
+                <SvgIconMap.CounterPlus aria-hidden="true" />
+                新增選項
+              </span>
+            }
+          />
         </div>
         <div className="overflow-hidden rounded-(--radius-card) border border-line bg-surface">
           <table className="w-full table-fixed border-collapse text-left">
@@ -108,14 +115,15 @@ export default function OptionGroupDetail({
                     </span>
                   </td>
                   <td className="px-3.5 text-center">
-                    <button
-                      type="button"
-                      aria-label={`編輯${item.name}`}
-                      onClick={() => onOpenItemModal(item)}
-                      className="inline-flex rounded-(--radius-btn) p-1 text-ink-600 transition-colors hover:bg-surface-2 hover:text-ink-900"
-                    >
-                      <SvgIconMap.OptionsEdit />
-                    </button>
+                    <div className="flex justify-center">
+                      <SOButton
+                        type="button"
+                        aria-label={`編輯${item.name}`}
+                        onClick={() => onOpenItemModal(item)}
+                        className="flex h-8 w-8 items-center justify-center rounded-(--radius-btn) bg-transparent p-1 text-ink-600 transition-all duration-300 hover:bg-surface-2 hover:text-ink-900 active:scale-[0.98]"
+                        content={<SvgIconMap.OptionsEdit />}
+                      />
+                    </div>
                   </td>
                 </tr>
               )) : (
