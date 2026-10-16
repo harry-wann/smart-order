@@ -6,12 +6,13 @@ import {
   useOpenOptions,
   useSeatReservation,
 } from '@/hooks/reservation/useAdminReservations'
-import { fetchSeats } from '@/services/api/seatApi'
+import { fetchSeats } from '@/services/api/table/seatApi'
 import { queryScope } from '@/services/client/queryClient'
 import SOButton from '@/components/SOButton'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import BellButtonPlaceholder from './BellButtonPlaceholder'
 import ReservationTab from './ReservationTab'
+import { openTable } from '@/services/api/table/tableApi'
 
 // 假資料：已叫號、等著入座的組別（之後換成 API）
 const calledWaitlist = [
@@ -350,9 +351,17 @@ function TableOpen() {
       )
       return
     }
-    // 之後接後端：POST /api/admin/tables/{id}/open，成功後回桌況總覽
-    alert(`已開桌 ${tableNo}：${JSON.stringify(payload)}`)
-    navigate('/admin/table_overview')
+    // 候位開桌還沒做（S-10b 之後接）
+    if (payload.type === 'waitlist') {
+      alert('候位開桌還沒接後端，先用「現場」頁籤')
+      setPendingOpen(null)
+      return
+    }
+    // 現場開桌：POST /api/admin/tables/{id}/open，成功後回桌況總覽
+    setPendingOpen(null)
+    openTable(tableId, payload.adults, payload.kids)
+      .then(() => navigate('/admin/table_overview'))
+      .catch((error) => setNotice(`開桌失敗：${error.message}`))
   }
 
   function cancelReservation(id) {
