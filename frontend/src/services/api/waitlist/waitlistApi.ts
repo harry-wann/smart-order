@@ -40,3 +40,9 @@ export async function callWaitlist(id: number) {
 export async function abandonWaitlist(id: number) {
   await employeeClient.delete(`/admin/waitlist/${id}`)
 }
+
+// POST /api/admin/waitlist/{id}/seat：報到開桌，body 帶店員選的那張桌
+export async function seatWaitlist(id: number, tableId: number) {
+  const { data } = await employeeClient.post<WaitlistEntry>(`/admin/waitlist/${id}/seat`, { tableId })
+  return data
+}
