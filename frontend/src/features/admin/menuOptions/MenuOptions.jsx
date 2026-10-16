@@ -246,6 +246,28 @@ export default function MenuOptions() {
     }
   };
 
+  const handleDeleteGroup = async () => {
+    if (!editingGroup || isSavingGroupEdit) return;
+    if (!window.confirm(`確定要刪除「${editingGroup.name}」群組及其選項嗎？`)) return;
+
+    setIsSavingGroupEdit(true);
+    setEditGroupError('');
+    try {
+      await optionGroupsClient.delete(`/order/admin/optionGroups/${editingGroup.id}`);
+      const remainingGroups = groups.filter(group => group.id !== editingGroup.id);
+      setGroups(prevGroups => prevGroups.filter(group => group.id !== editingGroup.id));
+      setSelectedGroupId(previousId => (
+        previousId === editingGroup.id ? remainingGroups[0]?.id ?? null : previousId
+      ));
+      setDetailsError('');
+      setEditingGroup(null);
+    } catch (error) {
+      setEditGroupError(error instanceof Error ? error.message : '刪除選項群組失敗，請稍後再試');
+    } finally {
+      setIsSavingGroupEdit(false);
+    }
+  };
+
   const handleOpenItemModal = (item) => {
     setEditingItem(item);
     setTempItemName(item.name);
@@ -393,7 +415,7 @@ export default function MenuOptions() {
             isSaving={isSavingGroupEdit}
             onClose={() => setEditingGroup(null)}
             onSave={handleSaveGroup}
-            onDelete={() => window.confirm(`確定要刪除「${editingGroup?.name ?? ''}」群組嗎？`)}
+            onDelete={handleDeleteGroup}
           />
 
           <EditItemModal

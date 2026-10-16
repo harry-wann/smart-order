@@ -2,6 +2,8 @@ package tw.ispan.smartorder.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -62,6 +64,23 @@ public class OptionGroupService {
         entity.setSortOrder(request.sortOrder());
         entity.setUpdatedAt(LocalDateTime.now());
         return toDto(optionGroupRepository.save(entity));
+    }
+
+    @Transactional
+    public void deleteOptionGroup(Long optionGroupId) {
+        OptionGroupEntity group = optionGroupRepository.findById(optionGroupId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到選項群組"));
+        if (!menuItemOptionGroupRepository.findAdminMenuItemsByOptionGroupId(optionGroupId).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "此群組仍有關聯商品，請先解除關聯再刪除");
+        }
+        try {
+            optionValueRepository.deleteByOptionGroupId_Id(optionGroupId);
+            optionValueRepository.flush();
+            optionGroupRepository.delete(group);
+            optionGroupRepository.flush();
+        } catch (DataIntegrityViolationException exception) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "此群組或選項仍被使用，無法刪除", exception);
+        }
     }
 
     public AdminOptionValueDto createOptionValue(Long optionGroupId, CreateOptionValueRequest request) {
