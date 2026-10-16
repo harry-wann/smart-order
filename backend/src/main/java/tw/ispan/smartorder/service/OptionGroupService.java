@@ -14,6 +14,7 @@ import tw.ispan.smartorder.dto.AdminOptionValueDto;
 import tw.ispan.smartorder.dto.request.CreateOptionGroupRequest;
 import tw.ispan.smartorder.dto.request.CreateOptionValueRequest;
 import tw.ispan.smartorder.dto.request.UpdateOptionGroupRequest;
+import tw.ispan.smartorder.dto.request.UpdateOptionValueStatusRequest;
 import tw.ispan.smartorder.entity.OptionGroupEntity;
 import tw.ispan.smartorder.entity.OptionValueEntity;
 import tw.ispan.smartorder.repository.MenuItemOptionGroupRepository;
@@ -105,6 +106,57 @@ public class OptionGroupService {
                 createdValue.getSortOrder(),
                 createdValue.getActive()
         );
+    }
+
+    public AdminOptionValueDto updateOptionValue(
+            Long optionGroupId, Long optionValueId, CreateOptionValueRequest request) {
+        OptionValueEntity entity = optionValueRepository.findById(optionValueId)
+                .filter(value -> value.getOptionGroupId().getId().equals(optionGroupId))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到此群組的選項"));
+
+        entity.setName(request.name().trim());
+        entity.setPriceDelta(request.priceDelta());
+        entity.setUpdatedAt(LocalDateTime.now());
+        OptionValueEntity updatedValue = optionValueRepository.save(entity);
+        return new AdminOptionValueDto(
+                updatedValue.getId(),
+                updatedValue.getName(),
+                updatedValue.getPriceDelta(),
+                updatedValue.getSortOrder(),
+                updatedValue.getActive()
+        );
+    }
+
+    public AdminOptionValueDto updateOptionValueStatus(
+            Long optionGroupId, Long optionValueId, UpdateOptionValueStatusRequest request) {
+        OptionValueEntity entity = optionValueRepository.findById(optionValueId)
+                .filter(value -> value.getOptionGroupId().getId().equals(optionGroupId))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到此群組的選項"));
+
+        entity.setActive(request.active());
+        entity.setUpdatedAt(LocalDateTime.now());
+        OptionValueEntity updatedValue = optionValueRepository.save(entity);
+        return new AdminOptionValueDto(
+                updatedValue.getId(),
+                updatedValue.getName(),
+                updatedValue.getPriceDelta(),
+                updatedValue.getSortOrder(),
+                updatedValue.getActive()
+        );
+    }
+
+    @Transactional
+    public void deleteOptionValue(Long optionGroupId, Long optionValueId) {
+        OptionValueEntity entity = optionValueRepository.findById(optionValueId)
+                .filter(value -> value.getOptionGroupId().getId().equals(optionGroupId))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到此群組的選項"));
+
+        try {
+            optionValueRepository.delete(entity);
+            optionValueRepository.flush();
+        } catch (DataIntegrityViolationException exception) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "此選項仍被使用，無法刪除", exception);
+        }
     }
 
     public AdminOptionGroupDetailDto getOptionGroupDetail(Long optionGroupId) {

@@ -38,11 +38,16 @@ export default function MenuOptions() {
   const [editingItem, setEditingItem] = useState(null);
   const [tempItemName, setTempItemName] = useState('');
   const [tempItemPrice, setTempItemPrice] = useState(0);
+  const [editItemError, setEditItemError] = useState('');
+  const [isSavingItemEdit, setIsSavingItemEdit] = useState(false);
+  const [isDeletingItem, setIsDeletingItem] = useState(false);
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [newItemName, setNewItemName] = useState('');
   const [newItemPrice, setNewItemPrice] = useState('0');
   const [addItemError, setAddItemError] = useState('');
   const [isSavingItem, setIsSavingItem] = useState(false);
+  const [togglingItemId, setTogglingItemId] = useState(null);
+  const [toggleItemError, setToggleItemError] = useState('');
 
   useEffect(() => {
     let isCurrentRequest = true;
@@ -272,6 +277,7 @@ export default function MenuOptions() {
     setEditingItem(item);
     setTempItemName(item.name);
     setTempItemPrice(item.priceDiff);
+    setEditItemError('');
   };
 
   const handleOpenAddItemModal = () => {
@@ -327,20 +333,101 @@ export default function MenuOptions() {
     }
   };
 
-  const handleSaveItem = () => {
-    if (!editingItem) return;
-    setGroups(prevGroups =>
-      prevGroups.map(g => {
-        if (g.id !== currentGroup.id) return g;
-        const updatedItems = g.items.map(item =>
-          item.id === editingItem.id
-            ? { ...item, name: tempItemName, priceDiff: Number(tempItemPrice) }
-            : item
-        );
-        return { ...g, items: updatedItems };
-      })
-    );
-    setEditingItem(null);
+  const handleSaveItem = async () => {
+    if (!editingItem || !currentGroup) return;
+
+    const name = tempItemName.trim();
+    const priceDelta = Number(tempItemPrice);
+    if (!name) {
+      setEditItemError('請輸入選項名稱');
+      return;
+    }
+    if (name.length > 50) {
+      setEditItemError('選項名稱最多 50 個字元');
+      return;
+    }
+    if (!Number.isFinite(priceDelta) || priceDelta < 0) {
+      setEditItemError('價差必須是大於或等於 0 的數字');
+      return;
+    }
+
+    setIsSavingItemEdit(true);
+    setEditItemError('');
+    try {
+      const { data } = await optionGroupsClient.put(
+        `/order/admin/optionGroups/${currentGroup.id}/items/${editingItem.id}`,
+        { name, priceDelta }
+      );
+      setGroups(prevGroups => prevGroups.map(group => (
+        group.id === currentGroup.id
+          ? {
+              ...group,
+              items: group.items.map(item => (
+                item.id === editingItem.id
+                  ? { ...item, name: data.name, priceDiff: Number(data.priceDelta) }
+                  : item
+              )),
+            }
+          : group
+      )));
+      setEditingItem(null);
+    } catch (error) {
+      setEditItemError(error instanceof Error ? error.message : '更新選項失敗，請稍後再試');
+    } finally {
+      setIsSavingItemEdit(false);
+    }
+  };
+
+  const handleDeleteItem = async () => {
+    if (!editingItem || !currentGroup || isDeletingItem) return;
+    if (!window.confirm(`確定要刪除「${editingItem.name}」選項嗎？`)) return;
+
+    setIsDeletingItem(true);
+    setEditItemError('');
+    try {
+      await optionGroupsClient.delete(
+        `/order/admin/optionGroups/${currentGroup.id}/items/${editingItem.id}`
+      );
+      setGroups(prevGroups => prevGroups.map(group => (
+        group.id === currentGroup.id
+          ? { ...group, items: group.items.filter(item => item.id !== editingItem.id) }
+          : group
+      )));
+      setEditingItem(null);
+    } catch (error) {
+      setEditItemError(error instanceof Error ? error.message : '刪除選項失敗，請稍後再試');
+    } finally {
+      setIsDeletingItem(false);
+    }
+  };
+
+  const handleToggleItem = async item => {
+    if (!currentGroup || togglingItemId) return;
+
+    setTogglingItemId(item.id);
+    setToggleItemError('');
+    try {
+      const { data } = await optionGroupsClient.patch(
+        `/order/admin/optionGroups/${currentGroup.id}/items/${item.id}/status`,
+        { active: item.status !== 'active' }
+      );
+      setGroups(prevGroups => prevGroups.map(group => (
+        group.id === currentGroup.id
+          ? {
+              ...group,
+              items: group.items.map(groupItem => (
+                groupItem.id === item.id
+                  ? { ...groupItem, status: data.active ? 'active' : 'inactive' }
+                  : groupItem
+              )),
+            }
+          : group
+      )));
+    } catch (error) {
+      setToggleItemError(error instanceof Error ? error.message : '更新選項狀態失敗，請稍後再試');
+    } finally {
+      setTogglingItemId(null);
+    }
   };
 
   return (
@@ -388,6 +475,9 @@ export default function MenuOptions() {
               onOpenEditGroupModal={() => handleOpenEditGroupModal(currentGroup)}
               onOpenItemModal={handleOpenItemModal}
               onOpenAddItemModal={handleOpenAddItemModal}
+              onToggleItem={handleToggleItem}
+              togglingItemId={togglingItemId}
+              toggleItemError={toggleItemError}
             />
 
             <AssociatedProducts
@@ -424,8 +514,12 @@ export default function MenuOptions() {
             setItemName={setTempItemName}
             itemPrice={tempItemPrice}
             setItemPrice={setTempItemPrice}
+            error={editItemError}
+            isSaving={isSavingItemEdit}
+            isDeleting={isDeletingItem}
             onClose={() => setEditingItem(null)}
             onSave={handleSaveItem}
+            onDelete={handleDeleteItem}
           />
 
           <AddOptionValueModal

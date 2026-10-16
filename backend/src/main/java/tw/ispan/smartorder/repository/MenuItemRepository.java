@@ -55,7 +55,7 @@ public interface MenuItemRepository extends JpaRepository<MenuItemEntity,Long> {
     FROM MenuItemEntity mi
     LEFT JOIN MenuItemOptionGroupEntity mog ON mi.id = mog.id.menuItemId
     LEFT JOIN OptionGroupEntity og ON mog.id.optionGroupId = og.id
-    LEFT JOIN OptionValueEntity ov ON og.id = ov.optionGroupId.id
+    LEFT JOIN OptionValueEntity ov ON og.id = ov.optionGroupId.id AND ov.active = true
     WHERE mi.id = :menuItemId
     ORDER BY mog.sortOrder, og.sortOrder, ov.sortOrder
     """)

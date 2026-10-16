@@ -10,6 +10,9 @@ export default function OptionGroupDetail({
   onOpenEditGroupModal,
   onOpenItemModal,
   onOpenAddItemModal,
+  onToggleItem,
+  togglingItemId,
+  toggleItemError,
 }) {
   const minSelect = Number(currentGroup.minSelect ?? 0);
   const maxSelect = Number(currentGroup.maxSelect ?? 1);
@@ -75,6 +78,9 @@ export default function OptionGroupDetail({
             }
           />
         </div>
+        {toggleItemError && (
+          <p role="alert" className="mb-2 type-caption text-danger">{toggleItemError}</p>
+        )}
         <div className="overflow-hidden rounded-(--radius-card) border border-line bg-surface">
           <table className="w-full table-fixed border-collapse text-left">
             <colgroup>
@@ -105,12 +111,17 @@ export default function OptionGroupDetail({
                   <td className="px-2 text-center type-body-sm text-ink-900">{item.sortOrder}</td>
                   <td className="px-2">
                     <span className="inline-flex items-center gap-2 type-body-sm text-ink-600">
-                      <span
-                        aria-hidden="true"
-                        className={`relative h-6 w-10 shrink-0 rounded-pill ${item.status === 'active' ? 'bg-success' : 'bg-line-strong'}`}
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={item.status === 'active'}
+                        aria-label={`${item.status === 'active' ? '停用' : '啟用'}${item.name}`}
+                        disabled={togglingItemId !== null}
+                        onClick={() => onToggleItem(item)}
+                        className={`relative h-6 w-10 shrink-0 rounded-pill transition-colors disabled:cursor-wait disabled:opacity-60 ${item.status === 'active' ? 'bg-success' : 'bg-line-strong'}`}
                       >
-                        <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white ${item.status === 'active' ? 'right-0.5' : 'left-0.5'}`} />
-                      </span>
+                        <span aria-hidden="true" className={`absolute top-0.5 h-5 w-5 rounded-full bg-white ${item.status === 'active' ? 'right-0.5' : 'left-0.5'}`} />
+                      </button>
                       {item.status === 'active' ? '啟用' : '停用'}
                     </span>
                   </td>

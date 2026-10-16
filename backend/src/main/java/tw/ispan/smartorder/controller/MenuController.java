@@ -12,6 +12,7 @@ import tw.ispan.smartorder.dto.AdminOptionGroupDto;
 import tw.ispan.smartorder.dto.MenuItemOptionDetailDto;
 import tw.ispan.smartorder.dto.request.CreateOptionGroupRequest;
 import tw.ispan.smartorder.dto.request.CreateOptionValueRequest;
+import tw.ispan.smartorder.dto.request.UpdateOptionValueStatusRequest;
 import tw.ispan.smartorder.dto.request.UpdateOptionGroupRequest;
 import tw.ispan.smartorder.dto.AdminOptionValueDto;
 import tw.ispan.smartorder.entity.MenuCategoryEntity;
@@ -145,5 +146,35 @@ public class MenuController {
     ) {
         AdminOptionValueDto createdValue = optionGroupService.createOptionValue(optionGroupId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdValue);
+    }
+
+    // MenuOptions 畫面 修改選項值
+    @PutMapping("/admin/optionGroups/{optionGroupId}/items/{optionValueId}")
+    public ResponseEntity<AdminOptionValueDto> updateOptionValue(
+            @PathVariable Long optionGroupId,
+            @PathVariable Long optionValueId,
+            @Valid @RequestBody CreateOptionValueRequest request
+    ) {
+        return ResponseEntity.ok(optionGroupService.updateOptionValue(optionGroupId, optionValueId, request));
+    }
+
+    // MenuOptions 畫面 修改選項值狀態
+    @PatchMapping("/admin/optionGroups/{optionGroupId}/items/{optionValueId}/status")
+    public ResponseEntity<AdminOptionValueDto> updateOptionValueStatus(
+            @PathVariable Long optionGroupId,
+            @PathVariable Long optionValueId,
+            @Valid @RequestBody UpdateOptionValueStatusRequest request
+    ) {
+        return ResponseEntity.ok(
+                optionGroupService.updateOptionValueStatus(optionGroupId, optionValueId, request));
+    }
+
+    @DeleteMapping("/admin/optionGroups/{optionGroupId}/items/{optionValueId}")
+    public ResponseEntity<Void> deleteOptionValue(
+            @PathVariable Long optionGroupId,
+            @PathVariable Long optionValueId
+    ) {
+        optionGroupService.deleteOptionValue(optionGroupId, optionValueId);
+        return ResponseEntity.noContent().build();
     }
 }
