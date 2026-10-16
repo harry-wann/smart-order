@@ -6,7 +6,7 @@ export default function AssociatedProducts({ associatedProducts, isLoading }) {
   return (
     <div className="bg-surface p-[var(--spacing-card)] rounded-[var(--radius-card)] border border-line shadow-[var(--shadow-card)]">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="type-h3">關聯品項</h3>
+        <h3 className="type-body-sm font-semibold text-ink-900">關聯品項</h3>
         <span className="type-caption text-ink-400">
           {isLoading || associatedProducts === null
             ? '載入關聯品項中...'
