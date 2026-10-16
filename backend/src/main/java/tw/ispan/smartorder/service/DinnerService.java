@@ -75,4 +75,10 @@ public class DinnerService {
 		String token = JwtToken.createToken(String.valueOf(session.getId()));
 		return new JoinTableResponse(table.getTableNo(), token);
 	}
+
+	public DiningInfoResponse currentByToken(String token) {
+		Long sessionId = Long.valueOf(JwtToken.parseToken(token));
+		return current(sessionId);
+	}
+
 }
