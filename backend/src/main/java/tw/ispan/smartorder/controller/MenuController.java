@@ -11,6 +11,8 @@ import tw.ispan.smartorder.dto.AdminOptionGroupDetailDto;
 import tw.ispan.smartorder.dto.AdminOptionGroupDto;
 import tw.ispan.smartorder.dto.MenuItemOptionDetailDto;
 import tw.ispan.smartorder.dto.request.CreateOptionGroupRequest;
+import tw.ispan.smartorder.dto.request.CreateOptionValueRequest;
+import tw.ispan.smartorder.dto.AdminOptionValueDto;
 import tw.ispan.smartorder.entity.MenuCategoryEntity;
 import tw.ispan.smartorder.entity.MenuItemEntity;
 import tw.ispan.smartorder.service.MenuCategoryService;
@@ -116,5 +118,15 @@ public class MenuController {
             @PathVariable Long optionGroupId
     ) {
         return ResponseEntity.ok(optionGroupService.getOptionGroupDetail(optionGroupId));
+    }
+
+    // MenuOptions 畫面 新增選項值
+    @PostMapping("/admin/optionGroups/{optionGroupId}/items")
+    public ResponseEntity<AdminOptionValueDto> createOptionValue(
+            @PathVariable Long optionGroupId,
+            @Valid @RequestBody CreateOptionValueRequest request
+    ) {
+        AdminOptionValueDto createdValue = optionGroupService.createOptionValue(optionGroupId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdValue);
     }
 }

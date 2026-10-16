@@ -6,6 +6,7 @@ import AssociatedProducts from '../../../components/menuOptions/AssociatedProduc
 import GroupNameModal from '../../../components/menuOptions/GroupNameModal';
 import EditItemModal from '../../../components/menuOptions/EditItemModal';
 import AddOptionGroupModal from '../../../components/menuOptions/AddOptionGroupModal';
+import AddOptionValueModal from '../../../components/menuOptions/AddOptionValueModal';
 import { SvgIconMap } from '@/assets/SvgIconMap';
 import { createApiClient } from '@/services/client/createApiClient'
 
@@ -31,6 +32,11 @@ export default function MenuOptions() {
   const [editingItem, setEditingItem] = useState(null);
   const [tempItemName, setTempItemName] = useState('');
   const [tempItemPrice, setTempItemPrice] = useState(0);
+  const [isAddingItem, setIsAddingItem] = useState(false);
+  const [newItemName, setNewItemName] = useState('');
+  const [newItemPrice, setNewItemPrice] = useState('0');
+  const [addItemError, setAddItemError] = useState('');
+  const [isSavingItem, setIsSavingItem] = useState(false);
 
   useEffect(() => {
     let isCurrentRequest = true;
@@ -190,6 +196,59 @@ export default function MenuOptions() {
     setTempItemPrice(item.priceDiff);
   };
 
+  const handleOpenAddItemModal = () => {
+    setNewItemName('');
+    setNewItemPrice('0');
+    setAddItemError('');
+    setIsAddingItem(true);
+  };
+
+  const handleAddItem = async () => {
+    if (!currentGroup) return;
+
+    const name = newItemName.trim();
+    const priceDelta = Number(newItemPrice);
+    if (!name) {
+      setAddItemError('請輸入選項名稱');
+      return;
+    }
+    if (name.length > 50) {
+      setAddItemError('選項名稱最多 50 個字元');
+      return;
+    }
+    if (!Number.isFinite(priceDelta) || priceDelta < 0 || !/^\d+(\.\d{1,2})?$/.test(newItemPrice)) {
+      setAddItemError('價差必須是大於或等於 0，且最多兩位小數的數字');
+      return;
+    }
+
+    setIsSavingItem(true);
+    setAddItemError('');
+    try {
+      const { data } = await optionGroupsClient.post(
+        `/order/admin/optionGroups/${currentGroup.id}/items`,
+        { name, priceDelta }
+      );
+      const createdItem = {
+        id: String(data.id),
+        name: data.name,
+        priceDiff: Number(data.priceDelta),
+        sortOrder: data.sortOrder,
+        status: data.active ? 'active' : 'inactive',
+      };
+
+      setGroups(prevGroups => prevGroups.map(group => (
+        group.id === currentGroup.id
+          ? { ...group, items: [...group.items, createdItem] }
+          : group
+      )));
+      setIsAddingItem(false);
+    } catch (error) {
+      setAddItemError(error instanceof Error ? error.message : '新增選項失敗，請稍後再試');
+    } finally {
+      setIsSavingItem(false);
+    }
+  };
+
   const handleSaveItem = () => {
     if (!editingItem) return;
     setGroups(prevGroups =>
@@ -245,6 +304,7 @@ export default function MenuOptions() {
               isLoading={isLoadingDetails}
               onOpenGroupNameModal={handleOpenGroupNameModal}
               onOpenItemModal={handleOpenItemModal}
+              onOpenAddItemModal={handleOpenAddItemModal}
             />
 
             <AssociatedProducts
@@ -274,6 +334,18 @@ export default function MenuOptions() {
             setItemPrice={setTempItemPrice}
             onClose={() => setEditingItem(null)}
             onSave={handleSaveItem}
+          />
+
+          <AddOptionValueModal
+            isOpen={isAddingItem}
+            itemName={newItemName}
+            setItemName={setNewItemName}
+            itemPrice={newItemPrice}
+            setItemPrice={setNewItemPrice}
+            error={addItemError}
+            isSaving={isSavingItem}
+            onClose={() => setIsAddingItem(false)}
+            onSave={handleAddItem}
           />
         </>
       ) : (

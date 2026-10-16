@@ -3,7 +3,13 @@ import { SvgIconMap } from '@/assets/SvgIconMap'
 
 // 原路徑 src/components/MenuOptions
 
-export default function OptionGroupDetail({ currentGroup, isLoading, onOpenGroupNameModal, onOpenItemModal }) {
+export default function OptionGroupDetail({
+  currentGroup,
+  isLoading,
+  onOpenGroupNameModal,
+  onOpenItemModal,
+  onOpenAddItemModal,
+}) {
   const minSelect = Number(currentGroup.minSelect ?? 0);
   const maxSelect = Number(currentGroup.maxSelect ?? 1);
   const selectionRule = `${minSelect > 0 ? '必選' : '非必選'} ${maxSelect > 1 ? '可複選' : '單選'}`;
@@ -55,6 +61,7 @@ export default function OptionGroupDetail({ currentGroup, isLoading, onOpenGroup
           <h3 className="type-body font-semibold text-ink-900">選項值</h3>
           <button
             type="button"
+            onClick={onOpenAddItemModal}
             className="flex h-8 items-center gap-1.5 rounded-(--radius-btn) border border-brand-600 bg-surface px-3 type-caption font-medium text-brand-600 transition-colors hover:bg-brand-100"
           >
             <SvgIconMap.CounterPlus aria-hidden="true" />
