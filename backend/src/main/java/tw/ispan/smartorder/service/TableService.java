@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import tw.ispan.smartorder.dto.SeatResponse;
 import tw.ispan.smartorder.dto.TableOverviewResponse;
 import tw.ispan.smartorder.entity.DiningSessionEntity;
 import tw.ispan.smartorder.entity.DiningTableEntity;
@@ -50,7 +51,15 @@ public class TableService {
     // S-02b 現場開桌：先鎖住這張桌，避免兩個店員同時開同一桌
     @Transactional
     public TableOverviewResponse open(Long id, Integer adultCount, Integer childCount) {
-        DiningTableEntity table = diningTables.findByIdForUpdate(id)
+        DiningSessionEntity session = openSession(id, adultCount, childCount);
+        return TableOverviewResponse.from(session.getDiningTable(), session);
+    }
+
+    // 開桌的共用步驟：現場開桌、候位報到都走這裡
+    // 鎖桌 → 檢查是空桌 → 建用餐紀錄 → 桌子改成用餐中
+    @Transactional
+    public DiningSessionEntity openSession(Long tableId, Integer adultCount, Integer childCount) {
+        DiningTableEntity table = diningTables.findByIdForUpdate(tableId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到桌位"));
         if (!"AVAILABLE".equals(table.getStatus())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "此桌已在使用中");
@@ -59,6 +68,7 @@ public class TableService {
         // status、金額、cartVersion 在 Entity 已有預設值，這裡只填開桌當下才知道的
         DiningSessionEntity session = new DiningSessionEntity();
         session.setTableId(table.getId());
+        session.setDiningTable(table);
         session.setAdultCount(adultCount);
         session.setChildCount(childCount);
         session.setSessionToken(UUID.randomUUID().toString().replace("-", ""));
@@ -66,6 +76,6 @@ public class TableService {
         diningSessions.save(session);
 
         table.setStatus("OCCUPIED");
-        return TableOverviewResponse.from(table, session);
+        return session;
     }
 }

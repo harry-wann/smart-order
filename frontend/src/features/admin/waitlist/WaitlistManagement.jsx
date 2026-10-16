@@ -3,32 +3,12 @@ import SOButton from '@/components/SOButton'
 import TopBar from '@/components/dashboard/TopBar'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import WaitlistSeatDialog from './WaitlistSeatDialog'
-import { fetchWaitlist, registerWaitlist, callWaitlist, abandonWaitlist } from '@/services/api/waitlist/waitlistApi'
+import { fetchWaitlist, registerWaitlist, callWaitlist, abandonWaitlist, seatWaitlist } from '@/services/api/waitlist/waitlistApi'
 
 // 叫號後幾分鐘沒報到會被排程標成過號（規格寫 10 分鐘）
 const CALL_EXPIRE_MINUTES = 10
 
 
-
-
-// 桌位假資料（S-10b 選桌用）
-// 後端好了之後換成 GET /api/admin/tables/available?partySize=N
-// upcomingReservation：115 分鐘內有別筆訂位的時間，沒有就不寫
-const INITIAL_TABLES = [
-  { tableNo: 'A01', capacity: 2, area: 'A 區・窗邊', status: 'OCCUPIED' },
-  { tableNo: 'A02', capacity: 2, area: 'A 區・窗邊', status: 'AVAILABLE' },
-  {
-    tableNo: 'A04',
-    capacity: 4,
-    area: 'A 區・窗邊',
-    status: 'AVAILABLE',
-    upcomingReservation: '19:30',
-  },
-  { tableNo: 'A05', capacity: 4, area: 'A 區・走道', status: 'AVAILABLE' },
-  { tableNo: 'A06', capacity: 6, area: 'A 區・走道', status: 'AVAILABLE' },
-  { tableNo: 'B04', capacity: 4, area: 'B 區', status: 'AVAILABLE' },
-  { tableNo: 'C01', capacity: 8, area: 'C 包廂', status: 'OCCUPIED' },
-]
 
 // 狀態 → 徽章文字與樣式（class 寫完整字串，Tailwind 才掃得到）
 const BADGE_BASE = 'inline-flex items-center rounded-pill px-2.5 py-0.5 text-xs font-medium'
@@ -67,7 +47,7 @@ function WaitlistManagement() {
   }, [])
 
   const [now, setNow] = useState(new Date())
-  const [tables, setTables] = useState(INITIAL_TABLES)
+  
   // 正在選桌的那一組；null 代表對話框沒開
   const [seatingEntry, setSeatingEntry] = useState(null)
 
@@ -142,12 +122,17 @@ function WaitlistManagement() {
   // 報到開桌 → 打開 S-10b
   const handleCheckIn = (entry) => setSeatingEntry(entry)
 
-  // S-10b 按下「開 A05」：候位轉已入座、桌位轉用餐中
-  // 之後換成 POST /api/admin/waitlist/{id}/seat 帶 { tableId }
-  function handleSeat(tableNo) {
-    updateEntry(seatingEntry.id, { status: 'SEATED', doneAt: new Date() })
-    setTables((prev) => prev.map((t) => (t.tableNo === tableNo ? { ...t, status: 'OCCUPIED' } : t)))
+    // S-10b 按下「開 A05」：後端開桌，候位轉已入座
+  async function handleSeat(tableId) {
+    const entry = seatingEntry
     setSeatingEntry(null)
+    try {
+      const updated = await seatWaitlist(entry.id, tableId)
+      updateEntry(entry.id, { ...toWaitlistRow(updated), doneAt: new Date() })
+    } catch (err) {
+      // 例如桌子剛好被別人開走（409）：關掉對話框，再按一次「報到開桌」會重抓空桌
+      alert(`報到開桌失敗：${err.message}`)
+    }
   }
 
   const sortedList = [...waitlist].sort(
@@ -345,7 +330,6 @@ function WaitlistManagement() {
         <WaitlistSeatDialog
           key={seatingEntry.id}
           entry={seatingEntry}
-          tables={tables}
           onClose={() => setSeatingEntry(null)}
           onConfirm={handleSeat}
         />

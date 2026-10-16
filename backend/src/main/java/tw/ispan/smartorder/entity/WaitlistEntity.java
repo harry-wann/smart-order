@@ -57,4 +57,12 @@ public class WaitlistEntity {
     public void abandon() {
         this.status = "ABANDONED";
     }
+
+    // 報到入座：記下入座時間，以及開出來的那筆用餐紀錄
+    public void seat(Long diningSessionId) {
+        this.status = "SEATED";
+        this.seatedAt = LocalDateTime.now();
+        this.diningSessionId = diningSessionId;
+    }
+
 }

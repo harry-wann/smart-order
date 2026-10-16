@@ -13,13 +13,7 @@ import { SvgIconMap } from '@/assets/SvgIconMap'
 import BellButtonPlaceholder from './BellButtonPlaceholder'
 import ReservationTab from './ReservationTab'
 import { openTable } from '@/services/api/table/tableApi'
-
-// 假資料：已叫號、等著入座的組別（之後換成 API）
-const calledWaitlist = [
-  { id: 13, queueNo: 'A13', name: '李小姐', people: 4, waitMinutes: 2 },
-  { id: 12, queueNo: 'A12', name: '王先生', people: 3, waitMinutes: 18 },
-  { id: 14, queueNo: 'A14', name: '張先生', people: 6, waitMinutes: 4 },
-]
+import { fetchWaitlist, seatWaitlist } from '@/services/api/waitlist/waitlistApi'
 
 const TABLE_INFO_BY_NUMBER = {
   A01: { capacity: 2, area: '窗邊區' },
@@ -283,6 +277,16 @@ function TableOpen() {
     queryFn: ({ signal }) => fetchSeats(signal),
   })
   const tableId = seatsQuery.data?.find((seat) => seat.tableNo === tableNo)?.id
+  // S-02c 候位頁籤：只列「已叫號」的組別（叫了號、人已經在門口等）
+  const waitlistQuery = useQuery({
+    queryKey: [...queryScope.employee, 'waitlist'],
+    queryFn: ({ signal }) => fetchWaitlist(signal),
+  })
+  const calledWaitlist = (waitlistQuery.data ?? [])
+    .filter((w) => w.status === 'CALLED')
+    .map(toWaitlistGroup)
+
+
   // 預約清單、保留、稍後的訂位都來自後端（工作包 E）；現場與候位開桌仍是假資料（工作包 D）
   const optionsQuery = useOpenOptions(tableId)
   const options = optionsQuery.data
@@ -351,12 +355,16 @@ function TableOpen() {
       )
       return
     }
-    // 候位開桌還沒做（S-10b 之後接）
+    
+        // S-02c 候位開桌：跟 S-10b 同一支 API，人數用登記時填的
     if (payload.type === 'waitlist') {
-      alert('候位開桌還沒接後端，先用「現場」頁籤')
       setPendingOpen(null)
+      seatWaitlist(payload.waitlistId, tableId)
+        .then(() => navigate('/admin/table_overview'))
+        .catch((error) => setNotice(`候位開桌失敗：${error.message}`))
       return
     }
+
     // 現場開桌：POST /api/admin/tables/{id}/open，成功後回桌況總覽
     setPendingOpen(null)
     openTable(tableId, payload.adults, payload.kids)
@@ -465,6 +473,17 @@ function TableOpen() {
 }
 
 export default TableOpen
+
+// 後端 WaitlistEntry → 候位頁籤原本用的欄位名稱
+function toWaitlistGroup(w) {
+  return {
+    id: w.id,
+    queueNo: w.ticketNo,
+    name: w.contactName,
+    people: w.partySize,
+    waitMinutes: Math.max(0, Math.floor((Date.now() - new Date(w.createdAt)) / 60000)),
+  }
+}
 
 // 開桌頁預約頁籤要的欄位；電話後端已經遮好了
 function toReservationRow(item) {

@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import SOButton from '@/components/SOButton'
+import { useAvailableTables } from '@/hooks/reservation/useAdminReservations'
+
 
 /**
  * S-10b 候位報到・選桌開桌
@@ -7,23 +9,20 @@ import SOButton from '@/components/SOButton'
  *
  * props
  * - entry：要入座的那一組候位（no、name、partySize、createdAt）
- * - tables：全部桌位（tableNo、capacity、area、status、upcomingReservation）
+ * - onConfirm(tableId)：確定開桌，傳選到的桌位 id
  * - onClose()：關閉對話框
  * - onConfirm(tableNo)：確定開桌
  */
-function WaitlistSeatDialog({ entry, tables, onClose, onConfirm }) {
-  // 只列「空桌」且「座位數 ≥ 人數」；稍後有訂位的排最後，其餘座位數小的排前面
-  const options = tables
-    .filter((t) => t.status === 'AVAILABLE' && t.capacity >= entry.partySize)
-    .sort(
-      (a, b) =>
-        Number(Boolean(a.upcomingReservation)) - Number(Boolean(b.upcomingReservation)) ||
-        a.capacity - b.capacity ||
-        a.tableNo.localeCompare(b.tableNo),
-    )
 
-  // 預設選第一張
-  const [selectedNo, setSelectedNo] = useState(options[0]?.tableNo ?? null)
+function WaitlistSeatDialog({ entry, onClose, onConfirm }) {
+  // 空桌清單由後端篩好、排好（坐得下、不含預約保留、稍後有訂位的排最後）
+  // 不帶 reservationId：harry的 API 註解寫「從 S-10b 替候位選桌就不帶」
+  const tablesQuery = useAvailableTables(entry.partySize, undefined, true)
+  const options = (tablesQuery.data ?? []).map(toOption)
+
+  // 店員點過就用點的那張；沒點過預設第一張（資料回來前 options 是空的，所以不能用 useState 存預設值）
+  const [pickedNo, setPickedNo] = useState(null)
+  const selectedNo = pickedNo ?? options[0]?.tableNo ?? null
   // 選到有訂位的桌時，要多確認一次
   const [confirming, setConfirming] = useState(false)
 
@@ -38,7 +37,7 @@ function WaitlistSeatDialog({ entry, tables, onClose, onConfirm }) {
   }, [onClose])
 
   function handleSelect(tableNo) {
-    setSelectedNo(tableNo)
+    setPickedNo(tableNo)
     setConfirming(false)
   }
 
@@ -48,7 +47,7 @@ function WaitlistSeatDialog({ entry, tables, onClose, onConfirm }) {
       setConfirming(true)
       return
     }
-    onConfirm(selected.tableNo)
+    onConfirm(selected.tableId)
   }
 
   return (
@@ -81,7 +80,11 @@ function WaitlistSeatDialog({ entry, tables, onClose, onConfirm }) {
           候位 {entry.no}・{formatTime(entry.createdAt)} 登記・已叫號
         </p>
 
-        {options.length === 0 ? (
+                {tablesQuery.isPending ? (
+          <p className="mt-6 type-body-sm text-ink-600">空桌載入中…</p>
+        ) : tablesQuery.isError ? (
+          <p className="mt-6 type-body-sm text-danger">{tablesQuery.error.message}</p>
+        ) : options.length === 0 ? (
           /* 空狀態：沒有坐得下的空桌 */
           <>
             <div className="mt-6 rounded-card bg-surface-2 px-4 py-8 text-center">
@@ -185,6 +188,17 @@ function mainButtonText(selected, hasClash, confirming) {
 // Date → "18:55"
 function formatTime(date) {
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+}
+
+// 後端 AvailableTable → 對話框原本用的欄位名稱，這樣下面的畫面不用改
+function toOption(t) {
+  return {
+    tableId: t.tableId,
+    tableNo: t.tableNo,
+    capacity: t.seats,
+    area: t.area,
+    upcomingReservation: t.upcomingReservationAt,
+  }
 }
 
 export default WaitlistSeatDialog
