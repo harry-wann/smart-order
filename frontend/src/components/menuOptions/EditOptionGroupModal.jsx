@@ -14,6 +14,7 @@ export default function EditOptionGroupModal({
   isSaving,
   onClose,
   onSave,
+  onDelete,
 }) {
   if (!group) return null;
 
@@ -106,7 +107,15 @@ export default function EditOptionGroupModal({
           {error && <p role="alert" className="type-caption text-danger sm:col-span-2">{error}</p>}
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-line pt-4">
+        <div className="flex items-center justify-end gap-2 border-t border-line pt-4">
+          <button
+            type="button"
+            onClick={onDelete}
+            disabled={isSaving}
+            className="rounded-(--radius-btn) border border-danger px-4 py-2 type-body-sm text-danger transition-colors hover:bg-danger-bg disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            刪除群組
+          </button>
           <button
             type="button"
             onClick={onClose}
