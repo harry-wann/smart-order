@@ -11,6 +11,8 @@ import java.util.List;
 
 @Repository
 public interface OptionValueRepository extends JpaRepository<OptionValueEntity, Long> {
+    void deleteByOptionGroupId_Id(Long optionGroupId);
+
     @Query("""
             SELECT COALESCE(MAX(optionValue.sortOrder), 0)
             FROM OptionValueEntity optionValue

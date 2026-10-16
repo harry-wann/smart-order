@@ -122,6 +122,13 @@ public class MenuController {
         return ResponseEntity.ok(optionGroupService.updateOptionGroup(optionGroupId, request));
     }
 
+    // MenuOptions 畫面 刪除選項群組資訊
+    @DeleteMapping("/admin/optionGroups/{optionGroupId}")
+    public ResponseEntity<Void> deleteOptionGroup(@PathVariable Long optionGroupId) {
+        optionGroupService.deleteOptionGroup(optionGroupId);
+        return ResponseEntity.noContent().build();
+    }
+
     // MenuOptions 畫面 依照 optionGroupId 提取選項群組詳細資訊
     @GetMapping("/admin/optionGroups/{optionGroupId}")
     public ResponseEntity<AdminOptionGroupDetailDto> getOptionGroupDetail(
