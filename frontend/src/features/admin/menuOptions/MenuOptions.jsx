@@ -387,6 +387,7 @@ export default function MenuOptions() {
             isSaving={isSavingGroupEdit}
             onClose={() => setEditingGroup(null)}
             onSave={handleSaveGroup}
+            onDelete={() => window.confirm(`確定要刪除「${editingGroup?.name ?? ''}」群組嗎？`)}
           />
 
           <EditItemModal

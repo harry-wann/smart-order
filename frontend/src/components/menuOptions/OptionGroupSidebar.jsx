@@ -29,20 +29,9 @@ export default function OptionGroupSidebar({ groups, selectedGroupId, onSelectGr
               <span className="type-body-sm font-semibold text-ink-900">{group.name}</span>
               <span className="type-caption text-ink-600">{selectionRule}</span>
             </button>
-            <div className="flex items-center">
-              <button
-                type="button"
-                aria-label={`刪除${group.name}群組`}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  window.confirm(`確定要刪除「${group.name}」群組嗎？`);
-                }}
-                className="ml-2 min-w-5 text-ink-400 transition-colors group-hover:text-danger group-focus-within:text-danger"
-              >
-                <span className="group-hover:hidden group-focus-within:hidden">›</span>
-                <span className="hidden group-hover:inline group-focus-within:inline">刪除</span>
-              </button>
-            </div>
+            <span aria-hidden="true" className="ml-2 inline-flex h-8 w-5 shrink-0 items-center justify-center text-ink-400">
+              ›
+            </span>
           </div>
         );
       })}
