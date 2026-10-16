@@ -3,7 +3,7 @@ import { fetchSeats, updateSeatReservable } from '@/services/api/table/seatApi'
 import SOButton from '../../../components/SOButton'
 import TopBar from '@/components/dashboard/TopBar'
 import { SvgIconMap } from '@/assets/SvgIconMap'
-
+import { openQrPrint } from './qrPrint'
 
 
 // 徽章樣式（對應設計稿的 .b-plain / .b-sold）
@@ -69,6 +69,7 @@ function SeatManagement() {
               <SOButton
                 variant="secondary"
                 height="h-11"
+                onClick={() => openQrPrint(tables)}
                 content={
                   <span className="flex items-center gap-1.5">
                     <Icon icon={SvgIconMap.DashboardQrcode} />
@@ -166,11 +167,16 @@ function SeatManagement() {
                       <span className={`${BADGE_BASE} ${status.className}`}>{status.label}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-2">
                         <span className="type-caption text-ink-600 tabular-nums">
-                          /t/{t.tableNo}
+                          /order/checkin/{t.tableNo}
                         </span>
-                        <TextButton icon={SvgIconMap.DashboardQrcode}>印 QR</TextButton>
+                        <TextButton
+                          icon={SvgIconMap.DashboardQrcode}
+                          onClick={() => openQrPrint([t])}
+                        >
+                          印 QR
+                        </TextButton>
                       </div>
                     </td>
                     <td className="px-4 py-3">
@@ -184,8 +190,7 @@ function SeatManagement() {
         </div>
 
         <p className="type-caption text-ink-600">
-          桌上的 QR code 內容固定是 <span className="tabular-nums">/t/{'{桌號}'}</span>
-          ，印一次貼著就好，永遠不用換。
+                    桌上的 QR code 內容固定是 <span className="tabular-nums">/order/checkin/{'{桌號}'}</span>
         </p>
       </div>
     </div>
