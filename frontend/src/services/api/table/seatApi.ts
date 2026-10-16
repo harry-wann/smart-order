@@ -24,3 +24,22 @@ export async function updateSeatReservable(id: number, reservable: boolean) {
   )
   return data
 }
+
+// 新增、編輯桌位共用的欄位
+export type SeatInput = {
+  tableNo: string
+  seats: number
+  area: string
+}
+
+// POST /api/admin/tables-config：新增桌位
+export async function createSeat(input: SeatInput) {
+  const { data } = await employeeClient.post<Seat>('/admin/tables-config', input)
+  return data
+}
+
+// PUT /api/admin/tables-config/{id}：編輯桌位
+export async function updateSeat(id: number, input: SeatInput) {
+  const { data } = await employeeClient.put<Seat>(`/admin/tables-config/${id}`, input)
+  return data
+}
