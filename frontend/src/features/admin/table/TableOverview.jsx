@@ -5,6 +5,7 @@ import TopBar from '@/components/dashboard/TopBar'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import BellButtonPlaceholder from './BellButtonPlaceholder'
 import { fetchTables, cleanTable } from '@/services/api/table/tableApi'
+import { fetchWaitlist } from '@/services/api/waitlist/waitlistApi'
 
 // 把後臺狀態的英文轉成中文顯示、根據桌位狀態決定顏色、根據狀態決定標籤底色
 const statusStyles = {
@@ -32,12 +33,7 @@ const statusStyles = {
 
 
 
-// 底部候位中的顯示>假資料、之後接後端要改
-const waitinglist = [
-  { id: 'A13', name: '李', people: 4, called: true },
-  { id: 'A12', name: '王', people: 3, waitMinutes: 18 },
-  { id: 'A14', name: '張', people: 6, waitMinutes: 4 },
-]
+
 
 //右側畫面的服務鈴>假資料、之後接後端要改
 const initialBellCalls = [
@@ -327,6 +323,21 @@ function TableOverview() {
     return () => controller.abort()
   }, [reloadKey])
 
+  // 底部「候位中」：等待中＋已叫號的組別；按重試、清潔完成時跟桌況一起重抓
+  const [waitinglist, setWaitinglist] = useState([])
+  useEffect(() => {
+    const controller = new AbortController()
+    fetchWaitlist(controller.signal)
+      .then((data) => setWaitinglist(data.map(toWaitingChip)))
+      .catch(() => {}) // 候位抓不到不影響桌況，底部就先空著
+    return () => controller.abort()
+  }, [reloadKey])
+
+  // 目前還在等的組別，平均已經等了幾分鐘
+  const avgWait = waitinglist.length
+    ? Math.round(waitinglist.reduce((sum, w) => sum + w.waitMinutes, 0) / waitinglist.length)
+    : 0
+
   // 顯示空資料的兩種情況：
   // 1. 網址 ?state=empty（demo 用）
   // 2. 狀態正常，但真的一張桌子都沒有（之後接後端就靠這個）
@@ -425,7 +436,7 @@ function TableOverview() {
                 <span className="rounded-pill bg-surface-2 px-2.5 py-0.5 type-caption text-ink-600 shadow-[inset_0_0_0_1px_var(--color-line)]">
                   {waitinglist.length} 組
                 </span>
-                <span className="type-caption text-ink-600">平均等 22 分</span>
+                <span className="type-caption text-ink-600">平均等 {avgWait} 分</span>
 
                 <div className="flex-1" />
 
@@ -490,6 +501,17 @@ function toTableCard(t) {
     adults: t.adultCount,
     kids: t.childCount,
     minutes: t.openedAt ? Math.floor((Date.now() - new Date(t.openedAt)) / 60000) : null,
+  }
+}
+
+// 後端 WaitlistEntry → 底部候位小卡用的欄位
+function toWaitingChip(w) {
+  return {
+    id: w.ticketNo,
+    name: w.contactName,
+    people: w.partySize,
+    called: w.status === 'CALLED',
+    waitMinutes: Math.max(0, Math.floor((Date.now() - new Date(w.createdAt)) / 60000)),
   }
 }
 
