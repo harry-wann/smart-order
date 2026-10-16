@@ -6,8 +6,7 @@ import AssociatedProducts from '../../../components/menuOptions/AssociatedProduc
 import GroupNameModal from '../../../components/menuOptions/GroupNameModal';
 import EditItemModal from '../../../components/menuOptions/EditItemModal';
 import AddOptionGroupModal from '../../../components/menuOptions/AddOptionGroupModal';
-import SOButton from '@/components/SOButton';
-import Badge from '@/components/Badge';
+import { SvgIconMap } from '@/assets/SvgIconMap';
 import { createApiClient } from '@/services/client/createApiClient'
 
 const optionGroupsClient = createApiClient()
@@ -207,22 +206,27 @@ export default function MenuOptions() {
     setEditingItem(null);
   };
 
-  return (<><TopBar
+  return (
+    <>
+      <TopBar
         childrenLeft={
-          <div className='flex scale-70'>
-            <Badge text={`${groups.length} 個群組`} col="plain" />
-          </div>
+          <span className="rounded-pill border border-line bg-surface-2 px-2.5 py-1 type-dashboard-top-bar-tag text-ink-600">
+            {groups.length} 個群組
+          </span>
         }
         childrenRight={
-          <SOButton
-            height="h-[44px]"
-            text="新增群組"
+          <button
+            type="button"
             onClick={handleOpenAddGroupModal}
             disabled={isLoading}
-          />
+            className="flex h-9 items-center gap-1.5 rounded-(--radius-btn) bg-brand-600 px-3.5 type-body-sm text-white transition-colors hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <SvgIconMap.DashboardPlus aria-hidden="true" />
+            新增群組
+          </button>
         }
       />
-    <div className="flex h-screen bg-paper p-(--spacing-page) gap-(--spacing-field) text-ink-900 font-sans relative">
+      <div className="relative flex min-h-0 flex-1 gap-4 overflow-y-auto bg-paper px-6 py-5 font-sans text-ink-900">
       <OptionGroupSidebar 
         groups={groups} 
         selectedGroupId={selectedGroupId} 
@@ -230,12 +234,12 @@ export default function MenuOptions() {
       />
 
       {isLoading ? (
-        <div className="flex-1 text-ink-600">載入選項群組中...</div>
+        <div className="flex-1 rounded-(--radius-card) border border-line bg-surface p-6 text-ink-600">載入選項群組中...</div>
       ) : loadError ? (
-        <div role="alert" className="flex-1 text-danger">載入選項群組失敗：{loadError}</div>
+        <div role="alert" className="flex-1 rounded-(--radius-card) border border-danger-line bg-surface p-6 text-danger">載入選項群組失敗：{loadError}</div>
       ) : currentGroup ? (
         <>
-          <div className="flex-1 flex flex-col gap-(--spacing-field)">
+          <div className="flex min-w-0 flex-1 flex-col gap-3">
             <OptionGroupDetail
               currentGroup={currentGroup}
               isLoading={isLoadingDetails}
@@ -273,22 +277,22 @@ export default function MenuOptions() {
           />
         </>
       ) : (
-        <div className="flex-1 text-ink-600">目前沒有選項群組</div>
+        <div className="flex-1 rounded-(--radius-card) border border-line bg-surface p-6 text-ink-600">目前沒有選項群組</div>
       )}
-    </div>
-    <AddOptionGroupModal
-      isOpen={isAddingGroup}
-      groupName={newGroupName}
-      setGroupName={setNewGroupName}
-      minSelect={newGroupMinSelect}
-      setMinSelect={setNewGroupMinSelect}
-      maxSelect={newGroupMaxSelect}
-      setMaxSelect={setNewGroupMaxSelect}
-      error={addGroupError}
-      isSaving={isSavingGroup}
-      onClose={() => setIsAddingGroup(false)}
-      onSave={handleAddGroup}
-    />
+      </div>
+      <AddOptionGroupModal
+        isOpen={isAddingGroup}
+        groupName={newGroupName}
+        setGroupName={setNewGroupName}
+        minSelect={newGroupMinSelect}
+        setMinSelect={setNewGroupMinSelect}
+        maxSelect={newGroupMaxSelect}
+        setMaxSelect={setNewGroupMaxSelect}
+        error={addGroupError}
+        isSaving={isSavingGroup}
+        onClose={() => setIsAddingGroup(false)}
+        onSave={handleAddGroup}
+      />
     </>
   );
 }
