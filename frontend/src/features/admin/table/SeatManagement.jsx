@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { fetchSeats, updateSeatReservable } from '@/services/api/table/seatApi'
+import { fetchSeats, updateSeatReservable, createSeat, updateSeat } from '@/services/api/table/seatApi'
 import SOButton from '../../../components/SOButton'
 import TopBar from '@/components/dashboard/TopBar'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import { openQrPrint } from './qrPrint'
+import SeatFormDialog from './SeatFormDialog'
 
 
 // 徽章樣式（對應設計稿的 .b-plain / .b-sold）
@@ -22,6 +23,8 @@ function SeatManagement() {
   const [tables, setTables] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
+  // 對話框要編輯哪張桌：undefined = 沒打開、null = 新增、桌子物件 = 編輯那張
+  const [formTable, setFormTable] = useState(undefined)
 
   // 畫面第一次出現時，去後端拿桌位
   useEffect(() => {
@@ -56,6 +59,18 @@ function SeatManagement() {
     }
   }
 
+  // 對話框按儲存：新增就加到表格裡，編輯就換掉那一列；失敗時丟回去給對話框顯示錯誤
+  async function handleSave(input) {
+    const saved = formTable ? await updateSeat(formTable.id, input) : await createSeat(input)
+    const row = toTableRow(saved)
+    setTables((prev) =>
+      formTable
+        ? prev.map((t) => (t.id === row.id ? row : t))
+        : [...prev, row].sort((a, b) => a.tableNo.localeCompare(b.tableNo)),
+    )
+    setFormTable(undefined)
+  }
+  
   return (
     <div className="flex h-full flex-col bg-paper text-ink-900">
       {/* 頂列：用團隊共用的 TopBar
@@ -81,6 +96,7 @@ function SeatManagement() {
             <div className="flex-none">
               <SOButton
                 height="h-11"
+                onClick={() => setFormTable(null)}
                 content={
                   <span className="flex items-center gap-1.5">
                     <Icon icon={SvgIconMap.DashboardPlus} />
@@ -92,6 +108,9 @@ function SeatManagement() {
           </>
         }
       />
+
+
+
 
       <div className="flex flex-col gap-4 p-6">
         {/* 統計列 */}
@@ -180,7 +199,9 @@ function SeatManagement() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <TextButton icon={SvgIconMap.DashboardEdit}>編輯</TextButton>
+                         <TextButton icon={SvgIconMap.DashboardEdit} onClick={() => setFormTable(t)}>
+                        編輯
+                      </TextButton>
                     </td>
                   </tr>
                 )
@@ -193,6 +214,16 @@ function SeatManagement() {
                     桌上的 QR code 內容固定是 <span className="tabular-nums">/order/checkin/{'{桌號}'}</span>
         </p>
       </div>
+
+      {formTable !== undefined && (
+        <SeatFormDialog
+          key={formTable?.id ?? 'new'}
+          table={formTable}
+          onClose={() => setFormTable(undefined)}
+          onSubmit={handleSave}
+        />
+      )}
+
     </div>
   )
 }
