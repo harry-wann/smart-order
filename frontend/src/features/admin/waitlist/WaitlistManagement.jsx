@@ -3,84 +3,12 @@ import SOButton from '@/components/SOButton'
 import TopBar from '@/components/dashboard/TopBar'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import WaitlistSeatDialog from './WaitlistSeatDialog'
+import { fetchWaitlist, registerWaitlist, callWaitlist, abandonWaitlist, seatWaitlist } from '@/services/api/waitlist/waitlistApi'
 
 // 叫號後幾分鐘沒報到會被排程標成過號（規格寫 10 分鐘）
 const CALL_EXPIRE_MINUTES = 10
 
-// 假資料：時間用「現在往前推幾分鐘」產生，畫面上的等待分鐘數才會是活的
-// 後端好了之後換成 GET /api/admin/waitlist 回來的資料
-const minutesAgo = (m) => new Date(Date.now() - m * 60000)
 
-const INITIAL_WAITLIST = [
-  {
-    id: 1,
-    no: 'A10',
-    name: '蔡先生',
-    phoneLast4: '4471',
-    partySize: 4,
-    status: 'EXPIRED',
-    createdAt: minutesAgo(50),
-    doneAt: minutesAgo(24),
-  },
-  {
-    id: 2,
-    no: 'A11',
-    name: '周小姐',
-    phoneLast4: '9106',
-    partySize: 2,
-    status: 'SEATED',
-    createdAt: minutesAgo(35),
-    doneAt: minutesAgo(11),
-  },
-  {
-    id: 3,
-    no: 'A12',
-    name: '王先生',
-    phoneLast4: '0338',
-    partySize: 3,
-    status: 'CALLED',
-    createdAt: minutesAgo(18),
-    calledAt: minutesAgo(4),
-  },
-  {
-    id: 4,
-    no: 'A13',
-    name: '李小姐',
-    phoneLast4: '5210',
-    partySize: 4,
-    status: 'CALLED',
-    createdAt: minutesAgo(3),
-    calledAt: minutesAgo(2),
-  },
-  {
-    id: 5,
-    no: 'A14',
-    name: '張先生',
-    phoneLast4: '7724',
-    partySize: 6,
-    status: 'WAITING',
-    createdAt: minutesAgo(4),
-  },
-]
-
-// 桌位假資料（S-10b 選桌用）
-// 後端好了之後換成 GET /api/admin/tables/available?partySize=N
-// upcomingReservation：115 分鐘內有別筆訂位的時間，沒有就不寫
-const INITIAL_TABLES = [
-  { tableNo: 'A01', capacity: 2, area: 'A 區・窗邊', status: 'OCCUPIED' },
-  { tableNo: 'A02', capacity: 2, area: 'A 區・窗邊', status: 'AVAILABLE' },
-  {
-    tableNo: 'A04',
-    capacity: 4,
-    area: 'A 區・窗邊',
-    status: 'AVAILABLE',
-    upcomingReservation: '19:30',
-  },
-  { tableNo: 'A05', capacity: 4, area: 'A 區・走道', status: 'AVAILABLE' },
-  { tableNo: 'A06', capacity: 6, area: 'A 區・走道', status: 'AVAILABLE' },
-  { tableNo: 'B04', capacity: 4, area: 'B 區', status: 'AVAILABLE' },
-  { tableNo: 'C01', capacity: 8, area: 'C 包廂', status: 'OCCUPIED' },
-]
 
 // 狀態 → 徽章文字與樣式（class 寫完整字串，Tailwind 才掃得到）
 const BADGE_BASE = 'inline-flex items-center rounded-pill px-2.5 py-0.5 text-xs font-medium'
@@ -105,9 +33,29 @@ const STATUS_BADGE = {
 const STATUS_ORDER = { CALLED: 0, WAITING: 1, SEATED: 2, EXPIRED: 2, ABANDONED: 2 }
 
 function WaitlistManagement() {
-  const [waitlist, setWaitlist] = useState(INITIAL_WAITLIST)
+    const [waitlist, setWaitlist] = useState([])
+
+  // 畫面出現時抓一次，之後每 30 秒重抓：過號是後端排程改的，不重抓畫面不會知道
+  useEffect(() => {
+    const controller = new AbortController()
+    function load(isFirst) {
+      fetchWaitlist(controller.signal)
+        .then((data) => setWaitlist(data.map(toWaitlistRow)))
+        .catch((err) => {
+          // 只有第一次失敗跳提示，之後的自動重抓失敗就安靜等下一次，免得每 30 秒跳一次
+          if (isFirst && !controller.signal.aborted) alert(`候位清單載入失敗：${err.message}`)
+        })
+    }
+    load(true)
+    const timer = setInterval(() => load(false), 30000)
+    return () => {
+      clearInterval(timer)
+      controller.abort()
+    }
+  }, [])
+
   const [now, setNow] = useState(new Date())
-  const [tables, setTables] = useState(INITIAL_TABLES)
+  
   // 正在選桌的那一組；null 代表對話框沒開
   const [seatingEntry, setSeatingEntry] = useState(null)
 
@@ -135,49 +83,61 @@ function WaitlistManagement() {
       )
     : 0
 
-  // 下一個號碼：目前最大號 + 1
-  const maxNo = Math.max(0, ...waitlist.map((w) => Number(w.no.slice(1))))
-  const nextNo = `A${String(maxNo + 1).padStart(2, '0')}`
 
   const canSubmit = name.trim() !== '' && phoneLast4.length === 4
 
   // ---------- 動作 ----------
-  function handleTakeNumber() {
+    async function handleTakeNumber() {
     if (!canSubmit) return
-    setWaitlist((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        no: nextNo,
-        name: name.trim(),
-        phoneLast4,
-        partySize,
-        status: 'WAITING',
-        createdAt: new Date(),
-      },
-    ])
-    setName('')
-    setPhoneLast4('')
-    setPartySize(2)
+    try {
+      const created = await registerWaitlist(name.trim(), phoneLast4, partySize)
+      setWaitlist((prev) => [...prev, toWaitlistRow(created)])
+      setName('')
+      setPhoneLast4('')
+      setPartySize(2)
+    } catch (err) {
+      alert(`取號失敗：${err.message}`)
+    }
   }
 
   function updateEntry(id, changes) {
     setWaitlist((prev) => prev.map((w) => (w.id === id ? { ...w, ...changes } : w)))
   }
 
-  const handleCall = (id) => updateEntry(id, { status: 'CALLED', calledAt: new Date() })
-  const handleAbandon = (id) => updateEntry(id, { status: 'ABANDONED', doneAt: new Date() })
+  async function handleCall(id) {
+    try {
+      const updated = await callWaitlist(id)
+      updateEntry(id, toWaitlistRow(updated))
+    } catch (err) {
+      alert(`叫號失敗：${err.message}`)
+    }
+  }
+
+  async function handleAbandon(id) {
+    try {
+      await abandonWaitlist(id)
+      updateEntry(id, { status: 'ABANDONED', doneAt: new Date() })
+    } catch (err) {
+      alert(`放棄失敗：${err.message}`)
+    }
+  }
+
   // TODO: 再叫一次 → 之後接候位螢幕重新播報
   const handleRecall = (id) => console.log('再叫一次', id)
   // 報到開桌 → 打開 S-10b
   const handleCheckIn = (entry) => setSeatingEntry(entry)
 
-  // S-10b 按下「開 A05」：候位轉已入座、桌位轉用餐中
-  // 之後換成 POST /api/admin/waitlist/{id}/seat 帶 { tableId }
-  function handleSeat(tableNo) {
-    updateEntry(seatingEntry.id, { status: 'SEATED', doneAt: new Date() })
-    setTables((prev) => prev.map((t) => (t.tableNo === tableNo ? { ...t, status: 'OCCUPIED' } : t)))
+    // S-10b 按下「開 A05」：後端開桌，候位轉已入座
+  async function handleSeat(tableId) {
+    const entry = seatingEntry
     setSeatingEntry(null)
+    try {
+      const updated = await seatWaitlist(entry.id, tableId)
+      updateEntry(entry.id, { ...toWaitlistRow(updated), doneAt: new Date() })
+    } catch (err) {
+      // 例如桌子剛好被別人開走（409）：關掉對話框，再按一次「報到開桌」會重抓空桌
+      alert(`報到開桌失敗：${err.message}`)
+    }
   }
 
   const sortedList = [...waitlist].sort(
@@ -261,7 +221,7 @@ function WaitlistManagement() {
 
             <SOButton
               height="h-13"
-              text={`取號　下一號 ${nextNo}`}
+              text="取號"
               disabled={!canSubmit}
               onClick={handleTakeNumber}
             />
@@ -375,7 +335,6 @@ function WaitlistManagement() {
         <WaitlistSeatDialog
           key={seatingEntry.id}
           entry={seatingEntry}
-          tables={tables}
           onClose={() => setSeatingEntry(null)}
           onConfirm={handleSeat}
         />
@@ -438,6 +397,20 @@ function SmallButton({ variant = 'ghost', children, ...props }) {
       {children}
     </button>
   )
+}
+
+// 後端的候位 → 這個畫面用的格式
+function toWaitlistRow(w) {
+  return {
+    id: w.id,
+    no: w.ticketNo,
+    name: w.contactName,
+    phoneLast4: w.contactPhone,
+    partySize: w.partySize,
+    status: w.status,
+    createdAt: new Date(w.createdAt),
+    calledAt: w.calledAt ? new Date(w.calledAt) : null,
+  }
 }
 
 export default WaitlistManagement

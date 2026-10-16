@@ -13,7 +13,7 @@ import {
 } from '@/hooks/reservation/useAdminReservations'
 import type { AdminReservation, AvailableTable } from '@/services/api/reservation/adminReservationApi'
 import type { ReservationStatus } from '@/services/api/reservation/types'
-import { fetchSeats } from '@/services/api/seatApi'
+import { fetchSeats } from '@/services/api/table/seatApi'
 import { queryScope } from '@/services/client/queryClient'
 
 type Reservation = {

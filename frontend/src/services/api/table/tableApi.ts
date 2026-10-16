@@ -61,3 +61,35 @@ export async function checkoutTable(
   )
   return data
 }
+// 後端 TableOverviewResponse 回來的一張桌子
+export type TableOverview = {
+  tableId: number
+  tableNo: string
+  seats: number
+  area: string
+  status: 'AVAILABLE' | 'OCCUPIED' | 'CLEANING'
+  displayStatus: 'AVAILABLE' | 'OCCUPIED' | 'CLEANING' | 'RESERVED'
+  adultCount: number | null
+  childCount: number | null
+  openedAt: string | null
+}
+
+// GET /api/admin/tables：S-02 桌況總覽
+export async function fetchTables(signal?: AbortSignal) {
+  const { data } = await employeeClient.get<TableOverview[]>('/admin/tables', { signal })
+  return data
+}
+
+// POST /api/admin/tables/{id}/clean：清潔完成 → 空桌
+export async function cleanTable(tableId: number) {
+  await employeeClient.post(`/admin/tables/${tableId}/clean`)
+}
+
+// POST /api/admin/tables/{id}/open：現場開桌
+export async function openTable(tableId: number, adultCount: number, childCount: number) {
+  const { data } = await employeeClient.post<TableOverview>(`/admin/tables/${tableId}/open`, {
+    adultCount,
+    childCount,
+  })
+  return data
+}

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { fetchSeats } from '@/services/api/seatApi'
+import { fetchSeats, updateSeatReservable } from '@/services/api/table/seatApi'
 import SOButton from '../../../components/SOButton'
 import TopBar from '@/components/dashboard/TopBar'
 import { SvgIconMap } from '@/assets/SvgIconMap'
-
+import { openQrPrint } from './qrPrint'
 
 
 // 徽章樣式（對應設計稿的 .b-plain / .b-sold）
@@ -47,10 +47,13 @@ function SeatManagement() {
   const areaCount = new Set(tables.map((t) => t.area.split('・')[0])).size
 
   // 切換「可否預約」
-  function toggleReservable(tableNo) {
-    setTables((prev) =>
-      prev.map((t) => (t.tableNo === tableNo ? { ...t, reservable: !t.reservable } : t)),
-    )
+  async function toggleReservable(table) {
+    try {
+      const updated = await updateSeatReservable(table.id, !table.reservable)
+      setTables((prev) => prev.map((t) => (t.id === updated.id ? toTableRow(updated) : t)))
+    } catch (err) {
+      alert(`更新失敗：${err.message}`)
+    }
   }
 
   return (
@@ -66,6 +69,7 @@ function SeatManagement() {
               <SOButton
                 variant="secondary"
                 height="h-11"
+                onClick={() => openQrPrint(tables)}
                 content={
                   <span className="flex items-center gap-1.5">
                     <Icon icon={SvgIconMap.DashboardQrcode} />
@@ -109,13 +113,13 @@ function SeatManagement() {
           <table className="w-full text-sm">
             <thead className="bg-surface-2 text-left text-[13px] font-bold tracking-wide text-ink-600">
               <tr>
-                <th className="w-[90px] border-b border-line px-4 py-3">桌號</th>
-                <th className="w-[90px] border-b border-line px-4 py-3">座位數</th>
-                <th className="w-[150px] border-b border-line px-4 py-3">區域</th>
-                <th className="w-[170px] border-b border-line px-4 py-3">可否預約</th>
-                <th className="w-[110px] border-b border-line px-4 py-3">目前狀態</th>
-                <th className="w-[190px] border-b border-line px-4 py-3">QR code</th>
-                <th className="w-[90px] border-b border-line px-4 py-3">操作</th>
+                <th className="w-22.5 border-b border-line px-4 py-3">桌號</th>
+                <th className="w-22.5 border-b border-line px-4 py-3">座位數</th>
+                <th className="w-37.5 border-b border-line px-4 py-3">區域</th>
+                <th className="w-42.5 border-b border-line px-4 py-3">可否預約</th>
+                <th className="w-27.5 border-b border-line px-4 py-3">目前狀態</th>
+                <th className="w-47.5 border-b border-line px-4 py-3">QR code</th>
+                <th className="w-22.5 border-b border-line px-4 py-3">操作</th>
               </tr>
             </thead>
             <tbody>
@@ -151,7 +155,7 @@ function SeatManagement() {
                       <div className="flex items-center gap-2">
                         <Switch
                           checked={t.reservable}
-                          onChange={() => toggleReservable(t.tableNo)}
+                          onChange={() => toggleReservable(t)}
                           label={`${t.tableNo} 可否預約`}
                         />
                         <span className="type-caption text-ink-600">
@@ -163,11 +167,16 @@ function SeatManagement() {
                       <span className={`${BADGE_BASE} ${status.className}`}>{status.label}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-2">
                         <span className="type-caption text-ink-600 tabular-nums">
-                          /t/{t.tableNo}
+                          /order/checkin/{t.tableNo}
                         </span>
-                        <TextButton icon={SvgIconMap.DashboardQrcode}>印 QR</TextButton>
+                        <TextButton
+                          icon={SvgIconMap.DashboardQrcode}
+                          onClick={() => openQrPrint([t])}
+                        >
+                          印 QR
+                        </TextButton>
                       </div>
                     </td>
                     <td className="px-4 py-3">
@@ -181,8 +190,7 @@ function SeatManagement() {
         </div>
 
         <p className="type-caption text-ink-600">
-          桌上的 QR code 內容固定是 <span className="tabular-nums">/t/{'{桌號}'}</span>
-          ，印一次貼著就好，永遠不用換。
+                    桌上的 QR code 內容固定是 <span className="tabular-nums">/order/checkin/{'{桌號}'}</span>
         </p>
       </div>
     </div>

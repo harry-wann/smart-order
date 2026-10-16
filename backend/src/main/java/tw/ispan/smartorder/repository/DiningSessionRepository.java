@@ -43,4 +43,7 @@ public interface DiningSessionRepository extends JpaRepository<DiningSessionEnti
             nativeQuery = true
     )
     Optional<DiningSessionEntity> findWithLockById(@Param("id") Long id);
+
+    // S-02 桌況總覽：找出所有用餐中的紀錄，對應每桌的人數與開桌時間
+    List<DiningSessionEntity> findByStatus(String status);
 }
