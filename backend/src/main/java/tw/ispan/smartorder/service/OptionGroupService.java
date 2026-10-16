@@ -8,8 +8,11 @@ import org.springframework.web.server.ResponseStatusException;
 import tw.ispan.smartorder.dto.AdminAssociatedMenuItemDto;
 import tw.ispan.smartorder.dto.AdminOptionGroupDetailDto;
 import tw.ispan.smartorder.dto.AdminOptionGroupDto;
+import tw.ispan.smartorder.dto.AdminOptionValueDto;
 import tw.ispan.smartorder.dto.request.CreateOptionGroupRequest;
+import tw.ispan.smartorder.dto.request.CreateOptionValueRequest;
 import tw.ispan.smartorder.entity.OptionGroupEntity;
+import tw.ispan.smartorder.entity.OptionValueEntity;
 import tw.ispan.smartorder.repository.MenuItemOptionGroupRepository;
 import tw.ispan.smartorder.repository.OptionGroupRepository;
 import tw.ispan.smartorder.repository.OptionValueRepository;
@@ -46,6 +49,30 @@ public class OptionGroupService {
         entity.setCreatedAt(now);
         entity.setUpdatedAt(now);
         return toDto(optionGroupRepository.save(entity));
+    }
+
+    public AdminOptionValueDto createOptionValue(Long optionGroupId, CreateOptionValueRequest request) {
+        OptionGroupEntity group = optionGroupRepository.findById(optionGroupId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Option group not found"));
+
+        LocalDateTime now = LocalDateTime.now();
+        OptionValueEntity entity = new OptionValueEntity();
+        entity.setOptionGroupId(group);
+        entity.setName(request.name().trim());
+        entity.setPriceDelta(request.priceDelta());
+        entity.setSortOrder(optionValueRepository.findMaxSortOrderByGroupId(optionGroupId) + 1);
+        entity.setActive(true);
+        entity.setCreatedAt(now);
+        entity.setUpdatedAt(now);
+
+        OptionValueEntity createdValue = optionValueRepository.save(entity);
+        return new AdminOptionValueDto(
+                createdValue.getId(),
+                createdValue.getName(),
+                createdValue.getPriceDelta(),
+                createdValue.getSortOrder(),
+                createdValue.getActive()
+        );
     }
 
     public AdminOptionGroupDetailDto getOptionGroupDetail(Long optionGroupId) {
