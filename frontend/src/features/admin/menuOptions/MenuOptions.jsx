@@ -1,4 +1,3 @@
-import React, { useEffect, useState } from 'react';
 import TopBar from '@/components/dashboard/TopBar'
 import SOButton from '@/components/SOButton';
 import OptionGroupSidebar from '../../../components/menuOptions/OptionGroupSidebar';
@@ -9,426 +8,80 @@ import EditItemModal from '../../../components/menuOptions/EditItemModal';
 import AddOptionGroupModal from '../../../components/menuOptions/AddOptionGroupModal';
 import AddOptionValueModal from '../../../components/menuOptions/AddOptionValueModal';
 import { SvgIconMap } from '@/assets/SvgIconMap';
-import { createApiClient } from '@/services/client/createApiClient'
-
-const optionGroupsClient = createApiClient()
+import useOptionGroups from './useOptionGroups';
+import useOptionValues from './useOptionValues';
 
 export default function MenuOptions() {
-  const [groups, setGroups] = useState([]);
-  const [selectedGroupId, setSelectedGroupId] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState('');
-  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
-  const [detailsError, setDetailsError] = useState('');
-
-  const [editingGroup, setEditingGroup] = useState(null);
-  const [editGroupName, setEditGroupName] = useState('');
-  const [editGroupMinSelect, setEditGroupMinSelect] = useState('0');
-  const [editGroupMaxSelect, setEditGroupMaxSelect] = useState('1');
-  const [editGroupSortOrder, setEditGroupSortOrder] = useState('0');
-  const [editGroupError, setEditGroupError] = useState('');
-  const [isSavingGroupEdit, setIsSavingGroupEdit] = useState(false);
-  const [isAddingGroup, setIsAddingGroup] = useState(false);
-  const [newGroupName, setNewGroupName] = useState('');
-  const [newGroupMinSelect, setNewGroupMinSelect] = useState('0');
-  const [newGroupMaxSelect, setNewGroupMaxSelect] = useState('1');
-  const [addGroupError, setAddGroupError] = useState('');
-  const [isSavingGroup, setIsSavingGroup] = useState(false);
-
-  const [editingItem, setEditingItem] = useState(null);
-  const [tempItemName, setTempItemName] = useState('');
-  const [tempItemPrice, setTempItemPrice] = useState(0);
-  const [editItemError, setEditItemError] = useState('');
-  const [isSavingItemEdit, setIsSavingItemEdit] = useState(false);
-  const [isDeletingItem, setIsDeletingItem] = useState(false);
-  const [isAddingItem, setIsAddingItem] = useState(false);
-  const [newItemName, setNewItemName] = useState('');
-  const [newItemPrice, setNewItemPrice] = useState('0');
-  const [addItemError, setAddItemError] = useState('');
-  const [isSavingItem, setIsSavingItem] = useState(false);
-  const [togglingItemId, setTogglingItemId] = useState(null);
-  const [toggleItemError, setToggleItemError] = useState('');
-
-  useEffect(() => {
-    let isCurrentRequest = true;
-
-    async function loadOptionGroups() {
-      try {
-        const { data } = await optionGroupsClient.get('/order/admin/optionGroups');
-        if (!isCurrentRequest) return;
-
-        const fetchedGroups = data.map(group => ({
-          id: String(group.id),
-          name: group.name,
-          minSelect: group.minSelect,
-          maxSelect: group.maxSelect,
-          sortOrder: group.sortOrder,
-          items: [],
-          associatedProducts: null,
-        }));
-        setGroups(fetchedGroups);
-        setSelectedGroupId(fetchedGroups[0]?.id ?? null);
-      } catch (error) {
-        if (isCurrentRequest) {
-          setLoadError(error instanceof Error ? error.message : '載入選項群組失敗');
-        }
-      } finally {
-        if (isCurrentRequest) setIsLoading(false);
-      }
-    }
-
-    loadOptionGroups();
-    return () => {
-      isCurrentRequest = false;
-    };
-  }, []);
-
-  const currentGroup = groups.find(g => g.id === selectedGroupId);
-
-  useEffect(() => {
-    if (!selectedGroupId) return undefined;
-
-    let isCurrentRequest = true;
-    async function loadOptionGroupDetails() {
-      setIsLoadingDetails(true);
-      setDetailsError('');
-      try {
-        const { data } = await optionGroupsClient.get(
-          `/order/admin/optionGroups/${selectedGroupId}`
-        );
-        if (!isCurrentRequest) return;
-
-        setGroups(prevGroups => prevGroups.map(group => (
-          group.id === selectedGroupId
-            ? {
-                ...group,
-                items: data.items.map(item => ({
-                  id: String(item.id),
-                  name: item.name,
-                  priceDiff: Number(item.priceDelta),
-                  sortOrder: item.sortOrder,
-                  status: item.active ? 'active' : 'inactive',
-                })),
-                associatedProducts: data.associatedProducts,
-              }
-            : group
-        )));
-      } catch (error) {
-        if (isCurrentRequest) {
-          setDetailsError(error instanceof Error ? error.message : '載入選項群組資料失敗');
-        }
-      } finally {
-        if (isCurrentRequest) setIsLoadingDetails(false);
-      }
-    }
-
-    loadOptionGroupDetails();
-    return () => {
-      isCurrentRequest = false;
-    };
-  }, [selectedGroupId]);
-
-  const handleOpenAddGroupModal = () => {
-    setNewGroupName('');
-    setNewGroupMinSelect('0');
-    setNewGroupMaxSelect('1');
-    setAddGroupError('');
-    setIsAddingGroup(true);
-  };
-
-  const handleAddGroup = async () => {
-    const name = newGroupName.trim();
-    const minSelect = Number(newGroupMinSelect);
-    const maxSelect = Number(newGroupMaxSelect);
-
-    if (!name) {
-      setAddGroupError('請輸入群組名稱');
-      return;
-    }
-    if (name.length > 50) {
-      setAddGroupError('群組名稱最多 50 個字元');
-      return;
-    }
-    if (!Number.isSafeInteger(minSelect) || minSelect < 0) {
-      setAddGroupError('min_select 必須是大於或等於 0 的整數');
-      return;
-    }
-    if (!Number.isSafeInteger(maxSelect) || maxSelect < 1 || maxSelect < minSelect) {
-      setAddGroupError('max_select 必須是大於等於 min_select 且至少為 1 的整數');
-      return;
-    }
-    setIsSavingGroup(true);
-    setAddGroupError('');
-    try {
-      const { data } = await optionGroupsClient.post('/order/admin/optionGroups', {
-        name,
-        minSelect,
-        maxSelect,
-      });
-      const createdGroup = {
-        id: String(data.id),
-        name: data.name,
-        minSelect: data.minSelect,
-        maxSelect: data.maxSelect,
-        sortOrder: data.sortOrder,
-        items: [],
-        associatedProducts: null,
-      };
-
-      setGroups(prevGroups => [...prevGroups, createdGroup]);
-      setSelectedGroupId(createdGroup.id);
-      setIsAddingGroup(false);
-    } catch (error) {
-      setAddGroupError(error instanceof Error ? error.message : '新增群組失敗，請稍後再試');
-    } finally {
-      setIsSavingGroup(false);
-    }
-  };
-
-  const handleOpenEditGroupModal = group => {
-    setEditingGroup(group);
-    setEditGroupName(group.name);
-    setEditGroupMinSelect(String(group.minSelect));
-    setEditGroupMaxSelect(String(group.maxSelect));
-    setEditGroupSortOrder(String(group.sortOrder));
-    setEditGroupError('');
-  };
-
-  const handleSaveGroup = async () => {
-    if (!editingGroup) return;
-
-    const name = editGroupName.trim();
-    const minSelect = Number(editGroupMinSelect);
-    const maxSelect = Number(editGroupMaxSelect);
-    const sortOrder = Number(editGroupSortOrder);
-
-    if (!name) {
-      setEditGroupError('請輸入群組名稱');
-      return;
-    }
-    if (name.length > 50) {
-      setEditGroupError('群組名稱最多 50 個字元');
-      return;
-    }
-    if (!Number.isSafeInteger(minSelect) || minSelect < 0) {
-      setEditGroupError('至少要選的數量必須是大於或等於 0 的整數');
-      return;
-    }
-    if (!Number.isSafeInteger(maxSelect) || maxSelect < 1 || maxSelect < minSelect) {
-      setEditGroupError('最多可選的數量必須是大於等於至少要選數量且至少為 1 的整數');
-      return;
-    }
-    if (!Number.isSafeInteger(sortOrder) || sortOrder < 0) {
-      setEditGroupError('排序必須是大於或等於 0 的整數');
-      return;
-    }
-
-    setIsSavingGroupEdit(true);
-    setEditGroupError('');
-    try {
-      const { data } = await optionGroupsClient.put(
-        `/order/admin/optionGroups/${editingGroup.id}`,
-        { name, minSelect, maxSelect, sortOrder }
-      );
-      setGroups(prevGroups => prevGroups
-        .map(group => (
-          group.id === editingGroup.id
-            ? {
-                ...group,
-                name: data.name,
-                minSelect: data.minSelect,
-                maxSelect: data.maxSelect,
-                sortOrder: data.sortOrder,
-              }
-            : group
-        ))
-        .sort((first, second) => first.sortOrder - second.sortOrder));
-      setEditingGroup(null);
-    } catch (error) {
-      setEditGroupError(error instanceof Error ? error.message : '更新選項群組失敗，請稍後再試');
-    } finally {
-      setIsSavingGroupEdit(false);
-    }
-  };
-
-  const handleDeleteGroup = async () => {
-    if (!editingGroup || isSavingGroupEdit) return;
-    if (!window.confirm(`確定要刪除「${editingGroup.name}」群組及其選項嗎？`)) return;
-
-    setIsSavingGroupEdit(true);
-    setEditGroupError('');
-    try {
-      await optionGroupsClient.delete(`/order/admin/optionGroups/${editingGroup.id}`);
-      const remainingGroups = groups.filter(group => group.id !== editingGroup.id);
-      setGroups(prevGroups => prevGroups.filter(group => group.id !== editingGroup.id));
-      setSelectedGroupId(previousId => (
-        previousId === editingGroup.id ? remainingGroups[0]?.id ?? null : previousId
-      ));
-      setDetailsError('');
-      setEditingGroup(null);
-    } catch (error) {
-      setEditGroupError(error instanceof Error ? error.message : '刪除選項群組失敗，請稍後再試');
-    } finally {
-      setIsSavingGroupEdit(false);
-    }
-  };
-
-  const handleOpenItemModal = (item) => {
-    setEditingItem(item);
-    setTempItemName(item.name);
-    setTempItemPrice(item.priceDiff);
-    setEditItemError('');
-  };
-
-  const handleOpenAddItemModal = () => {
-    setNewItemName('');
-    setNewItemPrice('0');
-    setAddItemError('');
-    setIsAddingItem(true);
-  };
-
-  const handleAddItem = async () => {
-    if (!currentGroup) return;
-
-    const name = newItemName.trim();
-    const priceDelta = Number(newItemPrice);
-    if (!name) {
-      setAddItemError('請輸入選項名稱');
-      return;
-    }
-    if (name.length > 50) {
-      setAddItemError('選項名稱最多 50 個字元');
-      return;
-    }
-    if (!Number.isFinite(priceDelta) || priceDelta < 0 || !/^\d+(\.\d{1,2})?$/.test(newItemPrice)) {
-      setAddItemError('價差必須是大於或等於 0，且最多兩位小數的數字');
-      return;
-    }
-
-    setIsSavingItem(true);
-    setAddItemError('');
-    try {
-      const { data } = await optionGroupsClient.post(
-        `/order/admin/optionGroups/${currentGroup.id}/items`,
-        { name, priceDelta }
-      );
-      const createdItem = {
-        id: String(data.id),
-        name: data.name,
-        priceDiff: Number(data.priceDelta),
-        sortOrder: data.sortOrder,
-        status: data.active ? 'active' : 'inactive',
-      };
-
-      setGroups(prevGroups => prevGroups.map(group => (
-        group.id === currentGroup.id
-          ? { ...group, items: [...group.items, createdItem] }
-          : group
-      )));
-      setIsAddingItem(false);
-    } catch (error) {
-      setAddItemError(error instanceof Error ? error.message : '新增選項失敗，請稍後再試');
-    } finally {
-      setIsSavingItem(false);
-    }
-  };
-
-  const handleSaveItem = async () => {
-    if (!editingItem || !currentGroup) return;
-
-    const name = tempItemName.trim();
-    const priceDelta = Number(tempItemPrice);
-    if (!name) {
-      setEditItemError('請輸入選項名稱');
-      return;
-    }
-    if (name.length > 50) {
-      setEditItemError('選項名稱最多 50 個字元');
-      return;
-    }
-    if (!Number.isFinite(priceDelta) || priceDelta < 0) {
-      setEditItemError('價差必須是大於或等於 0 的數字');
-      return;
-    }
-
-    setIsSavingItemEdit(true);
-    setEditItemError('');
-    try {
-      const { data } = await optionGroupsClient.put(
-        `/order/admin/optionGroups/${currentGroup.id}/items/${editingItem.id}`,
-        { name, priceDelta }
-      );
-      setGroups(prevGroups => prevGroups.map(group => (
-        group.id === currentGroup.id
-          ? {
-              ...group,
-              items: group.items.map(item => (
-                item.id === editingItem.id
-                  ? { ...item, name: data.name, priceDiff: Number(data.priceDelta) }
-                  : item
-              )),
-            }
-          : group
-      )));
-      setEditingItem(null);
-    } catch (error) {
-      setEditItemError(error instanceof Error ? error.message : '更新選項失敗，請稍後再試');
-    } finally {
-      setIsSavingItemEdit(false);
-    }
-  };
-
-  const handleDeleteItem = async () => {
-    if (!editingItem || !currentGroup || isDeletingItem) return;
-    if (!window.confirm(`確定要刪除「${editingItem.name}」選項嗎？`)) return;
-
-    setIsDeletingItem(true);
-    setEditItemError('');
-    try {
-      await optionGroupsClient.delete(
-        `/order/admin/optionGroups/${currentGroup.id}/items/${editingItem.id}`
-      );
-      setGroups(prevGroups => prevGroups.map(group => (
-        group.id === currentGroup.id
-          ? { ...group, items: group.items.filter(item => item.id !== editingItem.id) }
-          : group
-      )));
-      setEditingItem(null);
-    } catch (error) {
-      setEditItemError(error instanceof Error ? error.message : '刪除選項失敗，請稍後再試');
-    } finally {
-      setIsDeletingItem(false);
-    }
-  };
-
-  const handleToggleItem = async item => {
-    if (!currentGroup || togglingItemId) return;
-
-    setTogglingItemId(item.id);
-    setToggleItemError('');
-    try {
-      const { data } = await optionGroupsClient.patch(
-        `/order/admin/optionGroups/${currentGroup.id}/items/${item.id}/status`,
-        { active: item.status !== 'active' }
-      );
-      setGroups(prevGroups => prevGroups.map(group => (
-        group.id === currentGroup.id
-          ? {
-              ...group,
-              items: group.items.map(groupItem => (
-                groupItem.id === item.id
-                  ? { ...groupItem, status: data.active ? 'active' : 'inactive' }
-                  : groupItem
-              )),
-            }
-          : group
-      )));
-    } catch (error) {
-      setToggleItemError(error instanceof Error ? error.message : '更新選項狀態失敗，請稍後再試');
-    } finally {
-      setTogglingItemId(null);
-    }
-  };
+  const {
+    data: { groups, setGroups, selectedGroupId, setSelectedGroupId, currentGroup },
+    loading: { isLoading, loadError },
+    editForm: {
+      editingGroup,
+      editGroupName,
+      setEditGroupName,
+      editGroupMinSelect,
+      setEditGroupMinSelect,
+      editGroupMaxSelect,
+      setEditGroupMaxSelect,
+      editGroupSortOrder,
+      setEditGroupSortOrder,
+      editGroupError,
+      isSavingGroupEdit,
+      setEditingGroup,
+    },
+    createForm: {
+      isAddingGroup,
+      newGroupName,
+      setNewGroupName,
+      newGroupMinSelect,
+      setNewGroupMinSelect,
+      newGroupMaxSelect,
+      setNewGroupMaxSelect,
+      addGroupError,
+      isSavingGroup,
+      setIsAddingGroup,
+    },
+    actions: {
+      handleOpenAddGroupModal,
+      handleAddGroup,
+      handleOpenEditGroupModal,
+      handleSaveGroup,
+      handleDeleteGroup,
+    },
+  } = useOptionGroups();
+  const {
+    loading: { isLoadingDetails, detailsError },
+    editForm: {
+      editingItem,
+      tempItemName,
+      setTempItemName,
+      tempItemPrice,
+      setTempItemPrice,
+      editItemError,
+      isSavingItemEdit,
+      isDeletingItem,
+      setEditingItem,
+    },
+    createForm: {
+      isAddingItem,
+      newItemName,
+      setNewItemName,
+      newItemPrice,
+      setNewItemPrice,
+      addItemError,
+      isSavingItem,
+      setIsAddingItem,
+    },
+    status: { togglingItemId, toggleItemError },
+    actions: {
+      handleOpenItemModal,
+      handleOpenAddItemModal,
+      handleAddItem,
+      handleSaveItem,
+      handleDeleteItem,
+      handleToggleItem,
+    },
+  } = useOptionValues({ selectedGroupId, currentGroup, setGroups });
 
   return (
     <>
