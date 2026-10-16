@@ -3,7 +3,7 @@ import TopBar from '@/components/dashboard/TopBar'
 import OptionGroupSidebar from '../../../components/menuOptions/OptionGroupSidebar';
 import OptionGroupDetail from '../../../components/menuOptions/OptionGroupDetail';
 import AssociatedProducts from '../../../components/menuOptions/AssociatedProducts';
-import GroupNameModal from '../../../components/menuOptions/GroupNameModal';
+import EditOptionGroupModal from '../../../components/menuOptions/EditOptionGroupModal';
 import EditItemModal from '../../../components/menuOptions/EditItemModal';
 import AddOptionGroupModal from '../../../components/menuOptions/AddOptionGroupModal';
 import AddOptionValueModal from '../../../components/menuOptions/AddOptionValueModal';
@@ -20,8 +20,13 @@ export default function MenuOptions() {
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [detailsError, setDetailsError] = useState('');
 
-  const [isEditingGroupName, setIsEditingGroupName] = useState(false);
-  const [tempGroupName, setTempGroupName] = useState('');
+  const [editingGroup, setEditingGroup] = useState(null);
+  const [editGroupName, setEditGroupName] = useState('');
+  const [editGroupMinSelect, setEditGroupMinSelect] = useState('0');
+  const [editGroupMaxSelect, setEditGroupMaxSelect] = useState('1');
+  const [editGroupSortOrder, setEditGroupSortOrder] = useState('0');
+  const [editGroupError, setEditGroupError] = useState('');
+  const [isSavingGroupEdit, setIsSavingGroupEdit] = useState(false);
   const [isAddingGroup, setIsAddingGroup] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupMinSelect, setNewGroupMinSelect] = useState('0');
@@ -174,20 +179,70 @@ export default function MenuOptions() {
     }
   };
 
-  const handleOpenGroupNameModal = () => {
-    if (!currentGroup) return;
-    setTempGroupName(currentGroup.name);
-    setIsEditingGroupName(true);
+  const handleOpenEditGroupModal = group => {
+    setEditingGroup(group);
+    setEditGroupName(group.name);
+    setEditGroupMinSelect(String(group.minSelect));
+    setEditGroupMaxSelect(String(group.maxSelect));
+    setEditGroupSortOrder(String(group.sortOrder));
+    setEditGroupError('');
   };
 
-  const handleSaveGroupName = () => {
-    if (!currentGroup) return;
-    setGroups(prevGroups =>
-      prevGroups.map(g =>
-        g.id === currentGroup.id ? { ...g, name: tempGroupName } : g
-      )
-    );
-    setIsEditingGroupName(false);
+  const handleSaveGroup = async () => {
+    if (!editingGroup) return;
+
+    const name = editGroupName.trim();
+    const minSelect = Number(editGroupMinSelect);
+    const maxSelect = Number(editGroupMaxSelect);
+    const sortOrder = Number(editGroupSortOrder);
+
+    if (!name) {
+      setEditGroupError('請輸入群組名稱');
+      return;
+    }
+    if (name.length > 50) {
+      setEditGroupError('群組名稱最多 50 個字元');
+      return;
+    }
+    if (!Number.isSafeInteger(minSelect) || minSelect < 0) {
+      setEditGroupError('至少要選的數量必須是大於或等於 0 的整數');
+      return;
+    }
+    if (!Number.isSafeInteger(maxSelect) || maxSelect < 1 || maxSelect < minSelect) {
+      setEditGroupError('最多可選的數量必須是大於等於至少要選數量且至少為 1 的整數');
+      return;
+    }
+    if (!Number.isSafeInteger(sortOrder) || sortOrder < 0) {
+      setEditGroupError('排序必須是大於或等於 0 的整數');
+      return;
+    }
+
+    setIsSavingGroupEdit(true);
+    setEditGroupError('');
+    try {
+      const { data } = await optionGroupsClient.put(
+        `/order/admin/optionGroups/${editingGroup.id}`,
+        { name, minSelect, maxSelect, sortOrder }
+      );
+      setGroups(prevGroups => prevGroups
+        .map(group => (
+          group.id === editingGroup.id
+            ? {
+                ...group,
+                name: data.name,
+                minSelect: data.minSelect,
+                maxSelect: data.maxSelect,
+                sortOrder: data.sortOrder,
+              }
+            : group
+        ))
+        .sort((first, second) => first.sortOrder - second.sortOrder));
+      setEditingGroup(null);
+    } catch (error) {
+      setEditGroupError(error instanceof Error ? error.message : '更新選項群組失敗，請稍後再試');
+    } finally {
+      setIsSavingGroupEdit(false);
+    }
   };
 
   const handleOpenItemModal = (item) => {
@@ -302,7 +357,7 @@ export default function MenuOptions() {
             <OptionGroupDetail
               currentGroup={currentGroup}
               isLoading={isLoadingDetails}
-              onOpenGroupNameModal={handleOpenGroupNameModal}
+              onOpenEditGroupModal={() => handleOpenEditGroupModal(currentGroup)}
               onOpenItemModal={handleOpenItemModal}
               onOpenAddItemModal={handleOpenAddItemModal}
             />
@@ -318,12 +373,20 @@ export default function MenuOptions() {
             )}
           </div>
 
-          <GroupNameModal
-            isOpen={isEditingGroupName}
-            groupName={tempGroupName}
-            setGroupName={setTempGroupName}
-            onClose={() => setIsEditingGroupName(false)}
-            onSave={handleSaveGroupName}
+          <EditOptionGroupModal
+            group={editingGroup}
+            groupName={editGroupName}
+            setGroupName={setEditGroupName}
+            minSelect={editGroupMinSelect}
+            setMinSelect={setEditGroupMinSelect}
+            maxSelect={editGroupMaxSelect}
+            setMaxSelect={setEditGroupMaxSelect}
+            sortOrder={editGroupSortOrder}
+            setSortOrder={setEditGroupSortOrder}
+            error={editGroupError}
+            isSaving={isSavingGroupEdit}
+            onClose={() => setEditingGroup(null)}
+            onSave={handleSaveGroup}
           />
 
           <EditItemModal

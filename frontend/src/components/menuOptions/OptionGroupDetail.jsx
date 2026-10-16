@@ -6,7 +6,7 @@ import { SvgIconMap } from '@/assets/SvgIconMap'
 export default function OptionGroupDetail({
   currentGroup,
   isLoading,
-  onOpenGroupNameModal,
+  onOpenEditGroupModal,
   onOpenItemModal,
   onOpenAddItemModal,
 }) {
@@ -26,11 +26,11 @@ export default function OptionGroupDetail({
           </div>
           <button
             type="button"
-            onClick={onOpenGroupNameModal}
+            onClick={onOpenEditGroupModal}
             className="flex shrink-0 items-center gap-1 rounded-(--radius-btn) border border-line px-3 py-1.5 type-body-sm text-ink-600 transition-colors hover:bg-surface-2 hover:text-ink-900"
           >
             <SvgIconMap.OptionsEdit />
-            改名
+            編輯
           </button>
         </div>
 
