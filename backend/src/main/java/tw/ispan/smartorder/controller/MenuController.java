@@ -12,6 +12,7 @@ import tw.ispan.smartorder.dto.AdminOptionGroupDto;
 import tw.ispan.smartorder.dto.MenuItemOptionDetailDto;
 import tw.ispan.smartorder.dto.request.CreateOptionGroupRequest;
 import tw.ispan.smartorder.dto.request.CreateOptionValueRequest;
+import tw.ispan.smartorder.dto.request.UpdateOptionGroupRequest;
 import tw.ispan.smartorder.dto.AdminOptionValueDto;
 import tw.ispan.smartorder.entity.MenuCategoryEntity;
 import tw.ispan.smartorder.entity.MenuItemEntity;
@@ -110,6 +111,15 @@ public class MenuController {
     ) {
         AdminOptionGroupDto createdGroup = optionGroupService.createOptionGroup(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdGroup);
+    }
+
+    // MenuOptions 畫面 修改選項群組資訊
+    @PutMapping("/admin/optionGroups/{optionGroupId}")
+    public ResponseEntity<AdminOptionGroupDto> updateOptionGroup(
+            @PathVariable Long optionGroupId,
+            @Valid @RequestBody UpdateOptionGroupRequest request
+    ) {
+        return ResponseEntity.ok(optionGroupService.updateOptionGroup(optionGroupId, request));
     }
 
     // MenuOptions 畫面 依照 optionGroupId 提取選項群組詳細資訊

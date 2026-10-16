@@ -11,6 +11,7 @@ import tw.ispan.smartorder.dto.AdminOptionGroupDto;
 import tw.ispan.smartorder.dto.AdminOptionValueDto;
 import tw.ispan.smartorder.dto.request.CreateOptionGroupRequest;
 import tw.ispan.smartorder.dto.request.CreateOptionValueRequest;
+import tw.ispan.smartorder.dto.request.UpdateOptionGroupRequest;
 import tw.ispan.smartorder.entity.OptionGroupEntity;
 import tw.ispan.smartorder.entity.OptionValueEntity;
 import tw.ispan.smartorder.repository.MenuItemOptionGroupRepository;
@@ -48,6 +49,18 @@ public class OptionGroupService {
         entity.setSortOrder(0);
         entity.setCreatedAt(now);
         entity.setUpdatedAt(now);
+        return toDto(optionGroupRepository.save(entity));
+    }
+
+    public AdminOptionGroupDto updateOptionGroup(Long optionGroupId, UpdateOptionGroupRequest request) {
+        OptionGroupEntity entity = optionGroupRepository.findById(optionGroupId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Option group not found"));
+
+        entity.setName(request.name().trim());
+        entity.setMinSelect(request.minSelect());
+        entity.setMaxSelect(request.maxSelect());
+        entity.setSortOrder(request.sortOrder());
+        entity.setUpdatedAt(LocalDateTime.now());
         return toDto(optionGroupRepository.save(entity));
     }
 
