@@ -1,5 +1,6 @@
 package tw.ispan.smartorder.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -85,6 +86,18 @@ public class WaitlistService {
         waitlist.seat(session.getId());
 
         return WaitlistResponse.from(waitlist);
+    }
+
+    // 叫號後幾分鐘沒報到就算過號（S-10 規格：10 分鐘）
+    private static final int CALL_EXPIRE_MINUTES = 10;
+
+    // 排程每分鐘呼叫：已叫號超過 10 分鐘的組別 → 過號；回傳這次標了幾組（記日誌用）
+    @Transactional
+    public int expireOverdue() {
+        LocalDateTime deadline = LocalDateTime.now().minusMinutes(CALL_EXPIRE_MINUTES);
+        List<WaitlistEntity> overdue = waitlists.findByStatusAndCalledAtBefore("CALLED", deadline);
+        overdue.forEach(WaitlistEntity::expire);
+        return overdue.size();
     }
 
     // 共用：用 id 找候位，找不到回 404
