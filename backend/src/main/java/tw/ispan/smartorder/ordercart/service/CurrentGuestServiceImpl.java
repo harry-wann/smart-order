@@ -7,18 +7,29 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class CurrentGuestServiceImpl implements CurrentGuestService {
 
-    // 暫時使用資料庫中存在的資料 測試 客人 ID
-    private static final Long TEST_GUEST_ID = 97L;
+    private final tw.ispan.smartorder.repository.DiningSessionGuestRepository guests;
+
+    public CurrentGuestServiceImpl(tw.ispan.smartorder.repository.DiningSessionGuestRepository guests) {
+        this.guests = guests;
+    }
 
     @Override
     public Long requireGuestId(Long sessionId) {
 
-        if (sessionId == null) {
+        var attributes = org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
+        if (!(attributes instanceof org.springframework.web.context.request.ServletRequestAttributes servlet)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "請重新掃碼加入桌位");
+        }
+        var request = servlet.getRequest();
+        if (sessionId == null || !sessionId.equals(request.getAttribute("diningSessionId"))) {
             throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "找不到用餐場次"
+                    HttpStatus.FORBIDDEN,
+                    "無法操作其他桌的購物車"
             );
         }
-        return TEST_GUEST_ID;
+        var guest = guests.findByDiningSessionIdAndDeviceId(sessionId, request.getHeader("X-Device-Id"))
+                .filter(g -> g.getId().equals(request.getAttribute("diningGuestId")))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "請重新掃碼加入桌位"));
+        return guest.getId();
     }
 }

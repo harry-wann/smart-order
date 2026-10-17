@@ -24,6 +24,65 @@ import java.util.List;
 
 @Service
 public class OrderCartService {
+    @org.springframework.beans.factory.annotation.Autowired
+    private tw.ispan.smartorder.repository.MenuItemRepository menuItems;
+    @org.springframework.beans.factory.annotation.Autowired
+    private tw.ispan.smartorder.repository.OptionValueRepository optionValues;
+    @org.springframework.beans.factory.annotation.Autowired
+    private tw.ispan.smartorder.repository.MenuItemOptionGroupRepository itemGroups;
+    @org.springframework.beans.factory.annotation.Autowired
+    private tw.ispan.smartorder.repository.OptionGroupRepository groups;
+    @org.springframework.beans.factory.annotation.Autowired
+    private tw.ispan.smartorder.repository.DiningSessionGuestRepository guests;
+
+    public record AddItemRequest(Long menuItemId, int quantity, List<Long> optionValueIds, String note) {}
+
+    @Transactional
+    public void addItem(Long sessionId, Long guestId, AddItemRequest request) {
+        if (request.menuItemId() == null || request.quantity() < 1 || request.quantity() > 10) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "請選擇商品及 1 到 10 份數量");
+        }
+        var session = checkSessionOpenForUpdate(sessionId);
+        var guest = guests.findById(guestId).filter(g -> sessionId.equals(g.getDiningSessionId()))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "客人不屬於此桌"));
+        var menu = menuItems.findById(request.menuItemId())
+                .filter(m -> Boolean.TRUE.equals(m.getActive()) && !Boolean.TRUE.equals(m.getSoldOut()))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT, "商品已下架或售完"));
+        var ids = request.optionValueIds() == null ? List.<Long>of() : request.optionValueIds();
+        if (ids.stream().anyMatch(java.util.Objects::isNull) || new java.util.HashSet<>(ids).size() != ids.size()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "商品選項重複或不正確");
+        }
+        var selected = optionValues.findAllById(ids);
+        var allowedGroups = itemGroups.findById_MenuItemId(menu.getId()).stream()
+                .map(relation -> relation.getId().getOptionGroupId()).toList();
+        if (selected.size() != ids.size() || selected.stream().anyMatch(value ->
+                !Boolean.TRUE.equals(value.getActive()) || !allowedGroups.contains(value.getOptionGroupId().getId()))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "商品選項無效");
+        }
+        for (var group : groups.findAllById(allowedGroups)) {
+            long count = selected.stream().filter(v -> v.getOptionGroupId().getId().equals(group.getId())).count();
+            if (count < group.getMinSelect() || count > group.getMaxSelect()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "請依規則選擇" + group.getName());
+            }
+        }
+        var cart = new CartItemEntity();
+        cart.setDiningSession(session);
+        cart.setAddedByGuest(guest);
+        cart.setMenuItem(menu);
+        cart.setQuantity(request.quantity());
+        cart.setUnitPrice(menu.getPrice());
+        cart.setNote(request.note());
+        cartItemRepository.saveAndFlush(cart);
+        for (var value : selected) {
+            var option = new CartItemOptionEntity();
+            option.setCartItem(cart);
+            option.setOptionValue(value);
+            cartItemOptionRepository.save(option);
+        }
+        session.increaseCartVersion();
+        cartNotificationService.notifyTableAfterCommit(sessionId, guestId, "ITEM_ADDED", menu.getName(),
+                request.quantity(), selected.stream().map(OptionValueEntity::getName).toList(), null, 1, null);
+    }
 
     private final DiningSessionRepository diningSessionRepository;
     private final CartItemRepository cartItemRepository;

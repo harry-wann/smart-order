@@ -16,6 +16,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class OrderSubmitService {
+    @org.springframework.beans.factory.annotation.Autowired
+    private tw.ispan.smartorder.ordercart.service.CartNotificationService notifications;
     private final DiningSessionRepository sessionRepository;
     private final CartItemRepository cartItemRepository;
     private final CartItemOptionRepository cartItemOptionRepository;
@@ -132,6 +134,9 @@ public class OrderSubmitService {
         cartItemOptionRepository.flush();
         cartItemRepository.deleteAll(cartItems);
         cartItemRepository.flush();
+
+        notifications.notifyTableAfterCommit(sessionId, guestId, "ORDER_SUBMITTED", null, 0,
+                List.of(), nextSequence, cartItems.size(), addedSubtotal);
 
         return getOrder(ticket.getId());
     }

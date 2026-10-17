@@ -1,9 +1,17 @@
 import { useEffect } from 'react'
 import { Client } from '@stomp/stompjs'
+import { customerTokens, getDeviceId } from '@/services/client/tokenStore'
+
+export type TableActivity = {
+  eventId: string; sessionId: number; type: string; actorDeviceId: string;
+  actorName: string; itemName: string; quantity: number; options: string[];
+  sequenceNo: number; itemCount: number; amount: number; occurredAt: string;
+}
 
 export default function useCartWebSocket(
   sessionId: string | undefined,
   onCartUpdate: () => void,
+  onActivity?: (activity: TableActivity) => void,
 ) {
   useEffect(() => {
     if (!sessionId) return
@@ -14,6 +22,12 @@ export default function useCartWebSocket(
 
       // 斷線後 5 秒重連
       reconnectDelay: 5000,
+      beforeConnect: () => {
+        client.connectHeaders = {
+          'X-Session-Token': customerTokens.session.get() ?? '',
+          'X-Device-Id': getDeviceId(),
+        }
+      },
 
       // 成功連線
       onConnect: () => {
@@ -30,6 +44,9 @@ export default function useCartWebSocket(
               String(data.sessionId) === String(sessionId)
             ) {
               onCartUpdate()
+              if ('eventId' in data && 'actorDeviceId' in data && data.actorDeviceId !== getDeviceId()) {
+                onActivity?.(data as TableActivity)
+              }
             }
           } catch (error) {
             console.error('購物車通知解析失敗', error)
@@ -53,5 +70,5 @@ export default function useCartWebSocket(
     return () => {
       void client.deactivate()
     }
-  }, [sessionId, onCartUpdate])
+  }, [sessionId, onCartUpdate, onActivity])
 }

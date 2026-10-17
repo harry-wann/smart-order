@@ -27,6 +27,12 @@ public class OrderCartController {
 
     public record QuantityRequest(int quantity) {}
 
+    @PostMapping("/{sessionId}/cart/items")
+    @ResponseStatus(HttpStatus.CREATED)
+    public void addItem(@PathVariable Long sessionId, @RequestBody OrderCartService.AddItemRequest request) {
+        orderCartService.addItem(sessionId, currentGuestService.requireGuestId(sessionId), request);
+    }
+
     // 查詢自己的購物車
     @GetMapping("/{sessionId}/cart")
     public CartResponse getCart(@PathVariable Long sessionId) {

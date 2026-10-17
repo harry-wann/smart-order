@@ -42,7 +42,8 @@ public class DinnerService {
 		}
 
 		boolean joined=diningSessionGuestRepo.existsByDiningSessionIdAndDeviceId(session.get().getId(), deviceId);
-		String token = joined ? JwtToken.createToken(String.valueOf(session.get().getId())) : null;
+		String token = joined ? diningSessionGuestRepo.findByDiningSessionIdAndDeviceId(session.get().getId(), deviceId)
+                .map(g -> JwtToken.createGuestToken(g.getDiningSessionId(), g.getId(), deviceId)).orElse(null) : null;
 		return new TableStatusResponse(table.getTableNo(),true,joined,token);
 
 	}
@@ -56,8 +57,14 @@ public class DinnerService {
 
 	@Transactional
 	public JoinTableResponse join(String tableNo, String deviceId) {
+		if (deviceId == null || deviceId.isBlank() || deviceId.length() > 128) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST, "缺少有效的裝置識別碼");
+        }
 		DiningTableEntity table = findTable(tableNo);
 
+		// 鎖住桌位，避免同一裝置同時重複加入。
+        dinnerTableRepo.findByIdForUpdate(table.getId()).orElseThrow();
 		DiningSessionEntity session = diningSessionRepo.findFirstByTableIdAndStatusOrderByOpenedAtDesc(table.getId(), OPEN)
 						.orElseThrow(() -> new IllegalArgumentException("這桌尚未開桌，請洽櫃檯"));
 
@@ -72,7 +79,8 @@ public class DinnerService {
 			diningSessionGuestRepo.save(guest);
 		}
 
-		String token = JwtToken.createToken(String.valueOf(session.getId()));
+		var currentGuest = diningSessionGuestRepo.findByDiningSessionIdAndDeviceId(session.getId(), deviceId).orElseThrow();
+        String token = JwtToken.createGuestToken(session.getId(), currentGuest.getId(), deviceId);
 		return new JoinTableResponse(table.getTableNo(), token);
 	}
 

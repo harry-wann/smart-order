@@ -1,5 +1,11 @@
 import { customerClient } from '@/services/client/customerClient'
 
+export async function addCartItem(sessionId: string, item: {
+  menuItemId: number; quantity: number; optionValueIds: number[]; note?: string;
+}) {
+  await customerClient.post(`/dining-sessions/${sessionId}/cart/items`, item)
+}
+
 export type CartItem = {
   id: number | string
   name: string
