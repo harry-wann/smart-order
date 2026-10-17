@@ -1,15 +1,26 @@
 package tw.ispan.smartorder.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 import tw.ispan.smartorder.dto.AdminMenuCategoryDto;
 import tw.ispan.smartorder.dto.AdminMenuItemDto;
+import tw.ispan.smartorder.dto.AdminOptionGroupDetailDto;
+import tw.ispan.smartorder.dto.AdminOptionGroupDto;
 import tw.ispan.smartorder.dto.MenuItemOptionDetailDto;
+import tw.ispan.smartorder.dto.request.CreateOptionGroupRequest;
+import tw.ispan.smartorder.dto.request.CreateOptionValueRequest;
+import tw.ispan.smartorder.dto.request.ReorderOptionValuesRequest;
+import tw.ispan.smartorder.dto.request.UpdateOptionValueStatusRequest;
+import tw.ispan.smartorder.dto.request.UpdateOptionGroupRequest;
+import tw.ispan.smartorder.dto.AdminOptionValueDto;
 import tw.ispan.smartorder.entity.MenuCategoryEntity;
 import tw.ispan.smartorder.entity.MenuItemEntity;
 import tw.ispan.smartorder.service.MenuCategoryService;
 import tw.ispan.smartorder.service.MenuItemService;
+import tw.ispan.smartorder.service.OptionGroupService;
 
 import java.util.List;
 
@@ -21,6 +32,9 @@ public class MenuController {
 
     @Autowired
     private MenuItemService menuItemService;
+
+    @Autowired
+    private OptionGroupService optionGroupService;
 
     // Menu 畫面 提取類別
     @GetMapping("/category")
@@ -84,5 +98,95 @@ public class MenuController {
     ) {
         MenuCategoryEntity deletedCategory = menuCategoryService.deleteMenuCategory(categoryId);
         return ResponseEntity.ok(deletedCategory);
+    }
+
+    // MenuOptions 畫面 提取所有選項群組資訊
+    @GetMapping("/admin/optionGroups")
+    public ResponseEntity<List<AdminOptionGroupDto>> getOptionGroups() {
+        return ResponseEntity.ok(optionGroupService.getAllOptionGroups());
+    }
+
+    // MenuOptions 畫面 修改選項群組資訊
+    @PostMapping("/admin/optionGroups")
+    public ResponseEntity<AdminOptionGroupDto> createOptionGroup(
+            @Valid @RequestBody CreateOptionGroupRequest request
+    ) {
+        AdminOptionGroupDto createdGroup = optionGroupService.createOptionGroup(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdGroup);
+    }
+
+    // MenuOptions 畫面 修改選項群組資訊
+    @PutMapping("/admin/optionGroups/{optionGroupId}")
+    public ResponseEntity<AdminOptionGroupDto> updateOptionGroup(
+            @PathVariable Long optionGroupId,
+            @Valid @RequestBody UpdateOptionGroupRequest request
+    ) {
+        return ResponseEntity.ok(optionGroupService.updateOptionGroup(optionGroupId, request));
+    }
+
+    // MenuOptions 畫面 刪除選項群組資訊
+    @DeleteMapping("/admin/optionGroups/{optionGroupId}")
+    public ResponseEntity<Void> deleteOptionGroup(@PathVariable Long optionGroupId) {
+        optionGroupService.deleteOptionGroup(optionGroupId);
+        return ResponseEntity.noContent().build();
+    }
+
+    // MenuOptions 畫面 依照 optionGroupId 提取選項群組詳細資訊
+    @GetMapping("/admin/optionGroups/{optionGroupId}")
+    public ResponseEntity<AdminOptionGroupDetailDto> getOptionGroupDetail(
+            @PathVariable Long optionGroupId
+    ) {
+        return ResponseEntity.ok(optionGroupService.getOptionGroupDetail(optionGroupId));
+    }
+
+    // MenuOptions 畫面 新增選項值
+    @PostMapping("/admin/optionGroups/{optionGroupId}/items")
+    public ResponseEntity<AdminOptionValueDto> createOptionValue(
+            @PathVariable Long optionGroupId,
+            @Valid @RequestBody CreateOptionValueRequest request
+    ) {
+        AdminOptionValueDto createdValue = optionGroupService.createOptionValue(optionGroupId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdValue);
+    }
+
+    // MenuOptions 畫面 修改選項值
+    @PutMapping("/admin/optionGroups/{optionGroupId}/items/{optionValueId}")
+    public ResponseEntity<AdminOptionValueDto> updateOptionValue(
+            @PathVariable Long optionGroupId,
+            @PathVariable Long optionValueId,
+            @Valid @RequestBody CreateOptionValueRequest request
+    ) {
+        return ResponseEntity.ok(optionGroupService.updateOptionValue(optionGroupId, optionValueId, request));
+    }
+
+    // MenuOptions 畫面 依照 optionGroupId 與 optionValueId 修改選項值排序
+    @PatchMapping("/admin/optionGroups/{optionGroupId}/items/sort-order")
+    public ResponseEntity<Void> reorderOptionValues(
+            @PathVariable Long optionGroupId,
+            @Valid @RequestBody ReorderOptionValuesRequest request
+    ) {
+        optionGroupService.reorderOptionValues(optionGroupId, request.optionValueIds());
+        return ResponseEntity.noContent().build();
+    }
+
+    // MenuOptions 畫面 修改選項值狀態
+    @PatchMapping("/admin/optionGroups/{optionGroupId}/items/{optionValueId}/status")
+    public ResponseEntity<AdminOptionValueDto> updateOptionValueStatus(
+            @PathVariable Long optionGroupId,
+            @PathVariable Long optionValueId,
+            @Valid @RequestBody UpdateOptionValueStatusRequest request
+    ) {
+        return ResponseEntity.ok(
+                optionGroupService.updateOptionValueStatus(optionGroupId, optionValueId, request));
+    }
+
+    // MenuOptions 根據 optionGroupId 與 optionValueId 刪除選項值
+    @DeleteMapping("/admin/optionGroups/{optionGroupId}/items/{optionValueId}")
+    public ResponseEntity<Void> deleteOptionValue(
+            @PathVariable Long optionGroupId,
+            @PathVariable Long optionValueId
+    ) {
+        optionGroupService.deleteOptionValue(optionGroupId, optionValueId);
+        return ResponseEntity.noContent().build();
     }
 }
