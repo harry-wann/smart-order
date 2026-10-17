@@ -8,6 +8,7 @@ import SOButton from '../../../components/SOButton'
 
 async function getOrderHistory(signal) {
   const { data } = await customerClient.get('/dining/orders', { signal })
+  console.log('取得的訂單資料：', data)
   return data
 }
 
@@ -38,9 +39,21 @@ export default function OrderHistory() {
     return (
       <div className="mx-auto min-h-screen w-full max-w-full bg-paper">
         <CustomerTopBar title="本桌訂單" showBackButton />
-        <div className="p-6 text-center" role="status">
-          {query.isPending ? '訂單載入中…' : query.error.message}
-          {query.isError && <SOButton text="重新載入" onClick={() => query.refetch()} />}
+        <div className="mx-auto flex w-full max-w-3xl flex-col items-center px-6 pt-8 text-center" role="status">
+          <p className="type-body text-ink-900">
+            {query.isPending ? '訂單載入中…' : '點餐憑證已失效，請重新掃碼'}
+          </p>
+          {query.isError && (
+            <div className="mt-3 w-full max-w-md">
+              <SOButton
+                type="button"
+                variant="default"
+                height="h-[52px]"
+                text={<span className="type-button">重新載入</span>}
+                onClick={() => query.refetch()}
+              />
+            </div>
+          )}
         </div>
       </div>
     )
@@ -62,6 +75,16 @@ export default function OrderHistory() {
     )
   }
 
+  const getItemStatus = (status) => ({
+    text: {
+      SERVED: '已出餐',
+      CANCELLED: '已取消',
+      PENDING: '待製作',
+    }[status] || status,
+    color: status === 'SERVED' ? 'done' : status === 'CANCELLED' ? 'plain' : 'wait',
+    icon: status === 'SERVED' ? 'check' : 'clock',
+  })
+
   return (
     <div className="relative mx-auto flex min-h-screen w-full max-w-full flex-col bg-paper font-sans text-ink-900">
       <div className="sticky top-0 z-10 shadow-sm [&>nav]:h-14">
@@ -79,7 +102,7 @@ export default function OrderHistory() {
           <div className="rounded-card border border-line bg-surface p-card shadow-card">
             <div className="flex items-center justify-between">
               <div className="flex items-baseline gap-2">
-                <span className="type-h2 text-ink-900">{tableInfo.tableName}</span>
+                <span className="type-h2 text-ink-900">{tableInfo.tableNo} 桌</span>
                 <span className="rounded-pill bg-surface-2 px-2.5 py-0.5 text-xs leading-[1.6] font-medium text-ink-600 shadow-[inset_0_0_0_1px_var(--color-line)]">
                   {tableInfo.guestCount} 位
                 </span>
@@ -92,7 +115,7 @@ export default function OrderHistory() {
               <span>
                 {tableInfo.seatedTime} 入座・已 {tableInfo.elapsedMinutes} 分鐘
               </span>
-              <span>{tableInfo.note}</span>
+              <span>目前金額（未含服務費）</span>
             </div>
           </div>
         </div>
@@ -102,33 +125,36 @@ export default function OrderHistory() {
           {orders.map((order) => (
             <section
               key={order.orderId}
-              className={`rounded-card border p-card ${
-                order.isUrgent
-                  ? 'border-brand-600 bg-brand-100'
-                  : 'border-line bg-surface shadow-card'
-              }`}
+              className="rounded-card border border-line bg-surface p-card shadow-card"
             >
               <div className="flex items-center gap-2">
-                <h2 className="type-h3 text-ink-900">{order.orderTitle}</h2>
-                {order.badgeText && renderBadge(order.badgeText, order.badgeCol)}
+                <h2 className="type-h3 text-ink-900">第 {order.sequenceNo} 單</h2>
+                {order.status === 'CANCELLED' && renderBadge('已取消', 'plain')}
                 <span className="flex-1" />
                 <span className="type-caption whitespace-nowrap text-ink-600">{order.submitTime} 送出</span>
               </div>
 
               <div className="flex flex-col pt-2">
-                {order.items.map((item, index) => (
-                  <React.Fragment key={item.id}>
+                {order.items.map((item, index) => {
+                  const itemStatus = getItemStatus(item.status)
+                  const specs = [
+                    ...item.options,
+                    item.note?.trim() ? `備註：${item.note}` : null,
+                  ].filter(Boolean).join('・')
+
+                  return (
+                    <React.Fragment key={item.id}>
                     <div className={`flex items-start gap-2 py-2 ${index > 0 ? 'border-t border-line' : ''}`}>
-                      {item.iconType === 'check' ? (
+                      {itemStatus.icon === 'check' ? (
                         <SvgIconMap.TicketGreencheck
                           role="img"
-                          aria-label={item.statusText}
+                          aria-label={itemStatus.text}
                           className="h-6 w-5.5 shrink-0"
                         />
                       ) : (
                         <SvgIconMap.TicketTime
                           role="img"
-                          aria-label={item.statusText}
+                          aria-label={itemStatus.text}
                           className="h-6 w-5.5 shrink-0"
                         />
                       )}
@@ -137,15 +163,16 @@ export default function OrderHistory() {
                           <span className="min-w-0 truncate text-base leading-6 font-medium text-ink-900">
                             {item.name} ×{item.quantity}
                           </span>
-                          {renderBadge(item.statusText, item.statusCol)}
+                          {renderBadge(itemStatus.text, itemStatus.color)}
                         </div>
-                        {item.specs && (
-                          <span className="mt-1 type-caption text-ink-600">{item.specs}</span>
+                        {specs && (
+                          <span className="mt-1 type-caption text-ink-600">{specs}</span>
                         )}
                       </div>
                     </div>
-                  </React.Fragment>
-                ))}
+                    </React.Fragment>
+                  )
+                })}
               </div>
             </section>
           ))}
