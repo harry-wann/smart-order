@@ -49,7 +49,7 @@ public class OptionGroupService {
         entity.setName(request.name().trim());
         entity.setMinSelect(request.minSelect());
         entity.setMaxSelect(request.maxSelect());
-        entity.setSortOrder(0);
+        entity.setSortOrder(optionGroupRepository.findMaxSortOrder() + 1);
         entity.setCreatedAt(now);
         entity.setUpdatedAt(now);
         return toDto(optionGroupRepository.save(entity));

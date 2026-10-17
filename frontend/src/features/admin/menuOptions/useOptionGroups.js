@@ -94,7 +94,8 @@ export default function useOptionGroups() {
         associatedProducts: null,
       };
 
-      setGroups(prevGroups => [...prevGroups, createdGroup]);
+      setGroups(prevGroups => [...prevGroups, createdGroup]
+        .sort((first, second) => first.sortOrder - second.sortOrder));
       setSelectedGroupId(createdGroup.id);
       setIsAddingGroup(false);
     } catch (error) {
