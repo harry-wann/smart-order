@@ -86,6 +86,20 @@ const mockTableOrderData = {
   ],
 }
 
+function SyncStatus({ isLive = true, lastUpdated }) {
+  return (
+    <div
+      className={`flex items-center gap-2 px-4 py-2.5 type-caption font-medium ${
+        isLive ? 'bg-success-bg text-success-ink' : 'bg-warning-bg text-hold-ink'
+      }`}
+    >
+      <span className={`size-2 shrink-0 rounded-full ${isLive ? 'bg-success' : 'bg-hold-ink'}`} />
+      {isLive ? '即時同步中' : '連線中斷，重新連線中'}
+      {isLive && lastUpdated && <span>最後更新 {lastUpdated}</span>}
+    </div>
+  )
+}
+
 export default function OrderHistory() {
   const { tableInfo, orders } = mockTableOrderData
 
@@ -105,7 +119,7 @@ export default function OrderHistory() {
   }
 
   return (
-    <div className="relative mx-auto flex min-h-screen w-full max-w-[375px] flex-col bg-paper font-sans text-ink-900">
+    <div className="relative mx-auto flex min-h-screen w-full max-w-93.75 flex-col bg-paper font-sans text-ink-900">
       <div className="sticky top-0 z-10 shadow-sm [&>nav]:h-14">
         <CustomerTopBar title="本桌訂單" showBackButton>
           <button className="flex h-11 w-11 items-center justify-center active:opacity-70">
@@ -114,10 +128,7 @@ export default function OrderHistory() {
         </CustomerTopBar>
       </div>
 
-      <div className="flex items-center gap-2 bg-success-bg px-4 py-2.5 text-sm font-medium text-success-ink">
-        <div className="h-2 w-2 rounded-pill bg-success"></div>
-        即時同步中 最後更新 {tableInfo.lastSyncTime}
-      </div>
+      <SyncStatus isLive lastUpdated={tableInfo.lastSyncTime} />
 
       <div className="flex-1 overflow-y-auto pb-36">
         <div className="px-page pt-4">
@@ -196,7 +207,7 @@ export default function OrderHistory() {
         </div>
       </div>
 
-      <div className="fixed right-0 bottom-0 left-0 z-10 mx-auto w-full max-w-[375px] border-t border-line bg-surface px-4 pt-3 pb-6 shadow-pop">
+      <div className="fixed right-0 bottom-0 left-0 z-10 mx-auto w-full max-w-93.75 border-t border-line bg-surface px-4 pt-3 pb-6 shadow-pop">
         <p className="mb-3 text-center type-body-sm text-ink-600">用餐完畢請到櫃檯結帳</p>
         <div className="flex gap-3">
           <SOButton type="button" height="h-[52px]" text="繼續加點" />
