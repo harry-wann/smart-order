@@ -22,7 +22,9 @@ import tw.ispan.smartorder.repository.OptionGroupRepository;
 import tw.ispan.smartorder.repository.OptionValueRepository;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class OptionGroupService {
@@ -143,6 +145,33 @@ public class OptionGroupService {
                 updatedValue.getSortOrder(),
                 updatedValue.getActive()
         );
+    }
+
+    @Transactional
+    public void reorderOptionValues(Long optionGroupId, List<Long> optionValueIds) {
+        if (!optionGroupRepository.existsById(optionGroupId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Option group not found");
+        }
+
+        List<OptionValueEntity> optionValues =
+                optionValueRepository.findByOptionGroupId_IdOrderBySortOrderAscIdAsc(optionGroupId);
+        Set<Long> requestedIds = new HashSet<>(optionValueIds);
+        Set<Long> existingIds = optionValues.stream()
+                .map(OptionValueEntity::getId)
+                .collect(java.util.stream.Collectors.toSet());
+        if (requestedIds.size() != optionValueIds.size() || !requestedIds.equals(existingIds)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "選項排序資料不正確");
+        }
+
+        var optionValuesById = optionValues.stream()
+                .collect(java.util.stream.Collectors.toMap(OptionValueEntity::getId, value -> value));
+        LocalDateTime now = LocalDateTime.now();
+        for (int index = 0; index < optionValueIds.size(); index++) {
+            OptionValueEntity optionValue = optionValuesById.get(optionValueIds.get(index));
+            optionValue.setSortOrder(index + 1);
+            optionValue.setUpdatedAt(now);
+        }
+        optionValueRepository.saveAll(optionValues);
     }
 
     @Transactional

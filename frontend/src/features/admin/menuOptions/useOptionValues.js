@@ -20,6 +20,8 @@ export default function useOptionValues({ selectedGroupId, currentGroup, setGrou
   const [isSavingItem, setIsSavingItem] = useState(false);
   const [togglingItemId, setTogglingItemId] = useState(null);
   const [toggleItemError, setToggleItemError] = useState('');
+  const [isReorderingItems, setIsReorderingItems] = useState(false);
+  const [reorderItemsError, setReorderItemsError] = useState('');
 
   useEffect(() => {
     if (!selectedGroupId) return undefined;
@@ -217,6 +219,48 @@ export default function useOptionValues({ selectedGroupId, currentGroup, setGrou
     }
   };
 
+  const handleReorderItems = async (sourceItemId, targetItemId, insertAfterTarget) => {
+    if (!currentGroup || isReorderingItems || sourceItemId === targetItemId) return;
+
+    const sourceIndex = currentGroup.items.findIndex(item => item.id === sourceItemId);
+    const targetIndex = currentGroup.items.findIndex(item => item.id === targetItemId);
+    if (sourceIndex === -1 || targetIndex === -1) return;
+
+    const previousItems = currentGroup.items;
+    const reorderedItems = [...previousItems];
+    const [movedItem] = reorderedItems.splice(sourceIndex, 1);
+    const updatedTargetIndex = reorderedItems.findIndex(item => item.id === targetItemId);
+    reorderedItems.splice(updatedTargetIndex + (insertAfterTarget ? 1 : 0), 0, movedItem);
+    const itemsWithUpdatedOrder = reorderedItems.map((item, index) => ({
+      ...item,
+      sortOrder: index + 1,
+    }));
+
+    setIsReorderingItems(true);
+    setReorderItemsError('');
+    setGroups(prevGroups => prevGroups.map(group => (
+      group.id === currentGroup.id
+        ? { ...group, items: itemsWithUpdatedOrder }
+        : group
+    )));
+
+    try {
+      await optionGroupsClient.patch(
+        `/order/admin/optionGroups/${currentGroup.id}/items/sort-order`,
+        { optionValueIds: itemsWithUpdatedOrder.map(item => item.id) }
+      );
+    } catch (error) {
+      setGroups(prevGroups => prevGroups.map(group => (
+        group.id === currentGroup.id
+          ? { ...group, items: previousItems }
+          : group
+      )));
+      setReorderItemsError(error instanceof Error ? error.message : '重新排序選項失敗');
+    } finally {
+      setIsReorderingItems(false);
+    }
+  };
+
 
   return {
     loading: { isLoadingDetails, detailsError },
@@ -241,7 +285,7 @@ export default function useOptionValues({ selectedGroupId, currentGroup, setGrou
       isSavingItem,
       setIsAddingItem,
     },
-    status: { togglingItemId, toggleItemError },
+    status: { togglingItemId, toggleItemError, isReorderingItems, reorderItemsError },
     actions: {
       handleOpenItemModal,
       handleOpenAddItemModal,
@@ -249,6 +293,7 @@ export default function useOptionValues({ selectedGroupId, currentGroup, setGrou
       handleSaveItem,
       handleDeleteItem,
       handleToggleItem,
+      handleReorderItems,
     },
   };
 }

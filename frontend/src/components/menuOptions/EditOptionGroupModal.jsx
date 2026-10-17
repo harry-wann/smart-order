@@ -10,8 +10,6 @@ export default function EditOptionGroupModal({
   setMinSelect,
   maxSelect,
   setMaxSelect,
-  sortOrder,
-  setSortOrder,
   error,
   isSaving,
   onClose,
@@ -87,21 +85,6 @@ export default function EditOptionGroupModal({
               className="w-full rounded-(--radius-btn) border border-line px-3 py-2 type-body text-ink-900 focus:border-brand-600 focus:outline-none"
             />
           </div>
-          <div>
-            <label htmlFor="edit-option-group-sort" className="type-caption mb-2 block text-ink-600">
-              排序
-            </label>
-            <input
-              id="edit-option-group-sort"
-              type="number"
-              min="0"
-              step="1"
-              required
-              value={sortOrder}
-              onChange={event => setSortOrder(event.target.value)}
-              className="w-full rounded-(--radius-btn) border border-line px-3 py-2 type-body text-ink-900 focus:border-brand-600 focus:outline-none"
-            />
-          </div>
           {error && <p role="alert" className="type-caption text-danger sm:col-span-2">{error}</p>}
         </div>
 
@@ -112,13 +95,6 @@ export default function EditOptionGroupModal({
             disabled={isSaving}
             className="flex h-10 w-auto items-center justify-center rounded-(--radius-btn) border border-danger bg-transparent px-4 py-2 type-body-sm text-danger transition-all duration-300 hover:bg-danger-bg active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100"
             text="刪除"
-          />
-          <SOButton
-            type="button"
-            onClick={onClose}
-            disabled={isSaving}
-            className="flex h-10 w-auto items-center justify-center rounded-(--radius-btn) border border-line bg-transparent px-4 py-2 type-body-sm text-ink-600 transition-all duration-300 hover:bg-surface-2 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100"
-            text="取消"
           />
           <SOButton
             type="submit"

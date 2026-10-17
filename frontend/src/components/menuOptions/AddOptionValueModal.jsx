@@ -77,13 +77,6 @@ export default function AddOptionValueModal({
 
         <div className="flex justify-end gap-2 border-t border-line pt-4">
           <SOButton
-            type="button"
-            onClick={onClose}
-            disabled={isSaving}
-            className="flex h-10 w-auto items-center justify-center rounded-(--radius-btn) border border-line bg-transparent px-4 py-2 type-body-sm text-ink-600 transition-all duration-300 hover:bg-surface-2 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100"
-            text="取消"
-          />
-          <SOButton
             type="submit"
             disabled={isSaving}
             className="flex h-10 w-auto items-center justify-center rounded-(--radius-btn) bg-brand-600 px-4 py-2 type-body-sm text-white transition-all duration-300 hover:bg-brand-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100"

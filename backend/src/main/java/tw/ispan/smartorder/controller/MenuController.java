@@ -12,6 +12,7 @@ import tw.ispan.smartorder.dto.AdminOptionGroupDto;
 import tw.ispan.smartorder.dto.MenuItemOptionDetailDto;
 import tw.ispan.smartorder.dto.request.CreateOptionGroupRequest;
 import tw.ispan.smartorder.dto.request.CreateOptionValueRequest;
+import tw.ispan.smartorder.dto.request.ReorderOptionValuesRequest;
 import tw.ispan.smartorder.dto.request.UpdateOptionValueStatusRequest;
 import tw.ispan.smartorder.dto.request.UpdateOptionGroupRequest;
 import tw.ispan.smartorder.dto.AdminOptionValueDto;
@@ -156,6 +157,15 @@ public class MenuController {
             @Valid @RequestBody CreateOptionValueRequest request
     ) {
         return ResponseEntity.ok(optionGroupService.updateOptionValue(optionGroupId, optionValueId, request));
+    }
+
+    @PatchMapping("/admin/optionGroups/{optionGroupId}/items/sort-order")
+    public ResponseEntity<Void> reorderOptionValues(
+            @PathVariable Long optionGroupId,
+            @Valid @RequestBody ReorderOptionValuesRequest request
+    ) {
+        optionGroupService.reorderOptionValues(optionGroupId, request.optionValueIds());
+        return ResponseEntity.noContent().build();
     }
 
     // MenuOptions 畫面 修改選項值狀態

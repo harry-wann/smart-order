@@ -90,14 +90,6 @@ export default function AddOptionGroupModal({
 
         <div className="flex justify-end gap-2">
           <button
-            type="button"
-            onClick={onClose}
-            disabled={isSaving}
-            className="rounded-(--radius-btn) border border-line px-4 py-2 type-body-sm text-ink-600 hover:bg-surface-2"
-          >
-            取消
-          </button>
-          <button
             type="submit"
             disabled={isSaving}
             className="rounded-(--radius-btn) bg-brand-600 px-4 py-2 type-body-sm text-white hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-50"

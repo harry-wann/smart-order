@@ -13,9 +13,10 @@ export default function useOptionGroups() {
   const [editGroupName, setEditGroupName] = useState('');
   const [editGroupMinSelect, setEditGroupMinSelect] = useState('0');
   const [editGroupMaxSelect, setEditGroupMaxSelect] = useState('1');
-  const [editGroupSortOrder, setEditGroupSortOrder] = useState('0');
   const [editGroupError, setEditGroupError] = useState('');
   const [isSavingGroupEdit, setIsSavingGroupEdit] = useState(false);
+  const [isReorderingGroups, setIsReorderingGroups] = useState(false);
+  const [reorderGroupsError, setReorderGroupsError] = useState('');
   const [isAddingGroup, setIsAddingGroup] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupMinSelect, setNewGroupMinSelect] = useState('0');
@@ -110,7 +111,6 @@ export default function useOptionGroups() {
     setEditGroupName(group.name);
     setEditGroupMinSelect(String(group.minSelect));
     setEditGroupMaxSelect(String(group.maxSelect));
-    setEditGroupSortOrder(String(group.sortOrder));
     setEditGroupError('');
   };
 
@@ -120,7 +120,7 @@ export default function useOptionGroups() {
     const name = editGroupName.trim();
     const minSelect = Number(editGroupMinSelect);
     const maxSelect = Number(editGroupMaxSelect);
-    const sortOrder = Number(editGroupSortOrder);
+    const sortOrder = editingGroup.sortOrder;
 
     const validationError = validateOptionGroup({
       name,
@@ -183,6 +183,60 @@ export default function useOptionGroups() {
     }
   };
 
+  const handleReorderGroups = async (sourceGroupId, targetGroupId, insertAfterTarget) => {
+    if (isReorderingGroups || sourceGroupId === targetGroupId) return;
+
+    const sourceIndex = groups.findIndex(group => group.id === sourceGroupId);
+    const targetIndex = groups.findIndex(group => group.id === targetGroupId);
+    if (sourceIndex === -1 || targetIndex === -1) return;
+
+    const previousGroups = groups;
+    const reorderedGroups = [...groups];
+    const [movedGroup] = reorderedGroups.splice(sourceIndex, 1);
+    const updatedTargetIndex = reorderedGroups.findIndex(group => group.id === targetGroupId);
+    const insertIndex = updatedTargetIndex + (insertAfterTarget ? 1 : 0);
+    reorderedGroups.splice(insertIndex, 0, movedGroup);
+    const groupsWithUpdatedOrder = reorderedGroups.map((group, index) => ({
+      ...group,
+      sortOrder: index,
+    }));
+
+    setIsReorderingGroups(true);
+    setReorderGroupsError('');
+    setGroups(groupsWithUpdatedOrder);
+
+    try {
+      const saveResults = await Promise.allSettled(groupsWithUpdatedOrder.map(group => (
+        optionGroupsClient.put(`/order/admin/optionGroups/${group.id}`, {
+          name: group.name,
+          minSelect: group.minSelect,
+          maxSelect: group.maxSelect,
+          sortOrder: group.sortOrder,
+        })
+      )));
+      const failedSave = saveResults.find(result => result.status === 'rejected');
+      if (failedSave) throw failedSave.reason;
+    } catch (error) {
+      const rollbackResults = await Promise.allSettled(previousGroups.map(group => (
+        optionGroupsClient.put(`/order/admin/optionGroups/${group.id}`, {
+          name: group.name,
+          minSelect: group.minSelect,
+          maxSelect: group.maxSelect,
+          sortOrder: group.sortOrder,
+        })
+      )));
+      setGroups(previousGroups);
+      setReorderGroupsError(
+        `${error instanceof Error ? error.message : '重新排序選項群組失敗'}${
+          rollbackResults.some(result => result.status === 'rejected')
+            ? '；部分排序未能還原，請重新整理頁面。'
+            : ''
+        }`
+      );
+    } finally {
+      setIsReorderingGroups(false);
+    }
+  };
 
 
   return {
@@ -196,8 +250,6 @@ export default function useOptionGroups() {
       setEditGroupMinSelect,
       editGroupMaxSelect,
       setEditGroupMaxSelect,
-      editGroupSortOrder,
-      setEditGroupSortOrder,
       editGroupError,
       isSavingGroupEdit,
       setEditingGroup,
@@ -220,6 +272,8 @@ export default function useOptionGroups() {
       handleOpenEditGroupModal,
       handleSaveGroup,
       handleDeleteGroup,
+      handleReorderGroups,
     },
+    reorder: { isReorderingGroups, reorderGroupsError },
   };
 }

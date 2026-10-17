@@ -13,7 +13,12 @@ export default function OptionGroupDetail({
   onToggleItem,
   togglingItemId,
   toggleItemError,
+  onReorderItems,
+  isReorderingItems,
+  reorderItemsError,
 }) {
+  const [draggedItemId, setDraggedItemId] = React.useState(null);
+  const [dropItemId, setDropItemId] = React.useState(null);
   const minSelect = Number(currentGroup.minSelect ?? 0);
   const maxSelect = Number(currentGroup.maxSelect ?? 1);
   const selectionRule = `${minSelect > 0 ? '必選' : '非必選'} ${maxSelect > 1 ? '可複選' : '單選'}`;
@@ -81,6 +86,11 @@ export default function OptionGroupDetail({
         {toggleItemError && (
           <p role="alert" className="mb-2 type-caption text-danger">{toggleItemError}</p>
         )}
+        {reorderItemsError && (
+          <p role="alert" className="mb-2 type-caption text-danger">
+            選項排序失敗：{reorderItemsError}
+          </p>
+        )}
         <div className="overflow-hidden rounded-(--radius-card) border border-line bg-surface">
           <table className="w-full table-fixed border-collapse text-left">
             <colgroup>
@@ -105,7 +115,42 @@ export default function OptionGroupDetail({
                   <td colSpan={5} className="h-14 px-3.5 text-center type-body-sm text-ink-600">載入選項值中...</td>
                 </tr>
               ) : currentGroup.items.length > 0 ? currentGroup.items.map(item => (
-                <tr key={item.id} className="h-[54px] transition-colors hover:bg-surface-2/50">
+                <tr
+                  key={item.id}
+                  draggable={!isReorderingItems}
+                  onDragStart={event => {
+                    event.dataTransfer.effectAllowed = 'move';
+                    event.dataTransfer.setData('text/plain', item.id);
+                    setDraggedItemId(item.id);
+                  }}
+                  onDragOver={event => {
+                    event.preventDefault();
+                    event.dataTransfer.dropEffect = 'move';
+                    setDropItemId(item.id);
+                  }}
+                  onDrop={event => {
+                    event.preventDefault();
+                    const sourceItemId = event.dataTransfer.getData('text/plain') || draggedItemId;
+                    const bounds = event.currentTarget.getBoundingClientRect();
+                    const insertAfterTarget = event.clientY > bounds.top + bounds.height / 2;
+                    if (sourceItemId) {
+                      onReorderItems(sourceItemId, item.id, insertAfterTarget);
+                    }
+                    setDraggedItemId(null);
+                    setDropItemId(null);
+                  }}
+                  onDragEnd={() => {
+                    setDraggedItemId(null);
+                    setDropItemId(null);
+                  }}
+                  className={`h-[54px] transition-colors hover:bg-surface-2/50 ${
+                    isReorderingItems ? 'cursor-wait' : 'cursor-grab active:cursor-grabbing'
+                  } ${item.id === draggedItemId ? 'opacity-40' : ''} ${
+                    item.id === dropItemId && item.id !== draggedItemId
+                      ? 'border-brand-600 bg-brand-100 ring-2 ring-brand-600/20'
+                      : ''
+                  }`}
+                >
                   <td className="px-3.5 type-body-sm font-semibold text-ink-900">{item.name}</td>
                   <td className="px-2 text-center type-body-sm text-ink-900">+{item.priceDiff}</td>
                   <td className="px-2 text-center type-body-sm text-ink-900">{item.sortOrder}</td>
