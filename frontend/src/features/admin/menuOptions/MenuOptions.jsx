@@ -1,156 +1,245 @@
-import React, { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import TopBar from '@/components/dashboard/TopBar'
+import SOButton from '@/components/SOButton';
 import OptionGroupSidebar from '../../../components/menuOptions/OptionGroupSidebar';
 import OptionGroupDetail from '../../../components/menuOptions/OptionGroupDetail';
 import AssociatedProducts from '../../../components/menuOptions/AssociatedProducts';
-import GroupNameModal from '../../../components/menuOptions/GroupNameModal';
+import EditOptionGroupModal from '../../../components/menuOptions/EditOptionGroupModal';
 import EditItemModal from '../../../components/menuOptions/EditItemModal';
-import SOButton from '@/components/SOButton';
-import Badge from '@/components/Badge';
-
-const INITIAL_OPTION_GROUPS = [
-  {
-    id: 'g1',
-    name: '份量',
-    typeDescription: '必選 單選 · 掛在 18 個品項上',
-    minSelect: 1,
-    maxSelect: 1,
-    sortOrder: 1,
-    items: [
-      { id: 'i1', name: '半份 約 120g', priceDiff: 0, sortOrder: 1, status: 'active' },
-      { id: 'i2', name: '全份 約 220g', priceDiff: 80, sortOrder: 2, status: 'active' },
-      { id: 'i3', name: '加大 約 320g', priceDiff: 160, sortOrder: 3, status: 'disabled' },
-    ],
-    associatedProducts: [
-      '安格斯霜降牛五花', '伊比利豬梅花', '台灣松阪豬', '美國老饕牛小排',
-      '霜降牛舌', '紐西蘭小羔羊肩', '海鮮拼盤', '時蔬八品', '...還有 10 個'
-    ]
-  },
-  {
-    id: 'g2',
-    name: '辣度',
-    typeDescription: '選填 單選 · 掛在 22 個品項上',
-    minSelect: 0,
-    maxSelect: 1,
-    sortOrder: 2,
-    items: [
-      { id: 'i4', name: '不辣', priceDiff: 0, sortOrder: 1, status: 'active' },
-      { id: 'i5', name: '小辣', priceDiff: 0, sortOrder: 2, status: 'active' },
-    ],
-    associatedProducts: ['麻辣鍋底', '川味口水雞']
-  },
-  {
-    id: 'g3',
-    name: '加點配料',
-    typeDescription: '選填 複選 · 掛在 26 個品項上',
-    minSelect: 0,
-    maxSelect: 5,
-    sortOrder: 3,
-    items: [
-      { id: 'i6', name: '手工蝦滑', priceDiff: 120, sortOrder: 1, status: 'active' },
-    ],
-    associatedProducts: ['綜合火鍋料']
-  }
-];
+import AddOptionGroupModal from '../../../components/menuOptions/AddOptionGroupModal';
+import AddOptionValueModal from '../../../components/menuOptions/AddOptionValueModal';
+import { SvgIconMap } from '@/assets/SvgIconMap';
+import useOptionGroups from './useOptionGroups';
+import useOptionValues from './useOptionValues';
 
 export default function MenuOptions() {
-  const [groups, setGroups] = useState(INITIAL_OPTION_GROUPS);
-  const [selectedGroupId, setSelectedGroupId] = useState(INITIAL_OPTION_GROUPS[0].id);
+  const sidebarRef = useRef(null);
+  const [sidebarHeight, setSidebarHeight] = useState(0);
 
-  const [isEditingGroupName, setIsEditingGroupName] = useState(false);
-  const [tempGroupName, setTempGroupName] = useState('');
+  const {
+    data: { groups, setGroups, selectedGroupId, setSelectedGroupId, currentGroup },
+    loading: { isLoading, loadError },
+    editForm: {
+      editingGroup,
+      editGroupName,
+      setEditGroupName,
+      editGroupMinSelect,
+      setEditGroupMinSelect,
+      editGroupMaxSelect,
+      setEditGroupMaxSelect,
+      editGroupError,
+      isSavingGroupEdit,
+      setEditingGroup,
+    },
+    createForm: {
+      isAddingGroup,
+      newGroupName,
+      setNewGroupName,
+      newGroupMinSelect,
+      setNewGroupMinSelect,
+      newGroupMaxSelect,
+      setNewGroupMaxSelect,
+      addGroupError,
+      isSavingGroup,
+      setIsAddingGroup,
+    },
+    actions: {
+      handleOpenAddGroupModal,
+      handleAddGroup,
+      handleOpenEditGroupModal,
+      handleSaveGroup,
+      handleDeleteGroup,
+      handleReorderGroups,
+    },
+    reorder: { isReorderingGroups, reorderGroupsError },
+  } = useOptionGroups();
+  const {
+    loading: { isLoadingDetails, detailsError },
+    editForm: {
+      editingItem,
+      tempItemName,
+      setTempItemName,
+      tempItemPrice,
+      setTempItemPrice,
+      editItemError,
+      isSavingItemEdit,
+      isDeletingItem,
+      setEditingItem,
+    },
+    createForm: {
+      isAddingItem,
+      newItemName,
+      setNewItemName,
+      newItemPrice,
+      setNewItemPrice,
+      addItemError,
+      isSavingItem,
+      setIsAddingItem,
+    },
+    status: {
+      togglingItemId,
+      toggleItemError,
+      isReorderingItems,
+      reorderItemsError,
+    },
+    actions: {
+      handleOpenItemModal,
+      handleOpenAddItemModal,
+      handleAddItem,
+      handleSaveItem,
+      handleDeleteItem,
+      handleToggleItem,
+      handleReorderItems,
+    },
+  } = useOptionValues({ selectedGroupId, currentGroup, setGroups });
 
-  const [editingItem, setEditingItem] = useState(null);
-  const [tempItemName, setTempItemName] = useState('');
-  const [tempItemPrice, setTempItemPrice] = useState(0);
+  useLayoutEffect(() => {
+    const sidebarElement = sidebarRef.current;
+    if (!sidebarElement) return undefined;
 
-  const currentGroup = groups.find(g => g.id === selectedGroupId) || groups[0];
+    const updateSidebarHeight = () => {
+      setSidebarHeight(sidebarElement.getBoundingClientRect().height);
+    };
+    const resizeObserver = new ResizeObserver(updateSidebarHeight);
+    resizeObserver.observe(sidebarElement);
+    updateSidebarHeight();
 
-  const handleOpenGroupNameModal = () => {
-    setTempGroupName(currentGroup.name);
-    setIsEditingGroupName(true);
-  };
+    return () => resizeObserver.disconnect();
+  }, []);
 
-  const handleSaveGroupName = () => {
-    setGroups(prevGroups =>
-      prevGroups.map(g =>
-        g.id === currentGroup.id ? { ...g, name: tempGroupName } : g
-      )
-    );
-    setIsEditingGroupName(false);
-  };
-
-  const handleOpenItemModal = (item) => {
-    setEditingItem(item);
-    setTempItemName(item.name);
-    setTempItemPrice(item.priceDiff);
-  };
-
-  const handleSaveItem = () => {
-    if (!editingItem) return;
-    setGroups(prevGroups =>
-      prevGroups.map(g => {
-        if (g.id !== currentGroup.id) return g;
-        const updatedItems = g.items.map(item =>
-          item.id === editingItem.id
-            ? { ...item, name: tempItemName, priceDiff: Number(tempItemPrice) }
-            : item
-        );
-        return { ...g, items: updatedItems };
-      })
-    );
-    setEditingItem(null);
-  };
-
-  return (<><TopBar
+  return (
+    <>
+      <TopBar
         childrenLeft={
-          <div className='flex scale-70'>
-            <Badge text="5 個群組" col="plain" />
-          </div>
+          <span className="rounded-pill border border-line bg-surface-2 px-2.5 py-1 type-dashboard-top-bar-tag text-ink-600">
+            {groups.length} 個群組
+          </span>
         }
         childrenRight={
-          <SOButton height="h-[44px]"text="新增群組" />
+          <div className="w-fit">
+            <SOButton
+              type="button"
+              onClick={handleOpenAddGroupModal}
+              disabled={isLoading}
+              height="h-9"
+              content={
+                <span className="flex items-center gap-1.5">
+                  <SvgIconMap.DashboardPlus aria-hidden="true" />
+                  新增群組
+                </span>
+              }
+            />
+          </div>
         }
       />
-    <div className="flex h-screen bg-paper p-(--spacing-page) gap-(--spacing-field) text-ink-900 font-sans relative">
-      
-      
-      <OptionGroupSidebar 
-        groups={groups} 
-        selectedGroupId={selectedGroupId} 
-        onSelectGroup={setSelectedGroupId} 
-      />
-
-      <div className="flex-1 flex flex-col gap-(--spacing-field)">
-        <OptionGroupDetail 
-          currentGroup={currentGroup}
-          onOpenGroupNameModal={handleOpenGroupNameModal}
-          onOpenItemModal={handleOpenItemModal}
-        />
-
-        <AssociatedProducts 
-          associatedProducts={currentGroup.associatedProducts} 
+      <div className="relative flex min-h-0 min-w-0 flex-1 items-start gap-4 overflow-hidden bg-paper px-6 py-5 font-sans text-ink-900">
+      <div
+        ref={sidebarRef}
+        className="no-scrollbar max-h-full w-72 shrink-0 self-start touch-pan-y overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]"
+      >
+        <OptionGroupSidebar
+          groups={groups}
+          selectedGroupId={selectedGroupId}
+          onSelectGroup={setSelectedGroupId}
+          onReorderGroups={handleReorderGroups}
+          isReordering={isReorderingGroups}
+          reorderError={reorderGroupsError}
         />
       </div>
 
-      <GroupNameModal 
-        isOpen={isEditingGroupName}
-        groupName={tempGroupName}
-        setGroupName={setTempGroupName}
-        onClose={() => setIsEditingGroupName(false)}
-        onSave={handleSaveGroupName}
-      />
+      {isLoading ? (
+        <div className="flex-1 rounded-(--radius-card) border border-line bg-surface p-6 text-ink-600">載入選項群組中...</div>
+      ) : loadError ? (
+        <div role="alert" className="flex-1 rounded-(--radius-card) border border-danger-line bg-surface p-6 text-danger">載入選項群組失敗：{loadError}</div>
+      ) : currentGroup ? (
+        <>
+          <div
+            className="no-scrollbar flex min-h-0 min-w-0 flex-1 touch-pan-y flex-col gap-3 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]"
+            style={{ height: sidebarHeight || undefined }}
+          >
+            <OptionGroupDetail
+              currentGroup={currentGroup}
+              isLoading={isLoadingDetails}
+              onOpenEditGroupModal={() => handleOpenEditGroupModal(currentGroup)}
+              onOpenItemModal={handleOpenItemModal}
+              onOpenAddItemModal={handleOpenAddItemModal}
+              onToggleItem={handleToggleItem}
+              togglingItemId={togglingItemId}
+              toggleItemError={toggleItemError}
+              onReorderItems={handleReorderItems}
+              isReorderingItems={isReorderingItems}
+              reorderItemsError={reorderItemsError}
+            />
 
-      <EditItemModal 
-        isOpen={Boolean(editingItem)}
-        itemName={tempItemName}
-        setItemName={setTempItemName}
-        itemPrice={tempItemPrice}
-        setItemPrice={setTempItemPrice}
-        onClose={() => setEditingItem(null)}
-        onSave={handleSaveItem}
-      />
+            <AssociatedProducts
+              associatedProducts={currentGroup.associatedProducts}
+              isLoading={isLoadingDetails}
+            />
+            {detailsError && (
+              <div role="alert" className="text-danger">
+                載入選項群組資料失敗：{detailsError}
+              </div>
+            )}
+          </div>
 
-    </div></>
+          <EditOptionGroupModal
+            group={editingGroup}
+            groupName={editGroupName}
+            setGroupName={setEditGroupName}
+            minSelect={editGroupMinSelect}
+            setMinSelect={setEditGroupMinSelect}
+            maxSelect={editGroupMaxSelect}
+            setMaxSelect={setEditGroupMaxSelect}
+            error={editGroupError}
+            isSaving={isSavingGroupEdit}
+            onClose={() => setEditingGroup(null)}
+            onSave={handleSaveGroup}
+            onDelete={handleDeleteGroup}
+          />
+
+          <EditItemModal
+            isOpen={Boolean(editingItem)}
+            itemName={tempItemName}
+            setItemName={setTempItemName}
+            itemPrice={tempItemPrice}
+            setItemPrice={setTempItemPrice}
+            error={editItemError}
+            isSaving={isSavingItemEdit}
+            isDeleting={isDeletingItem}
+            onClose={() => setEditingItem(null)}
+            onSave={handleSaveItem}
+            onDelete={handleDeleteItem}
+          />
+
+          <AddOptionValueModal
+            isOpen={isAddingItem}
+            itemName={newItemName}
+            setItemName={setNewItemName}
+            itemPrice={newItemPrice}
+            setItemPrice={setNewItemPrice}
+            error={addItemError}
+            isSaving={isSavingItem}
+            onClose={() => setIsAddingItem(false)}
+            onSave={handleAddItem}
+          />
+        </>
+      ) : (
+        <div className="flex-1 rounded-(--radius-card) border border-line bg-surface p-6 text-ink-600">目前沒有選項群組</div>
+      )}
+      </div>
+      <AddOptionGroupModal
+        isOpen={isAddingGroup}
+        groupName={newGroupName}
+        setGroupName={setNewGroupName}
+        minSelect={newGroupMinSelect}
+        setMinSelect={setNewGroupMinSelect}
+        maxSelect={newGroupMaxSelect}
+        setMaxSelect={setNewGroupMaxSelect}
+        error={addGroupError}
+        isSaving={isSavingGroup}
+        onClose={() => setIsAddingGroup(false)}
+        onSave={handleAddGroup}
+      />
+    </>
   );
 }
