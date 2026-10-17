@@ -1,4 +1,6 @@
 import React from 'react';
+import SOButton from '@/components/SOButton';
+import { SvgIconMap } from '@/assets/SvgIconMap';
 
 export default function AddOptionValueModal({
   isOpen,
@@ -24,18 +26,14 @@ export default function AddOptionValueModal({
       >
         <div className="mb-5 flex items-center justify-between">
           <h3 className="type-h3 text-ink-900">新增選項</h3>
-          <button
+          <SOButton
             type="button"
             onClick={onClose}
             disabled={isSaving}
             aria-label="關閉"
-            className="text-ink-400 transition-colors hover:text-ink-900 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
+            className="flex h-8 w-8 items-center justify-center rounded-(--radius-btn) bg-transparent p-1 text-ink-400 transition-all duration-300 hover:text-ink-900 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100"
+            content={<SvgIconMap.ModalClose aria-hidden="true" />}
+          />
         </div>
 
         <div className="mb-6 space-y-4">
@@ -78,21 +76,19 @@ export default function AddOptionValueModal({
         </div>
 
         <div className="flex justify-end gap-2 border-t border-line pt-4">
-          <button
+          <SOButton
             type="button"
             onClick={onClose}
             disabled={isSaving}
-            className="rounded-(--radius-btn) border border-line px-4 py-2 type-body-sm text-ink-600 transition-colors hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            取消
-          </button>
-          <button
+            className="flex h-10 w-auto items-center justify-center rounded-(--radius-btn) border border-line bg-transparent px-4 py-2 type-body-sm text-ink-600 transition-all duration-300 hover:bg-surface-2 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100"
+            text="取消"
+          />
+          <SOButton
             type="submit"
             disabled={isSaving}
-            className="rounded-(--radius-btn) bg-brand-600 px-4 py-2 type-body-sm text-white transition-colors hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isSaving ? '新增中...' : '新增'}
-          </button>
+            className="flex h-10 w-auto items-center justify-center rounded-(--radius-btn) bg-brand-600 px-4 py-2 type-body-sm text-white transition-all duration-300 hover:bg-brand-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100"
+            text={isSaving ? '新增中...' : '新增'}
+          />
         </div>
       </form>
     </div>
