@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import SOButton from '@/components/SOButton'
-import { getOrderTicket } from '@/api/orderApi.js'
+import { getOrderTicket } from '@/services/api/order/orderApi'
 
 export default function OrderSubmitted() {
   const { orderTicketId } = useParams()

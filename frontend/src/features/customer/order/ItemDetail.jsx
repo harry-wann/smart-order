@@ -2,14 +2,38 @@ import React, { useState, useMemo, useEffect } from 'react'
 import SOButton from '../../../components/SOButton'
 import OptionRadioGroup from '../../../components/optionRadio/OptionRadioGroup'
 import OptionCheckboxGroup from '../../../components/optionCheckbox/OptionCheckboxGroup'
-import { useLocation } from 'react-router'
-import axios from 'axios'
+import { useLocation, useNavigate } from 'react-router'
+import { getCurrentDining } from '@/services/api/dining/diningApi'
+import { addCartItem } from '@/services/api/cart/cartApi'
+import { customerClient } from '@/services/client/customerClient'
 
 export default function ItemDetail() {
   const location = useLocation();
   const productId = location.state?.productId;
   const [selections, setSelections] = useState({})
   const [item, setItem] = useState(null);
+  const navigate = useNavigate()
+  const [quantity, setQuantity] = useState(1)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleAdd() {
+    if (busy || missingRequiredGroup) return
+    setBusy(true)
+    setError('')
+    try {
+      const dining = await getCurrentDining()
+      await addCartItem(String(dining.sessionId), {
+        menuItemId: Number(productId), quantity,
+        optionValueIds: Object.values(selections).flat().map(Number),
+      })
+      navigate('/order/menu')
+    } catch (err) {
+      setError(err.message || '加入購物車失敗，請稍後再試')
+    } finally {
+      setBusy(false)
+    }
+  }
 
   const displayOptionGroups = useMemo(
     () =>
@@ -32,7 +56,7 @@ export default function ItemDetail() {
     if (productId == null) return; 
     async function loadItems(productId) {
       try {
-        const response = await axios.get(`http://localhost:8080/api/order/items/${productId}`); 
+        const response = await customerClient.get(`/order/items/${productId}`);
         setItem(response.data)
       } catch (error) {
         console.error(error)
@@ -48,18 +72,16 @@ export default function ItemDetail() {
       const selectedIds = selections[group.id] || []
       group.options.forEach((option) => {
         if (selectedIds.includes(option.id)) {
-          extraPrice += option.priceDelta
+          extraPrice += Number(option.priceDelta)
         }
       })
     })
-    return item.price + extraPrice
-  }, [selections, displayOptionGroups, item])
+    return (Number(item.price) + extraPrice) * quantity
+  }, [selections, displayOptionGroups, item, quantity])
 
-  const missingRequiredGroup = useMemo(() => {
-    return displayOptionGroups.find(
+  const missingRequiredGroup = displayOptionGroups.find(
       (group) => group.isRequired && (!selections[group.id] || selections[group.id].length === 0),
     )
-  }, [displayOptionGroups, selections])
 
   return (
       <div className="relative min-h-screen w-full self-start bg-paper pb-24 font-sans text-ink-900">
@@ -159,6 +181,13 @@ export default function ItemDetail() {
               )
             })}
 
+            <div className="flex items-center justify-between px-5 pb-6">
+              <label htmlFor="item-quantity">份數</label>
+              <input id="item-quantity" type="number" min="1" max="10" value={quantity}
+                disabled={busy} className="w-20 rounded border border-line p-2"
+                onChange={(event) => setQuantity(Math.min(10, Math.max(1, Math.trunc(Number(event.target.value)) || 1)))} />
+            </div>
+            {error && <p role="alert" className="px-5 pb-4 text-brand-600">{error}</p>}
             <div className="fixed right-0 bottom-0 left-0 flex h-22.25 border-t border-line bg-paper p-4 pb-6">
               <SOButton
                 height="h-[52px]"
@@ -168,7 +197,8 @@ export default function ItemDetail() {
                     ? `請選擇${missingRequiredGroup.name}`
                     : ['加入購物車', `NT$ ${totalAmount}`]
                 }
-                disabled={!!missingRequiredGroup}
+                disabled={!!missingRequiredGroup || busy}
+                onClick={handleAdd}
               />
             </div>
           </div>

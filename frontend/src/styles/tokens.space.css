@@ -20,6 +20,17 @@
            店家端的區塊間距放大到 32px），給名字才改得動一個地方
    ========================================================================== */
 
+@keyframes table-notice-enter {
+  from {
+    opacity: 0;
+    transform: translateY(calc(-100% - env(safe-area-inset-top, 0px) - 12px));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @theme {
   /* ------------------------------------------------------------------------
      (a) §4.1.1 的例外

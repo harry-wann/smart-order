@@ -20,7 +20,8 @@ public class SessionTokenFilter extends OncePerRequestFilter {
 
 	@Override
 	protected boolean shouldNotFilter(HttpServletRequest request){
-		return !request.getRequestURI().startsWith("/api/dining/");
+		return !request.getRequestURI().startsWith("/api/dining/")
+                && !request.getRequestURI().startsWith("/api/dining-sessions/");
 	}
 
 	@Override
@@ -31,7 +32,9 @@ public class SessionTokenFilter extends OncePerRequestFilter {
 
 		Long sessionId;
 		try {
-			sessionId=Long.valueOf(JwtToken.parseToken(token));
+			var identity = JwtToken.parseGuestToken(token, request.getHeader("X-Device-Id"));
+            sessionId = identity.sessionId();
+            request.setAttribute("diningGuestId", identity.guestId());
 
 		}catch (JwtException|IllegalArgumentException e){
 			reject(response);

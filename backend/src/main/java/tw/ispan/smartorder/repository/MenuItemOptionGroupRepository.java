@@ -10,6 +10,7 @@ import tw.ispan.smartorder.entity.embeddable.MenuOptionEntity;
 import java.util.List;
 
 public interface MenuItemOptionGroupRepository extends JpaRepository<MenuItemOptionGroupEntity, MenuOptionEntity> {
+    List<MenuItemOptionGroupEntity> findById_MenuItemId(Long menuItemId);
     @Query("""
             SELECT new tw.ispan.smartorder.dto.AdminAssociatedMenuItemDto(
                 menuItem.id,

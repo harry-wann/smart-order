@@ -1,8 +1,16 @@
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import SOButton from '@/components/SOButton'
 
+// 狀態轉換，與 OrderSubmitted 的中文顯示一致。
+const statusText = {
+  PENDING: '待製作',
+  PREPARING: '製作中',
+  SERVED: '已出餐',
+  CANCELLED: '已取消',
+}
+
 function StatusBadge({ status }) {
-  const isFinished = status === '已出餐'
+  const isFinished = status === 'SERVED' || status === '已出餐'
 
   return (
     <span
@@ -10,7 +18,7 @@ function StatusBadge({ status }) {
         isFinished ? 'bg-success text-white' : 'border border-warning-line bg-accent-100 text-hold-ink'
       }`}
     >
-      {status}
+      {statusText[status] ?? status}
     </span>
   )
 }
@@ -23,7 +31,7 @@ function OrderCard({ order }) {
         <div className="flex items-center gap-2">
           <h3>第 {order.sequenceNo} 單</h3>
           <span className="rounded-pill border border-warning-line bg-accent-100 px-2 py-1 text-[10px] text-hold-ink">
-            {order.status}
+            {statusText[order.status] ?? order.status}
           </span>
         </div>
 
@@ -49,7 +57,7 @@ function OrderCard({ order }) {
           >
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                {item.status === '已出餐' ? (<SvgIconMap.OrderRecordOk />) :
+                {item.status === 'SERVED' || item.status === '已出餐' ? (<SvgIconMap.OrderRecordOk />) :
                   (<SvgIconMap.OrderRecordWait />)}
 
                 <p className="type-body font-medium">
