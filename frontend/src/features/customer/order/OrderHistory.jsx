@@ -1,7 +1,6 @@
 import React from 'react'
 import CustomerTopBar from '@/components/CustomerTopBar'
 import { SvgIconMap } from '@/assets/SvgIconMap'
-import Badge from '../../../components/Badge'
 import SOButton from '../../../components/SOButton'
 
 // 原檔名 Ticket.jsx
@@ -32,7 +31,7 @@ const mockTableOrderData = {
           name: '安格斯霜降牛五花',
           quantity: 1,
           statusText: '製作中',
-          statusCol: 'plain',
+          statusCol: 'wait',
           iconType: 'clock',
           specs: '全份・加蔥花・備註：不要太生',
         },
@@ -41,7 +40,7 @@ const mockTableOrderData = {
           name: '白飯',
           quantity: 2,
           statusText: '製作中',
-          statusCol: 'plain',
+          statusCol: 'wait',
           iconType: 'clock',
           specs: '免費續加',
         },
@@ -90,10 +89,25 @@ const mockTableOrderData = {
 export default function OrderHistory() {
   const { tableInfo, orders } = mockTableOrderData
 
+  const renderBadge = (text, color) => {
+    const colorClass = {
+      rec: 'bg-accent-500 text-ink-900',
+      wait: 'border border-warning-line bg-warning-bg text-hold-ink',
+      done: 'bg-success text-surface',
+      plain: 'border border-line bg-surface-2 text-ink-600',
+    }[color] || 'border border-line bg-surface-2 text-ink-600'
+
+    return (
+      <span className={`shrink-0 rounded-pill px-2 py-0.5 text-xs leading-5 font-medium ${colorClass}`}>
+        {text}
+      </span>
+    )
+  }
+
   return (
-    <div className="relative min-h-screen w-full self-start bg-paper pb-32 font-sans text-ink-900">
-      <div className="sticky top-0 z-10 shadow-sm">
-        <CustomerTopBar title="本桌訂單" showBackButton={false}>
+    <div className="relative mx-auto flex min-h-screen w-full max-w-[375px] flex-col bg-paper font-sans text-ink-900">
+      <div className="sticky top-0 z-10 shadow-sm [&>nav]:h-14">
+        <CustomerTopBar title="本桌訂單" showBackButton>
           <button className="flex h-11 w-11 items-center justify-center active:opacity-70">
             <SvgIconMap.OrderHeaderBell role="img" aria-label="通知鈴鐺" className="h-6 w-6" />
           </button>
@@ -105,12 +119,13 @@ export default function OrderHistory() {
         即時同步中 最後更新 {tableInfo.lastSyncTime}
       </div>
 
-      <div className="flex flex-col gap-4 p-4">
-        <div className="rounded-card bg-surface p-card shadow-card">
+      <div className="flex-1 overflow-y-auto pb-36">
+        <div className="px-page pt-4">
+          <div className="rounded-card bg-surface p-card shadow-card">
           <div className="flex items-center justify-between">
             <div className="flex items-baseline gap-2">
-              <span className="type-display text-ink-900">{tableInfo.tableName}</span>
-              <span className="rounded-pill bg-surface-2 px-2.5 py-0.5 text-sm font-medium text-ink-600">
+            <span className="type-h2 text-ink-900">{tableInfo.tableName}</span>
+              <span className="rounded-pill bg-surface-2 px-2.5 py-0.5 type-caption font-medium text-ink-600">
                 {tableInfo.guestCount} 位
               </span>
             </div>
@@ -124,35 +139,30 @@ export default function OrderHistory() {
             </span>
             <span>{tableInfo.note}</span>
           </div>
+          </div>
         </div>
 
-        {orders.map((order) => (
-          <div
-            key={order.orderId}
-            className={`rounded-card p-card ${
-              order.isUrgent
-                ? 'border border-brand-600 bg-danger-bg'
-                : 'border border-line/50 bg-surface shadow-card'
-            }`}
-          >
-            <div className="flex items-center justify-between border-b border-line pb-3">
+        <div className="flex flex-col gap-card-gap px-page pt-4">
+          {orders.map((order) => (
+            <section
+              key={order.orderId}
+              className={`rounded-card border p-card ${
+                order.isUrgent
+                  ? 'border-brand-600 bg-brand-100'
+                  : 'border-line/50 bg-surface shadow-card'
+              }`}
+            >
               <div className="flex items-center gap-2">
                 <h2 className="type-h3 text-ink-900">{order.orderTitle}</h2>
-                {order.badgeText && (
-                  <div className="flex scale-70">
-                    <Badge text={order.badgeText} col={order.badgeCol} />
-                  </div>
-                )}
+                {order.badgeText && renderBadge(order.badgeText, 'rec')}
+                <span className="flex-1" />
+                <span className="type-caption whitespace-nowrap text-ink-600">{order.submitTime} 送出</span>
               </div>
-              <span className="type-caption text-ink-600">{order.submitTime} 送出</span>
-            </div>
 
-            <div className="flex flex-col pt-3">
-              {order.items.map((item, index) => (
-                <React.Fragment key={item.id}>
-                  {index > 0 && <div className="my-1 border-b border-line/60"></div>}
-
-                  <div className="flex gap-2 py-3">
+              <div className="flex flex-col pt-2">
+                {order.items.map((item, index) => (
+                  <React.Fragment key={item.id}>
+                    <div className={`flex items-start gap-2 py-2 ${index > 0 ? 'border-t border-line' : ''}`}>
                     {item.iconType === 'check' ? (
                       <SvgIconMap.CartTime
                         role="img"
@@ -166,29 +176,28 @@ export default function OrderHistory() {
                         className="mt-0.5 h-5 w-5 shrink-0"
                       />
                     )}
-                    <div className="flex flex-1 flex-col">
-                      <div className="flex items-start justify-between gap-2">
-                        <span className="type-h3 text-ink-900">
-                          {item.name} × {item.quantity}
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="min-w-0 truncate text-base leading-6 font-medium text-ink-900">
+                          {item.name} ×{item.quantity}
                         </span>
-                        <div className="flex scale-70">
-                          <Badge text={item.statusText} col={item.statusCol} />
-                        </div>
+                        {renderBadge(item.statusText, item.statusCol)}
                       </div>
                       {item.specs && (
                         <span className="mt-1 type-body-sm text-ink-600">{item.specs}</span>
                       )}
                     </div>
-                  </div>
-                </React.Fragment>
-              ))}
-            </div>
-          </div>
-        ))}
+                    </div>
+                  </React.Fragment>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
       </div>
 
-      <div className="fixed right-0 bottom-0 left-0 border-t border-line bg-surface p-4 pb-6 shadow-[--shadow-pop]">
-        <p className="mb-3 text-center type-caption text-ink-600">用餐完畢請到櫃檯結帳</p>
+      <div className="fixed right-0 bottom-0 left-0 z-10 mx-auto w-full max-w-[375px] border-t border-line bg-surface px-4 pt-3 pb-6 shadow-pop">
+        <p className="mb-3 text-center type-body-sm text-ink-600">用餐完畢請到櫃檯結帳</p>
         <div className="flex gap-3">
           <SOButton type="button" height="h-[52px]" text="繼續加點" />
           <SOButton type="button" height="h-[52px]" variant="secondary" text="我要結帳  " />
