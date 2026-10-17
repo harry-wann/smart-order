@@ -6,6 +6,7 @@ import { SvgIconMap } from '@/assets/SvgIconMap'
 import BellButtonPlaceholder from './BellButtonPlaceholder'
 import { fetchTables, cleanTable } from '@/services/api/table/tableApi'
 import { fetchWaitlist } from '@/services/api/waitlist/waitlistApi'
+import { useTableStatusSocket } from '@/services/realtime/useTableStatusSocket'
 
 // 把後臺狀態的英文轉成中文顯示、根據桌位狀態決定顏色、根據狀態決定標籤底色
 const statusStyles = {
@@ -280,8 +281,16 @@ function ErrorState({ onRetry, onUseCache }) {
   )
 }
 
-// 右上角「即時同步中」。之後接 WebSocket 再依連線狀態切換
-function SyncIndicator() {
+// 右上角連線狀態：WebSocket 連著就是綠色「即時同步中」，斷線就是黃色「連線中斷，重新連線中」
+function SyncIndicator({ isLive }) {
+  if (!isLive) {
+    return (
+      <div className="flex h-9 items-center gap-2 rounded-btn border border-line bg-warning-bg px-3 type-caption text-hold-ink">
+        <span className="size-2 rounded-full bg-hold-ink" />
+        連線中斷，重新連線中
+      </div>
+    )
+  }
   return (
     <div className="flex h-9 items-center gap-2 rounded-btn border border-line bg-success-bg px-3 type-caption text-success">
       <span className="size-2 rounded-full bg-success" />
@@ -306,6 +315,8 @@ function TableOverview() {
 
   const [viewState, setViewState] = useState('loading')
   const [reloadKey, setReloadKey] = useState(0)
+    // 別台櫃檯開桌、清潔完成時，後端推 TABLE_STATUS → 重抓桌況和候位
+  const isLive = useTableStatusSocket(() => setReloadKey((k) => k + 1))
 
   // 畫面出現時（以及按「重試」時）去後端拿桌況
   useEffect(() => {
@@ -374,7 +385,7 @@ function TableOverview() {
         tag="今天 9/13（日）"
         childrenRight={
           <>
-            <SyncIndicator />
+            <SyncIndicator isLive={isLive} />
             <BellButtonPlaceholder />
           </>
         }

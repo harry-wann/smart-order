@@ -27,6 +27,9 @@ public class TableService {
     @Autowired
     private DiningSessionRepository diningSessions;
 
+    @Autowired
+    private TableStatusNotifier tableStatusNotifier;
+
     // S-02 桌況總覽：每張桌 + 正在用餐的那筆紀錄（人數、開桌時間）
     public List<TableOverviewResponse> findOverview() {
         Map<Long, DiningSessionEntity> openByTableId = diningSessions.findByStatus("OPEN").stream()
@@ -46,6 +49,7 @@ public class TableService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "這桌不是清潔中");
         }
         table.setStatus("AVAILABLE");
+        tableStatusNotifier.notifyAfterCommit(table);
     }
 
     // S-02b 現場開桌：先鎖住這張桌，避免兩個店員同時開同一桌
@@ -76,6 +80,7 @@ public class TableService {
         diningSessions.save(session);
 
         table.setStatus("OCCUPIED");
+        tableStatusNotifier.notifyAfterCommit(table);
         return session;
     }
 }

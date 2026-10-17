@@ -73,6 +73,8 @@ public class SecurityConfig {
                                     "/swagger-ui/**",
                                     "/swagger-ui.html",
                                     "/actuator/health",
+                                    // WebSocket 連線入口（桌況、購物車推播），握手時還沒有權杖，先放行
+                                    "/ws/**",
                                     "/error"
                             ).permitAll()
                             .anyRequest().authenticated();

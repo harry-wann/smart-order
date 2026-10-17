@@ -41,11 +41,17 @@ export default defineConfig(() => {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
       },
     },
-    server: {
+        server: {
       proxy: {
         '/api': {
           target: 'http://localhost:8080',
           changeOrigin: true,
+        },
+        // WebSocket（桌況 TABLE_STATUS、購物車 CART_UPDATED）也轉給後端
+        // 不設 changeOrigin：Spring 會檢查連線來源要跟 Host 一致，改了反而會被擋
+        '/ws': {
+          target: 'ws://localhost:8080',
+          ws: true,
         },
       },
     },
