@@ -108,7 +108,7 @@ export default function MenuOptions() {
           </div>
         }
       />
-      <div className="relative flex min-h-0 flex-1 gap-4 overflow-y-auto bg-paper px-6 py-5 font-sans text-ink-900">
+      <div className="relative flex min-h-0 min-w-0 flex-1 gap-4 overflow-auto bg-paper px-6 py-5 font-sans text-ink-900">
       <OptionGroupSidebar 
         groups={groups} 
         selectedGroupId={selectedGroupId} 
