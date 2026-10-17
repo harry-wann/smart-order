@@ -159,6 +159,7 @@ public class MenuController {
         return ResponseEntity.ok(optionGroupService.updateOptionValue(optionGroupId, optionValueId, request));
     }
 
+    // MenuOptions 畫面 依照 optionGroupId 與 optionValueId 修改選項值排序
     @PatchMapping("/admin/optionGroups/{optionGroupId}/items/sort-order")
     public ResponseEntity<Void> reorderOptionValues(
             @PathVariable Long optionGroupId,
@@ -179,6 +180,7 @@ public class MenuController {
                 optionGroupService.updateOptionValueStatus(optionGroupId, optionValueId, request));
     }
 
+    // MenuOptions 根據 optionGroupId 與 optionValueId 刪除選項值
     @DeleteMapping("/admin/optionGroups/{optionGroupId}/items/{optionValueId}")
     public ResponseEntity<Void> deleteOptionValue(
             @PathVariable Long optionGroupId,
