@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router";
 import CustomerTopBar from "@/components/CustomerTopBar";
 import SOFormInput, { SOFormInputType } from "../../../components/input/SOFormInput";
@@ -6,7 +6,8 @@ import SOButton from "../../../components/SOButton";
 import InfoBox from "../../../components/InfoBox";
 import CardMap from "../../../components/card/CardMap";
 import { SvgIconMap } from "@/assets/SvgIconMap";
-import { customerClient } from "@/services/client/customerClient";   
+import { customerClient } from "@/services/client/customerClient";
+import { customerTokens } from "@/services/client/tokenStore";   
 
 const iconSvg = (Icon) => {
   return <Icon aria-hidden="true" className="svg-icon mx-3 w-5 h-5 shrink-0 text-brand-600" />;
@@ -55,6 +56,12 @@ export function MemberLogin() {
       setSending(false);
     }
   }
+
+  useEffect(() => {
+    if (customerTokens.member.get()) {
+      navigate(returnTo ?? "/member/center", { replace: true, state: { reservationType } });
+    }
+  }, []);
 
   return (
     <div className="flex h-full w-full flex-col">
