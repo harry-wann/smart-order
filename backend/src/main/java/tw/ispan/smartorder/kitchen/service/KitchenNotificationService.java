@@ -16,6 +16,14 @@ public class KitchenNotificationService {
     }
 
     public void notifyNewTicketAfterCommit(Long ticketId) {
+        notifyAfterCommit("NEW_TICKET", ticketId);
+    }
+
+    public void notifyTicketCompletedAfterCommit(Long ticketId) {
+        notifyAfterCommit("TICKET_COMPLETED", ticketId);
+    }
+
+    private void notifyAfterCommit(String type, Long ticketId) {
         if (!TransactionSynchronizationManager.isActualTransactionActive()
                 || !TransactionSynchronizationManager.isSynchronizationActive()) {
             throw new IllegalStateException("Kitchen notifications require an active transaction.");
@@ -26,7 +34,7 @@ public class KitchenNotificationService {
             public void afterCommit() {
                 messagingTemplate.convertAndSend(
                         "/topic/kitchen",
-                        new KitchenTicketMessage("NEW_TICKET", ticketId));
+                        new KitchenTicketMessage(type, ticketId));
             }
         });
     }

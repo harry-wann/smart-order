@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import tw.ispan.smartorder.dto.KitchenTicketResponse;
 import tw.ispan.smartorder.dto.KitchenTicketResponse.KitchenItemResponse;
+import tw.ispan.smartorder.kitchen.service.KitchenNotificationService;
 
 import javax.sql.DataSource;
 import java.sql.ResultSet;
@@ -22,9 +23,12 @@ import java.util.Map;
 public class KitchenTicketService {
 
     private final JdbcTemplate jdbc;
+    private final KitchenNotificationService kitchenNotificationService;
 
-    public KitchenTicketService(@Qualifier("smartOrderDataSource") DataSource dataSource) {
+    public KitchenTicketService(@Qualifier("smartOrderDataSource") DataSource dataSource,
+                                KitchenNotificationService kitchenNotificationService) {
         this.jdbc = new JdbcTemplate(dataSource);
+        this.kitchenNotificationService = kitchenNotificationService;
     }
 
     public List<KitchenTicketResponse> getKitchenTickets() {
@@ -81,6 +85,7 @@ public class KitchenTicketService {
                 """, ticketId);
 
         if (updated == 1) {
+            kitchenNotificationService.notifyTicketCompletedAfterCommit(ticketId);
             return;
         }
 
