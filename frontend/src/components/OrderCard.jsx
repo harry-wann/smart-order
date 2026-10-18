@@ -2,6 +2,7 @@ import { SvgIconMap } from '@/assets/SvgIconMap'
 import SOButton from './SOButton'
 
 export default function OrderCard({
+  ticketId,
   tableNo,
   sequenceNo,
   placedAt,
@@ -10,7 +11,8 @@ export default function OrderCard({
   onComplete,
 }) {
   const handleCompleteClick = (e) => {
-    onComplete?.(tableNo, sequenceNo, placedAt, orderItems)
+    e.preventDefault()
+    onComplete?.(ticketId)
   }
 
   const getWaitingMinutes = () => {
@@ -79,6 +81,7 @@ export default function OrderCard({
       <SOButton
         height="h-11"
         disabled={!isAllServed}
+        onClick={handleCompleteClick}
         content={[
           <div key="btn-content" className="flex items-center justify-center gap-2">
             <SvgIconMap.CardCheck />

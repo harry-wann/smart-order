@@ -45,6 +45,18 @@ function KitchenOverview() {
 
   useKitchenSocket(refreshTickets)
   const [now, setNow] = useState(new Date())
+  const [completeError, setCompleteError] = useState('')
+
+  const handleCompleteTicket = async (ticketId) => {
+    setCompleteError('')
+    try {
+      await employeeClient.patch(`/admin/kitchen/tickets/${ticketId}/complete`)
+      await queryClient.invalidateQueries({ queryKey: kitchenKey })
+    } catch (error) {
+      console.error('整單出完失敗', error)
+      setCompleteError('整單出完失敗，請稍後重試。')
+    }
+  }
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -126,18 +138,24 @@ function KitchenOverview() {
         }
       />
       <div className="min-h-0 flex-1 overflow-y-auto">
+        {completeError && (
+          <div className="px-6 pt-4 text-danger" role="alert">
+            {completeError}
+          </div>
+        )}
         <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,17.5rem),1fr))] content-start gap-5 p-6">
           {orderTickets.map((ticket) => {
             return (
               <div key={ticket.id} className="w-full">
                 <OrderCard
+                  ticketId={ticket.id}
                   tableNo={ticket.tableNo}
                   sequenceNo={ticket.sequenceNo}
                   placedAt={ticket.placedAt}
                   orderItems={ticket.orderItems}
 
                   onToggle={handleToggle}
-                  onComplete={() => console.log('出單', ticket.id)}
+                  onComplete={handleCompleteTicket}
                 />
               </div>
             )

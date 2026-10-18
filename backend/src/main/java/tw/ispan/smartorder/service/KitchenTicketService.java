@@ -1,8 +1,11 @@
 package tw.ispan.smartorder.service;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 import tw.ispan.smartorder.dto.KitchenTicketResponse;
 import tw.ispan.smartorder.dto.KitchenTicketResponse.KitchenItemResponse;
 
@@ -58,6 +61,29 @@ public class KitchenTicketService {
         }
 
         return tickets.values().stream().map(TicketBuilder::toResponse).toList();
+    }
+
+    @Transactional
+    public void completeTicket(Long ticketId) {
+        int updated = jdbc.update("""
+                UPDATE order_ticket
+                SET status = 'SERVED'
+                WHERE id = ? AND status IN ('PENDING', 'PREPARING')
+                """, ticketId);
+
+        if (updated == 1) {
+            return;
+        }
+
+        String currentStatus = jdbc.query("SELECT status FROM order_ticket WHERE id = ?",
+                rs -> rs.next() ? rs.getString("status") : null, ticketId);
+        if (currentStatus == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到這筆廚房訂單");
+        }
+        if ("SERVED".equals(currentStatus)) {
+            return;
+        }
+        throw new ResponseStatusException(HttpStatus.CONFLICT, "此訂單目前不能標記為整單出完");
     }
 
     private TicketRow mapRow(ResultSet rs) throws SQLException {
