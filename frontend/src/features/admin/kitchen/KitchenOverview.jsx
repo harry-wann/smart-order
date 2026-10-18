@@ -7,6 +7,7 @@ import { employeeClient } from '@/services/client/employeeClient'
 
 
 const kitchenKey = ['kitchen', 'tickets']
+const completedCountKey = ['kitchen', 'completed-count']
 
 async function fetchKitchenTickets() {
   const { data } = await employeeClient.get('/admin/kitchen/tickets')
@@ -28,6 +29,11 @@ async function fetchKitchenTickets() {
   }))
 }
 
+async function fetchCompletedTicketCount() {
+  const { data } = await employeeClient.get('/admin/kitchen/tickets/completed-count')
+  return data
+}
+
 function KitchenOverview() {
   const queryClient = useQueryClient()
   const {
@@ -38,9 +44,13 @@ function KitchenOverview() {
     queryKey: kitchenKey,
     queryFn: fetchKitchenTickets,
   })
+  const { data: completedCount = 0 } = useQuery({
+    queryKey: completedCountKey,
+    queryFn: fetchCompletedTicketCount,
+  })
 
   const refreshTickets = useCallback(() => {
-    void queryClient.invalidateQueries({ queryKey: kitchenKey })
+    void queryClient.invalidateQueries({ queryKey: ['kitchen'] })
   }, [queryClient])
 
   useKitchenSocket(refreshTickets)
@@ -51,7 +61,7 @@ function KitchenOverview() {
     setCompleteError('')
     try {
       await employeeClient.patch(`/admin/kitchen/tickets/${ticketId}/complete`)
-      await queryClient.invalidateQueries({ queryKey: kitchenKey })
+      await queryClient.invalidateQueries({ queryKey: ['kitchen'] })
     } catch (error) {
       console.error('整單出完失敗', error)
       setCompleteError('整單出完失敗，請稍後重試。')
@@ -119,7 +129,7 @@ function KitchenOverview() {
               <span className="rounded-full bg-ink-900 px-4 py-1 font-semibold text-surface">
                 進行中 {activeOrdersCount} 單
               </span>
-              <span className="font-medium text-ink-600">最近完成 23</span>
+              <span className="font-medium text-ink-600">最近完成 {completedCount}</span>
             </div>
           </div>
         }

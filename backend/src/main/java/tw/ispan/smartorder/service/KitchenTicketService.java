@@ -63,6 +63,15 @@ public class KitchenTicketService {
         return tickets.values().stream().map(TicketBuilder::toResponse).toList();
     }
 
+    public int getCompletedTicketCountLast24Hours() {
+        Integer count = jdbc.queryForObject("""
+                SELECT COUNT(*)
+                FROM order_ticket
+                WHERE status = 'SERVED'
+                  AND updated_at >= CURRENT_TIMESTAMP(3) - INTERVAL 1 DAY
+                """, Integer.class);
+        return count == null ? 0 : count;
+    }
     @Transactional
     public void completeTicket(Long ticketId) {
         int updated = jdbc.update("""

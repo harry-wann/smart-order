@@ -27,6 +27,10 @@ public class KitchenTicketsController {
         return kitchenTicketService.getKitchenTickets();
     }
 
+    @GetMapping("/kitchen/tickets/completed-count")
+    public int getCompletedTicketCountLast24Hours() {
+        return kitchenTicketService.getCompletedTicketCountLast24Hours();
+    }
     @PatchMapping("/kitchen/tickets/{ticketId}/complete")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void completeTicket(@PathVariable Long ticketId) {
