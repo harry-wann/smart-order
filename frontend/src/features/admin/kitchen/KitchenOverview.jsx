@@ -103,8 +103,8 @@ function KitchenOverview() {
       <TopBar
         childrenLeft={
           <div className="flex items-center gap-6">
-            <div className="flex items-center gap-4 text-sm font-medium">
-              <span className="rounded-full bg-ink-900 px-4 py-1 font-medium text-surface">
+            <div className="flex items-center gap-3 text-sm font-medium">
+              <span className="rounded-full bg-ink-900 px-4 py-1 font-semibold text-surface">
                 進行中 {activeOrdersCount} 單
               </span>
               <span className="font-medium text-ink-600">最近完成 23</span>
@@ -126,7 +126,7 @@ function KitchenOverview() {
         }
       />
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] content-start gap-5 p-6">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,17.5rem),1fr))] content-start gap-5 p-6">
           {orderTickets.map((ticket) => {
             return (
               <div key={ticket.id} className="w-full">

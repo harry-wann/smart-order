@@ -1,11 +1,9 @@
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import SOButton from './SOButton'
-import Badge from '../components/Badge'
 
 export default function OrderCard({
   tableNo,
   sequenceNo,
-  isPreorder,
   placedAt,
   orderItems,
   onToggle,
@@ -28,17 +26,13 @@ export default function OrderCard({
 
   const isAllServed = orderItems?.length > 0 && orderItems.every((item) => item.status === 'SERVED')
 
-  const borderColor = isPreorder == true ? 'border-accent-500' : 'border-line'
   return (
     <div
-      className={`flex flex-col gap-4 rounded-card border ${borderColor} bg-surface p-5 text-ink-900 shadow-card`}
+      className="flex flex-col gap-4 rounded-card border border-line bg-surface p-5 text-ink-900 shadow-card"
     >
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h1 className="type-kds-table">{tableNo}</h1>
-          <div className="origin-right scale-55">
-            {isPreorder == true && <Badge text="預約優先" col="pri" />}
-          </div>
         </div>
 
         <div className="flex items-center justify-between text-ink-600">
