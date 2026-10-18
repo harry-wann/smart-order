@@ -1,0 +1,130 @@
+package tw.ispan.smartorder.service;
+
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Service;
+import tw.ispan.smartorder.dto.KitchenTicketResponse;
+import tw.ispan.smartorder.dto.KitchenTicketResponse.KitchenItemResponse;
+
+import javax.sql.DataSource;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+@Service
+public class KitchenTicketService {
+
+    private final JdbcTemplate jdbc;
+
+    public KitchenTicketService(@Qualifier("smartOrderDataSource") DataSource dataSource) {
+        this.jdbc = new JdbcTemplate(dataSource);
+    }
+
+    public List<KitchenTicketResponse> getKitchenTickets() {
+        List<TicketRow> rows = jdbc.query("""
+                SELECT ot.id AS order_id,
+                       ot.sequence_no,
+                       ot.placed_at,
+                       dt.table_no,
+                       oi.id AS item_id,
+                       oi.item_name_snapshot,
+                       oi.quantity,
+                       oi.status AS item_status,
+                       oi.note,
+                       oio.value_name_snapshot
+                FROM order_ticket ot
+                JOIN dining_session ds ON ds.id = ot.dining_session_id
+                JOIN dining_table dt ON dt.id = ds.table_id
+                JOIN order_item oi ON oi.order_ticket_id = ot.id
+                LEFT JOIN order_item_option oio ON oio.order_item_id = oi.id
+                WHERE ot.status IN ('PENDING', 'PREPARING')
+                  AND oi.status <> 'CANCELLED'
+                ORDER BY ot.placed_at ASC, ot.id ASC, oi.id ASC, oio.id ASC
+                """, (rs, rowNum) -> mapRow(rs));
+
+        Map<Long, TicketBuilder> tickets = new LinkedHashMap<>();
+        for (TicketRow row : rows) {
+            TicketBuilder ticket = tickets.computeIfAbsent(row.orderId(), id -> new TicketBuilder(
+                    row.orderId(), row.sequenceNo(), row.placedAt(), row.tableNo()));
+            ItemBuilder item = ticket.items.computeIfAbsent(row.itemId(), id -> new ItemBuilder(
+                    row.itemId(), row.itemName(), row.quantity(), row.itemStatus(), row.note()));
+            if (row.optionName() != null) {
+                item.options.add(row.optionName());
+            }
+        }
+
+        return tickets.values().stream().map(TicketBuilder::toResponse).toList();
+    }
+
+    private TicketRow mapRow(ResultSet rs) throws SQLException {
+        return new TicketRow(
+                rs.getLong("order_id"),
+                rs.getInt("sequence_no"),
+                rs.getTimestamp("placed_at").toLocalDateTime(),
+                rs.getString("table_no"),
+                rs.getLong("item_id"),
+                rs.getString("item_name_snapshot"),
+                rs.getInt("quantity"),
+                rs.getString("item_status"),
+                rs.getString("note"),
+                rs.getString("value_name_snapshot"));
+    }
+
+    private record TicketRow(
+            Long orderId,
+            Integer sequenceNo,
+            LocalDateTime placedAt,
+            String tableNo,
+            Long itemId,
+            String itemName,
+            Integer quantity,
+            String itemStatus,
+            String note,
+            String optionName
+    ) {}
+
+    private static class TicketBuilder {
+        private final Long orderId;
+        private final Integer sequenceNo;
+        private final LocalDateTime placedAt;
+        private final String tableNo;
+        private final Map<Long, ItemBuilder> items = new LinkedHashMap<>();
+
+        private TicketBuilder(Long orderId, Integer sequenceNo, LocalDateTime placedAt, String tableNo) {
+            this.orderId = orderId;
+            this.sequenceNo = sequenceNo;
+            this.placedAt = placedAt;
+            this.tableNo = tableNo;
+        }
+
+        private KitchenTicketResponse toResponse() {
+            return new KitchenTicketResponse(orderId, sequenceNo, placedAt, tableNo,
+                    items.values().stream().map(ItemBuilder::toResponse).toList());
+        }
+    }
+
+    private static class ItemBuilder {
+        private final Long id;
+        private final String name;
+        private final Integer quantity;
+        private final String status;
+        private final String note;
+        private final List<String> options = new ArrayList<>();
+
+        private ItemBuilder(Long id, String name, Integer quantity, String status, String note) {
+            this.id = id;
+            this.name = name;
+            this.quantity = quantity;
+            this.status = status;
+            this.note = note;
+        }
+
+        private KitchenItemResponse toResponse() {
+            return new KitchenItemResponse(id, name, quantity, status, List.copyOf(options), note);
+        }
+    }
+}

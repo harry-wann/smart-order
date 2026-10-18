@@ -1,154 +1,49 @@
 import TopBar from '@/components/dashboard/TopBar'
 import OrderCard from '@/components/OrderCard'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { useKitchenSocket } from '@/services/realtime/useKitchenSocket'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { employeeClient } from '@/services/client/employeeClient'
+
+
+const kitchenKey = ['kitchen', 'tickets']
+
+async function fetchKitchenTickets() {
+  const { data } = await employeeClient.get('/admin/kitchen/tickets')
+
+  return data.map((ticket) => ({
+    id: ticket.orderId,
+    tableNo: ticket.tableNo,
+    sequenceNo: ticket.sequenceNo,
+    status: ticket.status,
+    placedAt: ticket.placedAt,
+    orderItems: ticket.items.map((item) => ({
+      id: item.id,
+      itemNameSnapshot: item.name,
+      quantity: item.quantity,
+      status: item.status,
+      optionsSummary: item.options.join('、'),
+      note: item.note,
+    })),
+  }))
+}
 
 function KitchenOverview() {
-  const [orderTickets, setOrderTickets] = useState([
-    {
-      id: 1,
-      tableNo: 'A03',
-      sequenceNo: 1,
-      status: 'PENDING',
-      isPreorder: false,
-      placedAt: new Date(Date.now() - 2 * 60000).toISOString(),
-      orderItems: [
-        {
-          id: 1,
-          itemNameSnapshot: '招牌麻辣鍋底',
-          quantity: 2,
-          status: 'PENDING',
-          optionsSummary: '不要辣',
-        },
-        {
-          id: 2,
-          itemNameSnapshot: '安格斯霜降牛五花',
-          quantity: 2,
-          status: 'PENDING',
-          optionsSummary: '不要白飯',
-        },
-      ],
-    },
-    {
-      id: 2,
-      tableNo: 'B05',
-      sequenceNo: 2,
-      status: 'PENDING',
-      isPreorder: false,
-      placedAt: new Date(Date.now() - 4 * 60000).toISOString(),
-      orderItems: [
-        {
-          id: 3,
-          itemNameSnapshot: '海鮮拼盤',
-          quantity: 2,
-          status: 'PENDING',
-          optionsSummary: '',
-        },
-      ],
-    },
-    {
-      id: 3,
-      tableNo: 'C02',
-      sequenceNo: 1,
-      status: 'PENDING',
-      isPreorder: false,
-      placedAt: new Date(Date.now() - 12 * 60000).toISOString(),
-      orderItems: [
-        {
-          id: 4,
-          itemNameSnapshot: '養生白味鍋底',
-          quantity: 1,
-          status: 'PENDING',
-          optionsSummary: '加蔥',
-        },
-        {
-          id: 5,
-          itemNameSnapshot: '伊比利梅花豬',
-          quantity: 3,
-          status: 'PENDING',
-          optionsSummary: '',
-        },
-        {
-          id: 6,
-          itemNameSnapshot: '綜合鮮菇盤',
-          quantity: 1,
-          status: 'SERVED',
-          optionsSummary: '',
-        },
-      ],
-    },
-    {
-      id: 4,
-      tableNo: 'A05',
-      sequenceNo: 1,
-      status: 'PENDING',
-      isPreorder: true,
-      placedAt: new Date(Date.now() - 25 * 60000).toISOString(),
-      orderItems: [
-        {
-          id: 7,
-          itemNameSnapshot: '頂級日本A5和牛',
-          quantity: 1,
-          status: 'PENDING',
-          optionsSummary: '肉切厚一點',
-        },
-        {
-          id: 8,
-          itemNameSnapshot: '手工蝦仁漿',
-          quantity: 2,
-          status: 'PENDING',
-          optionsSummary: '',
-        },
-      ],
-    },
-    {
-      id: 5,
-      tableNo: 'A03',
-      sequenceNo: 2,
-      status: 'PENDING',
-      isPreorder: false,
-      placedAt: new Date(Date.now() - 0 * 60000).toISOString(),
-      orderItems: [
-        {
-          id: 9,
-          itemNameSnapshot: '老油條',
-          quantity: 2,
-          status: 'PENDING',
-          optionsSummary: '',
-        },
-        {
-          id: 10,
-          itemNameSnapshot: '冰鎮烏梅汁',
-          quantity: 1,
-          status: 'PENDING',
-          optionsSummary: '去冰',
-        },
-      ],
-    },
-    {
-      id: 6,
-      tableNo: 'V01',
-      sequenceNo: 1,
-      status: 'PENDING',
-      isPreorder: false,
-      placedAt: new Date(Date.now() - 8 * 60000).toISOString(),
-      orderItems: [
-        {
-          id: 11,
-          itemNameSnapshot: '秘製滷大腸',
-          quantity: 1,
-          status: 'PENDING',
-          optionsSummary: '另外放',
-        },
-        {
-          id: 12,
-          itemNameSnapshot: '招牌麻辣鍋底',
-          quantity: 1,
-          status: 'PENDING',
-          optionsSummary: '大辣',
-        },
-      ],
-    },
-  ])
+  const queryClient = useQueryClient()
+  const {
+    data: orderTickets = [],
+    isPending,
+    isError,
+  } = useQuery({
+    queryKey: kitchenKey,
+    queryFn: fetchKitchenTickets,
+  })
+
+  const refreshTickets = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: kitchenKey })
+  }, [queryClient])
+
+  useKitchenSocket(refreshTickets)
   const [now, setNow] = useState(new Date())
 
   useEffect(() => {
@@ -160,7 +55,7 @@ function KitchenOverview() {
   }, [])
 
   const handleToggle = (itemId) => {
-    setOrderTickets((prevTickets) =>
+    queryClient.setQueryData(kitchenKey, (prevTickets = []) =>
       prevTickets.map((ticket) => ({
         ...ticket,
         orderItems: ticket.orderItems.map((item) =>
@@ -199,6 +94,10 @@ function KitchenOverview() {
   const activeOrdersCount = orderTickets.length
   const { minutes: maxMinutes, tableNo: maxTableNo } = getMaxWaitMinutes()
   const currentTime = now.toTimeString().slice(0, 5)
+
+  if (isPending) return <div className="p-6">載入廚房訂單中…</div>
+  if (isError) return <div className="p-6 text-danger">廚房訂單載入失敗，請稍後重試。</div>
+
   return (
     <div className="flex h-full flex-col bg-paper text-ink-900">
       <TopBar
@@ -226,7 +125,7 @@ function KitchenOverview() {
           </div>
         }
       />
-      <main className="min-h-0 flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] content-start gap-5 p-6">
           {orderTickets.map((ticket) => {
             return (
@@ -234,7 +133,6 @@ function KitchenOverview() {
                 <OrderCard
                   tableNo={ticket.tableNo}
                   sequenceNo={ticket.sequenceNo}
-                  isPreorder={ticket.isPreorder}
                   placedAt={ticket.placedAt}
                   orderItems={ticket.orderItems}
 
@@ -245,7 +143,7 @@ function KitchenOverview() {
             )
           })}
         </div>
-      </main>
+      </div>
     </div>
   )
 }
