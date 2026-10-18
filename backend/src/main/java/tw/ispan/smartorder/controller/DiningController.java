@@ -4,14 +4,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import tw.ispan.smartorder.dto.JoinTableResponse;
 import tw.ispan.smartorder.dto.TableStatusResponse;
-import tw.ispan.smartorder.service.DinnerService;
+import tw.ispan.smartorder.service.DiningService;
 
 @RestController
 @RequestMapping("/api/tables")
 public class DiningController {
 
 	@Autowired
-	private DinnerService diningService;
+	private DiningService diningService;
 
 	@GetMapping("/{tableNo}/status")
 	public TableStatusResponse status(@PathVariable String tableNo,

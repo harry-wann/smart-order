@@ -3,10 +3,10 @@ import { useEffect, useState } from 'react'
 import SOButton from '@/components/SOButton'
 import TopBar from '@/components/dashboard/TopBar'
 import { SvgIconMap } from '@/assets/SvgIconMap'
-import BellButtonPlaceholder from './BellButtonPlaceholder'
 import { fetchTables, cleanTable } from '@/services/api/table/tableApi'
 import { fetchWaitlist } from '@/services/api/waitlist/waitlistApi'
 import { useTableStatusSocket } from '@/services/realtime/useTableStatusSocket'
+import ServiceBellCounter from './ServiceBellCounter'
 
 // 把後臺狀態的英文轉成中文顯示、根據桌位狀態決定顏色、根據狀態決定標籤底色
 const statusStyles = {
@@ -31,19 +31,6 @@ const statusStyles = {
     labelClass: 'bg-accent-500',
   },
 }
-
-
-
-
-
-//右側畫面的服務鈴>假資料、之後接後端要改
-const initialBellCalls = [
-  { id: 1, tableId: 'A03', request: '呼叫服務生', minutesAgo: 1 },
-  { id: 2, tableId: 'B03', request: '加湯', minutesAgo: 3 },
-  { id: 3, tableId: 'C01', request: '換鍋撈渣', minutesAgo: 4 },
-]
-
-//---------------------------------------------------//
 
 //上方條狀> 桌狀的統整
 function StatItem({ count, label, swatchClass, countClass = 'text-ink-900' }) {
@@ -165,29 +152,6 @@ function WaitingChip({ waiting }) {
   )
 }
 
-function BellCall({ call, onDone }) {
-  return (
-    <div className="flex items-center gap-3 px-4 py-3">
-      <span className="w-11 shrink-0 type-body font-bold text-ink-900 tabular-nums">
-        {call.tableId}
-      </span>
-
-      <div className="flex-1">
-        <p className="type-body-sm font-bold text-ink-900">{call.request}</p>
-        <p className="type-caption text-ink-600 tabular-nums">{call.minutesAgo} 分鐘前</p>
-      </div>
-
-      <button
-        onClick={() => onDone(call.id)}
-        className="inline-flex h-9 items-center rounded-btn bg-surface px-3.5 type-body-sm font-medium text-brand-600 shadow-[inset_0_0_0_1.5px_var(--color-brand-600)] hover:bg-brand-100"
-      >
-        已處理
-      </button>
-    </div>
-  )
-}
-
-// 載入中：側邊欄、header 照常(等harry的完成會再覆蓋掉)，只有桌況區換成灰色骨架
 function LoadingSkeleton({ count }) {
   return (
     <div className="flex items-start gap-6 p-6">
@@ -204,22 +168,7 @@ function LoadingSkeleton({ count }) {
           ))}
         </div>
       </main>
-
-      {/* 服務鈴的骨架：標題照常，內容換兩條灰條 */}
-      <aside className="w-75 shrink-0">
-        <section className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-pop">
-          <div className="flex items-center gap-2 bg-surface-2 px-4 py-3 type-body-sm font-bold text-ink-900">
-            <SvgIconMap.TableOverviewBell className="size-4.5" />
-            服務鈴
-          </div>
-          <div className="px-4 py-3">
-            <div className="h-9 animate-pulse rounded-btn bg-surface-2" />
-          </div>
-          <div className="px-4 py-3">
-            <div className="h-9 animate-pulse rounded-btn bg-surface-2" />
-          </div>
-        </section>
-      </aside>
+      <aside className="w-75 shrink-0" />
     </div>
   )
 }
@@ -305,8 +254,6 @@ function SyncIndicator({ isLive }) {
 function TableOverview() {
   const navigate = useNavigate()
   const [tableList, setTableList] = useState([])
-  const [calls, setCalls] = useState(initialBellCalls)
-  const [doneCount, setDoneCount] = useState(14)
   const [cleaningTable, setCleaningTable] = useState(null)
   const availableCount = tableList.filter((table) => table.status === 'available').length
   const occupiedCount = tableList.filter((table) => table.status === 'occupied').length
@@ -354,11 +301,6 @@ function TableOverview() {
   // 2. 狀態正常，但真的一張桌子都沒有（之後接後端就靠這個）
   const showEmpty = viewState === 'empty' || (viewState === 'ready' && tableList.length === 0)
 
-  function handleDone(id) {
-    setCalls(calls.filter((call) => call.id !== id))
-    setDoneCount(doneCount + 1)
-  }
-
   async function handleConfirmClean() {
     try {
       await cleanTable(cleaningTable.tableId)
@@ -386,7 +328,7 @@ function TableOverview() {
         childrenRight={
           <>
             <SyncIndicator isLive={isLive} />
-            <BellButtonPlaceholder />
+            <ServiceBellCounter />
           </>
         }
       />
@@ -468,27 +410,8 @@ function TableOverview() {
               </div>
             </section>
           </main>
+          <aside className="w-75 shrink-0" />
 
-          <aside className="w-75 shrink-0">
-            <section className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-pop">
-              <div className="flex items-center gap-2 bg-surface-2 px-4 py-3 type-body-sm font-bold text-ink-900">
-                <SvgIconMap.TableOverviewBell className="size-4.5" />
-                服務鈴
-                <div className="flex-1" />
-                <span className="rounded-pill bg-danger px-2.5 py-0.5 type-caption text-white">
-                  {calls.length}
-                </span>
-              </div>
-
-              {calls.map((call) => (
-                <BellCall key={call.id} call={call} onDone={handleDone} />
-              ))}
-
-              <p className="px-4 py-3 text-center type-caption text-ink-600">
-                今天已處理 {doneCount} 則
-              </p>
-            </section>
-          </aside>
         </div>
       )}
 </div>

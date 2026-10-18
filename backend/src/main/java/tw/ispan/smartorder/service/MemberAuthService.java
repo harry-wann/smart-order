@@ -21,7 +21,7 @@ import java.util.Optional;
 @Service
 public class MemberAuthService {
 
-	private static final int MAX_ATTEMPTS=3;
+	private static final int MAX_ATTEMPTS = 3;
 
 	@Autowired
 	private VerificationCodeRepository codeRepo;
@@ -31,7 +31,7 @@ public class MemberAuthService {
 
 	private final SecureRandom random = new SecureRandom();
 
-	public String  sendCode(String phone) {
+	public String sendCode(String phone) {
 		String code = String.format("%06d", random.nextInt(1_000_000));
 
 		VerificationCodeEntity entity = new VerificationCodeEntity();
@@ -96,9 +96,10 @@ public class MemberAuthService {
 		member.setPhone(phone);
 		member.setProfileCompleted(false);
 		member.setStatus("ACTIVE");
-		return memberRepo.save(member);   
+		return memberRepo.save(member);
 	}
 
+	// 會員中心、改資料用：一定要登入，解不出來丟 401
 	public Long memberIdFromHeader(String authHeader) {
 		if (authHeader == null || !authHeader.startsWith("Bearer ")) {
 			throw new MemberUnauthorizedException();
@@ -111,6 +112,16 @@ public class MemberAuthService {
 			return Long.valueOf(subject.substring(7));
 		} catch (JwtException | IllegalArgumentException e) {
 			throw new MemberUnauthorizedException();
+		}
+	}
+
+	// ── 新增 ──
+	// 訂位用：可以不登入，解不出來回 null，當作匿名訂位（MemberIdentityResolver 呼叫）
+	public Long memberIdOrNull(String authHeader) {
+		try {
+			return memberIdFromHeader(authHeader);
+		} catch (MemberUnauthorizedException e) {
+			return null;
 		}
 	}
 

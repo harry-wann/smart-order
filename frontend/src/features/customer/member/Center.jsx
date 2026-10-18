@@ -8,12 +8,32 @@ import Badge from '../../../components/Badge'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import { customerClient } from '@/services/client/customerClient'
 import { signOutMember } from '@/services/client/auth'
+import { useMyReservations } from '@/hooks/reservation/useReservationQueries'
 
 // 原檔名 MemberCenter.jsx
 // 原 component 名 MemberCenter
 
+const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
+
 function formatPhone(phone) {
   return phone.replace(/(\d{4})(\d{3})(\d{3})/, '$1-$2-$3')
+}
+
+// 從訂位清單找「還沒到、狀態是已確認」裡最早的一筆
+function findNextReservation(list) {
+  const now = Date.now()
+  return (list ?? [])
+    .filter((r) => r.status === 'CONFIRMED' && Date.parse(r.startTime) > now)
+    .sort((a, b) => Date.parse(a.startTime) - Date.parse(b.startTime))[0]
+}
+
+// "2026-10-20T18:30:00+08:00" → "10/20（二）18:30・2 位"
+// 照組員的註解：顯示用直接切字串，不轉時區，手機設在別的時區也不會顯示錯
+function formatReservation(r) {
+  const [y, m, d] = r.startTime.slice(0, 10).split('-').map(Number)
+  const weekday = WEEKDAYS[new Date(y, m - 1, d).getDay()]
+  const time = r.startTime.slice(11, 16)
+  return `${m}/${d}（${weekday}）${time}・${r.partySize} 位`
 }
 
 export function Center() {
@@ -21,9 +41,12 @@ export function Center() {
   const [member, setMember] = useState(null)
   const [error, setError] = useState('')
 
+  // 我的預約（組員寫好的 hook，跟「我的預約」頁同一份資料）
+  const reservationsQuery = useMyReservations(true)
+
   useEffect(() => {
     customerClient
-      .get('/member/me', { customerAuth: ['member'] })   
+      .get('/member/me', { customerAuth: ['member'] })
       .then(({ data }) => setMember(data))
       .catch((e) => {
         if (e.status === 401) {
@@ -34,6 +57,7 @@ export function Center() {
       })
   }, [])
 
+  // 登出：signOutMember 會清掉 localStorage 的 customer.memberToken 和會員相關的快取
   function handleLogout() {
     signOutMember()
     navigate('/member/login', { replace: true })
@@ -44,21 +68,22 @@ export function Center() {
 
   // 入會時間
   const joined = new Date(member.createdAt)
-  const joinYears = Math.max(1, new Date().getFullYear() - joined.getFullYear())
+  const years = new Date().getFullYear() - joined.getFullYear()
 
   const datamember = {
-    name: member.nickname || '會員',   
+    name: member.nickname || '會員',
     phone: formatPhone(member.phone),
     joinDate: `${joined.getFullYear()} 年 ${joined.getMonth() + 1} 月加入`,
-    joinLongTime: joinYears,
+    joinLabel: years < 1 ? '新會員' : `入會 ${years} 年`,
   }
 
-  const datareserve = {
-    date: '9/16',
-    day: '三',
-    time: '18:30',
-    people: '2 位',
-  }
+  // 「我的預約」下面那行字
+  const nextReservation = findNextReservation(reservationsQuery.data)
+  const reserveText = reservationsQuery.isPending
+    ? '載入中…'
+    : nextReservation
+      ? formatReservation(nextReservation)
+      : '沒有預約'
 
   const cardData = [
     {
@@ -73,7 +98,7 @@ export function Center() {
             <li>{datamember.phone}</li>
           </ul>,
         ],
-        ['other', <Badge text={`入會 ${datamember.joinLongTime} 年`} col="plain" />],
+        ['other', <Badge text={datamember.joinLabel} col="plain" />],
       ],
     },
     {
@@ -85,7 +110,7 @@ export function Center() {
   const reserve = {
     icon: SvgIconMap.OrderEntrance,
     textH2: '我的預約',
-    textP: `${datareserve.date}（${datareserve.day}）${datareserve.time}・${datareserve.people}`,
+    textP: reserveText,
     onclick: () => navigate('/member/reservations?view=member'),
   }
   const personal = {
