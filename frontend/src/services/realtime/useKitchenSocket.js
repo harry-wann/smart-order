@@ -1,5 +1,6 @@
 import {useEffect, useRef, useState} from 'react'
 import { Client } from '@stomp/stompjs'
+import { employeeToken } from '../client/tokenStore'
 
 export function useKitchenSocket(onRefresh) {
   const [connected,setConnected] = useState(false)
@@ -17,6 +18,10 @@ export function useKitchenSocket(onRefresh) {
         `//${location.host}/ws`,
 
       reconnectDelay: 5000,
+      beforeConnect: () => {
+        const token = employeeToken.get()
+        client.connectHeaders = token ? { Authorization: `Bearer ${token}` } : {}
+      },
       onConnect: () => {
         setConnected(true)
 

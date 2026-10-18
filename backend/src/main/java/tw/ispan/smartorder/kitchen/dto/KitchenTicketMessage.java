@@ -1,4 +1,4 @@
-package tw.ispan.smartorder.dto;
+package tw.ispan.smartorder.kitchen.dto;
 
 public record KitchenTicketMessage(
         String type,

@@ -10,14 +10,12 @@ export default function OrderCard({
   onComplete,
 }) {
   const handleCompleteClick = (e) => {
-    console.log(e)
     onComplete?.(tableNo, sequenceNo, placedAt, orderItems)
   }
 
   const getWaitingMinutes = () => {
     if (!placedAt) return 0
     const diff = Date.now() - new Date(placedAt).getTime()
-    console.log(diff)
 
     return Math.max(0, Math.floor(diff / 60000))
   }
