@@ -161,7 +161,10 @@ export default function OrderCard({
                   <p className="type-h3">
                     {item.itemNameSnapshot} ×{item.quantity}
                   </p>
-                  <p className={`type-body-sm ${isCompleted ? '' : 'text-ink-600'}`}>{item.optionsSummary}</p>
+                  <p className={`type-body-sm ${isCompleted ? '' : 'text-ink-600'}`}>
+                    {item.optionsSummary}
+                    {item.note != null && item.note !== '' && `${item.optionsSummary ? '、' : ''}${item.note}`}
+                  </p>
                 </div>
               </label>
             )
