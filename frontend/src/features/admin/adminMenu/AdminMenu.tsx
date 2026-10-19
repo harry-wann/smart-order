@@ -8,7 +8,7 @@ import Badge from '@/components/Badge';
 import SOFormInput, { SOFormInputType } from '@/components/input/SOFormInput';
 import { SvgIconMap } from '@/assets/SvgIconMap';
 import ProductModal from '@/components/adminMenu/ProductModal';
-import axios from 'axios';
+import { employeeClient } from '@/services/client/employeeClient';
 
 export interface BadgeItem {
   text: string;
@@ -163,8 +163,8 @@ export default function AdminMenu() {
       alert('分類名稱已存在！');
       return null;
     }
-    const response = await axios.post<CreatedMenuCategoryResponse>(
-      'http://localhost:8080/api/order/admin/categories',
+    const response = await employeeClient.post<CreatedMenuCategoryResponse>(
+      '/order/admin/categories',
       { name: newCategoryName },
     );
     const newCategory: Category = {
@@ -193,8 +193,8 @@ export default function AdminMenu() {
       return;
     }
 
-    await axios.delete(
-      `http://localhost:8080/api/order/admin/categories/${categoryId}`
+    await employeeClient.delete(
+      `/order/admin/categories/${categoryId}`
     );
 
     setCategories(prev => prev.filter(item => item.id !== categoryId));
@@ -223,7 +223,7 @@ export default function AdminMenu() {
   useEffect(() => {
     async function fetchCategories() {
       try {
-        const response = await axios.get<MenuCategoryResponse[]>('http://localhost:8080/api/order/admin/categories');
+        const response = await employeeClient.get<MenuCategoryResponse[]>('/order/admin/categories');
         const fetchedCategories = response.data.map(category => ({
           ...category,
           id: String(category.id),
@@ -247,7 +247,7 @@ export default function AdminMenu() {
     let isCurrentRequest = true;
       async function loadItems() {
         try {
-          const response = await axios.get<AdminMenuItemResponse[]>('http://localhost:8080/api/order/admin/menu', {
+          const response = await employeeClient.get<AdminMenuItemResponse[]>('/order/admin/menu', {
             params: searchKeyword.trim()
               ? { keyword: searchKeyword.trim() }
               : { categoryId: activeCategoryId === null ? undefined : Number(activeCategoryId) },
