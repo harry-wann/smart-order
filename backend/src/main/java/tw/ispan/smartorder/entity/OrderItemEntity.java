@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "order_item")
@@ -40,6 +41,9 @@ public class OrderItemEntity {
 
     @Column(name = "status")
     private String status;
+
+    @Column(name = "served_at")
+    private LocalDateTime servedAt;
 
     @Column(name = "line_total")
     private BigDecimal lineTotal;

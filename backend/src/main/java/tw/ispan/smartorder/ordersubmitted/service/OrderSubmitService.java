@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import tw.ispan.smartorder.entity.*;
+import tw.ispan.smartorder.service.KitchenNotificationService;
 import tw.ispan.smartorder.ordersubmitted.dto.OrderSubmittedResponse;
 import tw.ispan.smartorder.repository.*;
 
@@ -18,6 +19,8 @@ import java.util.stream.Collectors;
 public class OrderSubmitService {
     @org.springframework.beans.factory.annotation.Autowired
     private tw.ispan.smartorder.ordercart.service.CartNotificationService notifications;
+    @org.springframework.beans.factory.annotation.Autowired
+    private KitchenNotificationService kitchenNotificationService;
     private final DiningSessionRepository sessionRepository;
     private final CartItemRepository cartItemRepository;
     private final CartItemOptionRepository cartItemOptionRepository;
@@ -137,6 +140,9 @@ public class OrderSubmitService {
 
         notifications.notifyTableAfterCommit(sessionId, guestId, "ORDER_SUBMITTED", null, 0,
                 List.of(), nextSequence, cartItems.size(), addedSubtotal);
+
+        // 如果注入失敗，應用程式通常會在啟動時報錯
+        kitchenNotificationService.notifyNewTicketAfterCommit(ticket.getId());
 
         return getOrder(ticket.getId());
     }

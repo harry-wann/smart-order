@@ -12,6 +12,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     private final tw.ispan.smartorder.repository.DiningSessionGuestRepository guests;
     private final tw.ispan.smartorder.repository.DiningSessionRepository sessions;
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private tw.ispan.smartorder.staff.security.StaffJwtProvider staffJwtProvider;
+
     public WebSocketConfig(tw.ispan.smartorder.repository.DiningSessionGuestRepository guests,
                            tw.ispan.smartorder.repository.DiningSessionRepository sessions) {
         this.guests = guests;
@@ -30,6 +33,19 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 if (headers.getCommand() == org.springframework.messaging.simp.stomp.StompCommand.SEND) {
                     throw new IllegalArgumentException("通知只能由伺服器發送");
                 }
+                if (headers.getCommand() == org.springframework.messaging.simp.stomp.StompCommand.CONNECT) {
+                    String authorization = headers.getFirstNativeHeader("Authorization");
+                    if (authorization != null) {
+                        if (!authorization.startsWith("Bearer ") || staffJwtProvider == null) {
+                            throw new IllegalArgumentException("Invalid staff credentials.");
+                        }
+                        var staff = staffJwtProvider.parse(authorization.substring("Bearer ".length()));
+                        if (staff == null) {
+                            throw new IllegalArgumentException("Invalid staff credentials.");
+                        }
+                        headers.setUser(new StaffWebSocketPrincipal(staff.id(), staff.role()));
+                    }
+                }
                 if (headers.getCommand() == org.springframework.messaging.simp.stomp.StompCommand.CONNECT
                         && headers.getFirstNativeHeader("X-Session-Token") != null) {
                     var identity = tw.ispan.smartorder.util.JwtToken.parseGuestToken(
@@ -43,15 +59,32 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 }
                 if (headers.getCommand() == org.springframework.messaging.simp.stomp.StompCommand.SUBSCRIBE) {
                     String destination = headers.getDestination();
+                    boolean kitchenStaff = "/topic/kitchen".equals(destination)
+                            && isKitchenStaff(headers.getUser());
                     // 保留原有桌況公開推播；客人的通知只允許訂閱自己的 queue。
                     if (!"/topic/counter".equals(destination)
-                            && !("/user/queue/cart-updates".equals(destination) && headers.getUser() != null)) {
+                            && !("/user/queue/cart-updates".equals(destination) && headers.getUser() != null)
+                            && !kitchenStaff) {
                         throw new IllegalArgumentException("無法訂閱此通知");
                     }
                 }
                 return message;
             }
         });
+    }
+
+    private boolean isKitchenStaff(java.security.Principal principal) {
+        if (!(principal instanceof StaffWebSocketPrincipal staff)) {
+            return false;
+        }
+        return "KITCHEN".equals(staff.role()) || "MANAGER".equals(staff.role());
+    }
+
+    private record StaffWebSocketPrincipal(Long id, String role) implements java.security.Principal {
+        @Override
+        public String getName() {
+            return "staff-" + id;
+        }
     }
 
     @Override
