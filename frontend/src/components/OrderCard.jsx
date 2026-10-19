@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import SOButton from './SOButton'
 
@@ -10,7 +11,32 @@ export default function OrderCard({
   onToggle,
   savingItemIds = [],
   onComplete,
+  onCancel,
+  isCancelling = false,
 }) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const menuRef = useRef(null)
+
+  useEffect(() => {
+    if (!isMenuOpen) return
+
+    const handlePointerDown = (event) => {
+      if (!menuRef.current?.contains(event.target)) setIsMenuOpen(false)
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setIsMenuOpen(false)
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isMenuOpen])
+
   const handleCompleteClick = (e) => {
     e.preventDefault()
     onComplete?.(ticketId)
@@ -34,6 +60,37 @@ export default function OrderCard({
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h1 className="type-kds-table">{tableNo}</h1>
+          <div ref={menuRef} className="relative">
+            <button
+              type="button"
+              aria-label="訂單操作"
+              aria-haspopup="menu"
+              aria-expanded={isMenuOpen}
+              onClick={() => setIsMenuOpen((open) => !open)}
+              className="-translate-y-2 flex h-10 w-10 items-center justify-center rounded-full text-2xl font-normal leading-none text-ink-600 transition-colors hover:bg-paper hover:text-ink-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+            >
+              ⋯
+            </button>
+            {isMenuOpen && (
+              <div
+                role="menu"
+                className="absolute right-0 top-full z-20 mt-1 w-max rounded-xl border border-line bg-surface p-1.5 shadow-card"
+              >
+                <button
+                  type="button"
+                  role="menuitem"
+                  disabled={isCancelling}
+                  onClick={() => {
+                    setIsMenuOpen(false)
+                    onCancel?.(ticketId)
+                  }}
+                  className="whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm font-normal text-ink-900 transition-colors hover:bg-paper focus-visible:outline-2 focus-visible:outline-brand-600"
+                >
+                  {isCancelling ? '取消中…' : '取消'}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center justify-between text-ink-600">

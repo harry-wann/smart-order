@@ -48,4 +48,11 @@ public class KitchenTicketsController {
     public void serveOrderItem(@PathVariable Long itemId) {
         kitchenTicketService.serveOrderItem(itemId);
     }
+
+    // 取消訂單，把 order_ticket 的狀態改為 CANCELLED，從畫面中移除 - webSocket 事件類型 TICKET_CANCELLED
+    @PatchMapping("/kitchen/tickets/{ticketId}/cancel")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void cancelTicket(@PathVariable Long ticketId) {
+        kitchenTicketService.cancelTicket(ticketId);
+    }
 }

@@ -58,6 +58,8 @@ function KitchenOverview() {
   const [completeError, setCompleteError] = useState('')
   const [itemActionError, setItemActionError] = useState('')
   const [savingItemIds, setSavingItemIds] = useState([])
+  const [cancelError, setCancelError] = useState('')
+  const [cancellingTicketId, setCancellingTicketId] = useState(null)
 
   const handleCompleteTicket = async (ticketId) => {
     setCompleteError('')
@@ -67,6 +69,20 @@ function KitchenOverview() {
     } catch (error) {
       console.error('整單出完失敗', error)
       setCompleteError('整單出完失敗，請稍後重試。')
+    }
+  }
+
+  const handleCancelTicket = async (ticketId) => {
+    setCancelError('')
+    setCancellingTicketId(ticketId)
+    try {
+      await employeeClient.patch(`/admin/kitchen/tickets/${ticketId}/cancel`)
+      await queryClient.invalidateQueries({ queryKey: kitchenKey })
+    } catch (error) {
+      console.error('取消訂單失敗', error)
+      setCancelError('取消訂單失敗，請稍後重試。')
+    } finally {
+      setCancellingTicketId(null)
     }
   }
 
@@ -160,6 +176,11 @@ function KitchenOverview() {
             {itemActionError}
           </div>
         )}
+        {cancelError && (
+          <div className="px-6 pt-4 text-danger" role="alert">
+            {cancelError}
+          </div>
+        )}
         <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,17.5rem),1fr))] content-start gap-5 p-6">
           {orderTickets.map((ticket) => {
             return (
@@ -174,6 +195,8 @@ function KitchenOverview() {
                   onToggle={handleToggle}
                   savingItemIds={savingItemIds}
                   onComplete={handleCompleteTicket}
+                  onCancel={handleCancelTicket}
+                  isCancelling={cancellingTicketId === ticket.id}
                 />
               </div>
             )

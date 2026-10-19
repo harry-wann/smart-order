@@ -35,6 +35,12 @@ public class KitchenNotificationService {
                 "servedAt", Instant.now()));
     }
 
+    public void notifyTicketCancelledAfterCommit(Long ticketId, String reason) {
+        notifyAfterCommit("TICKET_CANCELLED", Map.of(
+                "ticketId", ticketId,
+                "reason", reason));
+    }
+
     private void notifyAfterCommit(String type, Object payload) {
         if (!TransactionSynchronizationManager.isActualTransactionActive()
                 || !TransactionSynchronizationManager.isSynchronizationActive()) {

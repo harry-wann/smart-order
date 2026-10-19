@@ -134,6 +134,30 @@ public class KitchenTicketService {
         throw new ResponseStatusException(HttpStatus.CONFLICT, "此訂單目前不能標記為整單出完");
     }
 
+    @Transactional
+    public void cancelTicket(Long ticketId) {
+        int updated = jdbc.update("""
+                UPDATE order_ticket
+                SET status = 'CANCELLED'
+                WHERE id = ? AND status IN ('PENDING', 'PREPARING')
+                """, ticketId);
+
+        if (updated == 1) {
+            kitchenNotificationService.notifyTicketCancelledAfterCommit(ticketId, "廚房取消訂單");
+            return;
+        }
+
+        String currentStatus = jdbc.query("SELECT status FROM order_ticket WHERE id = ?",
+                rs -> rs.next() ? rs.getString("status") : null, ticketId);
+        if (currentStatus == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到這筆廚房訂單");
+        }
+        if ("CANCELLED".equals(currentStatus)) {
+            return;
+        }
+        throw new ResponseStatusException(HttpStatus.CONFLICT, "此訂單目前不能取消");
+    }
+
     private TicketRow mapRow(ResultSet rs) throws SQLException {
         return new TicketRow(
                 rs.getLong("order_id"),
