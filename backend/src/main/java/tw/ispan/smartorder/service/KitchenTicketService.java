@@ -81,7 +81,7 @@ public class KitchenTicketService {
         int updated = jdbc.update("""
                 UPDATE order_item oi
                 JOIN order_ticket ot ON ot.id = oi.order_ticket_id
-                SET oi.status = 'SERVED'
+                SET oi.status = 'SERVED', oi.served_at = CURRENT_TIMESTAMP(3)
                 WHERE oi.id = ?
                   AND oi.status IN ('PENDING', 'PREPARING')
                   AND ot.status IN ('PENDING', 'PREPARING')
@@ -115,7 +115,7 @@ public class KitchenTicketService {
         int updated = jdbc.update("""
                 UPDATE order_item oi
                 JOIN order_ticket ot ON ot.id = oi.order_ticket_id
-                SET oi.status = 'PENDING'
+                SET oi.status = 'PENDING', oi.served_at = NULL
                 WHERE oi.id = ?
                   AND oi.status = 'SERVED'
                   AND ot.status IN ('PENDING', 'PREPARING')
