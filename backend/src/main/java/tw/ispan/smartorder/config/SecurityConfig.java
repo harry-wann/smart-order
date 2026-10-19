@@ -57,6 +57,10 @@ public class SecurityConfig {
                     // 擺後面會先被 /api/** 的 permitAll 吃掉）。login 要放行，不然沒登入就被擋，永遠登不進去
                     authorize.requestMatchers(HttpMethod.POST, "/api/admin/auth/login").permitAll();
                     authorize.requestMatchers("/api/admin/kitchen/**").hasAnyRole("KITCHEN", "MANAGER");
+                    authorize.requestMatchers(HttpMethod.PATCH, "/api/admin/order-items/*/serve")
+                            .hasAnyRole("KITCHEN", "MANAGER");
+                    authorize.requestMatchers(HttpMethod.PATCH, "/api/admin/order-items/*/unserve")
+                            .hasAnyRole("KITCHEN", "MANAGER");
                     // 只替訂位用到的路徑加角色，不寫成 /api/admin/** 一把鎖：隊友的店家端 API 還沒接登入，
                     // 一起鎖起來他們的頁面會全部 401，等各自接好再一條一條加進來。
                     // hasRole 比對的是 ROLE_ 開頭的 authority，由 StaffJwtFilter 組給 Spring Security
