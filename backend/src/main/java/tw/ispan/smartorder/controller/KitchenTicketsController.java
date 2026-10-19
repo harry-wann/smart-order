@@ -3,11 +3,13 @@ package tw.ispan.smartorder.controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.http.HttpStatus;
 import tw.ispan.smartorder.dto.KitchenTicketResponse;
+import tw.ispan.smartorder.dto.CancelTicketRequest;
 import tw.ispan.smartorder.service.KitchenTicketService;
 
 import java.util.List;
@@ -49,10 +51,16 @@ public class KitchenTicketsController {
         kitchenTicketService.serveOrderItem(itemId);
     }
 
+    @PatchMapping("/order-items/{itemId}/unserve")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void unserveOrderItem(@PathVariable Long itemId) {
+        kitchenTicketService.unserveOrderItem(itemId);
+    }
+
     // 取消訂單，把 order_ticket 的狀態改為 CANCELLED，從畫面中移除 - webSocket 事件類型 TICKET_CANCELLED
     @PatchMapping("/kitchen/tickets/{ticketId}/cancel")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void cancelTicket(@PathVariable Long ticketId) {
-        kitchenTicketService.cancelTicket(ticketId);
+    public void cancelTicket(@PathVariable Long ticketId, @RequestBody CancelTicketRequest request) {
+        kitchenTicketService.cancelTicket(ticketId, request.cancelReason());
     }
 }

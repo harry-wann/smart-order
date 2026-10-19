@@ -15,6 +15,8 @@ export default function OrderCard({
   isCancelling = false,
 }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false)
+  const [cancelReason, setCancelReason] = useState('')
   const menuRef = useRef(null)
 
   useEffect(() => {
@@ -40,6 +42,15 @@ export default function OrderCard({
   const handleCompleteClick = (e) => {
     e.preventDefault()
     onComplete?.(ticketId)
+  }
+
+  const handleCancelSubmit = async (event) => {
+    event.preventDefault()
+    const cancelled = await onCancel?.(ticketId, cancelReason.trim())
+    if (cancelled) {
+      setIsCancelDialogOpen(false)
+      setCancelReason('')
+    }
   }
 
   const getWaitingMinutes = () => {
@@ -82,7 +93,7 @@ export default function OrderCard({
                   disabled={isCancelling}
                   onClick={() => {
                     setIsMenuOpen(false)
-                    onCancel?.(ticketId)
+                    setIsCancelDialogOpen(true)
                   }}
                   className="whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm font-normal text-ink-900 transition-colors hover:bg-paper focus-visible:outline-2 focus-visible:outline-brand-600"
                 >
@@ -91,6 +102,7 @@ export default function OrderCard({
               </div>
             )}
           </div>
+
         </div>
 
         <div className="flex items-center justify-between text-ink-600">
@@ -117,7 +129,7 @@ export default function OrderCard({
                     className="peer sr-only"
                     checked={isCompleted}
                     disabled={savingItemIds.includes(item.id)}
-                    onChange={() => onToggle(item.id)}
+                    onChange={() => onToggle(item.id, !isCompleted)}
                   />
                   <div className="absolute inset-0 rounded-(--radius-check) border-2 border-ink-400 bg-transparent transition-colors peer-checked:border-success peer-checked:bg-success"></div>
                   <SvgIconMap.CardCheck
@@ -148,6 +160,62 @@ export default function OrderCard({
           </div>,
         ]}
       />
+
+      {isCancelDialogOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !isCancelling) setIsCancelDialogOpen(false)
+          }}
+        >
+          <form
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`cancel-ticket-title-${ticketId}`}
+            onSubmit={handleCancelSubmit}
+            className="w-full max-w-md rounded-card bg-surface p-6 text-ink-900 shadow-card"
+          >
+            <div className="mb-5 flex items-center justify-between">
+              <h2 id={`cancel-ticket-title-${ticketId}`} className="type-h2">取消訂單</h2>
+              <div className="w-9">
+                <SOButton
+                  type="button"
+                  variant="ghost"
+                  height="h-9"
+                  aria-label="關閉"
+                  disabled={isCancelling}
+                  onClick={() => setIsCancelDialogOpen(false)}
+                  content="×"
+                />
+              </div>
+            </div>
+            <label htmlFor={`cancel-ticket-reason-${ticketId}`} className="mb-2 block text-sm font-medium text-ink-700">
+              取消理由
+            </label>
+            <textarea
+              id={`cancel-ticket-reason-${ticketId}`}
+              name="cancel_reason"
+              value={cancelReason}
+              onChange={(event) => setCancelReason(event.target.value)}
+              rows={4}
+              maxLength={100}
+              placeholder="請輸入取消理由"
+              className="w-full resize-y rounded-lg border border-line bg-surface p-3 text-sm text-ink-900 outline-none transition focus:border-brand-600 focus:ring-2 focus:ring-brand-600/20"
+            />
+            <div className="mt-5 flex justify-end">
+              <div className="w-28">
+                <SOButton
+                  type="submit"
+                  variant="danger"
+                  height="h-11"
+                  disabled={isCancelling || !cancelReason.trim()}
+                  content={isCancelling ? '取消中…' : '確定'}
+                />
+              </div>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   )
 }

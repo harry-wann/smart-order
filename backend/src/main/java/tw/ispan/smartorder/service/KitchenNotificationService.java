@@ -35,6 +35,12 @@ public class KitchenNotificationService {
                 "servedAt", Instant.now()));
     }
 
+    public void notifyItemUnservedAfterCommit(Long ticketId, Long itemId) {
+        notifyAfterCommit("ITEM_UNSERVED", Map.of(
+                "ticketId", ticketId,
+                "itemId", itemId));
+    }
+
     public void notifyTicketCancelledAfterCommit(Long ticketId, String reason) {
         notifyAfterCommit("TICKET_CANCELLED", Map.of(
                 "ticketId", ticketId,

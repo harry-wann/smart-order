@@ -72,15 +72,19 @@ function KitchenOverview() {
     }
   }
 
-  const handleCancelTicket = async (ticketId) => {
+  const handleCancelTicket = async (ticketId, cancelReason) => {
     setCancelError('')
     setCancellingTicketId(ticketId)
     try {
-      await employeeClient.patch(`/admin/kitchen/tickets/${ticketId}/cancel`)
+      await employeeClient.patch(`/admin/kitchen/tickets/${ticketId}/cancel`, {
+        cancel_reason: cancelReason,
+      })
       await queryClient.invalidateQueries({ queryKey: kitchenKey })
+      return true
     } catch (error) {
       console.error('取消訂單失敗', error)
       setCancelError('取消訂單失敗，請稍後重試。')
+      return false
     } finally {
       setCancellingTicketId(null)
     }
@@ -94,12 +98,12 @@ function KitchenOverview() {
     return () => clearInterval(timer)
   }, [])
 
-  const handleToggle = (itemId) => {
+  const handleToggle = (itemId, isServed) => {
     setItemActionError('')
     setSavingItemIds((current) => [...current, itemId])
 
     void employeeClient
-      .patch(`/admin/order-items/${itemId}/serve`)
+      .patch(`/admin/order-items/${itemId}/${isServed ? 'serve' : 'unserve'}`)
       .then(() => queryClient.invalidateQueries({ queryKey: kitchenKey }))
       .catch((error) => {
         console.error('標記品項已出餐失敗', error)

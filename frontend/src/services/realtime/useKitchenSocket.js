@@ -30,7 +30,7 @@ export function useKitchenSocket(onRefresh) {
             const event = JSON.parse(message.body)
 
             if(
-              ['NEW_TICKET', 'ITEM_SERVED', 'TICKET_COMPLETED', 'TICKET_CANCELLED']
+              ['NEW_TICKET', 'ITEM_SERVED', 'ITEM_UNSERVED', 'TICKET_COMPLETED', 'TICKET_CANCELLED']
               .includes(event.type)
             ){
                 refreshRef.current()
