@@ -12,25 +12,30 @@ import tw.ispan.smartorder.service.KitchenTicketService;
 
 import java.util.List;
 
+// KitchenOverview 畫面
+// WebSocket 事件類型 'NEW_TICKET', 'ITEM_SERVED', 'TICKET_COMPLETED', 'TICKET_CANCELLED'
 @RestController
 @RequestMapping("/api/admin")
 public class KitchenTicketsController {
-
     private final KitchenTicketService kitchenTicketService;
 
     public KitchenTicketsController(KitchenTicketService kitchenTicketService) {
         this.kitchenTicketService = kitchenTicketService;
     }
 
+    // 拿到訂單資料，只取 PENDING 或 PREPARING 的廚房訂單，並排除已取消品項
     @GetMapping("/kitchen/tickets")
     public List<KitchenTicketResponse> getKitchenTickets() {
         return kitchenTicketService.getKitchenTickets();
     }
 
+    // 計算 24 小時內完成訂單數量
     @GetMapping("/kitchen/tickets/completed-count")
     public int getCompletedTicketCountLast24Hours() {
         return kitchenTicketService.getCompletedTicketCountLast24Hours();
     }
+
+    // 把整張訂單狀態更新為 SERVED
     @PatchMapping("/kitchen/tickets/{ticketId}/complete")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void completeTicket(@PathVariable Long ticketId) {

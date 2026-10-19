@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import tw.ispan.smartorder.dto.KitchenTicketResponse;
 import tw.ispan.smartorder.dto.KitchenTicketResponse.KitchenItemResponse;
-import tw.ispan.smartorder.kitchen.service.KitchenNotificationService;
 
 import javax.sql.DataSource;
 import java.sql.ResultSet;
