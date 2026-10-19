@@ -12,11 +12,16 @@ export default function OrderCard({
   savingItemIds = [],
   onComplete,
   onCancel,
+  onCancelItems,
   isCancelling = false,
+  isCancellingItem = false,
 }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false)
+  const [isCancelItemsDialogOpen, setIsCancelItemsDialogOpen] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
+  const [selectedCancelItemId, setSelectedCancelItemId] = useState(null)
+  const [cancelItemReason, setCancelItemReason] = useState('')
   const menuRef = useRef(null)
 
   useEffect(() => {
@@ -85,7 +90,7 @@ export default function OrderCard({
             {isMenuOpen && (
               <div
                 role="menu"
-                className="absolute right-0 top-full z-20 mt-1 w-max rounded-xl border border-line bg-surface p-1.5 shadow-card"
+                className="absolute right-0 top-full z-20 mt-1 w-32 rounded-xl border border-line bg-surface p-1.5 shadow-card"
               >
                 <button
                   type="button"
@@ -95,9 +100,23 @@ export default function OrderCard({
                     setIsMenuOpen(false)
                     setIsCancelDialogOpen(true)
                   }}
-                  className="whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm font-normal text-ink-900 transition-colors hover:bg-paper focus-visible:outline-2 focus-visible:outline-brand-600"
+                  className="w-full whitespace-nowrap rounded-lg px-0 py-2 text-left text-sm font-normal text-ink-900 transition-colors hover:bg-paper focus-visible:outline-2 focus-visible:outline-brand-600 sm:px-3.5 md:px-5"
                 >
-                  {isCancelling ? '取消中…' : '取消'}
+                  {isCancelling ? '取消中…' : '取消訂單'}
+                </button>
+                <div role="separator" className="mx-2 border-t border-line" />
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setIsMenuOpen(false)
+                    setSelectedCancelItemId(null)
+                    setCancelItemReason('')
+                    setIsCancelItemsDialogOpen(true)
+                  }}
+                  className="w-full whitespace-nowrap rounded-lg px-0 py-2 text-left text-sm font-normal text-ink-900 transition-colors hover:bg-paper focus-visible:outline-2 focus-visible:outline-brand-600 sm:px-3.5 md:px-5"
+                >
+                  取消細項
                 </button>
               </div>
             )}
@@ -214,6 +233,105 @@ export default function OrderCard({
               </div>
             </div>
           </form>
+        </div>
+      )}
+
+      {isCancelItemsDialogOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !isCancellingItem) setIsCancelItemsDialogOpen(false)
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`cancel-items-title-${ticketId}`}
+            className="w-full max-w-md rounded-card bg-surface p-6 text-ink-900 shadow-card"
+          >
+            <div className="mb-5 flex items-center justify-between">
+              <h2 id={`cancel-items-title-${ticketId}`} className="type-h2">取消細項</h2>
+              <div className="w-9">
+                <SOButton
+                  type="button"
+                  variant="ghost"
+                  height="h-9"
+                  aria-label="關閉"
+                  disabled={isCancellingItem}
+                  onClick={() => setIsCancelItemsDialogOpen(false)}
+                  content="×"
+                />
+              </div>
+            </div>
+            <div className="max-h-[60vh] space-y-3 overflow-y-auto">
+              {orderItems.map((item) => {
+                const isSelected = selectedCancelItemId === item.id
+                return (
+                  <div key={item.id} className="rounded-lg border border-line p-3">
+                    <button
+                      type="button"
+                      aria-expanded={isSelected}
+                      onClick={() => {
+                        setSelectedCancelItemId(isSelected ? null : item.id)
+                        setCancelItemReason('')
+                      }}
+                      className={`w-full rounded-md px-2 py-2 text-left transition-colors hover:bg-paper ${
+                        isSelected ? 'bg-paper' : ''
+                      }`}
+                    >
+                      <span className="block text-sm font-medium text-ink-900">
+                        {item.itemNameSnapshot} ×{item.quantity}
+                      </span>
+                      {item.optionsSummary && (
+                        <span className="mt-1 block text-sm text-ink-600">{item.optionsSummary}</span>
+                      )}
+                    </button>
+                    {isSelected && (
+                      <div className="mt-3 border-t border-line pt-3">
+                        <label
+                          htmlFor={`cancel-item-reason-${item.id}`}
+                          className="mb-2 block text-sm font-medium text-ink-700"
+                        >
+                          取消理由
+                        </label>
+                        <textarea
+                          id={`cancel-item-reason-${item.id}`}
+                          name="cancel_reason"
+                          value={cancelItemReason}
+                          onChange={(event) => setCancelItemReason(event.target.value)}
+                          rows={3}
+                          maxLength={100}
+                          placeholder="請輸入取消理由"
+                          className="w-full resize-y rounded-lg border border-line bg-surface p-3 text-sm text-ink-900 outline-none transition focus:border-brand-600 focus:ring-2 focus:ring-brand-600/20"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+            {selectedCancelItemId !== null && (
+              <div className="mt-5 flex justify-end">
+                <div className="w-28">
+                  <SOButton
+                    type="button"
+                    variant="danger"
+                    height="h-11"
+                    disabled={isCancellingItem || !cancelItemReason.trim()}
+                    onClick={async () => {
+                      const cancelled = await onCancelItems?.(selectedCancelItemId, cancelItemReason.trim())
+                      if (cancelled) {
+                        setIsCancelItemsDialogOpen(false)
+                        setSelectedCancelItemId(null)
+                        setCancelItemReason('')
+                      }
+                    }}
+                    content={isCancellingItem ? '取消中…' : '確定'}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

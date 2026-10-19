@@ -15,7 +15,7 @@ import tw.ispan.smartorder.service.KitchenTicketService;
 import java.util.List;
 
 // KitchenOverview 畫面
-// WebSocket 事件類型 'NEW_TICKET', 'ITEM_SERVED', 'TICKET_COMPLETED', 'TICKET_CANCELLED'
+// WebSocket 事件類型 'NEW_TICKET', 'ITEM_SERVED', 'ITEM_UNSERVED', 'ITEM_CANCELLED', 'TICKET_COMPLETED', 'TICKET_CANCELLED'
 @RestController
 @RequestMapping("/api/admin")
 public class KitchenTicketsController {
@@ -51,10 +51,18 @@ public class KitchenTicketsController {
         kitchenTicketService.serveOrderItem(itemId);
     }
 
+    // 勾勾取消 - webSocket 事件類型 ITEM_UNSERVED
     @PatchMapping("/order-items/{itemId}/unserve")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void unserveOrderItem(@PathVariable Long itemId) {
         kitchenTicketService.unserveOrderItem(itemId);
+    }
+
+    // 取消訂單細項 加入 order_item 取消理由 - webSocket 事件類型 ITEM_CANCELLED
+    @PatchMapping("/order-items/{itemId}/cancel")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void cancelOrderItem(@PathVariable Long itemId, @RequestBody CancelTicketRequest request) {
+        kitchenTicketService.cancelOrderItem(itemId, request.cancelReason());
     }
 
     // 取消訂單，把 order_ticket 的狀態改為 CANCELLED，從畫面中移除 - webSocket 事件類型 TICKET_CANCELLED

@@ -60,6 +60,7 @@ function KitchenOverview() {
   const [savingItemIds, setSavingItemIds] = useState([])
   const [cancelError, setCancelError] = useState('')
   const [cancellingTicketId, setCancellingTicketId] = useState(null)
+  const [cancellingItemId, setCancellingItemId] = useState(null)
 
   const handleCompleteTicket = async (ticketId) => {
     setCompleteError('')
@@ -87,6 +88,24 @@ function KitchenOverview() {
       return false
     } finally {
       setCancellingTicketId(null)
+    }
+  }
+
+  const handleCancelOrderItem = async (itemId, cancelReason) => {
+    setCancelError('')
+    setCancellingItemId(itemId)
+    try {
+      await employeeClient.patch(`/admin/order-items/${itemId}/cancel`, {
+        cancel_reason: cancelReason,
+      })
+      await queryClient.invalidateQueries({ queryKey: kitchenKey })
+      return true
+    } catch (error) {
+      console.error('取消餐點失敗', error)
+      setCancelError('取消餐點失敗，請稍後重試。')
+      return false
+    } finally {
+      setCancellingItemId(null)
     }
   }
 
@@ -201,6 +220,8 @@ function KitchenOverview() {
                   onComplete={handleCompleteTicket}
                   onCancel={handleCancelTicket}
                   isCancelling={cancellingTicketId === ticket.id}
+                  onCancelItems={handleCancelOrderItem}
+                  isCancellingItem={ticket.orderItems.some((item) => item.id === cancellingItemId)}
                 />
               </div>
             )

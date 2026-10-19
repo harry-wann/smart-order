@@ -41,6 +41,13 @@ public class KitchenNotificationService {
                 "itemId", itemId));
     }
 
+    public void notifyItemCancelledAfterCommit(Long ticketId, Long itemId, String reason) {
+        notifyAfterCommit("ITEM_CANCELLED", Map.of(
+                "ticketId", ticketId,
+                "itemId", itemId,
+                "reason", reason));
+    }
+
     public void notifyTicketCancelledAfterCommit(Long ticketId, String reason) {
         notifyAfterCommit("TICKET_CANCELLED", Map.of(
                 "ticketId", ticketId,
