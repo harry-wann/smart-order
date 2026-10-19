@@ -2,13 +2,24 @@ package tw.ispan.smartorder.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 import tw.ispan.smartorder.dto.AdminMenuItemDto;
 import tw.ispan.smartorder.dto.MenuItemOptionDetailDto;
 import tw.ispan.smartorder.dto.MenuItemOptionDetailRow;
+import tw.ispan.smartorder.dto.request.SaveMenuItemRequest;
 import tw.ispan.smartorder.entity.MenuItemEntity;
+import tw.ispan.smartorder.entity.InventoryEntity;
+import tw.ispan.smartorder.repository.CartItemRepository;
+import tw.ispan.smartorder.repository.InventoryRepository;
+import tw.ispan.smartorder.repository.MenuCategoryRepository;
 import tw.ispan.smartorder.repository.MenuItemRepository;
+import tw.ispan.smartorder.repository.MenuItemOptionGroupRepository;
+import tw.ispan.smartorder.repository.OrderItemRepository;
 
+import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +29,113 @@ import java.util.Map;
 public class MenuItemService {
     @Autowired
     private MenuItemRepository menuItemRepository;
+
+    @Autowired
+    private MenuCategoryRepository menuCategoryRepository;
+
+    @Autowired
+    private InventoryRepository inventoryRepository;
+
+    @Autowired
+    private MenuItemOptionGroupRepository menuItemOptionGroupRepository;
+
+    @Autowired
+    private CartItemRepository cartItemRepository;
+
+    @Autowired
+    private OrderItemRepository orderItemRepository;
+
+    @Transactional
+    public AdminMenuItemDto createAdminMenuItem(SaveMenuItemRequest request) {
+        LocalDateTime now = LocalDateTime.now();
+        MenuItemEntity item = new MenuItemEntity();
+        item.setCategory(menuCategoryRepository.findById(request.categoryId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到商品分類")));
+        item.setName(request.name().trim());
+        item.setDescription(request.description());
+        item.setPrice(request.price());
+        item.setImageUrl(request.imageUrl());
+        item.setIsSoupBase(false);
+        item.setTrackInventory(true);
+        item.setIsRefill(false);
+        item.setSuitableFor("ALL");
+        item.setSpicyLevel(0);
+        item.setIsVegetarian(false);
+        item.setContainsBeef(false);
+        item.setSoldOut(false);
+        item.setSortOrder("0");
+        item.setActive(request.active());
+        item.setCreatedAt(now);
+        item.setUpdatedAt(now);
+        MenuItemEntity saved = menuItemRepository.save(item);
+
+        InventoryEntity inventory = new InventoryEntity();
+        inventory.setMenuItem(saved);
+        inventory.setQuantity(request.stock());
+        inventory.setLowThreshold(10);
+        inventory.setCreatedAt(now);
+        inventory.setUpdatedAt(now);
+        inventoryRepository.save(inventory);
+        return toAdminMenuItemDto(saved, request.stock());
+    }
+
+    @Transactional
+    public AdminMenuItemDto updateAdminMenuItem(Long id, SaveMenuItemRequest request) {
+        MenuItemEntity item = menuItemRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到商品"));
+        item.setCategory(menuCategoryRepository.findById(request.categoryId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到商品分類")));
+        item.setName(request.name().trim());
+        item.setDescription(request.description());
+        item.setPrice(request.price());
+        item.setImageUrl(request.imageUrl());
+        item.setActive(request.active());
+        item.setUpdatedAt(LocalDateTime.now());
+        MenuItemEntity saved = menuItemRepository.save(item);
+
+        LocalDateTime now = LocalDateTime.now();
+        InventoryEntity inventory = inventoryRepository.findByMenuItem_Id(id).orElseGet(() -> {
+            InventoryEntity created = new InventoryEntity();
+            created.setMenuItem(saved);
+            created.setLowThreshold(10);
+            created.setCreatedAt(now);
+            return created;
+        });
+        inventory.setQuantity(request.stock());
+        inventory.setUpdatedAt(now);
+        inventoryRepository.save(inventory);
+        return toAdminMenuItemDto(saved, request.stock());
+    }
+
+    @Transactional
+    public AdminMenuItemDto updateAdminMenuItemStatus(Long id, boolean active) {
+        MenuItemEntity item = menuItemRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到商品"));
+        item.setActive(active);
+        item.setUpdatedAt(LocalDateTime.now());
+        menuItemRepository.save(item);
+        Integer stock = inventoryRepository.findByMenuItem_Id(id)
+                .map(InventoryEntity::getQuantity).orElse(0);
+        return toAdminMenuItemDto(item, stock);
+    }
+
+    @Transactional
+    public void deleteAdminMenuItem(Long id) {
+        MenuItemEntity item = menuItemRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到商品"));
+        if (cartItemRepository.existsByMenuItem_Id(id) || orderItemRepository.existsByMenuItemId(id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "商品已出現在購物車或訂單中，無法刪除");
+        }
+        menuItemOptionGroupRepository.deleteByMenuItemId(id);
+        inventoryRepository.deleteByMenuItem_Id(id);
+        menuItemRepository.delete(item);
+    }
+
+    private AdminMenuItemDto toAdminMenuItemDto(MenuItemEntity item, Integer stock) {
+        return new AdminMenuItemDto(item.getId(), item.getImageUrl(), item.getName(),
+                item.getDescription(), item.getPrice(), item.getCategory().getId(),
+                stock, item.getActive());
+    }
 
     public List<MenuItemEntity> findMenuItem(Long categoryId){
         if (categoryId == null) {

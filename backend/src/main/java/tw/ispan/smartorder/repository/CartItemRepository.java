@@ -8,6 +8,8 @@ import java.util.Optional;
 
 public interface CartItemRepository extends JpaRepository<CartItemEntity, Long> {
 
+    boolean existsByMenuItem_Id(Long menuItemId);
+
     // 只查詢目前客人的商品
     List<CartItemEntity> findByDiningSession_IdAndAddedByGuest_IdOrderByIdAsc(
             Long sessionId,

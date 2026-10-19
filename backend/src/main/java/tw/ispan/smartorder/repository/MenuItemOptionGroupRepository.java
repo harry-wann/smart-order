@@ -1,8 +1,10 @@
 package tw.ispan.smartorder.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 import tw.ispan.smartorder.dto.AdminAssociatedMenuItemDto;
 import tw.ispan.smartorder.entity.MenuItemOptionGroupEntity;
 import tw.ispan.smartorder.entity.embeddable.MenuOptionEntity;
@@ -11,6 +13,11 @@ import java.util.List;
 
 public interface MenuItemOptionGroupRepository extends JpaRepository<MenuItemOptionGroupEntity, MenuOptionEntity> {
     List<MenuItemOptionGroupEntity> findById_MenuItemId(Long menuItemId);
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM MenuItemOptionGroupEntity relation WHERE relation.id.menuItemId = :menuItemId")
+    void deleteByMenuItemId(@Param("menuItemId") Long menuItemId);
     @Query("""
             SELECT new tw.ispan.smartorder.dto.AdminAssociatedMenuItemDto(
                 menuItem.id,

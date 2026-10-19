@@ -12,23 +12,35 @@ import java.util.List;
 public interface MenuItemRepository extends JpaRepository<MenuItemEntity,Long> {
     List<MenuItemEntity> findByCategory_Id(Long categoryId);
     @Query("""
-    SELECT new tw.ispan.smartorder.dto.AdminMenuItemDto(mi.imageUrl, mi.name, mi.price, mi.category.id)
+    SELECT new tw.ispan.smartorder.dto.AdminMenuItemDto(
+        mi.id, mi.imageUrl, mi.name, mi.description, mi.price, mi.category.id,
+        COALESCE(inventory.quantity, 0), mi.active
+    )
     FROM MenuItemEntity mi
+    LEFT JOIN mi.inventory inventory
     WHERE mi.category.id = :categoryId
     ORDER BY mi.sortOrder
     """)
     List<AdminMenuItemDto> findAdminMenuItemsByCategoryId(@Param("categoryId") Long categoryId);
 
     @Query("""
-    SELECT new tw.ispan.smartorder.dto.AdminMenuItemDto(mi.imageUrl, mi.name, mi.price, mi.category.id)
+    SELECT new tw.ispan.smartorder.dto.AdminMenuItemDto(
+        mi.id, mi.imageUrl, mi.name, mi.description, mi.price, mi.category.id,
+        COALESCE(inventory.quantity, 0), mi.active
+    )
     FROM MenuItemEntity mi
+    LEFT JOIN mi.inventory inventory
     ORDER BY mi.sortOrder
     """)
     List<AdminMenuItemDto> findAllAdminMenuItems();
 
     @Query("""
-    SELECT new tw.ispan.smartorder.dto.AdminMenuItemDto(mi.imageUrl, mi.name, mi.price, mi.category.id)
+    SELECT new tw.ispan.smartorder.dto.AdminMenuItemDto(
+        mi.id, mi.imageUrl, mi.name, mi.description, mi.price, mi.category.id,
+        COALESCE(inventory.quantity, 0), mi.active
+    )
     FROM MenuItemEntity mi
+    LEFT JOIN mi.inventory inventory
     WHERE LOWER(mi.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
        OR LOWER(mi.description) LIKE LOWER(CONCAT('%', :keyword, '%'))
     ORDER BY mi.sortOrder

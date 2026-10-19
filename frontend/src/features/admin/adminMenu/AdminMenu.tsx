@@ -18,6 +18,7 @@ export interface BadgeItem {
 export interface Product {
   id: number;
   name: string;
+  description?: string;
   categoryId: string;
   price: number;
   stock: number;
@@ -27,10 +28,24 @@ export interface Product {
 }
 
 interface AdminMenuItemResponse {
+  id: number;
   img: string | null;
   name: string;
+  description: string | null;
   price: number;
   categoryId: number;
+  stock: number;
+  active: boolean;
+}
+
+interface SaveMenuItemRequest {
+  name: string;
+  description: string;
+  categoryId: number;
+  price: number;
+  imageUrl: string | null;
+  stock: number;
+  active: boolean;
 }
 
 interface MenuCategoryResponse {
@@ -57,6 +72,8 @@ export default function AdminMenu() {
   const [currentProduct, setCurrentProduct] = useState<Partial<Product>>({});
   //
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [reloadCategoriesKey, setReloadCategoriesKey] = useState(0);
 
   // 動態計算分類數量
   const totalProductCount = categories
@@ -69,14 +86,14 @@ export default function AdminMenu() {
       : cat.count
   }));
 
-  const toggleStatus = (id: number) => {
-    setProducts(prev => 
-      prev.map(item => 
-        item.id === id 
-          ? { ...item, status: item.status === 'active' ? 'inactive' : 'active' }
-          : item
-      )
-    );
+  const toggleStatus = async (product: Product) => {
+    const active = product.status !== 'active';
+    try {
+      await employeeClient.patch(`/order/admin/items/${product.id}/status`, { active });
+      setReloadKey(key => key + 1);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '更新上架狀態失敗');
+    }
   };
 
   const handleOpenAdd = () => {
@@ -98,9 +115,16 @@ export default function AdminMenu() {
     setModalMode('edit');
   };
 
-  const handleDeleteProduct = (id: number) => {
+  const handleDeleteProduct = async (id: number) => {
     if (window.confirm('確定要刪除此商品嗎？')) {
-      setProducts(prev => prev.filter(item => item.id !== id));
+      try {
+        await employeeClient.delete(`/order/admin/items/${id}`);
+        setModalMode('closed');
+        setReloadKey(key => key + 1);
+        setReloadCategoriesKey(key => key + 1);
+      } catch (error) {
+        alert(error instanceof Error ? error.message : '刪除商品失敗');
+      }
     }
   };
 
@@ -124,38 +148,33 @@ export default function AdminMenu() {
     }
   };
 
-  const handleSaveProduct = (formData: Partial<Product>) => {
-    if (!formData.name) return;
+  const handleSaveProduct = async (formData: Partial<Product>) => {
+    if (!formData.name || !formData.categoryId) return;
 
-    const stockVal = Number(formData.stock) || 0;
-    
-    if (modalMode === 'add') {
-      const firstValidCategoryId = categories.find(category => category.id !== 'all')?.id || '';
-      
-      const newProduct: Product = {
-        id: Date.now(),
-        name: formData.name,
-        categoryId: formData.categoryId || firstValidCategoryId,
-        price: Number(formData.price) || 0,
-        stock: stockVal,
-        status: (formData.status as 'active' | 'inactive') || 'active',
-        imageText: formData.imageText || '預設圖'
-      };
-      setProducts([newProduct, ...products]);
-    } else if (modalMode === 'edit' && formData.id) {
-      setProducts(prev => 
-        prev.map(item => 
-          item.id === formData.id 
-            ? { 
-                ...(formData as Product), 
-                stock: stockVal,
-                price: Number(formData.price) 
-              } 
-            : item
-        )
-      );
+    const payload: SaveMenuItemRequest = {
+      name: formData.name.trim(),
+      description: formData.description?.trim() ?? '',
+      categoryId: Number(formData.categoryId),
+      price: Number(formData.price) || 0,
+      imageUrl: formData.imageUrl?.trim() || null,
+      stock: Math.max(0, Number(formData.stock) || 0),
+      active: formData.status !== 'inactive',
+    };
+
+    try {
+      if (modalMode === 'add') {
+        await employeeClient.post('/order/admin/items', payload);
+      } else if (modalMode === 'edit' && formData.id) {
+        await employeeClient.put(`/order/admin/items/${formData.id}`, payload);
+      } else {
+        return;
+      }
+      setModalMode('closed');
+      setReloadKey(key => key + 1);
+      setReloadCategoriesKey(key => key + 1);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '儲存商品失敗');
     }
-    setModalMode('closed');
   };
 
   const handleAddCategory = async (newCategoryName: string): Promise<Category | null> => {
@@ -241,7 +260,7 @@ export default function AdminMenu() {
       }
     }
     fetchCategories();
-  }, []);
+  }, [reloadCategoriesKey]);
 
   useEffect(() => {
     let isCurrentRequest = true;
@@ -253,13 +272,14 @@ export default function AdminMenu() {
               : { categoryId: activeCategoryId === null ? undefined : Number(activeCategoryId) },
           });
           if (isCurrentRequest) {
-            setProducts(response.data.map((item, index) => ({
-              id: index + 1,
+            setProducts(response.data.map(item => ({
+              id: item.id,
               name: item.name,
+              description: item.description ?? '',
               categoryId: String(item.categoryId),
               price: item.price,
-              stock: 10,
-              status: 'active',
+              stock: item.stock,
+              status: item.active ? 'active' : 'inactive',
               imageText: item.img ? '' : '無圖片',
               imageUrl: item.img,
             })));
@@ -275,7 +295,7 @@ export default function AdminMenu() {
     return () => {
       isCurrentRequest = false;
     };
-  }, [activeCategoryId, categories, searchKeyword]);
+  }, [activeCategoryId, searchKeyword, reloadKey]);
 
   return (
   <>
@@ -363,23 +383,22 @@ export default function AdminMenu() {
                                 </div>
                               )}
                             </div>
-                            <div className="text-xs text-ink-400 mt-1">份量・加點配料</div>
+                            {product.description && <div className="text-xs text-ink-400 mt-1">{product.description}</div>}
                           </td>
                           <td className="p-4 text-ink-600">
                             {categories.find(category => category.id === product.categoryId)?.name ?? ''}
                           </td>
                           <td className="p-4 font-medium text-ink-900">${product.price}</td>
-                          <td className={`p-4 font-medium ${product.stock === 0 ? 'text-danger' : 'text-ink-600'}`}>庫存</td>
+                          <td className={`p-4 font-medium ${product.stock === 0 ? 'text-danger' : 'text-ink-600'}`}>{product.stock}</td>
                           <td className="p-4">
                             <div className="flex items-center gap-2">
-                              <ToggleSwitch active={isActive} onToggle={() => toggleStatus(product.id)} />
+                              <ToggleSwitch active={isActive} onToggle={() => void toggleStatus(product)} />
                               <span className="text-xs text-ink-600">{isActive ? '上架中' : '已下架'}</span>
                             </div>
                           </td>
                           <td className="p-4">
                             <div className="flex gap-2">
                               <button type="button" onClick={() => handleOpenEdit(product)} className="text-ink-600 hover:text-ink-900 text-xs border border-line px-3 py-1.5 rounded-lg bg-surface shadow-sm hover:bg-surface-200 transition-colors cursor-pointer">編輯</button>
-                              <button type="button" onClick={() => handleDeleteProduct(product.id)} className="text-danger hover:text-red-700 text-xs border border-line px-3 py-1.5 rounded-lg bg-surface shadow-sm hover:bg-red-50 transition-colors cursor-pointer">刪除</button>
                             </div>
                           </td>
                         </tr>
@@ -405,6 +424,7 @@ export default function AdminMenu() {
       categories={categories}
       onClose={() => setModalMode('closed')}
       onSave={handleSaveProduct}
+      onDelete={handleDeleteProduct}
     />
   </>
   );

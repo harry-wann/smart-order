@@ -12,9 +12,11 @@ import tw.ispan.smartorder.dto.AdminOptionGroupDto;
 import tw.ispan.smartorder.dto.MenuItemOptionDetailDto;
 import tw.ispan.smartorder.dto.request.CreateOptionGroupRequest;
 import tw.ispan.smartorder.dto.request.CreateOptionValueRequest;
+import tw.ispan.smartorder.dto.request.SaveMenuItemRequest;
 import tw.ispan.smartorder.dto.request.ReorderOptionValuesRequest;
 import tw.ispan.smartorder.dto.request.UpdateOptionValueStatusRequest;
 import tw.ispan.smartorder.dto.request.UpdateOptionGroupRequest;
+import tw.ispan.smartorder.dto.request.UpdateMenuItemStatusRequest;
 import tw.ispan.smartorder.dto.AdminOptionValueDto;
 import tw.ispan.smartorder.entity.MenuCategoryEntity;
 import tw.ispan.smartorder.entity.MenuItemEntity;
@@ -82,6 +84,36 @@ public class MenuController {
                 ? menuItemService.findAdminMenuItems(categoryId)
                 : menuItemService.searchAdminMenuItems(keyword);
         return ResponseEntity.ok(items);
+    }
+
+    @PostMapping("/admin/items")
+    public ResponseEntity<AdminMenuItemDto> createAdminMenuItem(
+            @Valid @RequestBody SaveMenuItemRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(menuItemService.createAdminMenuItem(request));
+    }
+
+    @PutMapping("/admin/items/{itemId}")
+    public ResponseEntity<AdminMenuItemDto> updateAdminMenuItem(
+            @PathVariable Long itemId,
+            @Valid @RequestBody SaveMenuItemRequest request
+    ) {
+        return ResponseEntity.ok(menuItemService.updateAdminMenuItem(itemId, request));
+    }
+
+    @PatchMapping("/admin/items/{itemId}/status")
+    public ResponseEntity<AdminMenuItemDto> updateAdminMenuItemStatus(
+            @PathVariable Long itemId,
+            @Valid @RequestBody UpdateMenuItemStatusRequest request
+    ) {
+        return ResponseEntity.ok(menuItemService.updateAdminMenuItemStatus(itemId, request.active()));
+    }
+
+    @DeleteMapping("/admin/items/{itemId}")
+    public ResponseEntity<Void> deleteAdminMenuItem(@PathVariable Long itemId) {
+        menuItemService.deleteAdminMenuItem(itemId);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/admin/categories")
