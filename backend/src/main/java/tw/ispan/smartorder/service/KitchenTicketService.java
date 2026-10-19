@@ -75,6 +75,41 @@ public class KitchenTicketService {
                 """, Integer.class);
         return count == null ? 0 : count;
     }
+
+    @Transactional
+    public void serveOrderItem(Long itemId) {
+        int updated = jdbc.update("""
+                UPDATE order_item oi
+                JOIN order_ticket ot ON ot.id = oi.order_ticket_id
+                SET oi.status = 'SERVED'
+                WHERE oi.id = ?
+                  AND oi.status IN ('PENDING', 'PREPARING')
+                  AND ot.status IN ('PENDING', 'PREPARING')
+                """, itemId);
+
+        if (updated == 1) {
+            Long ticketId = jdbc.queryForObject(
+                    "SELECT order_ticket_id FROM order_item WHERE id = ?", Long.class, itemId);
+            kitchenNotificationService.notifyItemServedAfterCommit(ticketId, itemId);
+            return;
+        }
+
+        String currentStatus = jdbc.query(
+                """
+                SELECT status FROM order_item WHERE id = ?
+                """,
+                rs -> rs.next() ? rs.getString("status") : null,
+                itemId);
+
+        if (currentStatus == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到這筆餐點");
+        }
+        if ("SERVED".equals(currentStatus)) {
+            return;
+        }
+        throw new ResponseStatusException(HttpStatus.CONFLICT, "此餐點目前不能標記為已出餐");
+    }
+
     @Transactional
     public void completeTicket(Long ticketId) {
         int updated = jdbc.update("""

@@ -1,7 +1,10 @@
 package tw.ispan.smartorder.dto;
 
+import java.time.Instant;
+
 public record KitchenTicketMessage(
         String type,
-        Object ticket
+        Object payload,
+        Instant serverTime
 ) {
 }

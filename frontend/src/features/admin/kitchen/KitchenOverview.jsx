@@ -56,6 +56,8 @@ function KitchenOverview() {
   useKitchenSocket(refreshTickets)
   const [now, setNow] = useState(new Date())
   const [completeError, setCompleteError] = useState('')
+  const [itemActionError, setItemActionError] = useState('')
+  const [savingItemIds, setSavingItemIds] = useState([])
 
   const handleCompleteTicket = async (ticketId) => {
     setCompleteError('')
@@ -77,19 +79,19 @@ function KitchenOverview() {
   }, [])
 
   const handleToggle = (itemId) => {
-    queryClient.setQueryData(kitchenKey, (prevTickets = []) =>
-      prevTickets.map((ticket) => ({
-        ...ticket,
-        orderItems: ticket.orderItems.map((item) =>
-          item.id === itemId
-            ? {
-                ...item,
-                status: item.status === 'PENDING' ? 'SERVED' : 'PENDING',
-              }
-            : item,
-        ),
-      })),
-    )
+    setItemActionError('')
+    setSavingItemIds((current) => [...current, itemId])
+
+    void employeeClient
+      .patch(`/admin/order-items/${itemId}/serve`)
+      .then(() => queryClient.invalidateQueries({ queryKey: kitchenKey }))
+      .catch((error) => {
+        console.error('標記品項已出餐失敗', error)
+        setItemActionError('標記品項已出餐失敗，請稍後重試。')
+      })
+      .finally(() => {
+        setSavingItemIds((current) => current.filter((id) => id !== itemId))
+      })
   }
 
   const getMaxWaitMinutes = () => {
@@ -153,6 +155,11 @@ function KitchenOverview() {
             {completeError}
           </div>
         )}
+        {itemActionError && (
+          <div className="px-6 pt-4 text-danger" role="alert">
+            {itemActionError}
+          </div>
+        )}
         <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,17.5rem),1fr))] content-start gap-5 p-6">
           {orderTickets.map((ticket) => {
             return (
@@ -165,6 +172,7 @@ function KitchenOverview() {
                   orderItems={ticket.orderItems}
 
                   onToggle={handleToggle}
+                  savingItemIds={savingItemIds}
                   onComplete={handleCompleteTicket}
                 />
               </div>

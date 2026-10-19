@@ -35,10 +35,17 @@ public class KitchenTicketsController {
         return kitchenTicketService.getCompletedTicketCountLast24Hours();
     }
 
-    // 把整張訂單狀態更新為 SERVED
+    // 把整張訂單狀態更新為 SERVED 隱藏 - webSocket 事件類型 TICKET_COMPLETED
     @PatchMapping("/kitchen/tickets/{ticketId}/complete")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void completeTicket(@PathVariable Long ticketId) {
         kitchenTicketService.completeTicket(ticketId);
+    }
+
+    // 更新 order_item status - webSocket 事件類型 ITEM_SERVED
+    @PatchMapping("/order-items/{itemId}/serve")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void serveOrderItem(@PathVariable Long itemId) {
+        kitchenTicketService.serveOrderItem(itemId);
     }
 }

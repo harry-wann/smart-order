@@ -8,6 +8,7 @@ export default function OrderCard({
   placedAt,
   orderItems,
   onToggle,
+  savingItemIds = [],
   onComplete,
 }) {
   const handleCompleteClick = (e) => {
@@ -58,6 +59,7 @@ export default function OrderCard({
                     type="checkbox"
                     className="peer sr-only"
                     checked={isCompleted}
+                    disabled={savingItemIds.includes(item.id)}
                     onChange={() => onToggle(item.id)}
                   />
                   <div className="absolute inset-0 rounded-(--radius-check) border-2 border-ink-400 bg-transparent transition-colors peer-checked:border-success peer-checked:bg-success"></div>
