@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import SOFormInput, { SOFormInputType } from '../../../components/input/SOFormInput'
 import MenuCategoryTabs from '../../../components/MenuCategoryTabs'
 import MenuItemRow from '../../../components/order/MenuItemRow'
+import Badge from '@/components/Badge'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import CustomerTopBar from '@/components/CustomerTopBar'
 import SOButton from '@/components/SOButton'
@@ -46,6 +47,9 @@ export default function Menu() {
   useCartWebSocket(sessionId == null ? undefined : String(sessionId), refreshCart, receiveActivity)
   const cartAmount = cartItems.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0)
   const navigate = useNavigate("");
+  const activeCategory = category.find(
+    (item) => String(item.id) === String(activeCategoryId),
+  );
 
   useEffect(() => {
     getCurrentDining()
@@ -124,25 +128,49 @@ export default function Menu() {
         </div>
 
         <main className="p-4">
-          <div className="flex flex-col gap-4">
-            {items.map((item) => (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-baseline gap-2 px-1 pb-1">
+              <h2 className="type-h3 text-ink-900">
+                {searchKeyword.trim() ? '搜尋結果' : activeCategory?.name ?? '菜單'}
+              </h2>
+              <span className="type-caption text-ink-600">
+                {items.length} 款{!searchKeyword.trim() && activeCategory?.name === '肉品' ? '・全部現切' : ''}
+              </span>
+            </div>
+            {items.map((item) => {
+              const isSoldOut = Boolean(item.soldOut)
+
+              return (
                 <button
                   key={item.id}
                   type="button"
-                  disabled={item.soldOut}
+                  disabled={isSoldOut}
                   onClick={() => navigate('/order/itemdetail', { state: { productId: item.id } })}
-                  className={`text-left ${item.soldOut ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-                  aria-label={item.soldOut ? `${item.name}，售完` : `查看${item.name}詳情`}
+                  className={`relative w-full text-left ${isSoldOut ? 'cursor-not-allowed [&_h3+span]:hidden' : 'cursor-pointer'} ${item.imageUrl ? '' : '[&_article>div>div]:pl-[6.5rem]'}`}
+                  aria-label={isSoldOut ? `${item.name}，售完` : `查看${item.name}詳情`}
                 >
                   <MenuItemRow
-                      img={item.imageUrl}
-                      title={item.name}
-                      desc={item.description}
-                      price={item.price}
-                      isSoldOut={item.soldOut}
+                    img={item.imageUrl}
+                    title={item.name}
+                    desc={item.description || ''}
+                    price={item.price}
+                    isSoldOut={isSoldOut}
+                    isPopular={false}
+                    onClick={() => {}}
                   />
+                  {!item.imageUrl && (
+                    <span className="pointer-events-none absolute left-4 top-1/2 flex size-22 -translate-y-1/2 items-center justify-center rounded-card border border-dashed border-line-strong bg-surface-2 type-caption text-ink-400">
+                      無圖片
+                    </span>
+                  )}
+                  {isSoldOut && (
+                    <span className="absolute right-10 top-3 origin-top-right scale-x-50 scale-y-75">
+                      <Badge text="售完" col="sold" p="soldOut" />
+                    </span>
+                  )}
                 </button>
-            ))}
+              )
+            })}
           </div>
         </main>
 
