@@ -10,6 +10,7 @@ import ServiceBell from '@/features/customer/order/ServiceBell'
 import { getCurrentDining } from '@/services/api/dining/diningApi'
 import { getCart } from '@/services/api/cart/cartApi'
 import useCartWebSocket from '@/services/realtime/useCartWebSocket'
+import useMenuWebSocket from '@/services/realtime/useMenuWebSocket'
 import TableActivityNotice from '@/components/order/TableActivityNotice'
 
 import { Link, useNavigate } from "react-router";
@@ -49,6 +50,29 @@ export default function Menu() {
   const [isBellOpen, setIsBellOpen] = useState(false);
   // 購物車路徑要帶用餐場次 id
   const [sessionId, setSessionId] = useState(null);
+  const menuStatusOverrides = useRef(new Map());
+  const unlistedMenuItems = useRef(new Set());
+  const receiveMenuStatus = useCallback((itemId, soldOut, type) => {
+    if (type === 'MENU_UNLISTED') {
+      unlistedMenuItems.current.add(String(itemId));
+      setItems((current) => current.filter((item) => String(item.id) !== String(itemId)));
+      return;
+    }
+    if (type === 'MENU_LISTED') {
+      unlistedMenuItems.current.delete(String(itemId));
+      menuStatusOverrides.current.delete(String(itemId));
+      setRetryCount((count) => count + 1);
+      return;
+    }
+    menuStatusOverrides.current.set(String(itemId), soldOut);
+    setItems((current) => current.map((item) => String(item.id) === String(itemId) ? { ...item, soldOut } : item));
+  }, []);
+  const refreshMenu = useCallback(() => {
+    menuStatusOverrides.current.clear();
+    unlistedMenuItems.current.clear();
+    setRetryCount((count) => count + 1);
+  }, []);
+  useMenuWebSocket(sessionId, receiveMenuStatus, refreshMenu);
   const [notices, setNotices] = useState([])
   const seenEvents = useRef(new Set())
   const [cartItems, setCartItems] = useState([])
@@ -115,7 +139,9 @@ export default function Menu() {
               : { categoryId: activeCategoryId },
         });
         if (isCurrentRequest) {
-          setItems(response.data);
+          setItems(response.data.filter((item) => !unlistedMenuItems.current.has(String(item.id))).map((item) => menuStatusOverrides.current.has(String(item.id))
+            ? { ...item, soldOut: menuStatusOverrides.current.get(String(item.id)) }
+            : item));
           setItemStatus('success');
         }
       } catch (error) {

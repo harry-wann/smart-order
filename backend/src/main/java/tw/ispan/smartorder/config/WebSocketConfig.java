@@ -61,8 +61,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                     String destination = headers.getDestination();
                     boolean kitchenStaff = "/topic/kitchen".equals(destination)
                             && isKitchenStaff(headers.getUser());
-                    // 保留原有桌況公開推播；客人的通知只允許訂閱自己的 queue。
+                    // 桌況公開推播；菜單狀態限已登入者，購物車通知使用個人 queue。
                     if (!"/topic/counter".equals(destination)
+                            && !("/topic/menu".equals(destination) && headers.getUser() != null)
                             && !("/user/queue/cart-updates".equals(destination) && headers.getUser() != null)
                             && !kitchenStaff) {
                         throw new IllegalArgumentException("無法訂閱此通知");

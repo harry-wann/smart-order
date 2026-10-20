@@ -28,6 +28,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class MenuItemService {
     @Autowired
+    private MenuStatusNotifier menuStatusNotifier;
+    @Autowired
     private MenuItemRepository menuItemRepository;
 
     @Autowired
@@ -90,6 +92,7 @@ public class MenuItemService {
         item.setDescription(request.description());
         item.setPrice(request.price());
         item.setImageUrl(request.imageUrl());
+        boolean wasActive = Boolean.TRUE.equals(item.getActive());
         item.setActive(request.active());
         item.setUpdatedAt(LocalDateTime.now());
         MenuItemEntity saved = menuItemRepository.save(item);
@@ -102,10 +105,17 @@ public class MenuItemService {
             created.setCreatedAt(now);
             return created;
         });
+        boolean wasSoldOut = inventory.getQuantity() == null || inventory.getQuantity() <= 0;
         inventory.setQuantity(request.stock());
         inventory.setUpdatedAt(now);
         inventoryRepository.save(inventory);
         saved.setSoldOut(request.stock() == 0);
+        if (wasSoldOut != (request.stock() == 0)) {
+            menuStatusNotifier.notifyAfterCommit(id, request.stock() == 0);
+        }
+        if (wasActive != request.active()) {
+            menuStatusNotifier.notifyVisibilityAfterCommit(id, request.active());
+        }
         return toAdminMenuItemDto(saved, request.stock());
     }
 
@@ -113,9 +123,13 @@ public class MenuItemService {
     public AdminMenuItemDto updateAdminMenuItemStatus(Long id, boolean active) {
         MenuItemEntity item = menuItemRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到商品"));
+        boolean wasActive = Boolean.TRUE.equals(item.getActive());
         item.setActive(active);
         item.setUpdatedAt(LocalDateTime.now());
         menuItemRepository.save(item);
+        if (wasActive != active) {
+            menuStatusNotifier.notifyVisibilityAfterCommit(id, active);
+        }
         Integer stock = inventoryRepository.findByMenuItem_Id(id)
                 .map(InventoryEntity::getQuantity).orElse(0);
         return toAdminMenuItemDto(item, stock);
