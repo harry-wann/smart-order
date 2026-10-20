@@ -99,6 +99,12 @@ export default function Menu() {
   const seenEvents = useRef(new Set())
   const [tableNo, setTableNo] = useState('')
   const [diningInfo, setDiningInfo] = useState(null)
+  const [diningStatus, setDiningStatus] = useState('loading')
+  const [diningRetryCount, setDiningRetryCount] = useState(0)
+  const retryDining = () => {
+    setDiningStatus('loading')
+    setDiningRetryCount((count) => count + 1)
+  }
   const diningSubtitle = diningInfo ? [
     diningInfo.adultCount != null || diningInfo.childCount != null
       ? `${diningInfo.adultCount ?? 0} 大 ${diningInfo.childCount ?? 0} 小` : '',
@@ -133,13 +139,25 @@ export default function Menu() {
   );
 
   useEffect(() => {
+    let isCurrentRequest = true
     getCurrentDining()
-      .then((dining) => { if (!sessionEnded.current) { setSessionId(dining.sessionId); setTableNo(dining.tableNo); setDiningInfo(dining); } })
+      .then((dining) => {
+        if (!isCurrentRequest || sessionEnded.current) return
+        setSessionId(dining.sessionId)
+        setTableNo(dining.tableNo)
+        setDiningInfo(dining)
+        setDiningStatus('success')
+      })
       .catch((error) => {
-        if (error.status === 401) handleSessionInvalid();
-        else console.error(error);
+        if (!isCurrentRequest) return
+        if (error.status === 401) handleSessionInvalid()
+        else {
+          setDiningStatus('error')
+          console.error(error)
+        }
       });
-  }, [handleSessionInvalid]);
+    return () => { isCurrentRequest = false }
+  }, [handleSessionInvalid, diningRetryCount]);
 
   useEffect(() => {
     let isCurrentRequest = true;
@@ -220,6 +238,15 @@ export default function Menu() {
             <SvgIconMap.MenuBell role="img" aria-label="服務鈴" />
           </button>
         </CustomerTopBar>
+
+        {diningStatus === 'error' && (
+          <div role="alert" className="mx-4 mt-3 flex items-center justify-between gap-3 rounded-card border border-danger/30 bg-surface px-4 py-3">
+            <p className="type-body-sm text-ink-700">無法載入桌次資訊，請確認網路後重試。</p>
+            <button type="button" onClick={retryDining} className="shrink-0 cursor-pointer font-medium text-brand-600 underline">
+              重新載入
+            </button>
+          </div>
+        )}
 
         <div className="px-4 py-3 [&>div]:h-11 [&>div]:rounded-btn [&>div]:bg-surface">
           <SOFormInput
