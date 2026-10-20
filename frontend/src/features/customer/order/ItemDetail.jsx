@@ -4,8 +4,7 @@ import OptionRadioGroup from '../../../components/optionRadio/OptionRadioGroup'
 import OptionCheckboxGroup from '../../../components/optionCheckbox/OptionCheckboxGroup'
 import Counter from '../../../components/steper/Counter'
 import { useLocation, useNavigate } from 'react-router'
-import { getCurrentDining } from '@/services/api/dining/diningApi'
-import { addCartItem } from '@/services/api/cart/cartApi'
+import { SvgIconMap } from '@/assets/SvgIconMap'
 import { customerClient } from '@/services/client/customerClient'
 
 const MAX_NOTE_LENGTH = 50
@@ -13,6 +12,7 @@ const MAX_NOTE_LENGTH = 50
 export default function ItemDetail() {
   const location = useLocation()
   const productId = location.state?.productId
+  const sessionId = location.state?.sessionId
   const navigate = useNavigate()
   const [selections, setSelections] = useState({})
   const [item, setItem] = useState(null)
@@ -79,8 +79,9 @@ export default function ItemDetail() {
     setBusy(true)
     setError('')
     try {
-      const dining = await getCurrentDining()
-      await addCartItem(String(dining.sessionId), {
+      if (!sessionId) throw new Error('找不到桌次資訊，請返回菜單重新進入')
+      await customerClient.post('/order/cart/items', {
+        sessionId,
         menuItemId: Number(productId),
         quantity,
         optionValueIds: Object.values(selections).flat().map(Number),
@@ -108,7 +109,7 @@ export default function ItemDetail() {
   if (!item) return <div className="min-h-screen bg-paper p-4 text-ink-900">商品資料載入中...</div>
 
   return (
-    <div className="relative min-h-screen w-full bg-paper pb-28 font-sans text-ink-900">
+    <div className="relative min-h-screen w-full bg-paper font-sans text-ink-900">
       <div className="relative flex h-[186px] w-full items-center justify-center overflow-hidden bg-surface-2">
         {item.imageUrl ? (
           <img src={item.imageUrl} className="h-full w-full object-cover" alt={item.name} />
@@ -116,6 +117,14 @@ export default function ItemDetail() {
           <span className="text-ink-400">暫無圖片</span>
         )}
         <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/30 via-transparent to-transparent" />
+        <button
+          type="button"
+          aria-label="返回上一頁"
+          onClick={() => navigate(-1)}
+          className="absolute left-4 top-4 z-10 flex size-11 items-center justify-center rounded-full bg-surface/90 shadow-sm"
+        >
+          <SvgIconMap.TopBarBack aria-hidden="true" className="size-11" />
+        </button>
       </div>
 
       <div className="px-4 pb-6 pt-4">
@@ -203,11 +212,10 @@ export default function ItemDetail() {
           placeholder="例如：不要太生"
           className="w-full resize-none rounded-lg border border-line bg-surface p-4 text-base text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-brand-600 focus:ring-2 focus:ring-brand-600/20 disabled:cursor-not-allowed disabled:opacity-60"
         />
-        <p className="mt-2 text-sm text-ink-600">廚房看得到，但無法保證每一項都能配合</p>
       </section>
 
       {error && <p role="alert" className="px-4 pb-4 text-brand-600">{error}</p>}
-      <div className="fixed bottom-0 left-0 right-0 z-10 border-t border-line bg-surface px-4 pb-6 pt-3">
+      <div className="sticky bottom-0 z-10 border-t border-line bg-surface px-4 pb-6 pt-3">
         <SOButton
           height="h-[52px]"
           type="button"

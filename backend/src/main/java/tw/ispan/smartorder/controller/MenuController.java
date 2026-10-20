@@ -23,6 +23,8 @@ import tw.ispan.smartorder.entity.MenuItemEntity;
 import tw.ispan.smartorder.service.MenuCategoryService;
 import tw.ispan.smartorder.service.MenuItemService;
 import tw.ispan.smartorder.service.OptionGroupService;
+import tw.ispan.smartorder.service.ItemDetailCartService;
+import tw.ispan.smartorder.ordercart.service.CurrentGuestService;
 
 import java.util.List;
 
@@ -37,6 +39,12 @@ public class MenuController {
 
     @Autowired
     private OptionGroupService optionGroupService;
+
+    @Autowired
+    private ItemDetailCartService itemDetailCartService;
+
+    @Autowired
+    private CurrentGuestService currentGuestService;
 
     // Menu 畫面 提取類別
     @GetMapping("/category")
@@ -72,6 +80,21 @@ public class MenuController {
         MenuItemOptionDetailDto menuItem =
                 menuItemService.findOptionValuesByMenuItemId(productId);
         return ResponseEntity.ok(menuItem);
+    }
+
+    // ItemDetail 畫面：新增購物車品項並一併寫入備註
+    @PostMapping("/cart/items")
+    public ResponseEntity<Void> addItemToCartFromItemDetail(
+            @RequestBody ItemDetailCartService.AddItemRequest request
+    ) {
+        if (request == null || request.sessionId() == null) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    HttpStatus.BAD_REQUEST, "請提供用餐桌次"
+            );
+        }
+        Long guestId = currentGuestService.requireGuestId(request.sessionId());
+        itemDetailCartService.addItem(guestId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     // AdminMenu 畫面 依照 categoryId 提取商品指定資訊

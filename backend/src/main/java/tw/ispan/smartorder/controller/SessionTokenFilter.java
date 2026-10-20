@@ -20,8 +20,10 @@ public class SessionTokenFilter extends OncePerRequestFilter {
 
 	@Override
 	protected boolean shouldNotFilter(HttpServletRequest request){
-		return !request.getRequestURI().startsWith("/api/dining/")
-                && !request.getRequestURI().startsWith("/api/dining-sessions/");
+		String requestUri = request.getRequestURI();
+		return !requestUri.startsWith("/api/dining/")
+                && !requestUri.startsWith("/api/dining-sessions/")
+                && !requestUri.equals("/api/order/cart/items");
 	}
 
 	@Override
