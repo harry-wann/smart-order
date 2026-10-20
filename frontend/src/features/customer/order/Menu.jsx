@@ -16,7 +16,6 @@ import { Link, useNavigate } from "react-router";
 
 import { customerClient } from '@/services/client/customerClient'
 import { leaveTable } from '@/services/client/auth'
-import './Menu.css'
 
 export default function Menu() {
   const navigate = useNavigate();
