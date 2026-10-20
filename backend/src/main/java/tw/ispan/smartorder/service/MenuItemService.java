@@ -28,6 +28,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class MenuItemService {
     @Autowired
+    private MenuStatusNotifier menuStatusNotifier;
+    @Autowired
     private MenuItemRepository menuItemRepository;
 
     @Autowired
@@ -62,7 +64,7 @@ public class MenuItemService {
         item.setSpicyLevel(0);
         item.setIsVegetarian(false);
         item.setContainsBeef(false);
-        item.setSoldOut(false);
+        item.setSoldOut(request.stock() == 0);
         item.setSortOrder("0");
         item.setActive(request.active());
         item.setCreatedAt(now);
@@ -76,6 +78,7 @@ public class MenuItemService {
         inventory.setCreatedAt(now);
         inventory.setUpdatedAt(now);
         inventoryRepository.save(inventory);
+        item.setSoldOut(request.stock() == 0);
         return toAdminMenuItemDto(saved, request.stock());
     }
 
@@ -89,6 +92,7 @@ public class MenuItemService {
         item.setDescription(request.description());
         item.setPrice(request.price());
         item.setImageUrl(request.imageUrl());
+        boolean wasActive = Boolean.TRUE.equals(item.getActive());
         item.setActive(request.active());
         item.setUpdatedAt(LocalDateTime.now());
         MenuItemEntity saved = menuItemRepository.save(item);
@@ -101,9 +105,17 @@ public class MenuItemService {
             created.setCreatedAt(now);
             return created;
         });
+        boolean wasSoldOut = inventory.getQuantity() == null || inventory.getQuantity() <= 0;
         inventory.setQuantity(request.stock());
         inventory.setUpdatedAt(now);
         inventoryRepository.save(inventory);
+        saved.setSoldOut(request.stock() == 0);
+        if (wasSoldOut != (request.stock() == 0)) {
+            menuStatusNotifier.notifyAfterCommit(id, request.stock() == 0);
+        }
+        if (wasActive != request.active()) {
+            menuStatusNotifier.notifyVisibilityAfterCommit(id, request.active());
+        }
         return toAdminMenuItemDto(saved, request.stock());
     }
 
@@ -111,9 +123,13 @@ public class MenuItemService {
     public AdminMenuItemDto updateAdminMenuItemStatus(Long id, boolean active) {
         MenuItemEntity item = menuItemRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到商品"));
+        boolean wasActive = Boolean.TRUE.equals(item.getActive());
         item.setActive(active);
         item.setUpdatedAt(LocalDateTime.now());
         menuItemRepository.save(item);
+        if (wasActive != active) {
+            menuStatusNotifier.notifyVisibilityAfterCommit(id, active);
+        }
         Integer stock = inventoryRepository.findByMenuItem_Id(id)
                 .map(InventoryEntity::getQuantity).orElse(0);
         return toAdminMenuItemDto(item, stock);
@@ -137,11 +153,15 @@ public class MenuItemService {
                 stock, item.getActive());
     }
 
+    @Transactional
     public List<MenuItemEntity> findMenuItem(Long categoryId){
+        List<MenuItemEntity> items;
         if (categoryId == null) {
-            return menuItemRepository.findByActiveTrue();
+            items = menuItemRepository.findByActiveTrue();
+        } else {
+            items = menuItemRepository.findByActiveTrueAndCategory_Id(categoryId);
         }
-        return menuItemRepository.findByActiveTrueAndCategory_Id(categoryId);
+        return withCurrentSoldOutStatus(items);
     }
 
     public List<AdminMenuItemDto> findAdminMenuItems(Long categoryId) {
@@ -155,12 +175,28 @@ public class MenuItemService {
         return menuItemRepository.searchAdminMenuItemsByKeyword(keyword.trim());
     }
 
+    @Transactional
     public List<MenuItemEntity> searchMenuItem(String keyword){
         String searchKeyword = keyword == null ? "" : keyword.trim();
         if (searchKeyword.isEmpty()) {
-            return menuItemRepository.findByActiveTrue();
+            return withCurrentSoldOutStatus(menuItemRepository.findByActiveTrue());
         }
-        return menuItemRepository.searchActiveMenuItemsByKeyword(searchKeyword);
+        return withCurrentSoldOutStatus(menuItemRepository.searchActiveMenuItemsByKeyword(searchKeyword));
+    }
+
+    private List<MenuItemEntity> withCurrentSoldOutStatus(List<MenuItemEntity> items) {
+        for (MenuItemEntity item : items) {
+            int stock = inventoryRepository.findByMenuItem_Id(item.getId())
+                    .map(inventory -> inventory.getQuantity() == null ? 0 : inventory.getQuantity())
+                    .orElse(0);
+            boolean soldOut = stock == 0;
+            if (!Boolean.valueOf(soldOut).equals(item.getSoldOut())) {
+                item.setSoldOut(soldOut);
+                item.setUpdatedAt(LocalDateTime.now());
+                menuItemRepository.save(item);
+            }
+        }
+        return items;
     }
 
 //    public Optional<MenuItemEntity> findMenuItemById(Long id) {

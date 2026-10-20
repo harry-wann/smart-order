@@ -32,6 +32,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class TableService {
+    @org.springframework.beans.factory.annotation.Autowired
+    private tw.ispan.smartorder.service.MenuCheckoutNotifier menuCheckoutNotifier;
 
     private final DiningTableRepository tableRepository;
     private final DiningSessionRepository sessionRepository;
@@ -291,6 +293,7 @@ public class TableService {
         // 更新用餐狀態
         session.setStatus("PAID");
         session.setClosedAt(LocalDateTime.now());
+        menuCheckoutNotifier.completeAfterCommit(session.getId());
 
         sessionRepository.save(session);
 

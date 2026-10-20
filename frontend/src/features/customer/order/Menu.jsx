@@ -9,13 +9,40 @@ import ServiceBell from '@/features/customer/order/ServiceBell'
 import { getCurrentDining } from '@/services/api/dining/diningApi'
 import { getCart } from '@/services/api/cart/cartApi'
 import useCartWebSocket from '@/services/realtime/useCartWebSocket'
+import useMenuWebSocket from '@/services/realtime/useMenuWebSocket'
 import TableActivityNotice from '@/components/order/TableActivityNotice'
 
 import { Link, useNavigate } from "react-router";
 
 import { customerClient } from '@/services/client/customerClient'
+import { leaveTable } from '@/services/client/auth'
 
 export default function Menu() {
+  const navigate = useNavigate();
+  const [closedSession, setClosedSession] = useState(null);
+  const sessionEnded = useRef(false);
+  const [isBellOpen, setIsBellOpen] = useState(false);
+  const [sessionId, setSessionId] = useState(null);
+  const [notices, setNotices] = useState([]);
+  const [cartItems, setCartItems] = useState([]);
+  const [isCartSocketConnected, setIsCartSocketConnected] = useState(false);
+  const handleSessionInvalid = useCallback(() => {
+    if (sessionEnded.current) return;
+    sessionEnded.current = true;
+    leaveTable();
+    setSessionId(null);
+    navigate('/', { replace: true });
+  }, [navigate]);
+  const handleSessionClosed = useCallback((event) => {
+    if (sessionEnded.current) return;
+    sessionEnded.current = true;
+    leaveTable();
+    setSessionId(null);
+    setCartItems([]);
+    setNotices([]);
+    setIsBellOpen(false);
+    setClosedSession(event);
+  }, []);
   // 商品類別
   const [category,setCategory]=useState([]);
   // 選取項目 card
@@ -24,66 +51,169 @@ export default function Menu() {
   const [activeCategoryId,setActiveCategoryId]=useState(null);
   // 搜尋關鍵字拿 list
   const [searchKeyword,setSearchKeyword]=useState('');
+  const [debouncedSearchKeyword, setDebouncedSearchKeyword] = useState('');
+  const [searchInputKey, setSearchInputKey] = useState(0);
+  const [categoryStatus, setCategoryStatus] = useState('loading');
+  const [itemStatus, setItemStatus] = useState('loading');
+  const [retryCount, setRetryCount] = useState(0);
+  const [categoryRetryCount, setCategoryRetryCount] = useState(0);
+  const isLoading = categoryStatus === 'loading' || (categoryStatus === 'success' && activeCategoryId != null && itemStatus === 'loading');
+  const hasError = categoryStatus === 'error' || (categoryStatus === 'success' && activeCategoryId != null && itemStatus === 'error');
+  const clearSearch = () => {
+    setSearchKeyword('');
+    setDebouncedSearchKeyword('');
+    setSearchInputKey((key) => key + 1);
+  };
+  const retryMenu = () => {
+    if (categoryStatus === 'error' || category.length === 0) {
+      setCategoryStatus('loading');
+      setCategoryRetryCount((count) => count + 1);
+    } else {
+      setItemStatus('loading');
+      setRetryCount((count) => count + 1);
+    }
+  };
   // 
-  const [isBellOpen, setIsBellOpen] = useState(false);
   // 購物車路徑要帶用餐場次 id
-  const [sessionId, setSessionId] = useState(null);
-  const [notices, setNotices] = useState([])
+  const menuStatusOverrides = useRef(new Map());
+  const unlistedMenuItems = useRef(new Set());
+  const receiveMenuStatus = useCallback((itemId, soldOut, type) => {
+    if (type === 'MENU_UNLISTED') {
+      unlistedMenuItems.current.add(String(itemId));
+      setItems((current) => current.filter((item) => String(item.id) !== String(itemId)));
+      return;
+    }
+    if (type === 'MENU_LISTED') {
+      unlistedMenuItems.current.delete(String(itemId));
+      menuStatusOverrides.current.delete(String(itemId));
+      setRetryCount((count) => count + 1);
+      return;
+    }
+    menuStatusOverrides.current.set(String(itemId), soldOut);
+    setItems((current) => current.map((item) => String(item.id) === String(itemId) ? { ...item, soldOut } : item));
+  }, []);
+  const refreshMenu = useCallback(() => {
+    menuStatusOverrides.current.clear();
+    unlistedMenuItems.current.clear();
+    setRetryCount((count) => count + 1);
+  }, []);
+  useMenuWebSocket(sessionId, receiveMenuStatus, refreshMenu, handleSessionClosed, handleSessionInvalid);
   const seenEvents = useRef(new Set())
-  const [cartItems, setCartItems] = useState([])
   const [tableNo, setTableNo] = useState('')
+  const [diningInfo, setDiningInfo] = useState(null)
+  const [diningStatus, setDiningStatus] = useState('loading')
+  const [diningRetryCount, setDiningRetryCount] = useState(0)
+  const retryDining = () => {
+    setDiningStatus('loading')
+    setDiningRetryCount((count) => count + 1)
+  }
+  const diningSubtitle = diningInfo ? [
+    diningInfo.adultCount != null || diningInfo.childCount != null
+      ? `${diningInfo.adultCount ?? 0} 大 ${diningInfo.childCount ?? 0} 小` : '',
+    diningInfo.openedAt?.match(/T(\d{2}:\d{2})/)?.[1]
+      ? `${diningInfo.openedAt.match(/T(\d{2}:\d{2})/)[1]} 入座` : '',
+  ].filter(Boolean).join('　') : ''
   const refreshCart = useCallback(() => {
     if (!sessionId) return
-    getCart(String(sessionId)).then((cart) => setCartItems(cart.items ?? []))
-      .catch((error) => console.error('更新購物車失敗', error))
-  }, [sessionId])
+    getCart(String(sessionId)).then((cart) => { if (!sessionEnded.current) setCartItems(cart.items ?? []) })
+      .catch((error) => {
+        if (error.status === 401) handleSessionInvalid();
+        else console.error('更新購物車失敗', error);
+      })
+  }, [sessionId, handleSessionInvalid])
   const receiveActivity = useCallback((activity) => {
     if (!['ITEM_ADDED', 'ORDER_SUBMITTED'].includes(activity.type) || seenEvents.current.has(activity.eventId)) return
     seenEvents.current.add(activity.eventId)
     setNotices((current) => [...current, activity])
   }, [])
   const dismissNotice = useCallback(() => setNotices((current) => current.slice(1)), [])
-  useCartWebSocket(sessionId == null ? undefined : String(sessionId), refreshCart, receiveActivity)
+  useCartWebSocket(sessionId == null ? undefined : String(sessionId), refreshCart, receiveActivity, setIsCartSocketConnected)
+  useEffect(() => {
+    if (!sessionId || isCartSocketConnected) return;
+
+    refreshCart();
+    const intervalId = window.setInterval(refreshCart, 5000);
+    return () => window.clearInterval(intervalId);
+  }, [sessionId, isCartSocketConnected, refreshCart]);
+  const cartItemCount = cartItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0)
   const cartAmount = cartItems.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0)
-  const navigate = useNavigate("");
+  const activeCategory = category.find(
+    (item) => String(item.id) === String(activeCategoryId),
+  );
 
   useEffect(() => {
+    let isCurrentRequest = true
     getCurrentDining()
-      .then((dining) => { setSessionId(dining.sessionId); setTableNo(dining.tableNo) })
-      .catch((error) => console.error(error));
-  }, []);
+      .then((dining) => {
+        if (!isCurrentRequest || sessionEnded.current) return
+        setSessionId(dining.sessionId)
+        setTableNo(dining.tableNo)
+        setDiningInfo(dining)
+        setDiningStatus('success')
+      })
+      .catch((error) => {
+        if (!isCurrentRequest) return
+        if (error.status === 401) handleSessionInvalid()
+        else {
+          setDiningStatus('error')
+          console.error(error)
+        }
+      });
+    return () => { isCurrentRequest = false }
+  }, [handleSessionInvalid, diningRetryCount]);
 
   useEffect(() => {
+    let isCurrentRequest = true;
     async function loadCategories() {
       try {
         const response = await customerClient.get('/order/category');
-        setCategory(response.data);
-        if (response.data.length > 0) {
-          setActiveCategoryId(response.data[0].id);
-        }
+        const visibleCategories = response.data.filter((item) => {
+          const name = String(item.name ?? '').replace(/\s/g, '')
+          return name !== '推薦' && name !== '今日推薦'
+        })
+        if (!isCurrentRequest) return;
+        setCategory(visibleCategories);
+        setActiveCategoryId(visibleCategories[0]?.id ?? null);
+        setCategoryStatus('success');
       } catch (error) {
-        console.error(error);
+        if (isCurrentRequest) {
+          setCategoryStatus('error');
+          console.error(error);
+        }
       }
     }
 
     loadCategories();
-  }, []);
+    return () => { isCurrentRequest = false; };
+  }, [categoryRetryCount]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => setDebouncedSearchKeyword(searchKeyword), 300);
+    return () => window.clearTimeout(timeoutId);
+  }, [searchKeyword]);
 
   useEffect(() => {
     if (activeCategoryId == null) return;
     let isCurrentRequest = true;
+    setItems([]);
+    setItemStatus('loading');
     async function loadItems() {
       try {
         const response = await customerClient.get('/order/items', {
-          params: searchKeyword.trim()
-              ? { keyword: searchKeyword.trim() }
+          params: debouncedSearchKeyword.trim()
+              ? { keyword: debouncedSearchKeyword.trim() }
               : { categoryId: activeCategoryId },
         });
         if (isCurrentRequest) {
-          setItems(response.data);
+          setItems(response.data.filter((item) => !unlistedMenuItems.current.has(String(item.id))).map((item) => menuStatusOverrides.current.has(String(item.id))
+            ? { ...item, soldOut: menuStatusOverrides.current.get(String(item.id)) }
+            : item));
+          setItemStatus('success');
         }
       } catch (error) {
         if (isCurrentRequest) {
+          setItems([]);
+          setItemStatus('error');
           console.error(error);
         }
       }
@@ -93,18 +223,42 @@ export default function Menu() {
     return () => {
       isCurrentRequest = false;
     };
-  }, [activeCategoryId, searchKeyword]);
+  }, [activeCategoryId, debouncedSearchKeyword, retryCount]);
+
+  if (closedSession) {
+    return (
+      <div data-menu-page className="flex min-h-full w-full flex-col bg-paper">
+        <CustomerTopBar title={tableNo ? `${tableNo} 桌` : '菜單'} showBackButton={false} />
+        <section role="status" className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center">
+          <span aria-hidden="true" className="mb-6 flex size-20 items-center justify-center rounded-full bg-surface text-4xl text-brand-600">✓</span>
+          <h1 className="type-h1 text-ink-900">這桌已經結帳完成</h1>
+          <p className="mt-3 type-body-sm text-ink-600">謝謝光臨，歡迎再來</p>
+          <button type="button" onClick={() => navigate('/', { replace: true })} className="mt-8 min-h-11 w-full cursor-pointer rounded-btn bg-brand-600 px-6 py-3 font-medium text-white">回到首頁</button>
+        </section>
+      </div>
+    );
+  }
 
   return (
-      <div className="relative min-h-screen w-full self-start bg-surface-2 pb-24">
-        <CustomerTopBar title={tableNo ? `${tableNo} 桌` : '菜單'} showBackButton={false}>
+      <div data-menu-page className="relative min-h-screen w-full self-start bg-paper pb-24">
+        <CustomerTopBar title={tableNo ? `${tableNo} 桌` : '菜單'} subTitle={diningSubtitle} showBackButton={false}>
           <button onClick={() => setIsBellOpen(true)} type="button" className="cursor-pointer text-gray-600">
             <SvgIconMap.MenuBell role="img" aria-label="服務鈴" />
           </button>
         </CustomerTopBar>
 
-        <div className="px-4 py-3">
+        {diningStatus === 'error' && (
+          <div role="alert" className="mx-4 mt-3 flex items-center justify-between gap-3 rounded-card border border-danger/30 bg-surface px-4 py-3">
+            <p className="type-body-sm text-ink-700">無法載入桌次資訊，請確認網路後重試。</p>
+            <button type="button" onClick={retryDining} className="shrink-0 cursor-pointer font-medium text-brand-600 underline">
+              重新載入
+            </button>
+          </div>
+        )}
+
+        <div className="px-4 py-3 [&>div]:h-11 [&>div]:rounded-btn [&>div]:bg-surface">
           <SOFormInput
+              key={searchInputKey}
               type={SOFormInputType.NORMAL}
               icon={SvgIconMap.MenuSearch}
               defaultValue=""
@@ -113,28 +267,58 @@ export default function Menu() {
           />
         </div>
 
-        <div className="border-b border-line bg-surface">
-          <div className="no-scrollbar flex overflow-x-auto border-b border-line px-4 pt-2">
+        <div className="no-scrollbar overflow-x-auto border-b border-line bg-surface">
+          <div className="w-max px-4">
             <MenuCategoryTabs
                 category={category}
-                activeCategoryId={activeCategoryId}
-                onClick={(selectedCategory) => setActiveCategoryId(selectedCategory.id)}
+                activeCategoryId={searchKeyword.trim() ? null : activeCategoryId}
+                onClick={(selectedCategory) => {
+                  clearSearch();
+                  setActiveCategoryId(selectedCategory.id);
+                }}
             />
           </div>
         </div>
 
-        <main className="p-4">
-          <div className="flex flex-col gap-4">
-            {items.map((item) => (
-                <button key={item.id} onClick={()=>{navigate('/order/itemdetail',{state : {productId:item.id}})}} className="cursor-pointer text-left">
-                  <MenuItemRow
-                      img={item.imageUrl}
-                      title={item.name}
-                      desc={item.description}
-                      price={item.price}
-                      isSoldOut={item.soldOut}
-                  />
-                </button>
+        <main className="px-4 pb-4">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-baseline gap-2 px-1 pb-1 pt-4">
+              <h2 className="type-h2 text-ink-900">
+                {searchKeyword.trim() ? '搜尋結果' : activeCategory?.name ?? '菜單'}
+              </h2>
+              {!isLoading && !hasError && <span className="type-caption text-ink-600">
+                {items.length} 款{!searchKeyword.trim() && activeCategory?.name === '肉品' ? '・全部現切' : ''}
+              </span>}
+            </div>
+            {isLoading ? (
+              <p role="status" className="py-16 text-center type-body-sm text-ink-600">正在準備今天的菜單…</p>
+            ) : hasError ? (
+              <MenuState
+                error
+                title="菜單沒有載入成功"
+                description="連線可能不穩，請重新載入；如果還是不行，可以按服務鈴請店員幫忙。"
+                action="重新載入"
+                onAction={retryMenu}
+              >
+                <button type="button" onClick={() => setIsBellOpen(true)} className="mt-3 cursor-pointer rounded-btn px-4 py-3 text-ink-600 underline">按服務鈴找店員</button>
+              </MenuState>
+            ) : items.length === 0 ? (
+              <MenuState
+                title={category.length === 0 ? '目前沒有上架的菜單' : searchKeyword.trim() ? '找不到符合的菜色' : `${activeCategory?.name ?? '這個分類'}目前沒有上架的菜色`}
+                description={category.length === 0 ? '請稍後重新載入，或按右上角的服務鈴詢問店員。' : searchKeyword.trim() ? '試試其他關鍵字，或清除搜尋看看其他菜色。' : '可以先看看其他分類的菜色。'}
+                action={category.length === 0 ? '重新載入' : searchKeyword.trim() ? '清除搜尋' : category.some((entry) => entry.id !== activeCategoryId) ? '看看其他分類' : '重新載入'}
+                onAction={category.length === 0 ? retryMenu : searchKeyword.trim() ? clearSearch : () => {
+                  const nextCategory = category.find((entry) => entry.id !== activeCategoryId);
+                  if (nextCategory) setActiveCategoryId(nextCategory.id);
+                  else retryMenu();
+                }}
+              />
+            ) : items.map((item) => (
+              <MenuItemCard
+                key={item.id}
+                item={item}
+                onOpen={() => navigate('/order/itemdetail', { state: { productId: item.id } })}
+              />
             ))}
           </div>
         </main>
@@ -151,7 +335,7 @@ export default function Menu() {
                 content={[
                   <div key="cart-info" className="flex items-center gap-2">
                     <SvgIconMap.OrderShoppingCart role="img" aria-label="Cart" className="h-6 w-6" />
-                    <span className="text-lg font-medium">購物車 {cartItems.length} 項</span>
+                    <span className="text-lg font-medium">購物車 {cartItemCount} 項</span>
                   </div>,
                   <div key="cart-price" className="flex items-center gap-2">
                     <span className="text-lg font-medium">NT$ {cartAmount.toLocaleString('zh-TW')}</span>
@@ -164,5 +348,52 @@ export default function Menu() {
         <ServiceBell open={isBellOpen} onclick={() => setIsBellOpen(false)} />
         <TableActivityNotice activity={notices[0]} onDismiss={dismissNotice} />
       </div>
+  )
+}
+
+function MenuState({ error = false, title, description, action, onAction, children }) {
+  return (
+    <section role={error ? 'alert' : 'status'} className="flex min-h-80 flex-col items-center justify-center px-4 py-10 text-center">
+      <svg aria-hidden="true" viewBox="0 0 96 96" className={`mb-4 size-20 ${error ? 'text-danger' : 'text-ink-400'}`} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+        {error ? <><path d="M43 15 9 75a6 6 0 0 0 5 9h68a6 6 0 0 0 5-9L53 15a6 6 0 0 0-10 0Z" /><path d="M48 35v22m0 12v1" /></> : <><path d="M13 41v7a30 30 0 0 0 30 30h10a30 30 0 0 0 30-30v-7M8 41h80M13 47H7a5 5 0 0 0 0 10h4m72-10h6a5 5 0 0 1 0 10h-4" /><path d="M36 60h24" strokeDasharray="3 6" /></>}
+      </svg>
+      <h3 className="type-h3 text-ink-900">{title}</h3>
+      <p className="mt-2 type-body-sm text-ink-600">{description}</p>
+      <button type="button" onClick={onAction} className="mt-6 min-h-11 cursor-pointer rounded-btn bg-brand-600 px-6 py-3 font-medium text-white">{action}</button>
+      {children}
+    </section>
+  );
+}
+
+function MenuItemCard({ item, onOpen }) {
+  const isSoldOut = Boolean(item.soldOut)
+  const hasImage = Boolean(item.imageUrl)
+
+  return (
+    <button
+      type="button"
+      disabled={isSoldOut}
+      onClick={onOpen}
+      className={`relative w-full text-left ${isSoldOut ? 'cursor-not-allowed' : 'cursor-pointer'} ${hasImage ? '[&_article>div>div:first-child]:!size-20 [&_article>div>div:first-child>img]:!size-full' : '[&_article>div>div]:pl-24'}`}
+      aria-label={isSoldOut ? `${item.name}，售完` : `查看${item.name}詳情`}
+    >
+      <MenuItemRow
+        img={item.imageUrl}
+        title={item.name}
+        desc={item.description || ''}
+        price={item.price}
+        isSoldOut={isSoldOut}
+        isPopular={false}
+        isVegetarian={item.isVegetarian}
+        containsBeef={item.containsBeef}
+        spicyLevel={item.spicyLevel}
+        onClick={() => {}}
+      />
+      {!hasImage && (
+        <span className="pointer-events-none absolute left-4 top-1/2 flex size-20 -translate-y-1/2 items-center justify-center rounded-card border border-dashed border-line-strong bg-surface-2 type-caption text-ink-400">
+          無圖片
+        </span>
+      )}
+    </button>
   )
 }

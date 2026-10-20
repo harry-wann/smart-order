@@ -51,7 +51,8 @@ public class DiningService {
 	public DiningInfoResponse current(Long sessionId){
 		DiningSessionEntity session=diningSessionRepo.findById(sessionId).orElseThrow();
 		DiningTableEntity table=dinnerTableRepo.findById(session.getTableId()).orElseThrow();
-		return new DiningInfoResponse(sessionId,table.getTableNo());
+		return new DiningInfoResponse(sessionId, table.getTableNo(), session.getAdultCount(),
+                session.getChildCount(), session.getOpenedAt());
 	}
 
 

@@ -12,6 +12,7 @@ export default function useCartWebSocket(
   sessionId: string | undefined,
   onCartUpdate: () => void,
   onActivity?: (activity: TableActivity) => void,
+  onConnectionChange?: (connected: boolean) => void,
 ) {
   useEffect(() => {
     if (!sessionId) return
@@ -31,6 +32,7 @@ export default function useCartWebSocket(
 
       // 成功連線
       onConnect: () => {
+        onConnectionChange?.(true)
         console.log('WebSocket 已連線')
 
         // 訂閱目前客人的購物車通知
@@ -57,11 +59,17 @@ export default function useCartWebSocket(
       },
 
       onStompError: (frame) => {
+        onConnectionChange?.(false)
         console.error('WebSocket STOMP 錯誤', frame.headers.message)
       },
 
       onWebSocketError: (error) => {
+        onConnectionChange?.(false)
         console.error('WebSocket 連線錯誤', error)
+      },
+
+      onWebSocketClose: () => {
+        onConnectionChange?.(false)
       },
     })
 
@@ -70,5 +78,5 @@ export default function useCartWebSocket(
     return () => {
       void client.deactivate()
     }
-  }, [sessionId, onCartUpdate, onActivity])
+  }, [sessionId, onCartUpdate, onActivity, onConnectionChange])
 }
