@@ -51,6 +51,7 @@ export default function Menu() {
   const [activeCategoryId,setActiveCategoryId]=useState(null);
   // 搜尋關鍵字拿 list
   const [searchKeyword,setSearchKeyword]=useState('');
+  const [debouncedSearchKeyword, setDebouncedSearchKeyword] = useState('');
   const [searchInputKey, setSearchInputKey] = useState(0);
   const [categoryStatus, setCategoryStatus] = useState('loading');
   const [itemStatus, setItemStatus] = useState('loading');
@@ -60,6 +61,7 @@ export default function Menu() {
   const hasError = categoryStatus === 'error' || (categoryStatus === 'success' && activeCategoryId != null && itemStatus === 'error');
   const clearSearch = () => {
     setSearchKeyword('');
+    setDebouncedSearchKeyword('');
     setSearchInputKey((key) => key + 1);
   };
   const retryMenu = () => {
@@ -186,6 +188,11 @@ export default function Menu() {
   }, [categoryRetryCount]);
 
   useEffect(() => {
+    const timeoutId = window.setTimeout(() => setDebouncedSearchKeyword(searchKeyword), 300);
+    return () => window.clearTimeout(timeoutId);
+  }, [searchKeyword]);
+
+  useEffect(() => {
     if (activeCategoryId == null) return;
     let isCurrentRequest = true;
     setItems([]);
@@ -193,8 +200,8 @@ export default function Menu() {
     async function loadItems() {
       try {
         const response = await customerClient.get('/order/items', {
-          params: searchKeyword.trim()
-              ? { keyword: searchKeyword.trim() }
+          params: debouncedSearchKeyword.trim()
+              ? { keyword: debouncedSearchKeyword.trim() }
               : { categoryId: activeCategoryId },
         });
         if (isCurrentRequest) {
@@ -216,7 +223,7 @@ export default function Menu() {
     return () => {
       isCurrentRequest = false;
     };
-  }, [activeCategoryId, searchKeyword, retryCount]);
+  }, [activeCategoryId, debouncedSearchKeyword, retryCount]);
 
   if (closedSession) {
     return (
