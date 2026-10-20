@@ -228,8 +228,11 @@ export default function Menu() {
           <div className="w-max px-4">
             <MenuCategoryTabs
                 category={category}
-                activeCategoryId={activeCategoryId}
-                onClick={(selectedCategory) => setActiveCategoryId(selectedCategory.id)}
+                activeCategoryId={searchKeyword.trim() ? null : activeCategoryId}
+                onClick={(selectedCategory) => {
+                  clearSearch();
+                  setActiveCategoryId(selectedCategory.id);
+                }}
             />
           </div>
         </div>
