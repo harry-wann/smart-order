@@ -98,6 +98,13 @@ export default function Menu() {
   useMenuWebSocket(sessionId, receiveMenuStatus, refreshMenu, handleSessionClosed, handleSessionInvalid);
   const seenEvents = useRef(new Set())
   const [tableNo, setTableNo] = useState('')
+  const [diningInfo, setDiningInfo] = useState(null)
+  const diningSubtitle = diningInfo ? [
+    diningInfo.adultCount != null || diningInfo.childCount != null
+      ? `${diningInfo.adultCount ?? 0} 大 ${diningInfo.childCount ?? 0} 小` : '',
+    diningInfo.openedAt?.match(/T(\d{2}:\d{2})/)?.[1]
+      ? `${diningInfo.openedAt.match(/T(\d{2}:\d{2})/)[1]} 入座` : '',
+  ].filter(Boolean).join('　') : ''
   const refreshCart = useCallback(() => {
     if (!sessionId) return
     getCart(String(sessionId)).then((cart) => { if (!sessionEnded.current) setCartItems(cart.items ?? []) })
@@ -120,7 +127,7 @@ export default function Menu() {
 
   useEffect(() => {
     getCurrentDining()
-      .then((dining) => { if (!sessionEnded.current) { setSessionId(dining.sessionId); setTableNo(dining.tableNo); } })
+      .then((dining) => { if (!sessionEnded.current) { setSessionId(dining.sessionId); setTableNo(dining.tableNo); setDiningInfo(dining); } })
       .catch((error) => {
         if (error.status === 401) handleSessionInvalid();
         else console.error(error);
@@ -201,7 +208,7 @@ export default function Menu() {
 
   return (
       <div className="relative min-h-screen w-full self-start bg-paper pb-24">
-        <CustomerTopBar title={tableNo ? `${tableNo} 桌` : '菜單'} showBackButton={false}>
+        <CustomerTopBar title={tableNo ? `${tableNo} 桌` : '菜單'} subTitle={diningSubtitle} showBackButton={false}>
           <button onClick={() => setIsBellOpen(true)} type="button" className="cursor-pointer text-gray-600">
             <SvgIconMap.MenuBell role="img" aria-label="服務鈴" />
           </button>
@@ -356,6 +363,9 @@ function MenuItemCard({ item, onOpen }) {
         price={item.price}
         isSoldOut={isSoldOut}
         isPopular={false}
+        isVegetarian={item.isVegetarian}
+        containsBeef={item.containsBeef}
+        spicyLevel={item.spicyLevel}
         onClick={() => {}}
       />
       {!hasImage && (

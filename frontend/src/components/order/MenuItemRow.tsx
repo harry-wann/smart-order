@@ -7,6 +7,9 @@ interface MenuItemRowProps {
   price: number,
   isSoldOut: boolean,
   isPopular: boolean,
+  isVegetarian?: boolean | null,
+  containsBeef?: boolean | null,
+  spicyLevel?: number | null,
   onClick: () => void
 }
 
@@ -20,7 +23,7 @@ export default function MenuItemRow(props: MenuItemRowProps) {
   let formattedPrice = formatter.format(props.price)
   let isSoldOut = props.isSoldOut;
 
-  return <article onClick={ isSoldOut ? undefined : props.onClick } className="w-full h-36 p-card rounded-card border border-line bg-surface">
+  return <article onClick={ isSoldOut ? undefined : props.onClick } className="w-full min-h-36 p-card rounded-card border border-line bg-surface">
     <div className="h-full flex gap-4 items-center">
       
       { props.img && <Img src={ props.img } isSoldOut={isSoldOut} /> }
@@ -33,6 +36,16 @@ export default function MenuItemRow(props: MenuItemRowProps) {
             { isSoldOut && <Tag type={TagType.soldOut} /> }  
           </div>
           <p className={`type-body-sm text-ink-600 line-clamp-2 ${isSoldOut ? 'text-ink-400' : ''}`}>{props.desc}</p>
+          <div className={`mt-1 flex flex-wrap gap-1 type-caption ${isSoldOut ? 'text-ink-400' : 'text-ink-600'}`}>
+            {props.isVegetarian === true && <span className="rounded-pill bg-surface-2 px-2 py-0.5"><span aria-hidden="true">🌿 </span>素食</span>}
+            {props.containsBeef === false && <span className="rounded-pill bg-surface-2 px-2 py-0.5">不含牛</span>}
+            {Number.isInteger(props.spicyLevel) && props.spicyLevel != null && props.spicyLevel >= 0 && props.spicyLevel <= 3 && (
+              <span className="rounded-pill bg-surface-2 px-2 py-0.5">
+                {props.spicyLevel > 0 && <span aria-hidden="true">🌶 </span>}
+                {['不辣', '小辣', '中辣', '大辣'][props.spicyLevel]}
+              </span>
+            )}
+          </div>
         </div>
         
         <div className="flex h-8 items-center justify-between">
