@@ -9,6 +9,8 @@ import java.util.List;
 public interface OrderItemRepository
         extends JpaRepository<OrderItemEntity, Long> {
 
+    boolean existsByMenuItemId(Long menuItemId);
+
     // 查詢訂單中的有效餐點
     List<OrderItemEntity>
     findByOrderTicketIdAndStatusNotOrderByIdAsc(

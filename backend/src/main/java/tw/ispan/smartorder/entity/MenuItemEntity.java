@@ -39,4 +39,8 @@ public class MenuItemEntity {
     @JoinColumn(name = "category_id")
     @JsonIgnore
     private MenuCategoryEntity category;
+
+    @OneToOne(mappedBy = "menuItem", fetch = FetchType.LAZY)
+    @JsonIgnore
+    private InventoryEntity inventory;
 }

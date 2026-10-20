@@ -52,12 +52,12 @@ export default function CategorySidebar({
   };
 
   return (
-    <div className="no-scrollbar h-full w-45 shrink-0 overflow-y-auto">
+    <div className="no-scrollbar h-full w-[184px] shrink-0 overflow-y-auto">
       {/* 標題 */}
-      <div className="text-sm text-ink-400 font-medium px-4 mb-4">分類</div>
+      <div className="type-caption text-ink-600 px-3 pb-2">分類</div>
       
       {/* 分類列表 */}
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col">
         {categories.map((cat) => {
           const isActive = activeCategoryId === cat.id;
           
@@ -65,10 +65,10 @@ export default function CategorySidebar({
             <div
               key={cat.id}
               onClick={() => onSelectCategory(cat.id)}
-              className={`group flex items-center justify-between px-4 py-3 rounded-lg cursor-pointer transition-colors relative
+              className={`group flex items-center justify-between h-11 px-3 rounded-lg type-dashboard-menu cursor-pointer transition-colors relative
                 ${isActive 
-                  ? 'bg-brand-50 text-brand-700 font-bold' // 命中狀態（如圖片中的「肉品」樣式）
-                  : 'text-ink-600 hover:bg-surface-200'    // 未命中狀態
+                  ? 'bg-brand-100 text-brand-700 font-bold' // 命中狀態（如圖片中的「肉品」樣式）
+                  : 'text-ink-600 hover:bg-surface-3'    // 未命中狀態
                 }`}
             >
               <span className="truncate">{cat.name}</span>
@@ -101,7 +101,7 @@ export default function CategorySidebar({
         })}
       </div>
 
-      <div className="mt-6 px-4">
+      <div className="mt-0 px-3 py-3">
         {isAdding ? (
            <div className="flex flex-col gap-2">
              <input 

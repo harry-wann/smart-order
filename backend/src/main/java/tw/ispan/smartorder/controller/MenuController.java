@@ -12,9 +12,11 @@ import tw.ispan.smartorder.dto.AdminOptionGroupDto;
 import tw.ispan.smartorder.dto.MenuItemOptionDetailDto;
 import tw.ispan.smartorder.dto.request.CreateOptionGroupRequest;
 import tw.ispan.smartorder.dto.request.CreateOptionValueRequest;
+import tw.ispan.smartorder.dto.request.SaveMenuItemRequest;
 import tw.ispan.smartorder.dto.request.ReorderOptionValuesRequest;
 import tw.ispan.smartorder.dto.request.UpdateOptionValueStatusRequest;
 import tw.ispan.smartorder.dto.request.UpdateOptionGroupRequest;
+import tw.ispan.smartorder.dto.request.UpdateMenuItemStatusRequest;
 import tw.ispan.smartorder.dto.AdminOptionValueDto;
 import tw.ispan.smartorder.entity.MenuCategoryEntity;
 import tw.ispan.smartorder.entity.MenuItemEntity;
@@ -84,6 +86,41 @@ public class MenuController {
         return ResponseEntity.ok(items);
     }
 
+    // AdminMenu 畫面 新增商品
+    @PostMapping("/admin/items")
+    public ResponseEntity<AdminMenuItemDto> createAdminMenuItem(
+            @Valid @RequestBody SaveMenuItemRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(menuItemService.createAdminMenuItem(request));
+    }
+
+    // AdminMenu 畫面 依 itemId 更新商品資料
+    @PutMapping("/admin/items/{itemId}")
+    public ResponseEntity<AdminMenuItemDto> updateAdminMenuItem(
+            @PathVariable Long itemId,
+            @Valid @RequestBody SaveMenuItemRequest request
+    ) {
+        return ResponseEntity.ok(menuItemService.updateAdminMenuItem(itemId, request));
+    }
+
+    // AdminMenu 畫面 依 itemId 和 Body 中的 active 值，設定商品啟用狀態
+    @PatchMapping("/admin/items/{itemId}/status")
+    public ResponseEntity<AdminMenuItemDto> updateAdminMenuItemStatus(
+            @PathVariable Long itemId,
+            @Valid @RequestBody UpdateMenuItemStatusRequest request
+    ) {
+        return ResponseEntity.ok(menuItemService.updateAdminMenuItemStatus(itemId, request.active()));
+    }
+
+    // AdminMenu 畫面 依 itemId 刪除商品
+    @DeleteMapping("/admin/items/{itemId}")
+    public ResponseEntity<Void> deleteAdminMenuItem(@PathVariable Long itemId) {
+        menuItemService.deleteAdminMenuItem(itemId);
+        return ResponseEntity.noContent().build();
+    }
+
+    // AdminMenu 畫面 新增商品分類
     @PostMapping("/admin/categories")
     public ResponseEntity<MenuCategoryEntity> createAdminCategory(
             @RequestBody MenuCategoryEntity category
@@ -92,6 +129,7 @@ public class MenuController {
         return ResponseEntity.ok(createdCategory);
     }
 
+    // AdminMenu 畫面 依 categoryId 刪除商品分類
     @DeleteMapping("/admin/categories/{categoryId}")
     public ResponseEntity<MenuCategoryEntity> deleteAdminCategory(
             @PathVariable Long categoryId
