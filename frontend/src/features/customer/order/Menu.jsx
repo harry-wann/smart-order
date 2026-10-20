@@ -16,6 +16,7 @@ import { Link, useNavigate } from "react-router";
 
 import { customerClient } from '@/services/client/customerClient'
 import { leaveTable } from '@/services/client/auth'
+import './Menu.css'
 
 export default function Menu() {
   const navigate = useNavigate();
@@ -193,7 +194,7 @@ export default function Menu() {
 
   if (closedSession) {
     return (
-      <div className="flex min-h-full w-full flex-col bg-paper">
+      <div data-menu-page className="flex min-h-full w-full flex-col bg-paper">
         <CustomerTopBar title={tableNo ? `${tableNo} 桌` : '菜單'} showBackButton={false} />
         <section role="status" className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center">
           <span aria-hidden="true" className="mb-6 flex size-20 items-center justify-center rounded-full bg-surface text-4xl text-brand-600">✓</span>
@@ -206,7 +207,7 @@ export default function Menu() {
   }
 
   return (
-      <div className="relative min-h-screen w-full self-start bg-paper pb-24">
+      <div data-menu-page className="relative min-h-screen w-full self-start bg-paper pb-24">
         <CustomerTopBar title={tableNo ? `${tableNo} 桌` : '菜單'} subTitle={diningSubtitle} showBackButton={false}>
           <button onClick={() => setIsBellOpen(true)} type="button" className="cursor-pointer text-gray-600">
             <SvgIconMap.MenuBell role="img" aria-label="服務鈴" />
