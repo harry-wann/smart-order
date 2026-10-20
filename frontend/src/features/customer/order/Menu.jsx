@@ -16,8 +16,33 @@ import TableActivityNotice from '@/components/order/TableActivityNotice'
 import { Link, useNavigate } from "react-router";
 
 import { customerClient } from '@/services/client/customerClient'
+import { leaveTable } from '@/services/client/auth'
 
 export default function Menu() {
+  const navigate = useNavigate();
+  const [closedSession, setClosedSession] = useState(null);
+  const sessionEnded = useRef(false);
+  const [isBellOpen, setIsBellOpen] = useState(false);
+  const [sessionId, setSessionId] = useState(null);
+  const [notices, setNotices] = useState([]);
+  const [cartItems, setCartItems] = useState([]);
+  const handleSessionInvalid = useCallback(() => {
+    if (sessionEnded.current) return;
+    sessionEnded.current = true;
+    leaveTable();
+    setSessionId(null);
+    navigate('/', { replace: true });
+  }, [navigate]);
+  const handleSessionClosed = useCallback((event) => {
+    if (sessionEnded.current) return;
+    sessionEnded.current = true;
+    leaveTable();
+    setSessionId(null);
+    setCartItems([]);
+    setNotices([]);
+    setIsBellOpen(false);
+    setClosedSession(event);
+  }, []);
   // 商品類別
   const [category,setCategory]=useState([]);
   // 選取項目 card
@@ -47,9 +72,7 @@ export default function Menu() {
     }
   };
   // 
-  const [isBellOpen, setIsBellOpen] = useState(false);
   // 購物車路徑要帶用餐場次 id
-  const [sessionId, setSessionId] = useState(null);
   const menuStatusOverrides = useRef(new Map());
   const unlistedMenuItems = useRef(new Set());
   const receiveMenuStatus = useCallback((itemId, soldOut, type) => {
@@ -72,16 +95,17 @@ export default function Menu() {
     unlistedMenuItems.current.clear();
     setRetryCount((count) => count + 1);
   }, []);
-  useMenuWebSocket(sessionId, receiveMenuStatus, refreshMenu);
-  const [notices, setNotices] = useState([])
+  useMenuWebSocket(sessionId, receiveMenuStatus, refreshMenu, handleSessionClosed, handleSessionInvalid);
   const seenEvents = useRef(new Set())
-  const [cartItems, setCartItems] = useState([])
   const [tableNo, setTableNo] = useState('')
   const refreshCart = useCallback(() => {
     if (!sessionId) return
-    getCart(String(sessionId)).then((cart) => setCartItems(cart.items ?? []))
-      .catch((error) => console.error('更新購物車失敗', error))
-  }, [sessionId])
+    getCart(String(sessionId)).then((cart) => { if (!sessionEnded.current) setCartItems(cart.items ?? []) })
+      .catch((error) => {
+        if (error.status === 401) handleSessionInvalid();
+        else console.error('更新購物車失敗', error);
+      })
+  }, [sessionId, handleSessionInvalid])
   const receiveActivity = useCallback((activity) => {
     if (!['ITEM_ADDED', 'ORDER_SUBMITTED'].includes(activity.type) || seenEvents.current.has(activity.eventId)) return
     seenEvents.current.add(activity.eventId)
@@ -90,16 +114,18 @@ export default function Menu() {
   const dismissNotice = useCallback(() => setNotices((current) => current.slice(1)), [])
   useCartWebSocket(sessionId == null ? undefined : String(sessionId), refreshCart, receiveActivity)
   const cartAmount = cartItems.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0)
-  const navigate = useNavigate("");
   const activeCategory = category.find(
     (item) => String(item.id) === String(activeCategoryId),
   );
 
   useEffect(() => {
     getCurrentDining()
-      .then((dining) => { setSessionId(dining.sessionId); setTableNo(dining.tableNo) })
-      .catch((error) => console.error(error));
-  }, []);
+      .then((dining) => { if (!sessionEnded.current) { setSessionId(dining.sessionId); setTableNo(dining.tableNo); } })
+      .catch((error) => {
+        if (error.status === 401) handleSessionInvalid();
+        else console.error(error);
+      });
+  }, [handleSessionInvalid]);
 
   useEffect(() => {
     let isCurrentRequest = true;
@@ -158,6 +184,20 @@ export default function Menu() {
       isCurrentRequest = false;
     };
   }, [activeCategoryId, searchKeyword, retryCount]);
+
+  if (closedSession) {
+    return (
+      <div className="flex min-h-full w-full flex-col bg-paper">
+        <CustomerTopBar title={tableNo ? `${tableNo} 桌` : '菜單'} showBackButton={false} />
+        <section role="status" className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center">
+          <span aria-hidden="true" className="mb-6 flex size-20 items-center justify-center rounded-full bg-surface text-4xl text-brand-600">✓</span>
+          <h1 className="type-h1 text-ink-900">這桌已經結帳完成</h1>
+          <p className="mt-3 type-body-sm text-ink-600">謝謝光臨，歡迎再來</p>
+          <button type="button" onClick={() => navigate('/', { replace: true })} className="mt-8 min-h-11 w-full cursor-pointer rounded-btn bg-brand-600 px-6 py-3 font-medium text-white">回到首頁</button>
+        </section>
+      </div>
+    );
+  }
 
   return (
       <div className="relative min-h-screen w-full self-start bg-paper pb-24">
