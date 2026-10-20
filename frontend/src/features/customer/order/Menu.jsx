@@ -126,7 +126,14 @@ export default function Menu() {
         <main className="p-4">
           <div className="flex flex-col gap-4">
             {items.map((item) => (
-                <button key={item.id} onClick={()=>{navigate('/order/itemdetail',{state : {productId:item.id}})}} className="cursor-pointer text-left">
+                <button
+                  key={item.id}
+                  type="button"
+                  disabled={item.soldOut}
+                  onClick={() => navigate('/order/itemdetail', { state: { productId: item.id } })}
+                  className={`text-left ${item.soldOut ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                  aria-label={item.soldOut ? `${item.name}，售完` : `查看${item.name}詳情`}
+                >
                   <MenuItemRow
                       img={item.imageUrl}
                       title={item.name}
