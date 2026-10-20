@@ -4,7 +4,6 @@ import CategorySidebar from '../../../components/adminMenu/CategorySidebar';
 import type { Category } from '../../../components/adminMenu/CategorySidebar';
 import SOButton from '@/components/SOButton';
 import TopBar from '@/components/dashboard/TopBar';
-import Badge from '@/components/Badge';
 import SOFormInput, { SOFormInputType } from '@/components/input/SOFormInput';
 import { SvgIconMap } from '@/assets/SvgIconMap';
 import ProductModal from '@/components/adminMenu/ProductModal';
@@ -300,26 +299,26 @@ export default function AdminMenu() {
   return (
   <>
     <TopBar 
-      childrenLeft={<div className='flex scale-80'><Badge text={`${totalProductCount} 個品項・${categories.length} 個分類`} col="plain" /></div>} 
+      tag={`${totalProductCount} 個品項・${categories.filter(category => category.id !== 'all').length} 個分類`}
       childrenRight={
         <div className="flex items-center gap-3">
-          <div className="w-64">
+          <div className="w-36">
             <SOFormInput
               type={SOFormInputType.NORMAL}
               icon={SvgIconMap.MenuSearch}
               defaultValue=""
-              placeholder="搜尋菜色"
+              placeholder="搜尋品項"
               onChange={setSearchKeyword}
             />
           </div>
           <SOButton 
             type="button"
             onClick={handleOpenAdd} 
-            height='h-[44px]' 
+            className="flex h-11 shrink-0 items-center rounded-(--radius-btn) bg-brand-600 px-5 type-body-sm text-surface transition-colors hover:bg-brand-700"
             content={[
               <div key="param-2" className="flex items-center gap-1">
-                <span>新增商品</span>
                 <SvgIconMap.AdminMenuPlus aria-hidden="true" />
+                <span>新增品項</span>
               </div>
             ]}
           />
@@ -327,7 +326,7 @@ export default function AdminMenu() {
       }
     />
     <div className="min-h-0 flex-1 overflow-hidden bg-paper p-6 font-sans text-ink-900">
-      <div className="flex h-full min-h-0 max-w-7xl mx-auto gap-8">
+      <div className="flex h-full min-h-0 gap-6">
         
         <CategorySidebar 
           categories={displayCategories} 
@@ -338,9 +337,9 @@ export default function AdminMenu() {
           onDeleteClassification={handleDeleteClassification}
         />
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-(--shadow-card)">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <div
-            className="no-scrollbar min-h-0 flex-1 overflow-auto"
+            className="no-scrollbar min-h-0 overflow-auto rounded-xl border border-line bg-surface"
             onWheel={event => {
               if (event.shiftKey) {
                 event.currentTarget.scrollTop += event.deltaY || event.deltaX;
@@ -348,57 +347,67 @@ export default function AdminMenu() {
               }
             }}
           >
-            <table className="w-full text-left border-collapse">
+            <table className="w-full min-w-[780px] text-left border-collapse">
               <thead className="sticky top-0 z-10 bg-surface shadow-[inset_0_-1px_0_var(--color-line)]">
-                <tr className="text-ink-400 text-xs bg-surface-2">
-                    <th className="border-b border-line p-4 font-medium">縮圖</th>
-                    <th className="border-b border-line p-4 font-medium">品項</th>
-                    <th className="border-b border-line p-4 font-medium">分類</th>
-                    <th className="border-b border-line p-4 font-medium">價格</th>
-                    <th className="border-b border-line p-4 font-medium">庫存</th>
-                    <th className="border-b border-line p-4 font-medium">上架狀態</th>
-                    <th className="border-b border-line p-4 font-medium">操作</th>
+                <tr className="type-caption text-ink-600 bg-surface-2">
+                    <th className="border-b border-line px-4 py-3 font-bold whitespace-nowrap" style={{ width: 88 }}>縮圖</th>
+                    <th className="border-b border-line px-4 py-3 font-bold whitespace-nowrap">品項</th>
+                    <th className="border-b border-line px-4 py-3 font-bold whitespace-nowrap" style={{ width: 80 }}>分類</th>
+                    <th className="border-b border-line px-4 py-3 font-bold whitespace-nowrap" style={{ width: 80 }}>價格</th>
+                    <th className="border-b border-line px-4 py-3 font-bold whitespace-nowrap" style={{ width: 80 }}>庫存</th>
+                    <th className="border-b border-line px-4 py-3 font-bold whitespace-nowrap" style={{ width: 132 }}>上架狀態</th>
+                    <th className="border-b border-line px-4 py-3 font-bold whitespace-nowrap" style={{ width: 90 }}>操作</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line text-sm">
+              <tbody className="divide-y divide-line type-body-sm">
                   {filteredProducts.length > 0 ? (
                     filteredProducts.map(product => {
                       const isActive = product.status === 'active';
                       const currentBadge = getProductBadge(product);
                       return (
-                        <tr key={product.id} className="hover:bg-surface-200 transition-colors">
-                          <td className="p-4">
-                            <div className="w-16 h-16 bg-surface-200 rounded-lg flex flex-col items-center justify-center text-[10px] text-ink-400 border border-line leading-tight text-center break-all px-1">
+                        <tr key={product.id} className={product.stock === 0 ? 'bg-danger-bg' : currentBadge ? 'bg-warning-bg' : 'bg-surface hover:bg-paper transition-colors'}>
+                          <td className="px-4 py-3">
+                            <div className="w-18 h-18 overflow-hidden bg-surface-2 rounded-lg flex flex-col items-center justify-center text-[10px] text-ink-400 border border-dashed border-line-strong leading-tight text-center break-all">
                               {product.imageUrl
                                 ? <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
                                 : <span>{product.imageText}</span>}
                             </div>
                           </td>
-                          <td className="p-4">
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-ink-900">{product.name}</span>
+                          <td className="px-4 py-3">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="type-dashboard-menu-highlighted text-ink-900">{product.name}</span>
                               {currentBadge && (
-                                <div className="flex scale-80">
-                                  <Badge text={currentBadge.text} col={currentBadge.type === 'danger' ? 'sold' : 'hot'} />
-                                </div>
+                                <span className={`shrink-0 rounded-full px-2.5 py-0.5 type-dashboard-top-bar-tag ${currentBadge.type === 'danger' ? 'bg-danger text-surface' : 'border border-warning-line bg-warning-bg text-hold-ink'}`}>
+                                  {currentBadge.text}
+                                </span>
                               )}
                             </div>
-                            {product.description && <div className="text-xs text-ink-400 mt-1">{product.description}</div>}
+                            {product.description && <div className="type-caption text-ink-600 mt-1">{product.description}</div>}
                           </td>
-                          <td className="p-4 text-ink-600">
+                          <td className="px-4 py-3 text-ink-600">
                             {categories.find(category => category.id === product.categoryId)?.name ?? ''}
                           </td>
-                          <td className="p-4 font-medium text-ink-900">${product.price}</td>
-                          <td className={`p-4 font-medium ${product.stock === 0 ? 'text-danger' : 'text-ink-600'}`}>{product.stock}</td>
-                          <td className="p-4">
+                          <td className="px-4 py-3 font-bold tabular-nums text-ink-900">{product.price}</td>
+                          <td className={`px-4 py-3 tabular-nums ${product.stock === 0 ? 'font-bold text-danger' : currentBadge ? 'font-bold text-warning' : 'text-ink-900'}`}>{product.stock}</td>
+                          <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
                               <ToggleSwitch active={isActive} onToggle={() => void toggleStatus(product)} />
-                              <span className="text-xs text-ink-600">{isActive ? '上架中' : '已下架'}</span>
+                              <span className="type-caption whitespace-nowrap text-ink-600">{isActive ? '上架中' : '已下架'}</span>
                             </div>
                           </td>
-                          <td className="p-4">
-                            <div className="flex gap-2">
-                              <button type="button" onClick={() => handleOpenEdit(product)} className="text-ink-600 hover:text-ink-900 text-xs border border-line px-3 py-1.5 rounded-lg bg-surface shadow-sm hover:bg-surface-200 transition-colors cursor-pointer">編輯</button>
+                          <td className="px-4 py-3">
+                            <div className="flex justify-center gap-2">
+                              <SOButton
+                                type="button"
+                                onClick={() => handleOpenEdit(product)}
+                                className="flex h-9 w-auto shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-(--radius-btn) border border-transparent bg-transparent px-3 py-1.5 type-body-sm text-ink-600 transition-all duration-300 hover:bg-surface-2 hover:text-ink-900 active:scale-[0.98]"
+                                content={
+                                  <span className="flex items-center gap-1">
+                                    <SvgIconMap.OptionsEdit />
+                                    編輯
+                                  </span>
+                                }
+                              />
                             </div>
                           </td>
                         </tr>

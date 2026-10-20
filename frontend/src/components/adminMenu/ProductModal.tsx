@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import SOButton from '@/components/SOButton';
 
 export interface Category {
   id: string;
@@ -66,13 +67,13 @@ export default function ProductModal({
           <h3 className="text-lg font-bold text-ink-900">
             {mode === 'add' ? '新增商品' : '編輯商品'}
           </h3>
-          <button 
-            type="button" 
+          <SOButton
+            type="button"
             onClick={onClose}
-            className="text-ink-400 hover:text-ink-600 text-xl leading-none cursor-pointer"
-          >
-            &times;
-          </button>
+            aria-label="關閉"
+            className="text-ink-400 hover:text-ink-600 text-xl leading-none cursor-pointer transition-all duration-300 active:scale-[0.98]"
+            content={<>&times;</>}
+          />
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4">
@@ -167,20 +168,18 @@ export default function ProductModal({
 
           <div className="flex justify-end gap-3 pt-6 mt-2 border-t border-line">
             {mode === 'edit' && initialData.id !== undefined && (
-              <button
+              <SOButton
                 type="button"
                 onClick={() => void onDelete(initialData.id!)}
-                className="px-5 py-2 text-sm border border-danger text-danger rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
-              >
-                刪除
-              </button>
+                className="px-5 py-2 text-sm border border-danger text-danger rounded-lg hover:bg-red-50 transition-all duration-300 active:scale-[0.98] cursor-pointer"
+                content="刪除"
+              />
             )}
-            <button
+            <SOButton
               type="submit"
-              className="px-5 py-2 text-sm bg-brand-600 text-surface rounded-lg font-medium hover:bg-brand-700 transition-colors cursor-pointer"
-            >
-              儲存
-            </button>
+              className="px-5 py-2 text-sm bg-brand-600 text-surface rounded-lg font-medium hover:bg-brand-700 transition-all duration-300 active:scale-[0.98] cursor-pointer"
+              content="儲存"
+            />
           </div>
         </form>
 
