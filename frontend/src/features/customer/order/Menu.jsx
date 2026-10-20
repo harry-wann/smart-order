@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import SOFormInput, { SOFormInputType } from '../../../components/input/SOFormInput'
 import MenuCategoryTabs from '../../../components/MenuCategoryTabs'
 import MenuItemRow from '../../../components/order/MenuItemRow'
@@ -61,9 +61,13 @@ export default function Menu() {
     async function loadCategories() {
       try {
         const response = await customerClient.get('/order/category');
-        setCategory(response.data);
-        if (response.data.length > 0) {
-          setActiveCategoryId(response.data[0].id);
+        const visibleCategories = response.data.filter((item) => {
+          const name = String(item.name ?? '').replace(/\s/g, '')
+          return name !== '推薦' && name !== '今日推薦'
+        })
+        setCategory(visibleCategories);
+        if (visibleCategories.length > 0) {
+          setActiveCategoryId(visibleCategories[0].id);
         }
       } catch (error) {
         console.error(error);
@@ -100,14 +104,14 @@ export default function Menu() {
   }, [activeCategoryId, searchKeyword]);
 
   return (
-      <div className="relative min-h-screen w-full self-start bg-surface-2 pb-24">
+      <div className="relative min-h-screen w-full self-start bg-paper pb-24">
         <CustomerTopBar title={tableNo ? `${tableNo} 桌` : '菜單'} showBackButton={false}>
           <button onClick={() => setIsBellOpen(true)} type="button" className="cursor-pointer text-gray-600">
             <SvgIconMap.MenuBell role="img" aria-label="服務鈴" />
           </button>
         </CustomerTopBar>
 
-        <div className="px-4 py-3">
+        <div className="px-4 py-3 [&>div]:h-11 [&>div]:rounded-btn [&>div]:bg-surface">
           <SOFormInput
               type={SOFormInputType.NORMAL}
               icon={SvgIconMap.MenuSearch}
@@ -117,8 +121,8 @@ export default function Menu() {
           />
         </div>
 
-        <div className="border-b border-line bg-surface">
-          <div className="no-scrollbar flex overflow-x-auto border-b border-line px-4 pt-2">
+        <div className="no-scrollbar overflow-x-auto border-b border-line bg-surface">
+          <div className="w-max px-4">
             <MenuCategoryTabs
                 category={category}
                 activeCategoryId={activeCategoryId}
@@ -127,50 +131,23 @@ export default function Menu() {
           </div>
         </div>
 
-        <main className="p-4">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-baseline gap-2 px-1 pb-1">
-              <h2 className="type-h3 text-ink-900">
+        <main className="px-4 pb-4">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-baseline gap-2 px-1 pb-1 pt-4">
+              <h2 className="type-h2 text-ink-900">
                 {searchKeyword.trim() ? '搜尋結果' : activeCategory?.name ?? '菜單'}
               </h2>
               <span className="type-caption text-ink-600">
                 {items.length} 款{!searchKeyword.trim() && activeCategory?.name === '肉品' ? '・全部現切' : ''}
               </span>
             </div>
-            {items.map((item) => {
-              const isSoldOut = Boolean(item.soldOut)
-
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  disabled={isSoldOut}
-                  onClick={() => navigate('/order/itemdetail', { state: { productId: item.id } })}
-                  className={`relative w-full text-left ${isSoldOut ? 'cursor-not-allowed [&_h3+span]:hidden' : 'cursor-pointer'} ${item.imageUrl ? '' : '[&_article>div>div]:pl-[6.5rem]'}`}
-                  aria-label={isSoldOut ? `${item.name}，售完` : `查看${item.name}詳情`}
-                >
-                  <MenuItemRow
-                    img={item.imageUrl}
-                    title={item.name}
-                    desc={item.description || ''}
-                    price={item.price}
-                    isSoldOut={isSoldOut}
-                    isPopular={false}
-                    onClick={() => {}}
-                  />
-                  {!item.imageUrl && (
-                    <span className="pointer-events-none absolute left-4 top-1/2 flex size-22 -translate-y-1/2 items-center justify-center rounded-card border border-dashed border-line-strong bg-surface-2 type-caption text-ink-400">
-                      無圖片
-                    </span>
-                  )}
-                  {isSoldOut && (
-                    <span className="absolute right-10 top-3 origin-top-right scale-x-50 scale-y-75">
-                      <Badge text="售完" col="sold" p="soldOut" />
-                    </span>
-                  )}
-                </button>
-              )
-            })}
+            {items.map((item) => (
+              <MenuItemCard
+                key={item.id}
+                item={item}
+                onOpen={() => navigate('/order/itemdetail', { state: { productId: item.id } })}
+              />
+            ))}
           </div>
         </main>
 
@@ -199,5 +176,67 @@ export default function Menu() {
         <ServiceBell open={isBellOpen} onclick={() => setIsBellOpen(false)} />
         <TableActivityNotice activity={notices[0]} onDismiss={dismissNotice} />
       </div>
+  )
+}
+
+function MenuItemCard({ item, onOpen }) {
+  const cardRef = useRef(null)
+  const [badgePosition, setBadgePosition] = useState(null)
+  const isSoldOut = Boolean(item.soldOut)
+  const hasImage = Boolean(item.imageUrl)
+
+  useLayoutEffect(() => {
+    const card = cardRef.current
+    const title = card?.querySelector('h3')
+    if (!card || !title || !isSoldOut) return
+
+    const updateBadgePosition = () => {
+      const cardRect = card.getBoundingClientRect()
+      const titleRect = title.getBoundingClientRect()
+      setBadgePosition({
+        left: titleRect.right - cardRect.left + 8,
+        top: titleRect.top - cardRect.top + (titleRect.height - 23) / 2,
+      })
+    }
+
+    updateBadgePosition()
+    const observer = new ResizeObserver(updateBadgePosition)
+    observer.observe(card)
+    observer.observe(title)
+    return () => observer.disconnect()
+  }, [isSoldOut, item.name])
+
+  return (
+    <button
+      ref={cardRef}
+      type="button"
+      disabled={isSoldOut}
+      onClick={onOpen}
+      className={`relative w-full text-left ${isSoldOut ? 'cursor-not-allowed [&_h3+span]:hidden [&_h3]:max-w-[calc(100%_-_4.5rem)]' : 'cursor-pointer'} ${hasImage ? '[&_article>div>div:first-child]:!size-20 [&_article>div>div:first-child>img]:!size-full' : '[&_article>div>div]:pl-24'}`}
+      aria-label={isSoldOut ? `${item.name}，售完` : `查看${item.name}詳情`}
+    >
+      <MenuItemRow
+        img={item.imageUrl}
+        title={item.name}
+        desc={item.description || ''}
+        price={item.price}
+        isSoldOut={isSoldOut}
+        isPopular={false}
+        onClick={() => {}}
+      />
+      {!hasImage && (
+        <span className="pointer-events-none absolute left-4 top-1/2 flex size-20 -translate-y-1/2 items-center justify-center rounded-card border border-dashed border-line-strong bg-surface-2 type-caption text-ink-400">
+          無圖片
+        </span>
+      )}
+      {isSoldOut && badgePosition && (
+        <span
+          className="absolute z-10 [&_span]:!px-2.5 [&_span]:!py-0.5 [&_span]:!leading-[1.6]"
+          style={{ left: badgePosition.left, top: badgePosition.top }}
+        >
+          <Badge text="售完" col="sold" p="soldOut" />
+        </span>
+      )}
+    </button>
   )
 }
