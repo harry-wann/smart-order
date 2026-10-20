@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import SOFormInput, { SOFormInputType } from '../../../components/input/SOFormInput'
 import MenuCategoryTabs from '../../../components/MenuCategoryTabs'
 import MenuItemRow from '../../../components/order/MenuItemRow'
-import Badge from '@/components/Badge'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import CustomerTopBar from '@/components/CustomerTopBar'
 import SOButton from '@/components/SOButton'
@@ -321,39 +320,15 @@ function MenuState({ error = false, title, description, action, onAction, childr
 }
 
 function MenuItemCard({ item, onOpen }) {
-  const cardRef = useRef(null)
-  const [badgePosition, setBadgePosition] = useState(null)
   const isSoldOut = Boolean(item.soldOut)
   const hasImage = Boolean(item.imageUrl)
 
-  useLayoutEffect(() => {
-    const card = cardRef.current
-    const title = card?.querySelector('h3')
-    if (!card || !title || !isSoldOut) return
-
-    const updateBadgePosition = () => {
-      const cardRect = card.getBoundingClientRect()
-      const titleRect = title.getBoundingClientRect()
-      setBadgePosition({
-        left: titleRect.right - cardRect.left + 8,
-        top: titleRect.top - cardRect.top + (titleRect.height - 23) / 2,
-      })
-    }
-
-    updateBadgePosition()
-    const observer = new ResizeObserver(updateBadgePosition)
-    observer.observe(card)
-    observer.observe(title)
-    return () => observer.disconnect()
-  }, [isSoldOut, item.name])
-
   return (
     <button
-      ref={cardRef}
       type="button"
       disabled={isSoldOut}
       onClick={onOpen}
-      className={`relative w-full text-left ${isSoldOut ? 'cursor-not-allowed [&_h3+span]:hidden [&_h3]:max-w-[calc(100%_-_4.5rem)]' : 'cursor-pointer'} ${hasImage ? '[&_article>div>div:first-child]:!size-20 [&_article>div>div:first-child>img]:!size-full' : '[&_article>div>div]:pl-24'}`}
+      className={`relative w-full text-left ${isSoldOut ? 'cursor-not-allowed' : 'cursor-pointer'} ${hasImage ? '[&_article>div>div:first-child]:!size-20 [&_article>div>div:first-child>img]:!size-full' : '[&_article>div>div]:pl-24'}`}
       aria-label={isSoldOut ? `${item.name}，售完` : `查看${item.name}詳情`}
     >
       <MenuItemRow
@@ -371,14 +346,6 @@ function MenuItemCard({ item, onOpen }) {
       {!hasImage && (
         <span className="pointer-events-none absolute left-4 top-1/2 flex size-20 -translate-y-1/2 items-center justify-center rounded-card border border-dashed border-line-strong bg-surface-2 type-caption text-ink-400">
           無圖片
-        </span>
-      )}
-      {isSoldOut && badgePosition && (
-        <span
-          className="absolute z-10 [&_span]:!px-2.5 [&_span]:!py-0.5 [&_span]:!leading-[1.6]"
-          style={{ left: badgePosition.left, top: badgePosition.top }}
-        >
-          <Badge text="售完" col="sold" p="soldOut" />
         </span>
       )}
     </button>
