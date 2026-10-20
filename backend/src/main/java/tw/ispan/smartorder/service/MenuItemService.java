@@ -139,9 +139,9 @@ public class MenuItemService {
 
     public List<MenuItemEntity> findMenuItem(Long categoryId){
         if (categoryId == null) {
-            return menuItemRepository.findAll();
+            return menuItemRepository.findByActiveTrue();
         }
-        return menuItemRepository.findByCategory_Id(categoryId);
+        return menuItemRepository.findByActiveTrueAndCategory_Id(categoryId);
     }
 
     public List<AdminMenuItemDto> findAdminMenuItems(Long categoryId) {
@@ -158,11 +158,9 @@ public class MenuItemService {
     public List<MenuItemEntity> searchMenuItem(String keyword){
         String searchKeyword = keyword == null ? "" : keyword.trim();
         if (searchKeyword.isEmpty()) {
-            return menuItemRepository.findAll();
+            return menuItemRepository.findByActiveTrue();
         }
-        return menuItemRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
-                searchKeyword, searchKeyword
-        );
+        return menuItemRepository.searchActiveMenuItemsByKeyword(searchKeyword);
     }
 
 //    public Optional<MenuItemEntity> findMenuItemById(Long id) {
@@ -174,7 +172,7 @@ public class MenuItemService {
                 menuItemRepository.findOptionValuesByMenuItemId(menuItemId);
         MenuItemOptionDetailRow item = rows.stream()
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Menu item not found with id: " + menuItemId));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到上架中的商品"));
 
         Map<Long, OptionGroupBuilder> groups = new LinkedHashMap<>();
         for (MenuItemOptionDetailRow row : rows) {

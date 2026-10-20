@@ -11,6 +11,17 @@ import java.util.List;
 
 public interface MenuItemRepository extends JpaRepository<MenuItemEntity,Long> {
     List<MenuItemEntity> findByCategory_Id(Long categoryId);
+    List<MenuItemEntity> findByActiveTrue();
+    List<MenuItemEntity> findByActiveTrueAndCategory_Id(Long categoryId);
+
+    @Query("""
+    SELECT mi
+    FROM MenuItemEntity mi
+    WHERE mi.active = true
+      AND (LOWER(mi.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+        OR LOWER(mi.description) LIKE LOWER(CONCAT('%', :keyword, '%')))
+    """)
+    List<MenuItemEntity> searchActiveMenuItemsByKeyword(@Param("keyword") String keyword);
     @Query("""
     SELECT new tw.ispan.smartorder.dto.AdminMenuItemDto(
         mi.id, mi.imageUrl, mi.name, mi.description, mi.price, mi.category.id,
@@ -69,6 +80,7 @@ public interface MenuItemRepository extends JpaRepository<MenuItemEntity,Long> {
     LEFT JOIN OptionGroupEntity og ON mog.id.optionGroupId = og.id
     LEFT JOIN OptionValueEntity ov ON og.id = ov.optionGroupId.id AND ov.active = true
     WHERE mi.id = :menuItemId
+      AND mi.active = true
     ORDER BY mog.sortOrder, og.sortOrder, ov.sortOrder
     """)
     List<MenuItemOptionDetailRow> findOptionValuesByMenuItemId(@Param("menuItemId") Long menuItemId);
