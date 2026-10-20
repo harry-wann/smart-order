@@ -3,7 +3,7 @@ import { SvgIconMap } from '@/assets/SvgIconMap'
 
 // 原檔名 counter.jsx
 
-export default function Counter({ size = 'small', initialCount = 0, onChange, showTrash = true }) {
+export default function Counter({ size = 'small', initialCount = 0, onChange, showTrash = true, minCount = 0 }) {
   const [count, setCount] = useState(initialCount)
 
   const MAX_COUNT = 10
@@ -21,7 +21,7 @@ export default function Counter({ size = 'small', initialCount = 0, onChange, sh
   // 減少
   const decrement = () => {
     // 數量大於 1 → 正常減 1
-    if (count > 1) {
+    if (count > Math.max(1, minCount)) {
       const newCount = count - 1
 
       setCount(newCount)
@@ -32,7 +32,7 @@ export default function Counter({ size = 'small', initialCount = 0, onChange, sh
 
     // 數量 = 1，而且不顯示垃圾桶
     // 按減號等於刪除
-    if (count === 1 && !showTrash) {
+    if (count === 1 && !showTrash && minCount < 1) {
       setCount(0)
       onChange?.(0)
     }
