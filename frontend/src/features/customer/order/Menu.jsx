@@ -25,6 +25,7 @@ export default function Menu() {
   const [sessionId, setSessionId] = useState(null);
   const [notices, setNotices] = useState([]);
   const [cartItems, setCartItems] = useState([]);
+  const [isCartSocketConnected, setIsCartSocketConnected] = useState(false);
   const handleSessionInvalid = useCallback(() => {
     if (sessionEnded.current) return;
     sessionEnded.current = true;
@@ -118,7 +119,14 @@ export default function Menu() {
     setNotices((current) => [...current, activity])
   }, [])
   const dismissNotice = useCallback(() => setNotices((current) => current.slice(1)), [])
-  useCartWebSocket(sessionId == null ? undefined : String(sessionId), refreshCart, receiveActivity)
+  useCartWebSocket(sessionId == null ? undefined : String(sessionId), refreshCart, receiveActivity, setIsCartSocketConnected)
+  useEffect(() => {
+    if (!sessionId || isCartSocketConnected) return;
+
+    refreshCart();
+    const intervalId = window.setInterval(refreshCart, 5000);
+    return () => window.clearInterval(intervalId);
+  }, [sessionId, isCartSocketConnected, refreshCart]);
   const cartAmount = cartItems.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0)
   const activeCategory = category.find(
     (item) => String(item.id) === String(activeCategoryId),
