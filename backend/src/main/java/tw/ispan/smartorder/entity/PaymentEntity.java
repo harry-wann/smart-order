@@ -35,4 +35,7 @@ public class PaymentEntity {
 
     @Column(name = "paid_at")
     private LocalDateTime paidAt;
+
+    @Column(name = "transaction_no")
+    private String transactionNo;
 }
