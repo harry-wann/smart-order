@@ -133,6 +133,7 @@ export default function Menu() {
     const intervalId = window.setInterval(refreshCart, 5000);
     return () => window.clearInterval(intervalId);
   }, [sessionId, isCartSocketConnected, refreshCart]);
+  const cartItemCount = cartItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0)
   const cartAmount = cartItems.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0)
   const activeCategory = category.find(
     (item) => String(item.id) === String(activeCategoryId),
@@ -327,7 +328,7 @@ export default function Menu() {
                 content={[
                   <div key="cart-info" className="flex items-center gap-2">
                     <SvgIconMap.OrderShoppingCart role="img" aria-label="Cart" className="h-6 w-6" />
-                    <span className="text-lg font-medium">購物車 {cartItems.length} 項</span>
+                    <span className="text-lg font-medium">購物車 {cartItemCount} 項</span>
                   </div>,
                   <div key="cart-price" className="flex items-center gap-2">
                     <span className="text-lg font-medium">NT$ {cartAmount.toLocaleString('zh-TW')}</span>
