@@ -56,7 +56,7 @@ public class OrderSubmitService {
         }
 
         List<CartItemEntity> cartItems = cartItemRepository
-                .findByDiningSession_IdAndAddedByGuest_IdOrderByIdAsc(sessionId, guestId);
+                .findByDiningSession_IdOrderByIdAsc(sessionId);
         if (cartItems.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "你的購物車沒有商品");
         }
