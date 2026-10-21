@@ -150,6 +150,7 @@ export default function OrderSubmitted() {
           <SOButton
             variant="danger"
             height="h-9"
+            onClick={() => navigate('/order/menu')}
             content={[
               <div key="param-1" className="flex items-center gap-1">
                 <span>繼續點餐</span>
@@ -163,6 +164,7 @@ export default function OrderSubmitted() {
           <SOButton
             variant="secondary"
             height="h-9"
+            onClick={() => navigate('/order/history')}
             content={[
               <div key="param-1" className="flex items-center gap-1">
                 <span>查看本桌訂單</span>
