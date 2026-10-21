@@ -122,9 +122,7 @@ public class OrderCartService {
         Long cartVersion = session.getCartVersion();
 
         List<CartItemEntity> cartItems = cartItemRepository
-                .findByDiningSession_IdAndAddedByGuest_IdOrderByIdAsc(
-                        sessionId, currentGuestId
-                );
+                .findByDiningSession_IdOrderByIdAsc(sessionId);
 
         List<CartItemResponse> items = new ArrayList<>();
 
@@ -178,7 +176,8 @@ public class OrderCartService {
             // 商品單價 、 選項加價
             BigDecimal price = unitPrice.add(optionPrice);
 
-            boolean canEdit = !locked;
+            boolean canEdit = !locked && cartItem.getAddedByGuest() != null
+                    && currentGuestId.equals(cartItem.getAddedByGuest().getId());
 
             // 建立商品 DTO
             CartItemResponse item = new CartItemResponse(
@@ -239,9 +238,7 @@ public class OrderCartService {
         session.increaseCartVersion();
 
         diningSessionRepository.save(session);
-        cartNotificationService.notifyGuestAfterCommit(
-                sessionId, currentGuestId
-        );
+        cartNotificationService.notifyCartUpdatedAfterCommit(sessionId);
     }
 
     // 刪除購物車商品
@@ -275,9 +272,7 @@ public class OrderCartService {
         session.increaseCartVersion();
 
         diningSessionRepository.save(session);
-        cartNotificationService.notifyGuestAfterCommit(
-                sessionId, currentGuestId
-        );
+        cartNotificationService.notifyCartUpdatedAfterCommit(sessionId);
     }
 
     // 確認是否仍可點餐

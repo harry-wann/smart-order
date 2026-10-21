@@ -1,31 +1,91 @@
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import SOButton from '../../../components/SOButton'
 import OptionRadioGroup from '../../../components/optionRadio/OptionRadioGroup'
 import OptionCheckboxGroup from '../../../components/optionCheckbox/OptionCheckboxGroup'
+import Counter from '../../../components/steper/Counter'
 import { useLocation, useNavigate } from 'react-router'
-import { getCurrentDining } from '@/services/api/dining/diningApi'
-import { addCartItem } from '@/services/api/cart/cartApi'
+import { SvgIconMap } from '@/assets/SvgIconMap'
 import { customerClient } from '@/services/client/customerClient'
 
+const MAX_NOTE_LENGTH = 50
+
 export default function ItemDetail() {
-  const location = useLocation();
-  const productId = location.state?.productId;
-  const [selections, setSelections] = useState({})
-  const [item, setItem] = useState(null);
+  const location = useLocation()
+  const productId = location.state?.productId
+  const sessionId = location.state?.sessionId
   const navigate = useNavigate()
+  const [selections, setSelections] = useState({})
+  const [item, setItem] = useState(null)
   const [quantity, setQuantity] = useState(1)
+  const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
+  const [loadError, setLoadError] = useState('')
   const [error, setError] = useState('')
 
+  useEffect(() => {
+    if (productId == null) return
+    let cancelled = false
+
+    async function loadItem() {
+      setItem(null)
+      setLoadError('')
+      try {
+        const response = await customerClient.get(`/order/items/${productId}`)
+        if (!cancelled) setItem(response.data)
+      } catch (err) {
+        if (!cancelled) setLoadError(err.message || '商品資料載入失敗，請稍後再試')
+      }
+    }
+
+    loadItem()
+    return () => { cancelled = true }
+  }, [productId])
+
+  const displayOptionGroups = useMemo(
+    () => (Array.isArray(item?.optionGroups) ? item.optionGroups : []).map((group) => ({
+      id: String(group.optionGroupId),
+      name: group.name,
+      minSelect: Number(group.minSelect) || 0,
+      maxSelect: Number(group.maxSelect) || 1,
+      isRequired: Number(group.minSelect) > 0,
+      selectionType: Number(group.maxSelect) === 1 ? 'radio' : 'checkbox',
+      options: (Array.isArray(group.optionValues) ? group.optionValues : []).map((option) => ({
+        id: String(option.optionValueId),
+        name: option.name,
+        priceDelta: Number(option.priceDelta) || 0,
+      })),
+    })),
+    [item],
+  )
+
+  const invalidGroup = displayOptionGroups.find((group) => {
+    const count = (selections[group.id] || []).length
+    return count < group.minSelect || count > group.maxSelect
+  })
+
+  const totalAmount = useMemo(() => {
+    const extraPrice = displayOptionGroups.reduce((sum, group) => {
+      const selectedIds = selections[group.id] || []
+      return sum + group.options.reduce(
+        (groupSum, option) => groupSum + (selectedIds.includes(option.id) ? option.priceDelta : 0),
+        0,
+      )
+    }, 0)
+    return ((Number(item?.price) || 0) + extraPrice) * quantity
+  }, [displayOptionGroups, item, quantity, selections])
+
   async function handleAdd() {
-    if (busy || missingRequiredGroup) return
+    if (busy || invalidGroup) return
     setBusy(true)
     setError('')
     try {
-      const dining = await getCurrentDining()
-      await addCartItem(String(dining.sessionId), {
-        menuItemId: Number(productId), quantity,
+      if (!sessionId) throw new Error('找不到桌次資訊，請返回菜單重新進入')
+      await customerClient.post('/order/cart/items', {
+        sessionId,
+        menuItemId: Number(productId),
+        quantity,
         optionValueIds: Object.values(selections).flat().map(Number),
+        note: note.trim() || undefined,
       })
       navigate('/order/menu')
     } catch (err) {
@@ -35,174 +95,135 @@ export default function ItemDetail() {
     }
   }
 
-  const displayOptionGroups = useMemo(
-    () =>
-      (item?.optionGroups || []).map((group) => ({
-        id: String(group.optionGroupId),
-        name: group.name,
-        isRequired: group.minSelect > 0,
-        selectionType: group.maxSelect === 1 ? 'radio' : 'checkbox',
-        maxSelect: group.maxSelect,
-        options: group.optionValues.map((option) => ({
-          id: String(option.optionValueId),
-          name: option.name,
-          priceDelta: option.priceDelta,
-        })),
-      })),
-    [item],
-  )
-
-  useEffect(() => {
-    if (productId == null) return; 
-    async function loadItems(productId) {
-      try {
-        const response = await customerClient.get(`/order/items/${productId}`);
-        setItem(response.data)
-      } catch (error) {
-        console.error(error)
-      }
-    }
-    loadItems(productId)
-  },[productId])
-
-  const totalAmount = useMemo(() => {
-    if (!item) return 0;
-    let extraPrice = 0
-    displayOptionGroups.forEach((group) => {
-      const selectedIds = selections[group.id] || []
-      group.options.forEach((option) => {
-        if (selectedIds.includes(option.id)) {
-          extraPrice += Number(option.priceDelta)
-        }
-      })
-    })
-    return (Number(item.price) + extraPrice) * quantity
-  }, [selections, displayOptionGroups, item, quantity])
-
-  const missingRequiredGroup = displayOptionGroups.find(
-      (group) => group.isRequired && (!selections[group.id] || selections[group.id].length === 0),
+  if (productId == null) {
+    return <div className="min-h-screen bg-paper p-4 text-ink-900">查無商品資料</div>
+  }
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-paper p-4 text-ink-900" role="alert">
+        <p>{loadError}</p>
+        <button className="mt-3 text-brand-600 underline" onClick={() => window.location.reload()}>重新載入</button>
+      </div>
     )
+  }
+  if (!item) return <div className="min-h-screen bg-paper p-4 text-ink-900">商品資料載入中...</div>
 
   return (
-      <div className="relative min-h-screen w-full self-start bg-paper pb-24 font-sans text-ink-900">
-        {productId == null ? (
-          <span>查無資料</span>
-        ) : !item ? (
-          <span>資料載入中...</span>
+    <div className="relative min-h-screen w-full bg-paper font-sans text-ink-900">
+      <div className="relative flex h-[186px] w-full items-center justify-center overflow-hidden bg-surface-2">
+        {item.imageUrl ? (
+          <img src={item.imageUrl} className="h-full w-full object-cover" alt={item.name} />
         ) : (
-          <div>
-            <div className="relative h-64 w-full bg-surface-2 flex items-center justify-center">
-              {item.imageUrl ? (
-                <img src={item.imageUrl} className="h-full w-full object-cover" alt={item.name} />
-              ) : (
-                <span className="text-ink-400">暫無圖片</span>
-              )}
-              <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/30 via-transparent to-transparent"></div>
-            </div>
-
-            <div className="px-5 py-6">
-              <div className="flex items-start justify-between">
-                <h1 className="text-2xl font-bold tracking-wide">{item.name}</h1>
-              </div>
-              <div className="mt-2 flex items-baseline gap-1">
-                <span className="text-2xl font-bold text-brand-600">NT\$ {item.price}</span>
-                <span className="text-sm font-medium text-ink-600">起</span>
-              </div>
-              <p className="mt-4 leading-relaxed text-ink-600">{item.description}</p>
-              <div className="mt-6 border-b border-line"></div>
-            </div>
-
-            {displayOptionGroups.map((group) => {
-              const selectedIds = selections[group.id] || []
-
-              let badgeText = ''
-              if (group.isRequired) {
-                badgeText = '必選'
-              } else if (group.maxSelect > 1) {
-                badgeText = `可選 最多 ${group.maxSelect} 項`
-              } else {
-                badgeText = '可選'
-              }
-
-              let hintText = ''
-              if (group.selectionType === 'radio') {
-                hintText = '單選'
-              } else if (group.selectionType === 'checkbox') {
-                hintText = `已選 ${selectedIds.length}・還可選 ${group.maxSelect - selectedIds.length} 種`
-              }
-
-              const mappedOptions = group.options.map((opt) => ({
-                value: opt.id,
-                title: opt.name,
-                desc: opt.priceDelta > 0 ? `+NT$ ${opt.priceDelta}` : '',
-                disabled: false,
-              }))
-
-              return (
-                <div key={group.id} className="px-5 pb-6">
-                  <div className="mb-4 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-bold">{group.name}</h3>
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          group.isRequired ? 'bg-brand-100 text-brand-600' : 'bg-surface-2 text-ink-600'
-                        }`}
-                      >
-                        {badgeText}
-                      </span>
-                    </div>
-                    <span className="text-sm text-ink-600">{hintText}</span>
-                  </div>
-
-                  {group.selectionType === 'radio' ? (
-                    <OptionRadioGroup
-                      name={group.id}
-                      options={mappedOptions}
-                      value={selectedIds[0] || ''}
-                      onChange={(selectedValue) => {
-                        setSelections((prev) => ({ ...prev, [group.id]: [selectedValue] }))
-                      }}
-                    />
-                  ) : (
-                    <OptionCheckboxGroup
-                      name={group.id}
-                      options={mappedOptions}
-                      value={selectedIds}
-                      onChange={(selectedValues) => {
-                        if (selectedValues.length > group.maxSelect) {
-                          alert(`此項目最多只能選擇 ${group.maxSelect} 項`)
-                          return
-                        }
-                        setSelections((prev) => ({ ...prev, [group.id]: selectedValues }))
-                      }}
-                    />
-                  )}
-                </div>
-              )
-            })}
-
-            <div className="flex items-center justify-between px-5 pb-6">
-              <label htmlFor="item-quantity">份數</label>
-              <input id="item-quantity" type="number" min="1" max="10" value={quantity}
-                disabled={busy} className="w-20 rounded border border-line p-2"
-                onChange={(event) => setQuantity(Math.min(10, Math.max(1, Math.trunc(Number(event.target.value)) || 1)))} />
-            </div>
-            {error && <p role="alert" className="px-5 pb-4 text-brand-600">{error}</p>}
-            <div className="fixed right-0 bottom-0 left-0 flex h-22.25 border-t border-line bg-paper p-4 pb-6">
-              <SOButton
-                height="h-[52px]"
-                type="button"
-                text={
-                  missingRequiredGroup
-                    ? `請選擇${missingRequiredGroup.name}`
-                    : ['加入購物車', `NT$ ${totalAmount}`]
-                }
-                disabled={!!missingRequiredGroup || busy}
-                onClick={handleAdd}
-              />
-            </div>
-          </div>
+          <span className="text-ink-400">暫無圖片</span>
         )}
+        <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/30 via-transparent to-transparent" />
+        <button
+          type="button"
+          aria-label="返回上一頁"
+          onClick={() => navigate(-1)}
+          className="absolute left-4 top-4 z-10 flex size-11 items-center justify-center rounded-full bg-surface/90 shadow-sm"
+        >
+          <SvgIconMap.TopBarBack aria-hidden="true" className="size-11" />
+        </button>
       </div>
+
+      <div className="px-4 pb-6 pt-4">
+        <h1 className="font-serif text-[28px] font-bold leading-tight tracking-wide">{item.name}</h1>
+        <div className="mt-2 flex items-baseline gap-1">
+          <span className="text-[22px] font-bold text-brand-600">NT$ {item.price}</span>
+          <span className="text-sm font-bold text-ink-600">起</span>
+        </div>
+        {item.description && <p className="mt-2 leading-relaxed text-ink-600">{item.description}</p>}
+        <div className="mt-1 border-b border-line" />
+      </div>
+
+      {displayOptionGroups.map((group) => {
+        const selectedIds = selections[group.id] || []
+        const badgeText = group.isRequired
+          ? '必選'
+          : group.maxSelect > 1 ? `可選 最多 ${group.maxSelect} 項` : '可選'
+        const hintText = group.selectionType === 'radio'
+          ? '單選'
+          : `已選 ${selectedIds.length}・還有 ${Math.max(0, group.maxSelect - selectedIds.length)} 種`
+        const mappedOptions = group.options.map((option) => ({
+          value: option.id,
+          title: option.name,
+          desc: option.priceDelta > 0 ? `+NT$ ${option.priceDelta}` : '',
+          disabled: !selectedIds.includes(option.id) && selectedIds.length >= group.maxSelect,
+        }))
+
+        return (
+          <section key={group.id} className="px-4 pb-6">
+            <div className="mb-3 flex min-h-7 items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold">{group.name}</h2>
+                <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${group.isRequired ? 'bg-brand-100 text-brand-600' : 'bg-surface-2 text-ink-600'}`}>
+                  {badgeText}
+                </span>
+              </div>
+              <span className="shrink-0 text-xs text-ink-600">{hintText}</span>
+            </div>
+            {group.selectionType === 'radio' ? (
+              <OptionRadioGroup
+                name={group.id}
+                options={mappedOptions}
+                value={selectedIds[0] || ''}
+                onChange={(value) => setSelections((prev) => ({ ...prev, [group.id]: [value] }))}
+              />
+            ) : (
+              <OptionCheckboxGroup
+                name={group.id}
+                options={mappedOptions}
+                value={selectedIds}
+                onChange={(values) => setSelections((prev) => ({ ...prev, [group.id]: values }))}
+              />
+            )}
+            {selectedIds.length < group.minSelect && (
+              <p className="mt-2 text-sm text-brand-600">此規格至少選擇 {group.minSelect} 項</p>
+            )}
+          </section>
+        )
+      })}
+
+      <section className="mx-4 flex items-center justify-between border-t border-line py-4">
+        <h2 className="text-lg font-bold">數量</h2>
+        <Counter
+          size="small"
+          initialCount={1}
+          showTrash={false}
+          minCount={1}
+          onChange={setQuantity}
+        />
+      </section>
+
+      <section className="px-4 pb-6 pt-1">
+        <div className="mb-3 flex items-center justify-between">
+          <label htmlFor="item-note" className="text-lg font-bold">備註</label>
+          <span className="text-sm text-ink-600">{note.length} / {MAX_NOTE_LENGTH}</span>
+        </div>
+        <textarea
+          id="item-note"
+          name="note"
+          value={note}
+          onChange={(event) => setNote(event.target.value)}
+          rows={3}
+          maxLength={MAX_NOTE_LENGTH}
+          disabled={busy}
+          placeholder="例如：不要太生"
+          className="w-full resize-none rounded-lg border border-line bg-surface p-4 text-base text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-brand-600 focus:ring-2 focus:ring-brand-600/20 disabled:cursor-not-allowed disabled:opacity-60"
+        />
+      </section>
+
+      {error && <p role="alert" className="px-4 pb-4 text-brand-600">{error}</p>}
+      <div className="sticky bottom-0 z-10 border-t border-line bg-surface px-4 pb-6 pt-3">
+        <SOButton
+          height="h-[52px]"
+          type="button"
+          text={invalidGroup ? `請選擇${invalidGroup.name}` : ['加入購物車', `NT$ ${totalAmount}`]}
+          disabled={!!invalidGroup || busy}
+          onClick={handleAdd}
+        />
+      </div>
+    </div>
   )
 }

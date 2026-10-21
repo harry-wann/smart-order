@@ -317,7 +317,7 @@ export default function Menu() {
               <MenuItemCard
                 key={item.id}
                 item={item}
-                onOpen={() => navigate('/order/itemdetail', { state: { productId: item.id } })}
+                onOpen={() => navigate('/order/itemdetail', { state: { productId: item.id, sessionId } })}
               />
             ))}
           </div>

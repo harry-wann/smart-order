@@ -33,7 +33,7 @@ public class OrderCartController {
         orderCartService.addItem(sessionId, currentGuestService.requireGuestId(sessionId), request);
     }
 
-    // 查詢自己的購物車
+    // 查詢整桌購物車，依本人身分標示可編輯的商品。
     @GetMapping("/{sessionId}/cart")
     public CartResponse getCart(@PathVariable Long sessionId) {
         Long guestId = currentGuestService.requireGuestId(sessionId);

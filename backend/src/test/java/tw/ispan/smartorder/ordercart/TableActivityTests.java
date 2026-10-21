@@ -128,6 +128,8 @@ class TableActivityTests {
         when(items.findByOrderTicketIdAndStatusNotOrderByIdAsc(8L, "CANCELLED")).thenReturn(List.of());
         var service = new OrderSubmitService(sessions, carts, cartOptions, tickets, items, options);
         ReflectionTestUtils.setField(service, "notifications", notifications);
+        ReflectionTestUtils.setField(service, "kitchenNotificationService",
+                mock(tw.ispan.smartorder.service.KitchenNotificationService.class));
         service.submitOrder(50L, 98L);
         // 一筆餐點 × 2 份，加價 20：本次 240，不含既有 1000 與服務費。
         verify(notifications).notifyTableAfterCommit(50L, 98L, "ORDER_SUBMITTED", null, 0,
