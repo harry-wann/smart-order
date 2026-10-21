@@ -20,6 +20,7 @@ import tw.ispan.smartorder.util.EcpayUtil;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -35,6 +36,8 @@ public class EcpayService {
     private static final String PENDING = "PENDING";
     private static final String SUCCESS = "SUCCESS";
     private static final String FAILED = "FAILED";
+
+    private static final Duration PENDING_LOCK = Duration.ofMinutes(3);
 
     private static final DateTimeFormatter ECPAY_DATE = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
     private static final DateTimeFormatter RESULT_DATE = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm");
@@ -62,8 +65,17 @@ public class EcpayService {
 
     @Transactional
     public EcpayCheckoutResponse createCheckout(long sessionId) {
+        DiningSessionEntity session = sessionRepository.findWithLockById(sessionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "DINING_SESSION_ENDED"));
+        if (!"OPEN".equals(session.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "這桌已經結帳");
+        }
         if (paymentRepository.existsByDiningSessionIdAndStatus(sessionId, SUCCESS)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "這桌已經付款完成");
+        }
+        if (paymentRepository.existsByDiningSessionIdAndStatusAndCreatedAtAfter(
+                sessionId, PENDING, LocalDateTime.now().minus(PENDING_LOCK))) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "同桌有人正在付款中，請稍候再試或到櫃檯確認");
         }
 
         BillResponse bill = billService.calculateBill(sessionId);

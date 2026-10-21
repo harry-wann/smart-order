@@ -5,16 +5,6 @@ import SOButton from '@/components/SOButton.tsx'
 import { SvgIconMap } from '@/assets/SvgIconMap.tsx'
 import { customerClient } from '@/services/client/customerClient.ts'
 
-const DEMO_RESULT = {
-  status: 'SUCCESS',
-  transactionNo: 'T1789311960417123',
-  method: 'ECPAY',
-  amount: 1562,
-  paidAt: '2026/09/13 19:26',
-  tableNo: 'A03',
-  guestCount: 3,
-}
-
 const METHOD_LABELS = { ECPAY: '綠界線上付款', CASH: '現金', CARD: '信用卡' }
 const MAX_TRIES = 10
 
