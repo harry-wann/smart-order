@@ -233,7 +233,7 @@ export default function OrderCart() {
       busy ||
       locked ||
       loading ||
-      !cartItems.some((item) => item.canEdit)
+      cartItems.length === 0
     ) {
       return
     }
@@ -484,7 +484,7 @@ export default function OrderCart() {
               height="h-9"
               variant="danger"
               onClick={handleSubmit}
-              disabled={busy || locked || loading || !cartItems.some((item) => item.canEdit)}
+              disabled={busy || locked || loading || cartItems.length === 0}
               content={[
                 <div
                   key="submit"

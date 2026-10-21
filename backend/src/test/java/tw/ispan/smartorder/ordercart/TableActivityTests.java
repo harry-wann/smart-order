@@ -110,11 +110,14 @@ class TableActivityTests {
         var menu = new MenuItemEntity(); menu.setId(1L); menu.setName("牛肉");
         var cart = new CartItemEntity(); cart.setId(1L); cart.setMenuItem(menu);
         cart.setQuantity(2); cart.setUnitPrice(new BigDecimal("100"));
+        var otherGuestCart = new CartItemEntity(); otherGuestCart.setId(2L); otherGuestCart.setMenuItem(menu);
+        otherGuestCart.setQuantity(1); otherGuestCart.setUnitPrice(new BigDecimal("50"));
         var value = new OptionValueEntity(); value.setName("加量"); value.setPriceDelta(new BigDecimal("20"));
         var option = new CartItemOptionEntity(); option.setOptionValue(value);
         when(sessions.findWithLockById(50L)).thenReturn(Optional.of(session));
-        when(carts.findByDiningSession_IdAndAddedByGuest_IdOrderByIdAsc(50L, 98L)).thenReturn(List.of(cart));
+        when(carts.findByDiningSession_IdOrderByIdAsc(50L)).thenReturn(List.of(cart, otherGuestCart));
         when(cartOptions.findByCartItem_Id(1L)).thenReturn(List.of(option));
+        when(cartOptions.findByCartItem_Id(2L)).thenReturn(List.of());
         when(tickets.findByDiningSessionIdOrderBySequenceNoDesc(50L)).thenReturn(List.of());
         when(tickets.saveAndFlush(any())).thenAnswer(invocation -> {
             OrderTicketEntity ticket = invocation.getArgument(0); ticket.setId(8L); return ticket;
@@ -133,8 +136,12 @@ class TableActivityTests {
         service.submitOrder(50L, 98L);
         // 一筆餐點 × 2 份，加價 20：本次 240，不含既有 1000 與服務費。
         verify(notifications).notifyTableAfterCommit(50L, 98L, "ORDER_SUBMITTED", null, 0,
-                List.of(), 1, 1, new BigDecimal("240"));
-        assertEquals(new BigDecimal("1240"), session.getSubtotal());
+                List.of(), 1, 2, new BigDecimal("290"));
+        verify(items, times(2)).saveAndFlush(any());
+        verify(cartOptions).deleteAll(List.of(option));
+        verify(cartOptions).deleteAll(List.of());
+        verify(carts).deleteAll(List.of(cart, otherGuestCart));
+        assertEquals(new BigDecimal("1290"), session.getSubtotal());
     }
 
     private DiningSessionGuestEntity guest(Long id, String device, String name) {
