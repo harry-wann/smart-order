@@ -46,23 +46,26 @@ public class CartNotificationService {
         });
     }
 
-    // 交易成功後，通知客人
-    public void notifyGuestAfterCommit(Long sessionId, Long guestId) {
+    // 交易成功後，通知整桌重新取得購物車。
+    public void notifyCartUpdatedAfterCommit(Long sessionId) {
 
         if (!TransactionSynchronizationManager.isActualTransactionActive() || !TransactionSynchronizationManager.isSynchronizationActive()) {
             throw new IllegalStateException("購物車通知必須在交易中註冊");
         }
 
+        var recipients = guests.findByDiningSessionId(sessionId).stream().map(g -> g.getId()).toList();
         TransactionSynchronizationManager.registerSynchronization(
                 new TransactionSynchronization() {
 
                     @Override
                     public void afterCommit() {
-                        messagingTemplate.convertAndSendToUser(
-                                "guest-" + guestId,
-                                "/queue/cart-updates",
-                                new CartUpdateMessage(sessionId, "CART_UPDATED")
-                        );
+                        for (Long recipient : recipients) {
+                            messagingTemplate.convertAndSendToUser(
+                                    "guest-" + recipient,
+                                    "/queue/cart-updates",
+                                    new CartUpdateMessage(sessionId, "CART_UPDATED")
+                            );
+                        }
                     }
                 }
         );

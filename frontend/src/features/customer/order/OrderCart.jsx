@@ -233,7 +233,7 @@ export default function OrderCart() {
       busy ||
       locked ||
       loading ||
-      cartItems.length === 0
+      !cartItems.some((item) => item.canEdit)
     ) {
       return
     }
@@ -260,14 +260,14 @@ export default function OrderCart() {
     }
   }
 
-  // 計算個人購物車數量
+  // 計算整桌購物車數量
 
   const totalQuantity = cartItems.reduce(
     (total, item) => total + Number(item.quantity),
     0,
   )
 
-  // 計算個人購物車金額
+  // 計算整桌購物車金額
 
   const totalPrice = cartItems.reduce(
     (total, item) =>
@@ -282,23 +282,23 @@ export default function OrderCart() {
     <div className="flex h-screen w-full flex-col bg-surface-2">
       {/* 上方標題 */}
       <CustomerTopBar
-        title="我的購物車"
+        title="本桌購物車"
         subTitle={
           currentTableNumber
-            ? `${currentTableNumber} 桌・個人購物車`
-            : '個人購物車'
+            ? `${currentTableNumber} 桌・共用購物車`
+            : '共用購物車'
         }
         showBackButton={true}
       />
 
-      {/* 個人購物車提示 */}
-      <div className="flex h-9.75 items-center gap-2 bg-info-bg px-4">
+      {/* 同桌共用，編輯與送單仍以本人商品為限。 */}
+      <div className="flex min-h-9.75 items-center gap-2 bg-info-bg px-4 py-2">
         <span className="type-caption text-info-ink">
           <SvgIconMap.OrdercartPeople />
         </span>
 
         <p className="type-caption text-info-ink">
-          這是你的個人購物車，僅顯示自己加入的商品
+          全桌商品同步顯示；只能修改及送出自己加入的餐點
         </p>
       </div>
 
@@ -354,7 +354,7 @@ export default function OrderCart() {
           // 購物車是空的
           <div className="flex h-full flex-col items-center justify-center">
             <p className="type-body-sm text-ink-400">
-              你的購物車是空的
+              本桌購物車是空的
             </p>
 
             {!locked && (
@@ -450,7 +450,7 @@ export default function OrderCart() {
                   </div>
                 ) : (
                   <p className="mt-3 type-caption text-ink-400">
-                    {locked ? '本桌已鎖定，無法修改' : '目前無法修改此商品'}
+                    數量 {item.quantity}・{locked ? '本桌已鎖定，無法修改' : '同桌客人加入・僅供查看'}
                   </p>
                 )}
               </div>
@@ -462,10 +462,10 @@ export default function OrderCart() {
       {/* 底部小計與送出按鈕 */}
       {cartItems.length > 0 && (
         <footer className="h-38.25 border-t border-line bg-surface px-4 py-4">
-          {/* 個人小計 */}
+          {/* 全桌小計 */}
           <div className="flex items-center justify-between">
             <p className="type-body-sm text-ink-400">
-              小計 {totalQuantity} 項
+              全桌小計 {totalQuantity} 項
             </p>
 
             <p className="type-price font-bold text-brand-600">
@@ -484,7 +484,7 @@ export default function OrderCart() {
               height="h-9"
               variant="danger"
               onClick={handleSubmit}
-              disabled={busy || locked || loading}
+              disabled={busy || locked || loading || !cartItems.some((item) => item.canEdit)}
               content={[
                 <div
                   key="submit"
