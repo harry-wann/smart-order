@@ -11,6 +11,7 @@ export type ApiErrorBody = {
   message?: string
   details?: ApiErrorDetail[]
   reason?: string
+  bill?: unknown
 }
 
 export class ApiError extends Error {
@@ -18,6 +19,7 @@ export class ApiError extends Error {
   readonly code: string
   readonly details: ApiErrorDetail[]
   readonly reason?: string
+  readonly bill?: unknown
 
   constructor(status: number, body: ApiErrorBody, cause?: unknown) {
     super(body.message ?? DEFAULT_MESSAGE[body.code ?? ''] ?? DEFAULT_MESSAGE.UNKNOWN_ERROR, { cause })
@@ -26,6 +28,7 @@ export class ApiError extends Error {
     this.code = body.code ?? 'UNKNOWN_ERROR'
     this.details = body.details ?? []
     this.reason = body.reason
+    this.bill = body.bill
   }
 }
 

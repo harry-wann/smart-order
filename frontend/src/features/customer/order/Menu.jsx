@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import SOFormInput, { SOFormInputType } from '../../../components/input/SOFormInput'
 import MenuCategoryTabs from '../../../components/MenuCategoryTabs'
 import MenuItemRow from '../../../components/order/MenuItemRow'
@@ -12,37 +12,69 @@ import useCartWebSocket from '@/services/realtime/useCartWebSocket'
 import useMenuWebSocket from '@/services/realtime/useMenuWebSocket'
 import TableActivityNotice from '@/components/order/TableActivityNotice'
 
-import { Link, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 
 import { customerClient } from '@/services/client/customerClient'
 import { leaveTable } from '@/services/client/auth'
 
 export default function Menu() {
+  const location = useLocation();
   const navigate = useNavigate();
-  const [closedSession, setClosedSession] = useState(null);
-  const sessionEnded = useRef(false);
+  const initialClosedSession = location.state?.closedSession ?? null;
+  const [closedSession, setClosedSession] = useState(initialClosedSession);
+  const sessionEnded = useRef(Boolean(initialClosedSession));
+  const [sessionEpoch, setSessionEpoch] = useState(0);
+  const activeSessionId = useRef(null);
+  const sessionGeneration = useRef(0);
+  const mountedRef = useRef(false);
   const [isBellOpen, setIsBellOpen] = useState(false);
   const [sessionId, setSessionId] = useState(null);
   const [notices, setNotices] = useState([]);
   const [cartItems, setCartItems] = useState([]);
   const [isCartSocketConnected, setIsCartSocketConnected] = useState(false);
-  const handleSessionInvalid = useCallback(() => {
-    if (sessionEnded.current) return;
+  useLayoutEffect(() => {
+    mountedRef.current = true;
+    activeSessionId.current = sessionId;
+    const generation = sessionGeneration.current + 1;
+    sessionGeneration.current = generation;
+    setSessionEpoch(generation);
+    return () => {
+      mountedRef.current = false;
+      if (sessionGeneration.current === generation) sessionGeneration.current += 1;
+    };
+  }, [sessionId]);
+  const isCurrentMenuSession = useCallback((expectedSessionId, expectedGeneration) => (
+    mountedRef.current &&
+    sessionGeneration.current === expectedGeneration &&
+    activeSessionId.current === expectedSessionId
+  ), []);
+  const handleClosedSessionEvent = useCallback((event, expectedSessionId = sessionId, expectedGeneration = sessionEpoch) => {
+    if (
+      !isCurrentMenuSession(expectedSessionId, expectedGeneration) ||
+      sessionEnded.current ||
+      (event?.sessionId != null && expectedSessionId != null && String(event.sessionId) !== String(expectedSessionId))
+    ) return false;
     sessionEnded.current = true;
     leaveTable();
     setSessionId(null);
-    navigate('/', { replace: true });
-  }, [navigate]);
-  const handleSessionClosed = useCallback((event) => {
-    if (sessionEnded.current) return;
-    sessionEnded.current = true;
-    leaveTable();
-    setSessionId(null);
-    setCartItems([]);
-    setNotices([]);
-    setIsBellOpen(false);
-    setClosedSession(event);
-  }, []);
+    if (event?.reason === 'PAID') {
+      setCartItems([]);
+      setNotices([]);
+      setIsBellOpen(false);
+      setClosedSession(event);
+    } else {
+      navigate('/', { replace: true });
+    }
+    return true;
+  }, [isCurrentMenuSession, navigate, sessionEpoch, sessionId]);
+  const handleSessionApiError = useCallback((error, expectedSessionId = sessionId, expectedGeneration = sessionEpoch) => {
+    if (error?.status !== 401) return false;
+    return handleClosedSessionEvent({
+      type: 'SESSION_CLOSED',
+      sessionId: expectedSessionId,
+      reason: error.reason,
+    }, expectedSessionId, expectedGeneration);
+  }, [handleClosedSessionEvent, sessionEpoch, sessionId]);
   // 商品類別
   const [category,setCategory]=useState([]);
   // 選取項目 card
@@ -97,9 +129,9 @@ export default function Menu() {
     unlistedMenuItems.current.clear();
     setRetryCount((count) => count + 1);
   }, []);
-  useMenuWebSocket(sessionId, receiveMenuStatus, refreshMenu, handleSessionClosed, handleSessionInvalid);
+  useMenuWebSocket(sessionId, receiveMenuStatus, refreshMenu, handleClosedSessionEvent, handleSessionApiError);
   const seenEvents = useRef(new Set())
-  const [tableNo, setTableNo] = useState('')
+  const [tableNo, setTableNo] = useState(location.state?.tableNo ?? '')
   const [diningInfo, setDiningInfo] = useState(null)
   const [diningStatus, setDiningStatus] = useState('loading')
   const [diningRetryCount, setDiningRetryCount] = useState(0)
@@ -114,20 +146,32 @@ export default function Menu() {
       ? `${diningInfo.openedAt.match(/T(\d{2}:\d{2})/)[1]} 入座` : '',
   ].filter(Boolean).join('　') : ''
   const refreshCart = useCallback(() => {
-    if (!sessionId) return
-    getCart(String(sessionId)).then((cart) => { if (!sessionEnded.current) setCartItems(cart.items ?? []) })
+    if (!sessionId || !isCurrentMenuSession(sessionId, sessionEpoch) || sessionEnded.current) return
+    const expectedSessionId = sessionId
+    const expectedGeneration = sessionEpoch
+    getCart(String(expectedSessionId)).then((cart) => {
+      if (!isCurrentMenuSession(expectedSessionId, expectedGeneration) || sessionEnded.current) return
+      setCartItems(cart.items ?? [])
+    })
       .catch((error) => {
-        if (error.status === 401) handleSessionInvalid();
+        if (!isCurrentMenuSession(expectedSessionId, expectedGeneration) || sessionEnded.current) return;
+        if (handleSessionApiError(error, expectedSessionId, expectedGeneration)) return;
         else console.error('更新購物車失敗', error);
       })
-  }, [sessionId, handleSessionInvalid])
+  }, [handleSessionApiError, isCurrentMenuSession, sessionEpoch, sessionId])
   const receiveActivity = useCallback((activity) => {
     if (!['ITEM_ADDED', 'ORDER_SUBMITTED'].includes(activity.type) || seenEvents.current.has(activity.eventId)) return
     seenEvents.current.add(activity.eventId)
     setNotices((current) => [...current, activity])
   }, [])
   const dismissNotice = useCallback(() => setNotices((current) => current.slice(1)), [])
-  useCartWebSocket(sessionId == null ? undefined : String(sessionId), refreshCart, receiveActivity, setIsCartSocketConnected)
+  useCartWebSocket(
+    sessionId == null ? undefined : String(sessionId),
+    refreshCart,
+    receiveActivity,
+    setIsCartSocketConnected,
+    handleClosedSessionEvent,
+  )
   useEffect(() => {
     if (!sessionId || isCartSocketConnected) return;
 
@@ -142,25 +186,32 @@ export default function Menu() {
   );
 
   useEffect(() => {
+    if (sessionEnded.current) return undefined
     let isCurrentRequest = true
+    const expectedSessionId = sessionId
+    const expectedGeneration = sessionEpoch
     getCurrentDining()
       .then((dining) => {
-        if (!isCurrentRequest || sessionEnded.current) return
+        if (
+          !isCurrentRequest ||
+          sessionEnded.current ||
+          !isCurrentMenuSession(expectedSessionId, expectedGeneration)
+        ) return
         setSessionId(dining.sessionId)
         setTableNo(dining.tableNo)
         setDiningInfo(dining)
         setDiningStatus('success')
       })
       .catch((error) => {
-        if (!isCurrentRequest) return
-        if (error.status === 401) handleSessionInvalid()
+        if (!isCurrentRequest || !isCurrentMenuSession(expectedSessionId, expectedGeneration)) return
+        if (handleSessionApiError(error, expectedSessionId, expectedGeneration)) return
         else {
           setDiningStatus('error')
           console.error(error)
         }
       });
     return () => { isCurrentRequest = false }
-  }, [handleSessionInvalid, diningRetryCount]);
+  }, [handleSessionApiError, isCurrentMenuSession, sessionEpoch, sessionId, diningRetryCount]);
 
   useEffect(() => {
     let isCurrentRequest = true;

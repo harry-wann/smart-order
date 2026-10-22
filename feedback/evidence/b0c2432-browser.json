@@ -1,0 +1,130 @@
+{
+  "label": "checkout",
+  "testedAt": "2026-10-22T17:35:50.222Z",
+  "results": [
+    {
+      "path": "/admin/table_overview",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/seats",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/waitlist",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/reservations",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/kitchen",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/menu",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/options",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/table/A03",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/order/menu",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/order/cart/50",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/order/history",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/member/login",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/reserve/guest",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/reserve/datetime",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "name": "Checkout UI: payment starts from five seconds",
+      "passed": true
+    },
+    {
+      "name": "Checkout UI: background bill update preserves payment snapshot and requires confirmation after 409",
+      "passed": true
+    },
+    {
+      "name": "Checkout UI: late old billing GET cannot overwrite BILL_CHANGED snapshot",
+      "passed": true
+    },
+    {
+      "name": "Checkout UI: cancelling countdown sends no settlement request",
+      "passed": true
+    },
+    {
+      "name": "Checkout UI: real PAID 401 before WebSocket close still shows paid panel",
+      "passed": true
+    },
+    {
+      "name": "Checkout UI: request starts at zero once and cancellation stays disabled while processing",
+      "passed": true
+    },
+    {
+      "name": "Checkout UI: success stays visible then returns to overview after about 1.5 seconds",
+      "passed": true
+    },
+    {
+      "name": "Checkout UI: both guest identities receive closed-session UI",
+      "passed": true
+    },
+    {
+      "name": "Checkout UI: counter does not see manager cancellation action",
+      "passed": true
+    },
+    {
+      "name": "Checkout UI: manager cancellation returns both guests home and clears their credentials",
+      "passed": true
+    },
+    {
+      "name": "Checkout UI: un-ordered cancellation returns table directly to AVAILABLE",
+      "passed": true
+    },
+    {
+      "name": "Checkout UI: no uncaught browser errors",
+      "passed": true
+    }
+  ],
+  "passed": true
+}

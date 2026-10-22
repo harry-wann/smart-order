@@ -20,6 +20,7 @@ import java.time.OffsetDateTime;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import tw.ispan.smartorder.controller.SessionTokenFilter;
 import tw.ispan.smartorder.repository.DiningSessionRepository;
+import tw.ispan.smartorder.repository.DiningSessionGuestRepository;
 import tw.ispan.smartorder.staff.security.StaffJwtFilter;
 import tw.ispan.smartorder.staff.security.StaffJwtProvider;
 
@@ -36,6 +37,7 @@ public class SecurityConfig {
     SecurityFilterChain apiSecurity(
             HttpSecurity http,
             DiningSessionRepository sessionRepo,
+            DiningSessionGuestRepository guestRepo,
             StaffJwtProvider staffJwtProvider,
             @Value("${app.r2.allow-anonymous-uploads:false}") boolean allowAnonymousUploads) throws Exception {
         http
@@ -61,6 +63,16 @@ public class SecurityConfig {
                             .hasAnyRole("KITCHEN", "MANAGER");
                     authorize.requestMatchers(HttpMethod.PATCH, "/api/admin/order-items/*/unserve")
                             .hasAnyRole("KITCHEN", "MANAGER");
+                    authorize.requestMatchers(HttpMethod.PATCH, "/api/admin/order-items/*/cancel")
+                            .hasAnyRole("COUNTER", "MANAGER", "KITCHEN");
+                    authorize.requestMatchers(HttpMethod.GET, "/api/admin/tables/*/detail")
+                            .hasAnyRole("COUNTER", "MANAGER");
+                    authorize.requestMatchers(HttpMethod.GET, "/api/admin/dining-sessions/*")
+                            .hasAnyRole("COUNTER", "MANAGER");
+                    authorize.requestMatchers(HttpMethod.POST, "/api/admin/dining-sessions/*/settle")
+                            .hasAnyRole("COUNTER", "MANAGER");
+                    authorize.requestMatchers(HttpMethod.POST, "/api/admin/dining-sessions/*/cancel")
+                            .hasRole("MANAGER");
                     // 只替訂位用到的路徑加角色，不寫成 /api/admin/** 一把鎖：隊友的店家端 API 還沒接登入，
                     // 一起鎖起來他們的頁面會全部 401，等各自接好再一條一條加進來。
                     // hasRole 比對的是 ROLE_ 開頭的 authority，由 StaffJwtFilter 組給 Spring Security
@@ -95,7 +107,7 @@ public class SecurityConfig {
                                 PathPatternRequestMatcher.withDefaults().matcher("/api/admin/**"))
                         .accessDeniedHandler((request, response, exception) ->
                                 writeError(request, response, 403, "FORBIDDEN", "權限不足")))
-                .addFilterBefore(new SessionTokenFilter(sessionRepo),
+                .addFilterBefore(new SessionTokenFilter(sessionRepo, guestRepo),
                         UsernamePasswordAuthenticationFilter.class)
                 // StaffJwtFilter 自己只處理 /api/admin/，跟上面 SessionTokenFilter 的顧客端權杖各管各的
                 .addFilterBefore(new StaffJwtFilter(staffJwtProvider),

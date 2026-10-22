@@ -1,16 +1,15 @@
 package tw.ispan.smartorder.tabledetail.controller;
 
 import tw.ispan.smartorder.tabledetail.dto.CheckoutRequest;
+import tw.ispan.smartorder.tabledetail.dto.CancelSessionResponse;
+import tw.ispan.smartorder.tabledetail.dto.SettleResponse;
 import tw.ispan.smartorder.tabledetail.dto.TableDetailResponse;
 import tw.ispan.smartorder.tabledetail.service.TableService;
 
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
 @RestController
-@RequestMapping("/api/tables")
-//http://localhost:8080/api/tables/A03/detail
+@RequestMapping("/api/admin")
 public class TableController {
 
     private final TableService service;
@@ -19,27 +18,25 @@ public class TableController {
         this.service = service;
     }
 
-    // 取得桌位詳細資料
-    @GetMapping("/{tableNumber}/detail")
+    @GetMapping("/tables/{tableNumber}/detail")
     public TableDetailResponse getDetail(
             @PathVariable String tableNumber
     ) {
         return service.getDetail(tableNumber);
     }
 
-    // 結帳
-    @PostMapping("/{tableNumber}/checkout")
-    public Map<String, Object> checkout(
-            @PathVariable String tableNumber,
-            @RequestBody CheckoutRequest request
-    ) {
-        service.checkout(
-                tableNumber, request.paymentMethod()
-        );
+    @GetMapping("/dining-sessions/{id}")
+    public TableDetailResponse getSessionDetail(@PathVariable Long id) {
+        return service.getSessionDetail(id);
+    }
 
-        return Map.of(
-                "success", true,
-                "message", "模擬結帳成功"
-        );
+    @PostMapping("/dining-sessions/{id}/settle")
+    public SettleResponse settle(@PathVariable Long id, @RequestBody CheckoutRequest request) {
+        return service.settle(id, request);
+    }
+
+    @PostMapping("/dining-sessions/{id}/cancel")
+    public CancelSessionResponse cancel(@PathVariable Long id) {
+        return service.cancel(id);
     }
 }

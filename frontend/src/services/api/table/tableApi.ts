@@ -18,6 +18,10 @@ export type TableOrder = {
 }
 
 export type TableDetail = {
+  tableNumber: string
+  sessionId: number | string
+  sessionStatus: 'OPEN' | 'PAID' | 'CANCELLED' | string
+  hasOrderHistory: boolean
   tableInfo: string
   diningStatus: string
   seatedTime: string
@@ -30,34 +34,57 @@ export type TableDetail = {
   childCount: number
 }
 
-// 取得桌位詳細資料
-export async function getTableDetail(tableNumber: string) {
+export type SettlementMethod = 'CASH' | 'CARD' | 'BARCODE'
+
+export type SettlementResponse = {
+  sessionId: number | string
+  status: 'PAID'
+  method: SettlementMethod
+  total: number | string
+  tableNo: string
+  tableStatus: 'CLEANING'
+  closedAt: string
+}
+
+export type CancelSessionResponse = {
+  sessionId: number | string
+  status: 'CANCELLED'
+  tableStatus: 'AVAILABLE'
+}
+
+// 櫃檯使用精確用餐場次的帳單資料，避免桌號重用時誤關新場次。
+export async function getTableDetail(tableNumber: string, signal?: AbortSignal) {
   const { data } = await employeeClient.get<TableDetail>(
-    `/tables/${encodeURIComponent(tableNumber)}/detail`,
+    `/admin/tables/${encodeURIComponent(tableNumber)}/detail`,
+    { signal },
   )
   return data
 }
 
-// 模擬結帳
-export async function checkoutTable(
-  tableNumber: string,
-  paymentMethod: string,
+// 以精確場次重抓同一份帳單，不依桌號改查後續新場次。
+export async function getDiningSessionDetail(sessionId: number | string, signal?: AbortSignal) {
+  const { data } = await employeeClient.get<TableDetail>(
+    `/admin/dining-sessions/${encodeURIComponent(String(sessionId))}`,
+    { signal },
+  )
+  return data
+}
+
+export async function settleDiningSession(
+  sessionId: number | string,
+  method: SettlementMethod,
+  expectedTotal: number | string,
 ) {
-  const methodMap: Record<string, string> = {
-    cash: 'CASH',
-    credit: 'CARD',
-    barcode: 'BARCODE',
-  }
+  const { data } = await employeeClient.post<SettlementResponse>(
+    `/admin/dining-sessions/${encodeURIComponent(String(sessionId))}/settle`,
+    { method, expectedTotal },
+  )
+  return data
+}
 
-  const method = methodMap[paymentMethod]
-
-  if (!method) {
-    throw new Error('不支援的付款方式')
-  }
-
-  const { data } = await employeeClient.post<unknown>(
-    `/tables/${encodeURIComponent(tableNumber)}/checkout`,
-    { paymentMethod: method },
+export async function cancelDiningSession(sessionId: number | string) {
+  const { data } = await employeeClient.post<CancelSessionResponse>(
+    `/admin/dining-sessions/${encodeURIComponent(String(sessionId))}/cancel`,
   )
   return data
 }

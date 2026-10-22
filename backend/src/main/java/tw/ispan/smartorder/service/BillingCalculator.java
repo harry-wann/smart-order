@@ -16,11 +16,13 @@ public class BillingCalculator {
     private static final BigDecimal SERVICE_RATE = new BigDecimal("0.10");
     private final JdbcTemplate jdbc;
     private final EntityManager entityManager;
+    private final BillingNotifier notifier;
 
     public BillingCalculator(@Qualifier("smartOrderDataSource") DataSource dataSource,
-                             EntityManager entityManager) {
+                             EntityManager entityManager, BillingNotifier notifier) {
         this.jdbc = new JdbcTemplate(dataSource);
         this.entityManager = entityManager;
+        this.notifier = notifier;
     }
 
     public record Amount(BigDecimal subtotal, BigDecimal serviceFee, BigDecimal total) {}
@@ -46,6 +48,7 @@ public class BillingCalculator {
         session.setSubtotal(amount.subtotal());
         session.setServiceFee(amount.serviceFee());
         session.setTotal(amount.total());
+        notifier.notifyAfterCommit(session.getId());
         return amount;
     }
 }

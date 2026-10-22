@@ -170,13 +170,16 @@ public class OrderSubmitService {
         // 如果注入失敗，應用程式通常會在啟動時報錯
         kitchenNotificationService.notifyNewTicketAfterCommit(ticket.getId());
 
-        return getOrder(ticket.getId());
+        return getOrder(ticket.getId(), sessionId);
     }
 
     @Transactional(readOnly = true)
-    public OrderSubmittedResponse getOrder(Long orderTicketId) {
+    public OrderSubmittedResponse getOrder(Long orderTicketId, Long sessionId) {
         OrderTicketEntity ticket = ticketRepository.findById(orderTicketId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到訂單"));
+        if (!sessionId.equals(ticket.getDiningSessionId())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到訂單");
+        }
         List<OrderItemEntity> items = itemRepository
                 .findByOrderTicketIdAndStatusNotOrderByIdAsc(orderTicketId, "CANCELLED");
         List<Long> ids = items.stream().map(OrderItemEntity::getId).toList();

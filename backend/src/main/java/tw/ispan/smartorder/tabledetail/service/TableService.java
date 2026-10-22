@@ -1,6 +1,9 @@
 package tw.ispan.smartorder.tabledetail.service;
 
 import tw.ispan.smartorder.tabledetail.dto.TableDetailResponse;
+import tw.ispan.smartorder.tabledetail.dto.CheckoutRequest;
+import tw.ispan.smartorder.tabledetail.dto.SettleResponse;
+import tw.ispan.smartorder.tabledetail.dto.CancelSessionResponse;
 
 import tw.ispan.smartorder.entity.DiningTableEntity;
 import tw.ispan.smartorder.entity.DiningSessionEntity;
@@ -15,9 +18,13 @@ import tw.ispan.smartorder.repository.OrderTicketRepository;
 import tw.ispan.smartorder.repository.OrderItemRepository;
 import tw.ispan.smartorder.repository.OrderItemOptionRepository;
 import tw.ispan.smartorder.repository.PaymentRepository;
+import tw.ispan.smartorder.service.BillingCalculator;
+import tw.ispan.smartorder.service.MenuCheckoutNotifier;
+import tw.ispan.smartorder.service.TableStatusNotifier;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -26,21 +33,20 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 public class TableService {
-    @org.springframework.beans.factory.annotation.Autowired
-    private tw.ispan.smartorder.service.MenuCheckoutNotifier menuCheckoutNotifier;
-
     private final DiningTableRepository tableRepository;
     private final DiningSessionRepository sessionRepository;
     private final OrderTicketRepository ticketRepository;
     private final OrderItemRepository itemRepository;
     private final OrderItemOptionRepository optionRepository;
     private final PaymentRepository paymentRepository;
+    private final BillingCalculator billingCalculator;
+    private final MenuCheckoutNotifier menuCheckoutNotifier;
+    private final TableStatusNotifier tableStatusNotifier;
 
     private static final DateTimeFormatter TIME_FORMAT =
             DateTimeFormatter.ofPattern("HH:mm");
@@ -54,7 +60,10 @@ public class TableService {
             OrderTicketRepository ticketRepository,
             OrderItemRepository itemRepository,
             OrderItemOptionRepository optionRepository,
-            PaymentRepository paymentRepository
+            PaymentRepository paymentRepository,
+            BillingCalculator billingCalculator,
+            MenuCheckoutNotifier menuCheckoutNotifier,
+            TableStatusNotifier tableStatusNotifier
     ) {
         this.tableRepository = tableRepository;
         this.sessionRepository = sessionRepository;
@@ -62,14 +71,13 @@ public class TableService {
         this.itemRepository = itemRepository;
         this.optionRepository = optionRepository;
         this.paymentRepository = paymentRepository;
+        this.billingCalculator = billingCalculator;
+        this.menuCheckoutNotifier = menuCheckoutNotifier;
+        this.tableStatusNotifier = tableStatusNotifier;
     }
-
-    // 查詢桌位詳細資料
 
     @Transactional(readOnly = true)
     public TableDetailResponse getDetail(String tableNumber) {
-
-        // 查詢桌位
         DiningTableEntity table = tableRepository.findByTableNo(tableNumber)
                 .orElseThrow(() ->
                         new ResponseStatusException(
@@ -77,58 +85,47 @@ public class TableService {
                         )
                 );
 
-        // 查詢目前用餐紀錄
         DiningSessionEntity session = sessionRepository
                 .findFirstByTableIdAndStatusOrderByOpenedAtDesc(
                         table.getId(), "OPEN"
                 ).orElse(null);
 
-        // 桌位
+        return toDetail(table, session);
+    }
+
+    @Transactional(readOnly = true)
+    public TableDetailResponse getSessionDetail(Long sessionId) {
+        DiningSessionEntity session = sessionRepository.findById(sessionId)
+                .orElseThrow(SettlementException::notFound);
+        DiningTableEntity table = tableRepository.findById(session.getTableId())
+                .orElseThrow(() -> SettlementException.conflict("TABLE_NOT_FOUND", "找不到此用餐場次的桌位"));
+        return toDetail(table, session);
+    }
+
+    private TableDetailResponse toDetail(DiningTableEntity table, DiningSessionEntity session) {
         String tableInfo = table.getSeats() + "人桌";
-
-        // 沒用餐紀錄
         if (session == null) {
-            return new TableDetailResponse(
-                    table.getTableNo(),
-                    tableInfo,
-                    "未用餐",
-                    "",
-                    0,
-                    0,
-                    0,
-                    BigDecimal.ZERO,
-                    BigDecimal.ZERO,
-                    BigDecimal.ZERO,
-                    List.of()
-            );
+            return new TableDetailResponse(table.getTableNo(), tableInfo, "未用餐", "", 0,
+                    0, 0, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+                    List.of(), null, null, false);
         }
-
-        // 入座時間
         LocalDateTime openedAt = session.getOpenedAt();
-
         String seatedTime = openedAt == null ? "" : openedAt.format(TIME_FORMAT);
-
-        // 用餐分鐘數
         long diningMinutes = openedAt == null ? 0 : Math.max(0,
-                Duration.between(
-                        openedAt, LocalDateTime.now()
-                ).toMinutes()
-        );
-
-        // 查詢訂單
-        List<OrderTicketEntity> tickets = ticketRepository
-                .findByDiningSessionIdAndStatusNotOrderBySequenceNoDesc(
-                        session.getId(), "CANCELLED"
-                );
-
-        // 訂單 Entity 轉 DTO
+                Duration.between(openedAt, LocalDateTime.now()).toMinutes());
+        List<OrderTicketEntity> history = ticketRepository.findByDiningSessionIdOrderBySequenceNoDesc(session.getId());
+        List<OrderTicketEntity> tickets = history.stream()
+                .filter(ticket -> !"CANCELLED".equals(ticket.getStatus())).toList();
         List<TableDetailResponse.OrderDto> orders = tickets.stream().map(this::toOrderDto).toList();
-
-        // 回傳桌位資料
+        String diningStatus = switch (session.getStatus()) {
+            case "PAID" -> "已結帳";
+            case "CANCELLED" -> "已取消";
+            default -> "用餐中";
+        };
         return new TableDetailResponse(
                 table.getTableNo(),
                 tableInfo,
-                "用餐中",
+                diningStatus,
                 seatedTime,
                 diningMinutes,
                 safeInt(session.getAdultCount()),
@@ -136,7 +133,10 @@ public class TableService {
                 safeMoney(session.getSubtotal()),
                 safeMoney(session.getServiceFee()),
                 safeMoney(session.getTotal()),
-                orders
+                orders,
+                session.getId(),
+                session.getStatus(),
+                !history.isEmpty()
         );
     }
 
@@ -210,97 +210,74 @@ public class TableService {
         );
     }
 
-    // 結帳
-    @Transactional
-    public void checkout(
-            String tableNumber,
-            String paymentMethod
-    ) {
-
-        // 驗證付款方式
-        if (paymentMethod == null || paymentMethod.isBlank()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "請選擇付款方式"
-            );
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public SettleResponse settle(Long sessionId, CheckoutRequest request) {
+        if (request == null || request.method() == null || !PAYMENT_METHODS.contains(request.method())
+                || request.expectedTotal() == null || request.expectedTotal().signum() < 0) {
+            throw SettlementException.validation("請提供付款方式與有效的預期金額");
         }
+        DiningSessionEntity session = lockOpenSession(sessionId);
+        DiningTableEntity table = lockOccupiedTable(session);
 
-        String method = paymentMethod.trim().toUpperCase(Locale.ROOT);
-
-        //  credit 對到資料庫 CARD
-        if ("CREDIT".equals(method)) {
-            method = "CARD";
+        // Same session lock as submit/cancel. The calculator flushes JPA and reads valid snapshots.
+        BillingCalculator.Amount amount = billingCalculator.recalculateAndStore(session);
+        if (amount.total().compareTo(request.expectedTotal()) != 0) {
+            throw SettlementException.billChanged(toDetail(table, session));
         }
-
-        if (!PAYMENT_METHODS.contains(method)) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST, "不支援的付款方式"
-            );
-        }
-
-        // 鎖定桌位
-        DiningTableEntity table = tableRepository
-                .findWithLockByTableNo(tableNumber)
-                .orElseThrow(() ->
-                        new ResponseStatusException(
-                                HttpStatus.NOT_FOUND,
-                                "找不到桌位：" + tableNumber
-                        )
-                );
-
-        // 鎖定目前 用餐紀錄
-        List<DiningSessionEntity> sessions = sessionRepository
-                .findWithLockByTableIdAndStatus(
-                        table.getId(),
-                        "OPEN"
-                );
-
-        if (sessions.isEmpty()) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "此桌目前沒有可結帳的用餐紀錄"
-            );
-        }
-
-        if (sessions.size() != 1) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "此桌存在多筆未結帳用餐紀錄"
-            );
-        }
-
-        DiningSessionEntity session = sessions.get(0);
-
-        // 取得結帳金額
-        BigDecimal amount = safeMoney(session.getTotal());
-
-        if (amount.compareTo(BigDecimal.ZERO) < 0) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "結帳金額異常"
-            );
-        }
-
-        // 新增付款紀錄
         PaymentEntity payment = new PaymentEntity();
-        payment.setDiningSessionId(session.getId());
-        payment.setMethod(method);
-        payment.setAmount(amount);
+        payment.setDiningSessionId(sessionId);
+        payment.setMethod(request.method());
+        payment.setAmount(amount.total());
         payment.setStatus("SUCCESS");
-        payment.setPaidAt(LocalDateTime.now());
-
+        LocalDateTime closedAt = LocalDateTime.now();
+        payment.setPaidAt(closedAt);
         paymentRepository.save(payment);
 
-        // 更新用餐狀態
         session.setStatus("PAID");
-        session.setClosedAt(LocalDateTime.now());
-        menuCheckoutNotifier.completeAfterCommit(session.getId());
-
-        sessionRepository.save(session);
-
-        // 更新桌位狀態
+        session.setClosedAt(closedAt);
+        if (menuCheckoutNotifier.completeAfterCommit(sessionId, "PAID")) session.increaseCartVersion();
         table.setStatus("CLEANING");
+        tableStatusNotifier.notifyAfterCommit(table);
+        return new SettleResponse(sessionId, "PAID", request.method(), amount.total(),
+                table.getTableNo(), table.getStatus(), closedAt);
+    }
 
-        tableRepository.save(table);
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public CancelSessionResponse cancel(Long sessionId) {
+        DiningSessionEntity session = lockOpenSession(sessionId);
+        DiningTableEntity table = lockOccupiedTable(session);
+        if (!ticketRepository.findByDiningSessionIdOrderBySequenceNoDesc(sessionId).isEmpty()) {
+            throw SettlementException.conflict("SESSION_HAS_ORDERS", "此用餐場次已有點餐，無法取消");
+        }
+        billingCalculator.recalculateAndStore(session);
+        LocalDateTime closedAt = LocalDateTime.now();
+        session.setStatus("CANCELLED");
+        session.setClosedAt(closedAt);
+        if (menuCheckoutNotifier.completeAfterCommit(sessionId, "CANCELLED")) session.increaseCartVersion();
+        table.setStatus("AVAILABLE");
+        tableStatusNotifier.notifyAfterCommit(table);
+        return new CancelSessionResponse(sessionId, "CANCELLED", table.getTableNo(),
+                table.getStatus(), closedAt);
+    }
+
+    private DiningSessionEntity lockOpenSession(Long sessionId) {
+        DiningSessionEntity session = sessionRepository.findWithLockById(sessionId)
+                .orElseThrow(SettlementException::notFound);
+        if (!"OPEN".equals(session.getStatus())) throw SettlementException.closed(session.getStatus());
+        return session;
+    }
+
+    private DiningTableEntity lockOccupiedTable(DiningSessionEntity session) {
+        DiningTableEntity table = tableRepository.findByIdForUpdate(session.getTableId())
+                .orElseThrow(() -> SettlementException.conflict("TABLE_NOT_OCCUPIED", "桌位無法結束用餐"));
+        if (!"OCCUPIED".equals(table.getStatus())) {
+            throw SettlementException.conflict("TABLE_NOT_OCCUPIED", "桌位目前不是用餐中");
+        }
+        List<Long> openSessionIds = sessionRepository.findOpenSessionIdsByTableId(table.getId());
+        if (openSessionIds.size() != 1 || !session.getId().equals(openSessionIds.get(0))) {
+            throw SettlementException.conflict("TABLE_SESSION_CONFLICT", "此桌有其他進行中的用餐場次");
+        }
+        return table;
     }
 
     // 金額 null 防護

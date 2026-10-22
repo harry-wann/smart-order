@@ -8,14 +8,22 @@ export type TableActivity = {
   sequenceNo: number; itemCount: number; amount: number; occurredAt: string;
 }
 
+export type SessionClosedEvent = {
+  type: 'SESSION_CLOSED'
+  sessionId: number | string
+  reason?: 'PAID' | 'CANCELLED' | string
+}
+
 export default function useCartWebSocket(
   sessionId: string | undefined,
   onCartUpdate: () => void,
   onActivity?: (activity: TableActivity) => void,
   onConnectionChange?: (connected: boolean) => void,
+  onSessionClosed?: (event: SessionClosedEvent) => void,
 ) {
   useEffect(() => {
     if (!sessionId) return
+    let disposed = false
 
     const client = new Client({
       // 使用目前網站的主機建立 WebSocket 連線
@@ -32,6 +40,7 @@ export default function useCartWebSocket(
 
       // 成功連線
       onConnect: () => {
+        if (disposed) return
         onConnectionChange?.(true)
         console.log('WebSocket 已連線')
 
@@ -39,12 +48,17 @@ export default function useCartWebSocket(
         client.subscribe('/user/queue/cart-updates', (message) => {
           try {
             const data: unknown = JSON.parse(message.body)
+            if (disposed) return
             if (
               typeof data === 'object' &&
               data !== null &&
               'sessionId' in data &&
               String(data.sessionId) === String(sessionId)
             ) {
+              if ('type' in data && data.type === 'SESSION_CLOSED') {
+                onSessionClosed?.(data as SessionClosedEvent)
+                return
+              }
               onCartUpdate()
               if ('eventId' in data && 'actorDeviceId' in data && data.actorDeviceId !== getDeviceId()) {
                 onActivity?.(data as TableActivity)
@@ -76,7 +90,8 @@ export default function useCartWebSocket(
     client.activate()
 
     return () => {
+      disposed = true
       void client.deactivate()
     }
-  }, [sessionId, onCartUpdate, onActivity, onConnectionChange])
+  }, [sessionId, onCartUpdate, onActivity, onConnectionChange, onSessionClosed])
 }

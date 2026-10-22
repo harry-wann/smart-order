@@ -14,7 +14,10 @@ public record TableDetailResponse(
         BigDecimal subtotal,
         BigDecimal serviceFee,
         BigDecimal total,
-        List<OrderDto> orders
+        List<OrderDto> orders,
+        Long sessionId,
+        String sessionStatus,
+        boolean hasOrderHistory
 ) {
 
     public record OrderDto(
