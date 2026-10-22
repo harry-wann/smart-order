@@ -129,7 +129,11 @@ class TableActivityTests {
             OrderItemEntity item = invocation.getArgument(0); item.setId(9L); return item;
         });
         when(items.findByOrderTicketIdAndStatusNotOrderByIdAsc(8L, "CANCELLED")).thenReturn(List.of());
-        var service = new OrderSubmitService(sessions, carts, cartOptions, tickets, items, options);
+        var service = new OrderSubmitService(sessions, carts, cartOptions, tickets, items, options,
+                mock(InventoryRepository.class), mock(MenuItemRepository.class),
+                mock(tw.ispan.smartorder.service.OrderValidationService.class),
+                mock(tw.ispan.smartorder.service.BillingCalculator.class),
+                mock(tw.ispan.smartorder.service.MenuStatusNotifier.class));
         ReflectionTestUtils.setField(service, "notifications", notifications);
         ReflectionTestUtils.setField(service, "kitchenNotificationService",
                 mock(tw.ispan.smartorder.service.KitchenNotificationService.class));

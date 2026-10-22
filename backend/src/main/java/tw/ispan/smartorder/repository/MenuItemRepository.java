@@ -1,6 +1,7 @@
 package tw.ispan.smartorder.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import tw.ispan.smartorder.dto.AdminMenuItemDto;
@@ -10,6 +11,9 @@ import tw.ispan.smartorder.entity.MenuItemEntity;
 import java.util.List;
 
 public interface MenuItemRepository extends JpaRepository<MenuItemEntity,Long> {
+    @Modifying
+    @Query(value = "UPDATE menu_item SET sold_out = :soldOut WHERE id = :menuItemId", nativeQuery = true)
+    int updateSoldOut(@Param("menuItemId") Long menuItemId, @Param("soldOut") boolean soldOut);
     List<MenuItemEntity> findByCategory_Id(Long categoryId);
     List<MenuItemEntity> findByActiveTrue();
     List<MenuItemEntity> findByActiveTrueAndCategory_Id(Long categoryId);

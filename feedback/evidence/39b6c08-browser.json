@@ -1,0 +1,82 @@
+{
+  "label": "order-integrity",
+  "testedAt": "2026-10-22T17:00:17.649Z",
+  "results": [
+    {
+      "path": "/admin/table_overview",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/seats",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/waitlist",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/reservations",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/kitchen",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/menu",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/options",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/table/A03",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/order/menu",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/order/cart/50",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/order/history",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/member/login",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/reserve/guest",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/reserve/datetime",
+      "passed": true,
+      "errors": []
+    }
+  ],
+  "passed": true
+}
