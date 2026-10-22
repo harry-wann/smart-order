@@ -481,7 +481,7 @@ export default function OrderCart() {
           {/* 送出按鈕 */}
           <div className="mt-3">
             <SOButton
-              height="h-9"
+              height="h-13"
               variant="danger"
               onClick={handleSubmit}
               disabled={busy || locked || loading || cartItems.length === 0}

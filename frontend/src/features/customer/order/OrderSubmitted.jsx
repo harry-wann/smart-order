@@ -170,7 +170,7 @@ export default function OrderSubmitted() {
         <div className="mt-3">
           <SOButton
             variant="danger"
-            height="h-9"
+            height="h-13"
             onClick={() => navigate('/order/menu')}
             content={[
               <div key="param-1" className="flex items-center gap-1">
@@ -184,7 +184,7 @@ export default function OrderSubmitted() {
         <div className="mt-3">
           <SOButton
             variant="secondary"
-            height="h-9"
+            height="h-13"
             onClick={() => navigate('/order/history')}
             content={[
               <div key="param-1" className="flex items-center gap-1">
