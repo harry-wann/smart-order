@@ -22,7 +22,7 @@
       </div>
       <h1>點餐金額與取消狀態要前後一致</h1>
       <p class="lede">這篇把獨立審查已確認的五項問題，整理成「原問題情境、目前程式怎麼修、逐步核對」三部分，方便新手沿著程式和資料理解整筆交易。</p>
-      <p class="intro-note"><strong>目前狀態：</strong>五項點餐交易問題已完成修正與指定冒煙核對，程式修正 commit：<code>39b6c08</code>。五項是原審查確認的缺失；本文依可追溯的修改紀錄區分原始實作與後續收尾，不把後續完成項目歸為原作者獨力成果。櫃檯結帳整合仍待整理。</p>
+      <p class="intro-note"><strong>目前狀態：</strong>五項點餐交易問題已完成修正與指定冒煙核對，程式修正 commit：<code>39b6c08</code>。五項是原審查確認的缺失；本文依可追溯的修改紀錄區分原始實作與後續收尾，不把後續完成項目歸為原作者獨力成果。櫃檯結帳已由 <code>b0c2432</code> 接齊，詳見<a class="subtle-link" href="checkout.html">櫃檯結帳與場次安全</a>。</p>
     </header>
 
     <main class="person-layout">
@@ -67,7 +67,7 @@
             <li>瀏覽器介面的 15 條主要操作路徑通過。</li>
           </ul>
           <p><strong>原始結果：</strong><a class="subtle-link" href="../evidence/39b6c08-http.json">後端與資料庫核對報告（214 項）</a> · <a class="subtle-link" href="../evidence/39b6c08-browser.json">瀏覽器核對報告（15 條路徑）</a></p>
-          <p class="muted"><strong>驗證界線：</strong>這是針對本次指定案例的冒煙核對，不代表所有錯誤路徑與完整回歸都已覆蓋。櫃檯結帳的完整整理和整合仍待後續處理；本文不宣稱結帳頁已共用送單與取消使用的金額計算器。</p>
+          <p class="muted"><strong>驗證界線：</strong>這是針對本次指定案例的冒煙核對，不代表所有錯誤路徑與完整回歸都已覆蓋。本文記錄的是 <code>39b6c08</code> 的送單與取消驗證；其後櫃檯結帳已由 <code>b0c2432</code> 接入送單與取消共用的 <code>BillingCalculator</code>，結帳驗收範圍見<a class="subtle-link" href="checkout.html">結帳文章</a>。</p>
         </section>
 
         <section class="section-card" id="stale-price">
@@ -167,7 +167,7 @@
               <li>在隔離測試桌只送出一份 100 元餐點，確認原帳單含 10 元服務費，總額 110 元。</li>
               <li>從廚房看板取消該餐點，再重新載入櫃檯帳單。</li>
               <li>確認取消列不計入有效明細；此例沒有其他餐點時，小計、服務費和總額都應回到 0.00 元。</li>
-              <li>確認送單與取消路徑的有效明細金額一致；櫃檯結帳頁的完整整理與整合留待後續工作。</li>
+              <li>確認送單與取消路徑的有效明細金額一致；櫃檯端後續以共用的 <code>BillingCalculator</code> 核算並檢查預期總額，詳見<a class="subtle-link" href="checkout.html">結帳文章</a>。</li>
             </ol>
           </details>
         </section>
@@ -228,7 +228,7 @@
           <span class="section-kicker">08 · 審查建議</span>
           <h2>本次審查建議（技術前輩角度）</h2>
           <div class="note-card feedback">
-            <p>以 <code>BigDecimal</code>（Java 用來表示十進位數值的類別）表示金額是好的起點，也要明確規定精度和捨入時機。本次送單與取消已使用同一個計算器；櫃檯與結帳下一步仍需整理並核對相同規則。</p>
+            <p>以 <code>BigDecimal</code>（Java 用來表示十進位數值的類別）表示金額是好的起點，也要明確規定精度和捨入時機。送單、取消與後續櫃檯結帳已共用 <code>BillingCalculator</code>；結帳金額變更的確認方式另見<a class="subtle-link" href="checkout.html">櫃檯結帳與場次安全</a>。</p>
             <p>取消操作會同時影響點餐單、明細和用餐場次帳單。應把彼此相依的狀態更新放在正確的資料庫交易邊界，並由有效明細重算金額；發生錯誤時要能整組回滾，避免資料只更新一半。</p>
             <p>面試時要能用一筆具體案例說明：哪一步失敗、為什麼需要回滾、訂單快照保存了什麼、取消後帳單如何從有效明細重算。只列出 <code>BigDecimal</code> 或資料庫交易的名稱，還不足以說明設計判斷。</p>
           </div>
