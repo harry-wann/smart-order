@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import SOButton from '@/components/SOButton'
 import { getOrderTicket } from '@/services/api/order/orderApi'
 
 export default function OrderSubmitted() {
+  const pageRef = useRef(null)
   const { orderTicketId } = useParams()
   const navigate = useNavigate()
 
@@ -11,6 +12,26 @@ export default function OrderSubmitted() {
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  // 隱藏此頁外層捲動容器的側邊捲軸，保留捲動功能。
+  useEffect(() => {
+    const scrollContainer = pageRef.current?.parentElement
+    if (!scrollContainer) return
+
+    const className = 'order-submitted-no-scrollbar'
+    const style = document.createElement('style')
+    style.textContent = `.${className}::-webkit-scrollbar { display: none; }`
+
+    scrollContainer.classList.add(className)
+    scrollContainer.style.scrollbarWidth = 'none'
+    document.head.appendChild(style)
+
+    return () => {
+      scrollContainer.classList.remove(className)
+      scrollContainer.style.removeProperty('scrollbar-width')
+      style.remove()
+    }
+  }, [])
 
   // 取得訂單
   useEffect(() => {
@@ -73,7 +94,7 @@ export default function OrderSubmitted() {
   }
 
   return (
-    <div className="flex min-h-203 w-full flex-col bg-surface-2">
+    <div ref={pageRef} className="flex min-h-203 w-full flex-col bg-surface-2">
       {/* 上方成功內容區：375 × 659 */}
       <main className="flex min-h-164.75 flex-1 flex-col items-center px-6 pt-26.25">
         {/* 成功圖示 */}
@@ -149,7 +170,7 @@ export default function OrderSubmitted() {
         <div className="mt-3">
           <SOButton
             variant="danger"
-            height="h-9"
+            height="h-13"
             onClick={() => navigate('/order/menu')}
             content={[
               <div key="param-1" className="flex items-center gap-1">
@@ -163,7 +184,7 @@ export default function OrderSubmitted() {
         <div className="mt-3">
           <SOButton
             variant="secondary"
-            height="h-9"
+            height="h-13"
             onClick={() => navigate('/order/history')}
             content={[
               <div key="param-1" className="flex items-center gap-1">
