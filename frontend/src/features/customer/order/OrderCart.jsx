@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 
 import CustomerTopBar from '@/components/CustomerTopBar'
-import Counter from '@/components/steper/Counter'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import SOButton from '@/components/SOButton'
 
@@ -17,113 +16,148 @@ import useCartWebSocket from '@/services/realtime/useCartWebSocket'
 
 export default function OrderCart() {
   const navigate = useNavigate()
-  const [counterVersion, setCounterVersion] = useState(0)
-  // 從網址取得用餐場次 ID
   const { sessionId } = useParams()
 
-  // 購物車資料
   const [cartItems, setCartItems] = useState([])
   const [currentTableNumber, setCurrentTableNumber] = useState('')
   const [locked, setLocked] = useState(false)
+  const [cartVersion, setCartVersion] = useState(0)
+  const [sessionEpoch, setSessionEpoch] = useState(0)
 
-  // 頁面狀態
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
-  // 購物車版本
-  const [cartVersion, setCartVersion] = useState(0)
-
-  // 保存目前最新的購物車版本
   const latestVersion = useRef(0)
-
-  // 避免舊的 API 回應覆蓋新資料
   const requestId = useRef(0)
-
-  // 紀錄目前資料所屬的用餐場次
   const activeSessionId = useRef(sessionId)
+  const sessionGeneration = useRef(0)
+  const lifecycleGeneration = useRef(0)
+  const mountedRef = useRef(false)
+  const busyRef = useRef(false)
 
-  // 取得最新購物車
-  const loadCart = useCallback(async () => {
-    if (!sessionId) return
+  const loadCart = useCallback(async ({ clearError = true, expectedGeneration = sessionEpoch } = {}) => {
+    if (
+      !sessionId ||
+      !mountedRef.current ||
+      !isCurrentSession(activeSessionId, sessionGeneration, sessionId, expectedGeneration)
+    ) {
+      return false
+    }
 
     const currentRequest = ++requestId.current
 
     try {
       const data = await getCart(sessionId)
-
-      // 如果有更新的請求，忽略舊回應
-      if (currentRequest !== requestId.current) return
-
-      // 如果已經切換用餐場次，忽略舊回應
-      if (activeSessionId.current !== sessionId) return
+      if (
+        currentRequest !== requestId.current ||
+        !mountedRef.current ||
+        !isCurrentSession(activeSessionId, sessionGeneration, sessionId, expectedGeneration)
+      ) {
+        return false
+      }
 
       const newVersion = Number(data.cartVersion ?? 0)
-
-      // 只接受相同或更新版本的資料
       if (newVersion >= latestVersion.current) {
         latestVersion.current = newVersion
-
         setCartVersion(newVersion)
         setCartItems(data.items ?? [])
         setLocked(Boolean(data.locked))
         setCurrentTableNumber(data.tableNumber ?? '')
       }
 
-      setError('')
+      if (clearError) setError('')
+      return true
     } catch (err) {
-      // 只讓目前最新請求回報錯誤
       if (
         currentRequest === requestId.current &&
-        activeSessionId.current === sessionId
+        mountedRef.current &&
+        isCurrentSession(activeSessionId, sessionGeneration, sessionId, expectedGeneration)
       ) {
         throw err
       }
+      return false
     }
-  }, [sessionId])
+  }, [sessionId, sessionEpoch])
 
-  // WebSocket 即時通知 收到通知時，重新呼叫 GET API
+  useLayoutEffect(() => {
+    lifecycleGeneration.current += 1
+    const lifecycle = lifecycleGeneration.current
+    mountedRef.current = true
+
+    return () => {
+      mountedRef.current = false
+      if (lifecycleGeneration.current === lifecycle) lifecycleGeneration.current += 1
+      requestId.current += 1
+      busyRef.current = false
+    }
+  }, [])
+
   const handleCartUpdate = useCallback(() => {
-    loadCart().catch((err) => {
+    loadCart({ expectedGeneration: sessionEpoch }).catch((err) => {
+      if (
+        !mountedRef.current ||
+        !isCurrentSession(activeSessionId, sessionGeneration, sessionId, sessionEpoch)
+      ) {
+        return
+      }
       console.error('WebSocket 更新購物車失敗：', err)
-      setError(err.message)
+      setError(getCartErrorMessage(err))
     })
-  }, [loadCart])
+  }, [loadCart, sessionEpoch, sessionId])
 
-  // 訂閱目前客人的購物車通知
   useCartWebSocket(sessionId, handleCartUpdate)
 
-  // 頁面首次載入
-  useEffect(() => {
-    let active = true
+  useLayoutEffect(() => {
+    if (activeSessionId.current === sessionId) return
 
-    // 切換用餐場次時重設狀態
     activeSessionId.current = sessionId
+    sessionGeneration.current += 1
+    const nextEpoch = sessionGeneration.current
+    setSessionEpoch(nextEpoch)
+
     requestId.current += 1
     latestVersion.current = 0
+    busyRef.current = false
 
     setCartItems([])
     setCurrentTableNumber('')
     setLocked(false)
     setCartVersion(0)
     setError('')
+    setBusy(false)
     setLoading(true)
+  }, [sessionId])
+
+  useEffect(() => {
+    let active = true
+    const expectedGeneration = sessionEpoch
 
     async function initializeCart() {
       if (!sessionId) {
-        setError('找不到目前的用餐場次')
-        setLoading(false)
+        if (isCurrentSession(activeSessionId, sessionGeneration, sessionId, expectedGeneration)) {
+          setError('找不到目前的用餐場次')
+          setLoading(false)
+        }
         return
       }
 
       try {
-        await loadCart()
+        await loadCart({ expectedGeneration })
       } catch (err) {
-        if (active) {
-          setError(err.message)
+        if (
+          active &&
+          mountedRef.current &&
+          isCurrentSession(activeSessionId, sessionGeneration, sessionId, expectedGeneration)
+        ) {
+          setError(getCartErrorMessage(err))
         }
       } finally {
-        if (active) {
+        if (
+          active &&
+          mountedRef.current &&
+          isCurrentSession(activeSessionId, sessionGeneration, sessionId, expectedGeneration)
+        ) {
           setLoading(false)
         }
       }
@@ -133,372 +167,469 @@ export default function OrderCart() {
 
     return () => {
       active = false
-      requestId.current += 1
-    }
-  }, [sessionId, loadCart])
-
-  // 手機切回頁面時同步
-
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        loadCart().catch((err) => {
-          console.error('重新取得購物車失敗：', err)
-          setError(err.message)
-        })
+      if (
+        isCurrentSession(activeSessionId, sessionGeneration, sessionId, expectedGeneration)
+      ) {
+        requestId.current += 1
       }
     }
+  }, [sessionId, sessionEpoch, loadCart])
 
-    document.addEventListener(
-      'visibilitychange',
-      handleVisibilityChange,
-    )
+  useEffect(() => {
+    const expectedGeneration = sessionEpoch
+    const handleVisibilityChange = () => {
+      if (document.hidden) return
 
-    return () => {
-      document.removeEventListener(
-        'visibilitychange',
-        handleVisibilityChange,
-      )
+      loadCart({ expectedGeneration }).catch((err) => {
+        if (
+          !mountedRef.current ||
+          !isCurrentSession(activeSessionId, sessionGeneration, sessionId, expectedGeneration)
+        ) {
+          return
+        }
+        console.error('重新取得購物車失敗：', err)
+        setError(getCartErrorMessage(err))
+      })
     }
-  }, [loadCart])
 
-  // 修改商品數量
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [loadCart, sessionEpoch, sessionId])
 
-  const handleQuantityChange = async (item, newQuantity) => {
-    if (busy || locked || !item.canEdit) return
-
+  const beginBusyAction = () => {
+    if (
+      busyRef.current ||
+      !mountedRef.current ||
+      !isCurrentSession(activeSessionId, sessionGeneration, sessionId, sessionEpoch)
+    ) {
+      return null
+    }
+    busyRef.current = true
     setBusy(true)
     setError('')
+    return {
+      sessionId,
+      generation: sessionEpoch,
+      lifecycle: lifecycleGeneration.current,
+    }
+  }
+
+  const isCurrentAction = (action) => Boolean(
+    action &&
+    mountedRef.current &&
+    action.lifecycle === lifecycleGeneration.current &&
+    isCurrentSession(
+      activeSessionId,
+      sessionGeneration,
+      action.sessionId,
+      action.generation,
+    ),
+  )
+
+  const finishBusyAction = (action) => {
+    if (!isCurrentAction(action)) return
+    busyRef.current = false
+    setBusy(false)
+  }
+
+  const reloadAfterActionError = async (message, action) => {
+    if (!isCurrentAction(action)) return
+    setError(message)
+    try {
+      await loadCart({ clearError: false, expectedGeneration: action.generation })
+    } catch (reloadError) {
+      if (!isCurrentAction(action)) return
+      console.error('重新取得購物車失敗：', reloadError)
+    }
+  }
+
+  const handleQuantityChange = async (item, newQuantity) => {
+    if (locked || !isOwnCartItem(item)) return
+    const action = beginBusyAction()
+    if (!action) return
 
     try {
       if (newQuantity === 0) {
-        // 數量變成 0，刪除商品
-        await deleteCartItem(sessionId, item.id)
+        await deleteCartItem(action.sessionId, item.id)
       } else {
-        // 修改商品數量
-        await updateCartQuantity(
-          sessionId,
-          item.id,
-          newQuantity,
-        )
+        await updateCartQuantity(action.sessionId, item.id, newQuantity)
       }
-
-      // 修改成功後立即更新自己的畫面
-      await loadCart()
+      if (!isCurrentAction(action)) return
+      await loadCart({ expectedGeneration: action.generation })
     } catch (err) {
-      setError(err.message)
-
-      // 發生錯誤時重新查詢，還原畫面
-      try {
-        await loadCart()
-      } catch (reloadError) {
-        console.error('重新取得購物車失敗：', reloadError)
-      }
+      if (!isCurrentAction(action)) return
+      await reloadAfterActionError(getCartErrorMessage(err), action)
     } finally {
-      setCounterVersion((version) => version + 1)
-      setBusy(false)
+      finishBusyAction(action)
     }
   }
-
-  // 刪除商品
 
   const handleDelete = async (item) => {
-    if (busy || locked || !item.canEdit) return
-
-    setBusy(true)
-    setError('')
+    if (locked || !isOwnCartItem(item)) return
+    const action = beginBusyAction()
+    if (!action) return
 
     try {
-      await deleteCartItem(sessionId, item.id)
-
-      // 刪除成功後立即更新畫面
-      await loadCart()
+      await deleteCartItem(action.sessionId, item.id)
+      if (!isCurrentAction(action)) return
+      await loadCart({ expectedGeneration: action.generation })
     } catch (err) {
-      setError(err.message)
-
-      try {
-        await loadCart()
-      } catch (reloadError) {
-        console.error('重新取得購物車失敗：', reloadError)
-      }
+      if (!isCurrentAction(action)) return
+      await reloadAfterActionError(getCartErrorMessage(err), action)
     } finally {
-      setBusy(false)
+      finishBusyAction(action)
     }
   }
 
-  // 送出自己的訂單
-
-  const handleSubmit = async () => {
+  const retryCart = async () => {
+    const expectedGeneration = sessionEpoch
     if (
-      busy ||
-      locked ||
+      !sessionId ||
+      !mountedRef.current ||
+      busyRef.current ||
       loading ||
-      cartItems.length === 0
+      !isCurrentSession(activeSessionId, sessionGeneration, sessionId, expectedGeneration)
     ) {
       return
     }
-
-    setBusy(true)
-    setError('')
-
+    setLoading(true)
     try {
-      // 個人送單由後端依驗證身分處理
-      const result = await submitOrder(sessionId)
-
-      // 送出成功後進入訂單完成頁
-      navigate(`/order/submitted/${(result.orderTicketId ?? result.id)}`)
+      await loadCart({ expectedGeneration })
     } catch (err) {
-      setError(err.message)
-
-      try {
-        await loadCart()
-      } catch (reloadError) {
-        console.error('重新取得購物車失敗：', reloadError)
+      if (
+        !mountedRef.current ||
+        !isCurrentSession(activeSessionId, sessionGeneration, sessionId, expectedGeneration)
+      ) {
+        return
       }
+      setError(getCartErrorMessage(err))
     } finally {
-      setBusy(false)
+      if (
+        mountedRef.current &&
+        isCurrentSession(activeSessionId, sessionGeneration, sessionId, expectedGeneration)
+      ) {
+        setLoading(false)
+      }
     }
   }
 
-  // 計算整桌購物車數量
+  const handleSubmit = async () => {
+    const myItems = cartItems.filter(isOwnCartItem)
+    if (locked || loading || myItems.length === 0) return
+    const action = beginBusyAction()
+    if (!action) return
 
-  const totalQuantity = cartItems.reduce(
-    (total, item) => total + Number(item.quantity),
-    0,
-  )
+    try {
+      const result = await submitOrder(action.sessionId)
+      if (!isCurrentAction(action)) return
+      navigate(`/order/submitted/${(result.orderTicketId ?? result.id)}`)
+    } catch (err) {
+      if (!isCurrentAction(action)) return
+      await reloadAfterActionError(getCartErrorMessage(err), action)
+    } finally {
+      finishBusyAction(action)
+    }
+  }
 
-  // 計算整桌購物車金額
-
-  const totalPrice = cartItems.reduce(
-    (total, item) =>
-      total +
-      Number(item.price) * Number(item.quantity),
-    0,
-  )
-
-  // 購物車畫面
+  const myItems = cartItems.filter(isOwnCartItem)
+  const tableItems = cartItems.filter((item) => !isOwnCartItem(item))
+  const myQuantity = totalQuantity(myItems)
+  const tableQuantity = totalQuantity(tableItems)
+  const mySubtotal = totalPrice(myItems)
+  const submitDisabled = busy || locked || loading || myItems.length === 0
 
   return (
-    <div className="flex h-screen w-full flex-col bg-surface-2">
-      {/* 上方標題 */}
+    <div
+      className="flex h-[100dvh] min-h-0 w-full min-w-0 flex-col overflow-hidden bg-surface-2"
+      data-cart-version={cartVersion}
+    >
       <CustomerTopBar
         title="本桌購物車"
         subTitle={
           currentTableNumber
-            ? `${currentTableNumber} 桌・共用購物車`
-            : '共用購物車'
+            ? `${currentTableNumber} 桌・各自送出自己的餐點`
+            : '各自送出自己的餐點'
         }
         showBackButton={true}
       />
 
-      {/* 同桌共用，編輯與送單仍以本人商品為限。 */}
-      <div className="flex min-h-9.75 items-center gap-2 bg-info-bg px-4 py-2">
-        <span className="type-caption text-info-ink">
-          <SvgIconMap.OrdercartPeople />
-        </span>
-
-        <p className="type-caption text-info-ink">
-          全桌商品同步顯示；只能修改及送出自己加入的餐點
+      <div className="flex shrink-0 items-start gap-2 border-b border-info-line bg-info-bg px-4 py-3">
+        <SvgIconMap.OrdercartPeople className="mt-0.5 h-5 w-5 shrink-0 text-info-ink" aria-hidden="true" />
+        <p className="type-caption min-w-0 break-words text-info-ink">
+          可查看全桌餐點；每位客人只能修改並送出自己加入的餐點。
         </p>
       </div>
 
-      {/* 已結帳鎖定 */}
       {locked && (
-        <div className="bg-warning-bg px-4 py-3">
+        <div role="status" className="shrink-0 bg-warning-bg px-4 py-3">
           <p className="type-body-sm text-hold-ink">
-            本桌已進入結帳流程或已結帳，無法繼續點餐
+            本桌已進入結帳流程或已結帳，無法繼續點餐。
           </p>
         </div>
       )}
 
-      {/* API 錯誤提示 */}
       {error && (
-        <div
-          role="alert"
-          className="bg-red-50 px-4 py-3 text-sm text-brand-600"
-        >
-          {error}
+        <div role="alert" className="flex shrink-0 items-center justify-between gap-3 bg-danger-bg px-4 py-3 text-sm text-danger-ink">
+          <p className="min-w-0 break-words">{error}</p>
+          <button
+            type="button"
+            onClick={retryCart}
+            disabled={loading || busy}
+            className="min-h-11 shrink-0 rounded-btn px-3 font-semibold underline disabled:opacity-50"
+          >
+            重試
+          </button>
         </div>
       )}
 
-      {/* 商品列表 */}
-      <main className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
+      <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 sm:px-4">
         {loading ? (
-          // 載入中
-          <div className="flex h-full items-center justify-center">
-            <p className="type-body-sm text-ink-400">
-              購物車載入中...
-            </p>
+          <div role="status" className="flex h-full min-h-48 items-center justify-center">
+            <p className="type-body-sm text-ink-600">購物車載入中…</p>
           </div>
-        ) : error && !cartItems.length ? (
-          // 載入失敗
-          <div className="flex h-full flex-col items-center justify-center">
-            <p className="type-body-sm text-ink-400">
-              無法取得購物車資料
-            </p>
-
+        ) : error && cartItems.length === 0 ? (
+          <div className="flex min-h-64 flex-col items-center justify-center rounded-3xl border border-line bg-surface px-5 py-8 text-center">
+            <p className="type-h3 text-ink-900">暫時無法取得購物車</p>
+            <p className="mt-2 type-body-sm text-ink-600">請確認網路連線後重新載入。</p>
             <button
               type="button"
-              onClick={() => {
-                setLoading(true)
-                loadCart()
-                  .catch((err) => setError(err.message))
-                  .finally(() => setLoading(false))
-              }}
-              className="mt-4 rounded-btn bg-brand-600 px-6 py-3 type-body-sm text-surface"
+              onClick={retryCart}
+              disabled={loading || busy}
+              className="mt-5 min-h-11 rounded-btn bg-brand-600 px-6 py-3 font-medium text-surface disabled:opacity-50"
             >
               重新載入
             </button>
           </div>
-        ) : cartItems.length === 0 ? (
-          // 購物車是空的
-          <div className="flex h-full flex-col items-center justify-center">
-            <p className="type-body-sm text-ink-400">
-              本桌購物車是空的
-            </p>
-
-            {!locked && (
-              <button
-                type="button"
-                onClick={() => navigate('/order/menu')}
-                className="mt-4 rounded-btn bg-brand-600 px-6 py-3 type-body-sm text-surface"
-              >
-                去看看菜單
-              </button>
-            )}
-          </div>
         ) : (
-          // 購物車商品
-          <div className="space-y-3">
-            {cartItems.map((item) => (
-              <div
-                key={item.id}
-                className="rounded-btn border border-line bg-surface p-4"
-              >
-                {/* 商品名稱 + 價格 */}
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <h2 className="type-body font-bold text-ink-900">
-                      {item.name}
-                    </h2>
+          <div className="mx-auto flex w-full max-w-xl min-w-0 flex-col gap-4 pb-2">
+            <section
+              aria-labelledby="cart-my-items-title"
+              className="min-w-0 rounded-3xl border border-brand-600/20 bg-surface p-4 shadow-card"
+            >
+              <SectionHeading
+                id="cart-my-items-title"
+                title="我的餐點"
+                summary={`${myItems.length} 道・${myQuantity} 份`}
+                description="只有你能修改這些餐點；送出時只會建立你的訂單。"
+                accent
+              />
 
-                    {/* 加入商品的人 */}
-                    <div className="mt-1 flex items-center gap-1">
-                      <SvgIconMap.OrdercartPerson />
-                      <p className="type-caption text-ink-400">
-                        {item.people}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* 商品金額 */}
-                  <p className="type-price font-bold text-brand-600">
-                    NT${' '}
-                    {(
-                      Number(item.price) *
-                      Number(item.quantity)
-                    ).toLocaleString()}
+              {myItems.length > 0 ? (
+                <div className="mt-4 flex min-w-0 flex-col gap-3">
+                  {myItems.map((item) => (
+                    <CartItemCard
+                      key={item.id}
+                      item={item}
+                      busy={busy}
+                      locked={locked}
+                      onDelete={handleDelete}
+                      onQuantityChange={handleQuantityChange}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-4 rounded-2xl bg-surface-2 px-4 py-5">
+                  <p className="type-body-sm font-semibold text-ink-900">還沒有自己的餐點</p>
+                  <p className="mt-1 type-caption text-ink-600">
+                    同桌餐點不會一起送出，挑選想吃的餐點後再送出即可。
                   </p>
                 </div>
+              )}
+            </section>
 
-                {/* 商品選項 */}
-                {(item.options ?? []).length > 0 && (
-                  <p className="mt-1 type-body-sm text-ink-400">
-                    {item.options.join(' · ')}
-                  </p>
-                )}
+            <section
+              aria-labelledby="cart-table-items-title"
+              className="min-w-0 rounded-3xl border border-line bg-surface p-4 shadow-card"
+            >
+              <SectionHeading
+                id="cart-table-items-title"
+                title="同桌餐點"
+                summary={`${tableItems.length} 道・${tableQuantity} 份`}
+                description="其他客人加入的餐點只供查看，不會列入你的訂單或小計。"
+              />
 
-                {/* 備註 */}
-                {item.note && (
-                  <p className="type-body-sm text-ink-400">
-                    備註：{item.note}
-                  </p>
-                )}
-
-                {/* 自己的商品才能修改 */}
-                {item.canEdit && !locked ? (
-                  <div className="mt-4 flex items-center justify-between">
-                    {/* 刪除按鈕 */}
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => handleDelete(item)}
-                      className="flex h-8 w-8 items-center justify-center disabled:opacity-50"
-                      aria-label={`刪除 ${item.name}`}
-                    >
-                      <SvgIconMap.OrdercartGraytrash />
-                    </button>
-
-                    {/* 數量 Counter */}
-                    <div
-                      className={
-                        busy ? 'pointer-events-none opacity-50' : ''
-                      }
-                    >
-                      <Counter
-                        key={`${item.id}-${item.quantity}-${counterVersion}`}
-                        size="small"
-                        initialCount={item.quantity}
-                        showTrash={false}
-                        onChange={(newQuantity) =>
-                          handleQuantityChange(
-                            item, newQuantity,
-                          )
-                        }
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <p className="mt-3 type-caption text-ink-400">
-                    數量 {item.quantity}・{locked ? '本桌已鎖定，無法修改' : '同桌客人加入・僅供查看'}
-                  </p>
-                )}
-              </div>
-            ))}
+              {tableItems.length > 0 ? (
+                <div className="mt-4 flex min-w-0 flex-col gap-3">
+                  {tableItems.map((item) => (
+                    <CartItemCard key={item.id} item={item} />
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-4 rounded-2xl bg-surface-2 px-4 py-4 type-caption text-ink-600">
+                  目前沒有其他客人的餐點。
+                </p>
+              )}
+            </section>
           </div>
         )}
       </main>
 
-      {/* 底部小計與送出按鈕 */}
-      {cartItems.length > 0 && (
-        <footer className="h-38.25 border-t border-line bg-surface px-4 py-4">
-          {/* 全桌小計 */}
-          <div className="flex items-center justify-between">
-            <p className="type-body-sm text-ink-400">
-              全桌小計 {totalQuantity} 項
-            </p>
-
-            <p className="type-price font-bold text-brand-600">
-              NT$ {totalPrice.toLocaleString()}
+      <footer className="z-10 shrink-0 border-t border-line bg-surface px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-4 shadow-card">
+        <div className="mx-auto w-full max-w-xl">
+          <div className="flex items-end justify-between gap-3">
+            <div className="min-w-0">
+              <p className="type-body-sm text-ink-600">我的小計</p>
+              <p className="mt-0.5 type-caption text-ink-600">{myQuantity} 份・不含服務費</p>
+            </div>
+            <p className="shrink-0 text-xl font-bold text-brand-600">
+              NT$ {mySubtotal.toLocaleString('zh-TW')}
             </p>
           </div>
 
-          {/* 說明 */}
-          <p className="mt-1 type-caption text-ink-400">
-            送出後建立個人訂單 · 服務費 10% 結帳時才算
-          </p>
+          {myItems.length === 0 && !loading && !locked && (
+            <button
+              type="button"
+              onClick={() => navigate('/order/menu')}
+              className="mt-3 min-h-11 w-full rounded-btn bg-surface-2 px-4 py-2 text-center type-body-sm font-semibold text-brand-600"
+            >
+              還沒點餐？前往菜單加點
+            </button>
+          )}
 
-          {/* 送出按鈕 */}
           <div className="mt-3">
             <SOButton
-              height="h-13"
-              variant="danger"
+              height="min-h-12 py-3"
+              variant="default"
               onClick={handleSubmit}
-              disabled={busy || locked || loading || cartItems.length === 0}
+              disabled={submitDisabled}
+              aria-label="送出我的餐點"
               content={[
-                <div
-                  key="submit"
-                  className="flex items-center gap-1"
-                >
-                  <span>
-                    {locked ? '本桌已鎖定' : busy ? '處理中...' : '送出我的點餐'}
-                  </span>
-                </div>,
+                <span key="submit-label" className="px-2 text-center">
+                  {locked
+                    ? '本桌已鎖定'
+                    : busy
+                      ? '處理中…'
+                      : myItems.length === 0
+                        ? '先加點再送出'
+                        : '送出我的餐點'}
+                </span>,
               ]}
             />
           </div>
-        </footer>
-      )}
+        </div>
+      </footer>
     </div>
   )
+}
+
+function SectionHeading({ id, title, summary, description, accent = false }) {
+  return (
+    <header className="min-w-0">
+      <div className="flex min-w-0 items-center justify-between gap-2">
+        <h2 id={id} className="type-h3 min-w-0 break-words text-ink-900">{title}</h2>
+        <span className={`shrink-0 rounded-full px-3 py-1 type-caption font-semibold ${accent ? 'bg-brand-100 text-brand-700' : 'bg-surface-2 text-ink-600'}`}>
+          {summary}
+        </span>
+      </div>
+      <p className="mt-1 type-caption break-words text-ink-600">{description}</p>
+    </header>
+  )
+}
+
+function CartItemCard({ item, busy = false, locked = false, onDelete, onQuantityChange }) {
+  const editable = Boolean(isOwnCartItem(item) && !locked && onQuantityChange)
+  const quantity = Number(item.quantity) || 0
+  const unitPrice = Number(item.price) || 0
+  const lineTotal = unitPrice * quantity
+  const options = Array.isArray(item.options) ? item.options : []
+
+  return (
+    <article className="min-w-0 rounded-2xl border border-line bg-surface p-4">
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <h3 className="type-body break-words font-bold text-ink-900">{item.name}</h3>
+          <div className="mt-1 flex min-w-0 items-center gap-1.5 text-ink-600">
+            <SvgIconMap.OrdercartPerson className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <p className="type-caption min-w-0 break-words">{item.people || '同桌客人加入'}</p>
+          </div>
+        </div>
+        <p className="shrink-0 text-right type-price font-bold text-brand-600">
+          NT$ {lineTotal.toLocaleString('zh-TW')}
+        </p>
+      </div>
+
+      {options.length > 0 && (
+        <p className="mt-2 break-words type-body-sm leading-relaxed text-ink-600">
+          {options.join(' · ')}
+        </p>
+      )}
+      {item.note && (
+        <p className="mt-1 break-words type-caption leading-relaxed text-ink-600">
+          備註：{item.note}
+        </p>
+      )}
+      <p className="mt-2 type-caption text-ink-600">
+        單價 NT$ {unitPrice.toLocaleString('zh-TW')}・{quantity} 份
+      </p>
+
+      <div className="mt-3 flex min-w-0 flex-wrap items-center justify-between gap-2 border-t border-line pt-3">
+        {editable ? (
+          <>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => onDelete(item)}
+              className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-danger-ink disabled:opacity-50"
+              aria-label={`刪除 ${item.name}`}
+            >
+              <SvgIconMap.OrdercartGraytrash aria-hidden="true" />
+            </button>
+            <div className="flex shrink-0 items-center gap-1 rounded-full border border-line bg-surface px-1">
+              <button
+                type="button"
+                disabled={busy || quantity <= 1}
+                onClick={() => onQuantityChange(item, quantity - 1)}
+                className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-lg font-medium text-ink-600 disabled:opacity-35"
+                aria-label={`減少 ${item.name} 數量`}
+              >
+                −
+              </button>
+              <span className="min-w-7 text-center font-semibold text-ink-900" aria-live="polite">
+                {quantity}
+              </span>
+              <button
+                type="button"
+                disabled={busy || quantity >= 10}
+                onClick={() => onQuantityChange(item, quantity + 1)}
+                className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-lg font-medium text-ink-600 disabled:opacity-35"
+                aria-label={`增加 ${item.name} 數量`}
+              >
+                +
+              </button>
+            </div>
+          </>
+        ) : (
+          <p className="type-caption text-ink-600">
+            {locked && isOwnCartItem(item)
+              ? `數量 ${quantity}・本桌已鎖定`
+              : `數量 ${quantity}・唯讀`}
+          </p>
+        )}
+      </div>
+    </article>
+  )
+}
+
+function isOwnCartItem(item) {
+  return Boolean(item?.isOwnItem ?? item?.canEdit)
+}
+
+function totalQuantity(items) {
+  return items.reduce((total, item) => total + (Number(item.quantity) || 0), 0)
+}
+
+function totalPrice(items) {
+  return items.reduce(
+    (total, item) => total + (Number(item.price) || 0) * (Number(item.quantity) || 0),
+    0,
+  )
+}
+
+function getCartErrorMessage(error) {
+  if (error?.code === 'CART_EMPTY') return '你的餐點已送出或已更新，請重新查看購物車。'
+  return error?.message || '購物車操作失敗，請稍後重試。'
+}
+
+function isCurrentSession(activeSessionId, sessionGeneration, expectedSessionId, expectedGeneration) {
+  return activeSessionId.current === expectedSessionId && sessionGeneration.current === expectedGeneration
 }

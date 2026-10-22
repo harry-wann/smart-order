@@ -335,10 +335,10 @@ export default function Menu() {
                 content={[
                   <div key="cart-info" className="flex items-center gap-2">
                     <SvgIconMap.OrderShoppingCart role="img" aria-label="Cart" className="h-6 w-6" />
-                    <span className="text-lg font-medium">購物車 {cartItemCount} 項</span>
+                    <span className="text-lg font-medium">本桌餐點 {cartItemCount} 份</span>
                   </div>,
                   <div key="cart-price" className="flex items-center gap-2">
-                    <span className="text-lg font-medium">NT$ {cartAmount.toLocaleString('zh-TW')}</span>
+                    <span className="text-lg font-medium">全桌 NT$ {cartAmount.toLocaleString('zh-TW')}</span>
                     <SvgIconMap.MenuRight role="img" aria-label="Right" className="h-5 w-5" />
                   </div>,
                 ]}

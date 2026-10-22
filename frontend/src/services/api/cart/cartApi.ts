@@ -15,6 +15,7 @@ export type CartItem = {
   options?: string[]
   note?: string | null
   canEdit: boolean
+  isOwnItem?: boolean
 }
 
 export type Cart = {
@@ -61,7 +62,7 @@ export async function deleteCartItem(
   return data
 }
 
-// 送出整桌訂單
+// 送出目前登入客人的餐點
 export async function submitOrder(sessionId: string) {
   const { data } = await customerClient.post<SubmitOrderResult>(
     `/dining-sessions/${sessionId}/orders`,

@@ -176,8 +176,9 @@ public class OrderCartService {
             // 商品單價 、 選項加價
             BigDecimal price = unitPrice.add(optionPrice);
 
-            boolean canEdit = !locked && cartItem.getAddedByGuest() != null
+            boolean isOwnItem = cartItem.getAddedByGuest() != null
                     && currentGuestId.equals(cartItem.getAddedByGuest().getId());
+            boolean canEdit = !locked && isOwnItem;
 
             // 建立商品 DTO
             CartItemResponse item = new CartItemResponse(
@@ -188,7 +189,8 @@ public class OrderCartService {
                     people,
                     options,
                     note,
-                    canEdit
+                    canEdit,
+                    isOwnItem
             );
             items.add(item);
         }
