@@ -11,10 +11,12 @@ import tw.ispan.smartorder.ordersubmitted.dto.OrderSubmittedResponse;
 import tw.ispan.smartorder.repository.*;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import tw.ispan.smartorder.service.BillingCalculator;
+import tw.ispan.smartorder.service.MenuStatusNotifier;
+import tw.ispan.smartorder.service.OrderValidationService;
 
 @Service
 public class OrderSubmitService {
@@ -28,19 +30,34 @@ public class OrderSubmitService {
     private final OrderTicketRepository ticketRepository;
     private final OrderItemRepository itemRepository;
     private final OrderItemOptionRepository optionRepository;
+    private final InventoryRepository inventoryRepository;
+    private final MenuItemRepository menuItemRepository;
+    private final OrderValidationService validationService;
+    private final BillingCalculator billingCalculator;
+    private final MenuStatusNotifier menuStatusNotifier;
 
     public OrderSubmitService(DiningSessionRepository sessionRepository,
                               CartItemRepository cartItemRepository,
                               CartItemOptionRepository cartItemOptionRepository,
                               OrderTicketRepository ticketRepository,
                               OrderItemRepository itemRepository,
-                              OrderItemOptionRepository optionRepository) {
+                              OrderItemOptionRepository optionRepository,
+                              InventoryRepository inventoryRepository,
+                              MenuItemRepository menuItemRepository,
+                              OrderValidationService validationService,
+                              BillingCalculator billingCalculator,
+                              MenuStatusNotifier menuStatusNotifier) {
         this.sessionRepository = sessionRepository;
         this.cartItemRepository = cartItemRepository;
         this.cartItemOptionRepository = cartItemOptionRepository;
         this.ticketRepository = ticketRepository;
         this.itemRepository = itemRepository;
         this.optionRepository = optionRepository;
+        this.inventoryRepository = inventoryRepository;
+        this.menuItemRepository = menuItemRepository;
+        this.validationService = validationService;
+        this.billingCalculator = billingCalculator;
+        this.menuStatusNotifier = menuStatusNotifier;
     }
 
     @Transactional
@@ -53,13 +70,34 @@ public class OrderSubmitService {
         DiningSessionEntity session = sessionRepository.findWithLockById(sessionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到用餐場次"));
         if (!"OPEN".equals(session.getStatus())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "此桌已停止點餐");
+            throw ApiException.conflict("SESSION_CLOSED", "此桌已停止點餐");
         }
 
         List<CartItemEntity> cartItems = cartItemRepository
                 .findByDiningSession_IdAndAddedByGuest_IdOrderByIdAsc(sessionId, guestId);
         if (cartItems.isEmpty()) {
             throw ApiException.conflict("CART_EMPTY", "你的購物車沒有商品");
+        }
+
+        List<OrderValidationService.Line> lines = validationService.validate(sessionId, cartItems);
+        Map<Long, Integer> stockNeeded = new TreeMap<>();
+        Map<Long, String> itemNames = new HashMap<>();
+        for (OrderValidationService.Line line : lines) {
+            if (line.menu().trackInventory()) {
+                stockNeeded.merge(line.menu().id(), line.cart().getQuantity(), Integer::sum);
+                itemNames.put(line.menu().id(), line.menu().name());
+            }
+        }
+        for (var entry : stockNeeded.entrySet()) {
+            Long menuItemId = entry.getKey();
+            if (inventoryRepository.decreaseIfEnough(menuItemId, entry.getValue()) != 1) {
+                throw ApiException.conflict("ITEM_SOLD_OUT", itemNames.get(menuItemId) + " 已售完");
+            }
+            Integer remaining = inventoryRepository.currentQuantity(menuItemId);
+            if (remaining != null && remaining == 0) {
+                menuItemRepository.updateSoldOut(menuItemId, true);
+                menuStatusNotifier.notifyAfterCommit(menuItemId, true);
+            }
         }
 
         List<OrderTicketEntity> previousTickets = ticketRepository
@@ -80,27 +118,20 @@ public class OrderSubmitService {
         ticket = ticketRepository.saveAndFlush(ticket);
 
         BigDecimal addedSubtotal = BigDecimal.ZERO;
-        for (CartItemEntity cart : cartItems) {
-            int quantity = cart.getQuantity() == null ? 0 : cart.getQuantity();
-            if (quantity <= 0) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "購物車商品數量不正確");
-            }
-            if (cart.getMenuItem() == null) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "購物車商品不存在");
-            }
-
-            List<CartItemOptionEntity> cartOptions = cartItemOptionRepository.findByCartItem_Id(cart.getId());
-            BigDecimal optionsPrice = cartOptions.stream()
-                    .map(option -> money(option.getOptionValue().getPriceDelta()))
+        for (OrderValidationService.Line line : lines) {
+            CartItemEntity cart = line.cart();
+            int quantity = cart.getQuantity();
+            BigDecimal optionsPrice = line.options().stream()
+                    .map(option -> money(option.priceDelta()))
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
-            BigDecimal unitPrice = money(cart.getUnitPrice());
+            BigDecimal unitPrice = line.menu().price();
             BigDecimal lineTotal = unitPrice.add(optionsPrice)
                     .multiply(BigDecimal.valueOf(quantity));
 
             OrderItemEntity orderItem = new OrderItemEntity();
             orderItem.setOrderTicketId(ticket.getId());
-            orderItem.setMenuItemId(cart.getMenuItem().getId());
-            orderItem.setItemNameSnapshot(cart.getMenuItem().getName());
+            orderItem.setMenuItemId(line.menu().id());
+            orderItem.setItemNameSnapshot(line.menu().name());
             orderItem.setUnitPriceSnapshot(unitPrice);
             orderItem.setOptionsPrice(optionsPrice);
             orderItem.setQuantity(quantity);
@@ -109,24 +140,18 @@ public class OrderSubmitService {
             orderItem.setLineTotal(lineTotal);
             orderItem = itemRepository.saveAndFlush(orderItem);
 
-            for (CartItemOptionEntity cartOption : cartOptions) {
-                OptionValueEntity value = cartOption.getOptionValue();
+            for (OrderValidationService.OptionSnapshot value : line.options()) {
                 OrderItemOptionEntity orderOption = new OrderItemOptionEntity();
                 orderOption.setOrderItemId(orderItem.getId());
-                orderOption.setGroupNameSnapshot("");          // 目前 OptionValue 沒有選項群組關聯，先保留空字串。
-                orderOption.setValueNameSnapshot(value.getName());
-                orderOption.setPriceDelta(money(value.getPriceDelta()));
+                orderOption.setGroupNameSnapshot(value.groupName());
+                orderOption.setValueNameSnapshot(value.valueName());
+                orderOption.setPriceDelta(money(value.priceDelta()));
                 optionRepository.save(orderOption);
             }
             addedSubtotal = addedSubtotal.add(lineTotal);
         }
 
-        BigDecimal subtotal = money(session.getSubtotal()).add(addedSubtotal);
-        BigDecimal serviceFee = subtotal.multiply(new BigDecimal("0.10"))
-                .setScale(0, RoundingMode.HALF_UP);
-        session.setSubtotal(subtotal);
-        session.setServiceFee(serviceFee);
-        session.setTotal(subtotal.add(serviceFee));
+        billingCalculator.recalculateAndStore(session);
         session.increaseCartVersion();
         sessionRepository.save(session);
 
