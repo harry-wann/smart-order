@@ -1,0 +1,115 @@
+{
+  "label": "personal-cart",
+  "testedAt": "2026-10-22T16:06:14.473Z",
+  "results": [
+    {
+      "path": "/admin/table_overview",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/seats",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/waitlist",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/reservations",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/kitchen",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/menu",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/options",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/table/A03",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/order/menu",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/order/cart/50",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/order/history",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/member/login",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/reserve/guest",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/reserve/datetime",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "name": "Mobile cart: mine first and others read-only",
+      "passed": true
+    },
+    {
+      "name": "Mobile cart: 390px layout",
+      "passed": true
+    },
+    {
+      "name": "Mobile cart: 320px layout",
+      "passed": true
+    },
+    {
+      "name": "Switch table: old 204 response preserves new busy state",
+      "passed": true
+    },
+    {
+      "name": "Switch table: old 409 response preserves new busy state",
+      "passed": true
+    },
+    {
+      "name": "Other guest addition synchronizes through WebSocket",
+      "passed": true,
+      "observedMilliseconds": 129
+    },
+    {
+      "name": "Mobile submit leaves the other guest cart intact",
+      "passed": true
+    },
+    {
+      "name": "Own empty cart disables submit despite other guest rows",
+      "passed": true
+    }
+  ],
+  "passed": true
+}

@@ -27,7 +27,11 @@ import java.util.List;
 // 全站那份也處理 MethodArgumentNotValidException、HttpMessageNotReadableException，
 // 沒排順序的話訂位這邊的驗證失敗會落到誰手上不一定，所以這份要排最前面。
 // 只有 controller 丟出來的例外會進來；filter 層的 401／403 不會經過這裡，那邊在 SecurityConfig 自己寫
-@RestControllerAdvice(basePackages = {"tw.ispan.smartorder.reservation", "tw.ispan.smartorder.staff"})
+@RestControllerAdvice(basePackages = {
+        "tw.ispan.smartorder.reservation",
+        "tw.ispan.smartorder.staff",
+        "tw.ispan.smartorder.ordercart.controller"
+})
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class ApiExceptionAdvice {
 

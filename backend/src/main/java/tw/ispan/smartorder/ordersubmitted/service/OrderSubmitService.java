@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import tw.ispan.smartorder.common.exception.ApiException;
 import tw.ispan.smartorder.entity.*;
 import tw.ispan.smartorder.service.KitchenNotificationService;
 import tw.ispan.smartorder.ordersubmitted.dto.OrderSubmittedResponse;
@@ -56,9 +57,9 @@ public class OrderSubmitService {
         }
 
         List<CartItemEntity> cartItems = cartItemRepository
-                .findByDiningSession_IdOrderByIdAsc(sessionId);
+                .findByDiningSession_IdAndAddedByGuest_IdOrderByIdAsc(sessionId, guestId);
         if (cartItems.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "你的購物車沒有商品");
+            throw ApiException.conflict("CART_EMPTY", "你的購物車沒有商品");
         }
 
         List<OrderTicketEntity> previousTickets = ticketRepository
