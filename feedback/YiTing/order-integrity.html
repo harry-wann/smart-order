@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7fb">
+  <title>YiTing｜點餐金額與取消資料一致性</title>
+  <link rel="stylesheet" href="../assets/feedback.css">
+</head>
+<body>
+  <div class="site-shell">
+    <nav class="topbar" aria-label="主要導覽">
+      <a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">鍋</span><span>實作回饋整理</span></a>
+      <a class="toplink" href="index.html">回 YiTing 首頁</a>
+    </nav>
+    <p class="breadcrumb"><a href="../index.html">成員索引</a> ／ <a href="index.html">YiTing</a> ／ 點餐交易資料一致性</p>
+
+    <header class="person-header">
+      <div class="meta-row">
+        <span class="scope-tag">工作包 C · 點餐交易</span>
+        <span class="status">已修正 · 指定 smoke 通過</span>
+      </div>
+      <h1>點餐金額與取消狀態要前後一致</h1>
+      <p class="lede">這篇把獨立審查已確認的五項問題，整理成「原問題情境、目前程式怎麼修、逐步核對」三部分，方便新手沿著程式和資料理解整筆交易。</p>
+      <p class="intro-note"><strong>目前狀態：</strong>五項點餐交易問題已完成修正與指定冒煙核對，程式修正 commit：<code>39b6c08</code>。五項是原審查確認的缺失；本文依可追溯的修改紀錄區分原始實作與後續收尾，不把後續完成項目歸為原作者獨力成果。櫃檯結帳整合仍待整理。</p>
+    </header>
+
+    <main class="person-layout">
+      <nav class="toc" aria-label="本頁目錄">
+        <h2>本頁目錄</h2>
+        <ol>
+          <li><a href="#scope">本篇範圍</a></li>
+          <li><a href="#verification">驗證摘要與界線</a></li>
+          <li><a href="#stale-price">送單沿用舊價格</a></li>
+          <li><a href="#group-snapshot">選項群組名稱空白</a></li>
+          <li><a href="#fee-rounding">服務費取整錯誤</a></li>
+          <li><a href="#cancel-total">取消後帳單未重算</a></li>
+          <li><a href="#ticket-state">整單取消狀態不一致</a></li>
+          <li><a href="#integrated-flow">本次一起接齊的流程</a></li>
+          <li><a href="#review">本次審查建議</a></li>
+          <li><a href="#interview">報告與面試亮點</a></li>
+          <li><a href="#resume">履歷建議</a></li>
+          <li><a href="#terms">專有名詞</a></li>
+        </ol>
+      </nav>
+
+      <div class="content-stack">
+        <section class="scope-card" id="scope">
+          <span class="section-kicker">01 · 審查範圍</span>
+          <h2>沿著一筆點餐，追蹤金額和狀態</h2>
+          <p class="section-intro">本篇保留原審查確認的五項缺失：送單價格快照、選項群組名稱快照、服務費精度、取消後帳單重算、整單取消狀態。後段另說明這次一起接齊的鍋底、選項有效性、庫存與取消回補流程；它們不是另外歸給原作者的缺失。</p>
+          <ul class="scope-list">
+            <li>送單應重新依菜單現價計算，不沿用加入購物車時的舊價。</li>
+            <li>點餐單要保留當時選項群組名稱，不能只留下空字串。</li>
+            <li>服務費保留到小數點後兩位；小計 15.00 元的 10% 是 1.50 元。</li>
+            <li>取消餐點後，帳單應依仍有效的點餐明細重新計算。</li>
+            <li>取消整張點餐單時，點餐單和其中明細的狀態應一致。</li>
+          </ul>
+        </section>
+
+        <section class="section-card" id="verification">
+          <span class="section-kicker">驗證摘要</span>
+          <h2>指定冒煙核對通過，完整回歸仍有範圍界線</h2>
+          <ul class="scope-list">
+            <li>乾淨後端打包通過，204 個來源檔案完成編譯；4 個既有測試只有編譯，沒有執行，也沒有新增測試案例。</li>
+            <li>214 項後端與資料庫冒煙核對通過：包含兩桌 10 位客人同時搶最後一份庫存只成功一位、第二品項失敗時整筆回滾、送單現價快照、選項名稱與價差快照、鍋底規則、取消回補及重複取消、已出餐與已結帳保護。</li>
+            <li>瀏覽器介面的 15 條主要操作路徑通過。</li>
+          </ul>
+          <p><strong>原始結果：</strong><a class="subtle-link" href="../evidence/39b6c08-http.json">後端與資料庫核對報告（214 項）</a> · <a class="subtle-link" href="../evidence/39b6c08-browser.json">瀏覽器核對報告（15 條路徑）</a></p>
+          <p class="muted"><strong>驗證界線：</strong>這是針對本次指定案例的冒煙核對，不代表所有錯誤路徑與完整回歸都已覆蓋。櫃檯結帳的完整整理和整合仍待後續處理；本文不宣稱結帳頁已共用送單與取消使用的金額計算器。</p>
+        </section>
+
+        <section class="section-card" id="stale-price">
+          <span class="section-kicker">02 · 價格快照</span>
+          <h2>送單時沿用加入購物車的舊價格</h2>
+          <div class="compare-grid">
+            <div class="compare-side">
+              <div class="compare-label">原問題表現</div>
+              <p>客人先把一份肉品加入購物車，之後菜單價格更新，再送出點餐。原問題是正式點餐單沿用加入購物車時保存的舊單價，帳單沒有反映送單當下的菜單價格。</p>
+            </div>
+            <div class="compare-side after">
+              <div class="compare-label">目前程式怎麼處理</div>
+              <p>加入購物車時會保存 <code>cart_item.unit_price</code>，但送單不能把它當成正式訂單價格。現在的 <code>OrderSubmitService.submitOrder()</code> 先呼叫 <code>OrderValidationService.validate()</code> 鎖定並讀取菜單當下的價格；建立明細時使用這個價格寫入 <code>unit_price_snapshot</code>，再以單價加選項價差計算明細金額。</p>
+            </div>
+          </div>
+          <p class="intro-note"><strong>目前修法：</strong><code>OrderValidationService.validate()</code> 對購物車內的菜單品項逐一讀取並鎖定目前資料；<code>OrderSubmitService.submitOrder()</code> 以回傳的 <code>MenuSnapshot.price()</code> 作為正式單價，並保存品名、單價、選項價差、數量與明細總額。如此可保留送單時價格，即使之後菜單再調整也不會改寫舊單。</p>
+          <p><strong>讀程式位置：</strong><code>backend/src/main/java/tw/ispan/smartorder/ordersubmitted/service/OrderSubmitService.java</code> 的 <code>submitOrder()</code>；<code>backend/src/main/java/tw/ispan/smartorder/service/OrderValidationService.java</code> 的 <code>validate()</code>。</p>
+          <details class="details-card">
+            <summary>手動 smoke 步驟：價格更新後再送單</summary>
+            <ol>
+              <li>在隔離測試資料中記下某品項目前菜單價格，並由客人加入購物車。</li>
+              <li>在測試環境更新該品項菜單價格，保留購物車中已加入的那列。</li>
+              <li>送出點餐後查看新點餐單的單價與帳單金額。</li>
+              <li>確認 <code>order_item.unit_price_snapshot</code> 等於送單時的菜單價格，明細金額也以該快照加選項價差計算。</li>
+            </ol>
+          </details>
+        </section>
+
+        <section class="section-card" id="group-snapshot">
+          <span class="section-kicker">03 · 選項快照</span>
+          <h2>有選項的明細，群組名稱快照是空白</h2>
+          <div class="compare-grid">
+            <div class="compare-side">
+              <div class="compare-label">原問題表現</div>
+              <p>客人為肉品選擇「份量：全份」或「加點：蔥花」後送單。原問題是明細雖有選項值，群組名稱快照卻是空字串；之後查看舊單時，無法從快照還原選項屬於哪個群組。</p>
+            </div>
+            <div class="compare-side after">
+              <div class="compare-label">目前程式怎麼處理</div>
+              <p>審查確認的舊問題是送單快照沒有保存所屬群組名稱。現在 <code>OrderValidationService.validate()</code> 會讀取選項值、所屬群組名稱與價差，組成 <code>OptionSnapshot</code>；<code>OrderSubmitService.submitOrder()</code> 再將群組名稱、值名稱及價差寫入 <code>order_item_option</code>。</p>
+            </div>
+          </div>
+          <p class="intro-note"><strong>目前修法：</strong>驗證階段會確認所選值仍有效且屬於該品項，再從選項值所屬群組取名稱。送單時將 <code>OptionSnapshot.groupName()</code>、<code>valueName()</code> 與 <code>priceDelta()</code> 寫入快照；若選項已停用或不屬於品項，整筆送單會以用戶端錯誤回應，資料庫交易不會留下半張訂單。</p>
+          <p><strong>讀程式位置：</strong><code>backend/src/main/java/tw/ispan/smartorder/service/OrderValidationService.java</code> 的選項驗證與 <code>OptionSnapshot</code>；<code>backend/src/main/java/tw/ispan/smartorder/ordersubmitted/service/OrderSubmitService.java</code> 的選項快照保存。</p>
+          <details class="details-card">
+            <summary>手動 smoke 步驟：檢查選項群組快照</summary>
+            <ol>
+              <li>選一個有群組和選項的品項，例如指定份量或加點內容，加入購物車並送單。</li>
+              <li>在測試資料庫查看該點餐明細的選項群組快照與選項值快照。</li>
+              <li>確認群組名稱、選項值名稱及價差快照都有保存，且與送單時選擇相符。</li>
+            </ol>
+          </details>
+        </section>
+
+        <section class="section-card" id="fee-rounding">
+          <span class="section-kicker">04 · 金額精度</span>
+          <h2>服務費被四捨五入到整數元</h2>
+          <div class="compare-grid">
+            <div class="compare-side">
+              <div class="compare-label">原問題表現</div>
+              <p>小計為 15.00 元、服務費率為 10% 時，服務費應是 1.50 元，總額應是 16.50 元。原問題是送單時計算曾把服務費取整到元，得到 2.00 元，總額變成 17.00 元。</p>
+            </div>
+            <div class="compare-side after">
+              <div class="compare-label">目前程式怎麼處理</div>
+              <p>服務費屬於金額，取整到整數元會造成帳單多收或少收。現在金額由 <code>BillingCalculator.calculate()</code> 從該用餐場次仍有效的訂單明細加總，服務費率為 10%，再用 <code>HALF_UP</code> 捨入至小數點後兩位。</p>
+            </div>
+          </div>
+          <p class="intro-note"><strong>目前修法：</strong><code>BillingCalculator.calculate()</code> 先把有效明細小計整理為兩位小數，再以 <code>subtotal × 0.10</code> 計算服務費並使用 <code>RoundingMode.HALF_UP</code> 保留兩位，最後計算總額。送單與取消都呼叫同一個 <code>recalculateAndStore()</code>，因此使用相同的金額規則。</p>
+          <p><strong>讀程式位置：</strong><code>backend/src/main/java/tw/ispan/smartorder/service/BillingCalculator.java</code> 的 <code>calculate()</code> 與 <code>recalculateAndStore()</code>；<code>backend/src/main/java/tw/ispan/smartorder/ordersubmitted/service/OrderSubmitService.java</code> 的 <code>submitOrder()</code>。</p>
+          <details class="details-card">
+            <summary>手動 smoke 步驟：核對小數金額</summary>
+            <ol>
+              <li>在隔離測試資料中準備小計正好為 15.00 元的點餐內容，服務費率使用 10%。</li>
+              <li>送出後查看服務費、小計與總額。</li>
+              <li>確認服務費為 1.50 元、總額為 16.50 元，而不是 2.00 元與 17.00 元。</li>
+            </ol>
+          </details>
+        </section>
+
+        <section class="section-card" id="cancel-total">
+          <span class="section-kicker">05 · 取消與帳單</span>
+          <h2>取消餐點後，用餐場次總額仍是舊金額</h2>
+          <div class="compare-grid">
+            <div class="compare-side">
+              <div class="compare-label">原問題表現</div>
+              <p>原問題情境是客人只點了一份 100 元餐點，帳單含 10 元服務費，總額為 110 元。櫃檯取消這份餐點後，明細不再列出它，但舊帳單總額仍顯示 110 元。</p>
+            </div>
+            <div class="compare-side after">
+              <div class="compare-label">目前程式怎麼處理</div>
+              <p>審查確認的舊問題是取消狀態更新後沒有同步重算帳單。現在 <code>OrderCancellationService.cancelItem()</code> 與 <code>cancelTicket()</code> 都會在同一筆交易內呼叫 <code>BillingCalculator.recalculateAndStore()</code>；計算依據排除已取消的點餐單和明細。</p>
+            </div>
+          </div>
+          <p class="intro-note"><strong>目前修法：</strong>兩種取消方法都在資料庫交易中先鎖定仍開放點餐的用餐場次，再更新取消狀態、依規則回補庫存並重算小計、服務費和總額。若其中一步失敗，交易會回復這一組資料變更。</p>
+          <p><strong>讀程式位置：</strong><code>backend/src/main/java/tw/ispan/smartorder/service/OrderCancellationService.java</code> 的 <code>cancelItem()</code>、<code>cancelTicket()</code> 與 <code>lockOpenSession()</code>；金額由 <code>BillingCalculator.recalculateAndStore()</code> 計算。</p>
+          <details class="details-card">
+            <summary>手動 smoke 步驟：取消後重新核對帳單</summary>
+            <ol>
+              <li>在隔離測試桌只送出一份 100 元餐點，確認原帳單含 10 元服務費，總額 110 元。</li>
+              <li>從廚房看板取消該餐點，再重新載入櫃檯帳單。</li>
+              <li>確認取消列不計入有效明細；此例沒有其他餐點時，小計、服務費和總額都應回到 0.00 元。</li>
+              <li>確認送單與取消路徑的有效明細金額一致；櫃檯結帳頁的完整整理與整合留待後續工作。</li>
+            </ol>
+          </details>
+        </section>
+
+        <section class="section-card" id="ticket-state">
+          <span class="section-kicker">06 · 狀態一致性</span>
+          <h2>取消整張點餐單後，點餐單與明細狀態不一致</h2>
+          <div class="compare-grid">
+            <div class="compare-side">
+              <div class="compare-label">原問題表現</div>
+              <p>原問題情境是廚房取消一整張點餐單後，點餐單狀態已改為取消，但所包含的餐點明細仍保留原狀態。畫面或後續計算若分別讀取點餐單與明細，就會對這張單是否有效得到不同答案。</p>
+            </div>
+            <div class="compare-side after">
+              <div class="compare-label">目前程式怎麼處理</div>
+              <p>審查確認的舊問題是整張取消後，點餐單與明細可能留下不同狀態。現在 <code>cancelTicket()</code> 會逐筆將仍可取消的明細改為 <code>CANCELLED</code>，再將點餐單改為 <code>CANCELLED</code>；若明細已先逐項取消，整張取消會保留其取消狀態並完成剩餘部分。</p>
+            </div>
+          </div>
+          <p class="intro-note"><strong>目前修法：</strong>整單取消只允許訂單仍在處理中，且不含已出餐明細時進行；服務以條件更新確認明細及訂單狀態仍可取消，接著回補可追蹤庫存並重算帳單。已取消的明細不會再次回補；已出餐的整單拒絕取消；已結帳的用餐場次也不能再取消。</p>
+          <p><strong>讀程式位置：</strong><code>backend/src/main/java/tw/ispan/smartorder/service/OrderCancellationService.java</code> 的 <code>cancelTicket()</code>、<code>isOpenTicket()</code>、<code>isUnserved()</code> 與條件式資料更新；資料模型為 <code>OrderTicketEntity</code> 與 <code>OrderItemEntity</code>。</p>
+          <details class="details-card">
+            <summary>手動 smoke 步驟：檢查整單及每筆明細</summary>
+            <ol>
+              <li>建立一張含兩筆餐點的測試點餐單，記下點餐單及兩筆明細的原始狀態。</li>
+              <li>從廚房看板執行整張取消。</li>
+              <li>重新查看點餐單和每筆明細，確認點餐單與所有未出餐明細都已取消，且不留下仍有效的明細。</li>
+              <li>再查看帳單，確認整單取消後金額只依仍有效的明細計算。</li>
+            </ol>
+          </details>
+        </section>
+
+        <section class="section-card" id="integrated-flow">
+          <span class="section-kicker">07 · 一起接齊的流程</span>
+          <h2>鍋底、選項、庫存與取消一起維持一致</h2>
+          <p class="section-intro">以下是送單與取消流程的實際保護措施，補足端到端交易邊界。這些是本次一起接齊的流程，不列作原作者另外五項缺失。</p>
+          <div class="note-card feedback">
+            <p><strong>鍋底規則：</strong><code>OrderValidationService.validate()</code> 先看本次送單列是否含鍋底；若沒有，再查該用餐場次是否已有未取消的鍋底訂單明細。其他客人只放在購物車、尚未送出的鍋底不算已點鍋底，所以不能替另一位客人通過規則。</p>
+            <p><strong>選項有效性：</strong>送單時會鎖定菜單、選項群組和已選選項值，重新確認品項仍上架、選項仍啟用、選項仍屬於該品項，並檢查每個群組的最少及最多選擇數。快照保存群組名稱、選項值名稱與價差。</p>
+            <p><strong>庫存競爭：</strong>送單先鎖用餐場次，再依菜單品項編號排序取得品項列鎖；實際扣庫存由 <code>InventoryRepository.decreaseIfEnough()</code> 以「庫存足夠才扣」的單一更新完成。若任何品項不足，回傳 <code>ITEM_SOLD_OUT</code>，同筆交易已執行的扣庫存，以及後續若已執行的訂單、帳單和購物車變更都會回滾，不會留下半張訂單或只刪除部分購物車。庫存扣到零時只更新 <code>sold_out</code>，不會改動 <code>active</code>。</p>
+            <p><strong>取消與回補：</strong><code>OrderCancellationService.restoreInventory()</code> 只回補 <code>track_inventory=true</code> 的品項，按品項編號排序更新庫存；不追蹤庫存的免費續加不會因此增加數量。回補後依有效明細重算帳單；庫存恢復時只解除售完標記，不會自動重新上架或改動 <code>active</code>。</p>
+            <p><strong>避免重複回補：</strong>取消服務鎖用餐場次，且用狀態條件更新明細和點餐單。已取消的明細或訂單再次送取消會直接結束，不再回補第二次；兩個請求同時取消時，後續請求會看到已變更狀態，不會再次成功更新。</p>
+            <p><strong>可取消範圍：</strong>單項取消只接受尚未出餐的明細。整單取消若包含已出餐明細就拒絕，已結帳或已關閉的場次也拒絕取消。已出餐餐點的報廢或退料屬於另一套政策，本篇不處理。</p>
+            <p><strong>即時通知時機：</strong>訂單、取消和售完狀態的通知會透過 <code>afterCommit</code> 在資料庫交易成功提交後送出。若交易回滾，就不會先讓其他畫面收到一個尚未保存的狀態。</p>
+          <p><strong>讀程式位置：</strong><code>backend/src/main/java/tw/ispan/smartorder/ordersubmitted/service/OrderSubmitService.java</code> 的 <code>submitOrder()</code>；<code>backend/src/main/java/tw/ispan/smartorder/service/OrderValidationService.java</code> 的 <code>validate()</code>；<code>backend/src/main/java/tw/ispan/smartorder/repository/InventoryRepository.java</code> 的 <code>decreaseIfEnough()</code> 與 <code>increase()</code>；<code>backend/src/main/java/tw/ispan/smartorder/service/OrderCancellationService.java</code> 的取消、鎖定與回補方法；<code>backend/src/main/java/tw/ispan/smartorder/service/BillingCalculator.java</code> 的金額計算方法。</p>
+          </div>
+          <details class="details-card">
+            <summary>逐步核對：從購物車到取消</summary>
+            <ol>
+              <li>選有選項的品項加入購物車，再停用其中一個已選選項；送單應被拒絕，購物車保留，且不留下訂單或庫存扣減。</li>
+              <li>恢復選項後，準備含多個追蹤庫存品項的購物車，讓其中一項庫存不足再送單；確認其他品項的扣減、訂單和帳單一併回滾。</li>
+              <li>先把庫存設為 1，成功送出 1 份後確認數量為 0、<code>sold_out</code> 為真而 <code>active</code> 不變；再取消未出餐明細，確認庫存只回補 1 次並只解除售完狀態。</li>
+              <li>先逐項取消一張多品項訂單中的一項，再整單取消；確認剩餘明細、訂單狀態、庫存與有效金額都相符。</li>
+              <li>分別嘗試取消已出餐項目、含已出餐明細的整單及已結帳場次；確認操作被拒絕且庫存和帳單不變。</li>
+            </ol>
+          </details>
+        </section>
+
+        <section class="section-card" id="review">
+          <span class="section-kicker">08 · 審查建議</span>
+          <h2>本次審查建議（技術前輩角度）</h2>
+          <div class="note-card feedback">
+            <p>以 <code>BigDecimal</code>（Java 用來表示十進位數值的類別）表示金額是好的起點，也要明確規定精度和捨入時機。本次送單與取消已使用同一個計算器；櫃檯與結帳下一步仍需整理並核對相同規則。</p>
+            <p>取消操作會同時影響點餐單、明細和用餐場次帳單。應把彼此相依的狀態更新放在正確的資料庫交易邊界，並由有效明細重算金額；發生錯誤時要能整組回滾，避免資料只更新一半。</p>
+            <p>面試時要能用一筆具體案例說明：哪一步失敗、為什麼需要回滾、訂單快照保存了什麼、取消後帳單如何從有效明細重算。只列出 <code>BigDecimal</code> 或資料庫交易的名稱，還不足以說明設計判斷。</p>
+          </div>
+        </section>
+
+        <section class="section-card" id="interview">
+          <span class="section-kicker">09 · 報告與面試</span>
+          <h2>把資料一致性說成可以追問的技術故事</h2>
+          <div class="evidence-grid">
+            <div class="note-card report">
+              <h3>報告技術亮點</h3>
+              <p>沿著送單與取消兩條資料流程，說明購物車暫存價格與正式訂單快照的差別、服務費精度如何影響總額，以及取消後如何從有效明細重算。完成 smoke 與資料庫核對後，再補上具體結果和證據。</p>
+            </div>
+            <div class="note-card">
+              <h3>面試時可以解釋</h3>
+              <p>快照讓點餐單保留送單當下的品項、選項名稱與價格，日後菜單變更不會改寫舊單內容。交易則保護一組互相依賴的更新；若更新帳單失敗，不應留下已取消的明細和未取消的帳單狀態。</p>
+            </div>
+          </div>
+          <details class="details-card">
+            <summary>一分鐘回答練習</summary>
+            <p>「我會先找出金額從哪裡產生、在哪裡被保存。購物車的價格只是送單前顯示用，正式點餐單應固定送單時的菜單與選項快照。取消後則要排除已取消明細，重算帳單並確保狀態更新一起成功；若中途失敗，資料庫交易要讓整組變更回復。這次的具體工作與驗證範圍，我會依自己實際參與的修正來說明。」</p>
+          </details>
+        </section>
+
+        <section class="section-card" id="resume">
+          <span class="section-kicker">10 · 履歷建議</span>
+          <h2>依實際參與程度填寫</h2>
+          <blockquote class="note-card report">
+            參與點餐交易資料一致性修正，檢視送單價格與選項快照、服務費精度，以及取消後帳單與點餐狀態；依有效明細重算金額，並以手動流程確認修正結果。
+          </blockquote>
+          <p class="muted">這是確認本人參與項目後才可採用的句型。履歷主詞、負責範圍和驗證內容應按實際工作及可追溯修改紀錄調整，不將後續收尾工作寫成原作者獨力完成。</p>
+        </section>
+
+        <section class="section-card" id="terms">
+          <span class="section-kicker">11 · 名詞說明</span>
+          <h2>專有名詞</h2>
+          <dl class="glossary">
+            <div class="term"><dt>API — Application Programming Interface（應用程式介面）</dt><dd>讓不同程式依約定呼叫功能的介面；本文的送單與取消端點就是由前端呼叫後端的介面。</dd></div>
+            <div class="term"><dt>HTTP — Hypertext Transfer Protocol（超文字傳輸協定）</dt><dd>瀏覽器、前端和伺服器常用的請求與回應規則；送單成功、庫存不足等結果會透過此協定回傳。</dd></div>
+            <div class="term"><dt>SQL — Structured Query Language（結構化查詢語言）</dt><dd>查詢或修改資料庫資料的語言；本文的明細加總、鎖定資料列和條件式庫存更新都會使用它。</dd></div>
+            <div class="term"><dt>DB — Database（資料庫）</dt><dd>集中保存程式資料的地方；本文的價格快照、點餐明細與帳單都會寫入資料庫。</dd></div>
+            <div class="term"><dt>JPA — Java Persistence API（Java 持久化應用程式介面；現規格名稱為 Jakarta Persistence）</dt><dd>Java 程式透過物件存取關聯式資料庫的標準介面；目前程式使用 Jakarta Persistence 的 <code>EntityManager</code> 在計算前將待寫入資料同步到資料庫連線。</dd></div>
+            <div class="term"><dt>transaction（資料庫交易）</dt><dd>把多個資料庫操作當成一組；全部成功才一起保存，中途失敗則一起回復，避免只更新部分資料。</dd></div>
+            <div class="term"><dt>snapshot（快照）</dt><dd>在一個時間點複製並保存資料，例如送單時的品名、價格和選項名稱，讓舊訂單不受之後菜單修改影響。</dd></div>
+            <div class="term"><dt>cart_item.unit_price</dt><dd>購物車列保存的單價供購物車階段使用；送單正式保存單價時，<code>OrderSubmitService.submitOrder()</code> 取用驗證階段讀取的菜單現價。</dd></div>
+            <div class="term"><dt>groupNameSnapshot</dt><dd>點餐選項快照記錄送單當下的群組名稱，例如「份量」或「加點」；目前由選項所屬群組提供名稱並寫入點餐單。</dd></div>
+            <div class="term"><dt>BigDecimal</dt><dd>Java 用來精確表示十進位數值的類別，適合金額；仍需搭配明確的小數位數和捨入規則，避免一般二進位浮點數的表示誤差。</dd></div>
+            <div class="term"><dt>scale（小數位數）</dt><dd>數字的小數點後保留幾位。金額欄位保留兩位時，15.00 元的 10% 服務費應保留為 1.50 元。</dd></div>
+            <div class="term"><dt>HALF_UP</dt><dd>Java 的常用捨入規則之一；遇到正好在中間的數字時，向遠離零的方向進位，例如 1.005 保留兩位為 1.01。</dd></div>
+            <div class="term"><dt>有效明細</dt><dd>目前仍應計入帳單的點餐項目；所屬訂單或明細已取消時，不再增加小計、服務費或總額。</dd></div>
+            <div class="term"><dt>OrderTicketEntity／OrderItemEntity</dt><dd>Java 程式中的資料模型，分別代表一張點餐單及其中一筆餐點明細。</dd></div>
+            <div class="term"><dt>列鎖（row lock）</dt><dd>暫時鎖住資料庫中的特定資料列，使同時操作的交易依序修改同一張桌、菜單品項或選項，避免互相覆寫。</dd></div>
+            <div class="term"><dt>deadlock（死結）</dt><dd>兩個交易各自持有對方所需的鎖並互相等待，形成無法自行前進的狀態；送單和取消按固定順序鎖資料，可降低這類競爭。</dd></div>
+            <div class="term"><dt>READ_COMMITTED（read committed，讀取已提交隔離級別）</dt><dd>交易只讀取其他交易已成功提交的資料；取消服務明確採用此隔離級別，並以用餐場次列鎖保護同桌修改。</dd></div>
+            <div class="term"><dt>affected rows（受影響資料列數）</dt><dd>資料庫更新或刪除回報實際符合條件的資料列數；例如庫存條件更新回傳 1 才代表成功扣到庫存，回傳 0 就代表庫存不足或資料不存在。</dd></div>
+            <div class="term"><dt>commit（交易提交／版本提交）</dt><dd>資料庫交易提交表示整組變更成功保存；版本提交則表示程式變更被記錄在版本控制中。</dd></div>
+            <div class="term"><dt>rollback（交易回滾）</dt><dd>交易中途失敗時，撤銷該交易尚未提交的資料變更；例如多個品項送單時有一項庫存不足，就不保留前面已扣的庫存或建立中的訂單。</dd></div>
+            <div class="term"><dt>afterCommit（提交後回呼）</dt><dd>資料庫交易成功提交後才執行的程式；目前訂單、取消與菜單狀態通知在這時送出，避免回滾交易仍通知前端更新。</dd></div>
+            <div class="term"><dt>smoke test（冒煙測試）</dt><dd>快速走過最重要的操作路徑，確認基本流程能回應；它不能取代完整測試。</dd></div>
+          </dl>
+        </section>
+
+        <footer class="page-footer">
+          <div class="link-row"><a class="subtle-link" href="index.html">← 回 YiTing 首頁</a><a class="subtle-link" href="../index.html">回成員索引 →</a></div>
+        </footer>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
