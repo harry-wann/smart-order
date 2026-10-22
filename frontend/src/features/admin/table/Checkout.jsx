@@ -10,6 +10,10 @@ export default function Checkout({
                                    onCash,
                                    onCreditCard,
                                    onBarcode,
+                                   canSettle = true,
+                                   isBusy = false,
+                                   showCancelSession = false,
+                                   onCancelSession,
                                  }) {
   // 商品總數量
   const itemCount = orders.reduce(
@@ -91,14 +95,34 @@ export default function Checkout({
           收款方式
         </h3>
 
-        <div className="grid grid-cols-3 gap-2">
-          <SOButton variant="danger" height="h-9" onClick={onCash} type="button" text="現金" />
+        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <SOButton variant="default" height="h-11" onClick={onCash} type="button" text="現金" disabled={!canSettle || isBusy} />
 
-          <SOButton variant="danger" height="h-9" onClick={onCreditCard} type="button" text="信用卡" />
+          <SOButton variant="secondary" height="h-11" onClick={onCreditCard} type="button" text="信用卡" disabled={!canSettle || isBusy} />
 
-          <SOButton variant="danger" height="h-9" onClick={onBarcode} type="button" text="條碼" />
+          <SOButton variant="secondary" height="h-11" onClick={onBarcode} type="button" text="條碼" disabled={!canSettle || isBusy} />
         </div>
       </div>
+
+      {!canSettle && (
+        <p role="status" className="mt-3 rounded-btn bg-warning-bg px-3 py-2 type-caption text-hold-ink">
+          此用餐場次已關閉，無法開始付款。
+        </p>
+      )}
+
+      {showCancelSession && (
+        <div className="mt-4 border-t border-line pt-4">
+          <p className="mb-2 type-caption text-ink-600">只有尚未送出任何訂單的用餐場次可以取消。</p>
+          <SOButton
+            variant="ghost"
+            height="h-11"
+            onClick={onCancelSession}
+            disabled={isBusy}
+            type="button"
+            text="取消這次用餐"
+          />
+        </div>
+      )}
     </div>
   )
 }

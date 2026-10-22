@@ -20,8 +20,9 @@ public class OrderSubmitController {
 
     @GetMapping("/{id}")
     public OrderSubmittedResponse getOrder(
-            @PathVariable Long id
+            @PathVariable Long id,
+            @RequestAttribute("diningSessionId") Long sessionId
     ) {
-        return orderSubmitService.getOrder(id);
+        return orderSubmitService.getOrder(id, sessionId);
     }
 }

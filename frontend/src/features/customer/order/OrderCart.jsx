@@ -13,6 +13,7 @@ import {
 } from '@/services/api/cart/cartApi'
 
 import useCartWebSocket from '@/services/realtime/useCartWebSocket'
+import { leaveTable } from '@/services/client/auth'
 
 export default function OrderCart() {
   const navigate = useNavigate()
@@ -31,6 +32,7 @@ export default function OrderCart() {
   const latestVersion = useRef(0)
   const requestId = useRef(0)
   const activeSessionId = useRef(sessionId)
+  const sessionClosed = useRef(false)
   const sessionGeneration = useRef(0)
   const lifecycleGeneration = useRef(0)
   const mountedRef = useRef(false)
@@ -39,6 +41,7 @@ export default function OrderCart() {
   const loadCart = useCallback(async ({ clearError = true, expectedGeneration = sessionEpoch } = {}) => {
     if (
       !sessionId ||
+      sessionClosed.current ||
       !mountedRef.current ||
       !isCurrentSession(activeSessionId, sessionGeneration, sessionId, expectedGeneration)
     ) {
@@ -51,6 +54,7 @@ export default function OrderCart() {
       const data = await getCart(sessionId)
       if (
         currentRequest !== requestId.current ||
+        sessionClosed.current ||
         !mountedRef.current ||
         !isCurrentSession(activeSessionId, sessionGeneration, sessionId, expectedGeneration)
       ) {
@@ -93,26 +97,63 @@ export default function OrderCart() {
     }
   }, [])
 
+  const handleSessionClosed = useCallback((event, expectedSessionId = sessionId, expectedGeneration = sessionEpoch) => {
+    if (
+      !mountedRef.current ||
+      !isCurrentSession(activeSessionId, sessionGeneration, expectedSessionId, expectedGeneration) ||
+      sessionClosed.current ||
+      String(event.sessionId) !== String(expectedSessionId)
+    ) return false
+    sessionClosed.current = true
+    leaveTable()
+    if (event.reason === 'PAID') {
+      navigate('/order/menu', {
+        replace: true,
+        state: { closedSession: event, tableNo: currentTableNumber },
+      })
+    } else {
+      navigate('/', { replace: true })
+    }
+    return true
+  }, [currentTableNumber, navigate, sessionEpoch, sessionId])
+
+  const handleSessionApiError = useCallback((error, expectedSessionId = sessionId, expectedGeneration = sessionEpoch) => {
+    if (error?.status !== 401) return false
+    if (
+      !mountedRef.current ||
+      !isCurrentSession(activeSessionId, sessionGeneration, expectedSessionId, expectedGeneration)
+    ) return true
+    handleSessionClosed({
+      type: 'SESSION_CLOSED',
+      sessionId: expectedSessionId,
+      reason: error.reason,
+    }, expectedSessionId, expectedGeneration)
+    return true
+  }, [handleSessionClosed, sessionEpoch, sessionId])
+
   const handleCartUpdate = useCallback(() => {
-    loadCart({ expectedGeneration: sessionEpoch }).catch((err) => {
+    const expectedSessionId = sessionId
+    const expectedGeneration = sessionEpoch
+    loadCart({ expectedGeneration }).catch((err) => {
       if (
+        sessionClosed.current ||
         !mountedRef.current ||
-        !isCurrentSession(activeSessionId, sessionGeneration, sessionId, sessionEpoch)
-      ) {
-        return
-      }
+        !isCurrentSession(activeSessionId, sessionGeneration, expectedSessionId, expectedGeneration)
+      ) return
+      if (handleSessionApiError(err, expectedSessionId, expectedGeneration)) return
       console.error('WebSocket 更新購物車失敗：', err)
       setError(getCartErrorMessage(err))
     })
-  }, [loadCart, sessionEpoch, sessionId])
+  }, [handleSessionApiError, loadCart, sessionEpoch, sessionId])
 
-  useCartWebSocket(sessionId, handleCartUpdate)
+  useCartWebSocket(sessionId, handleCartUpdate, undefined, undefined, handleSessionClosed)
 
   useLayoutEffect(() => {
     if (activeSessionId.current === sessionId) return
 
     activeSessionId.current = sessionId
     sessionGeneration.current += 1
+    sessionClosed.current = false
     const nextEpoch = sessionGeneration.current
     setSessionEpoch(nextEpoch)
 
@@ -150,7 +191,9 @@ export default function OrderCart() {
           mountedRef.current &&
           isCurrentSession(activeSessionId, sessionGeneration, sessionId, expectedGeneration)
         ) {
-          setError(getCartErrorMessage(err))
+          if (!handleSessionApiError(err, sessionId, expectedGeneration)) {
+            setError(getCartErrorMessage(err))
+          }
         }
       } finally {
         if (
@@ -173,7 +216,7 @@ export default function OrderCart() {
         requestId.current += 1
       }
     }
-  }, [sessionId, sessionEpoch, loadCart])
+  }, [handleSessionApiError, sessionId, sessionEpoch, loadCart])
 
   useEffect(() => {
     const expectedGeneration = sessionEpoch
@@ -187,6 +230,7 @@ export default function OrderCart() {
         ) {
           return
         }
+        if (handleSessionApiError(err, sessionId, expectedGeneration)) return
         console.error('重新取得購物車失敗：', err)
         setError(getCartErrorMessage(err))
       })
@@ -194,11 +238,12 @@ export default function OrderCart() {
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
-  }, [loadCart, sessionEpoch, sessionId])
+  }, [handleSessionApiError, loadCart, sessionEpoch, sessionId])
 
   const beginBusyAction = () => {
     if (
       busyRef.current ||
+      sessionClosed.current ||
       !mountedRef.current ||
       !isCurrentSession(activeSessionId, sessionGeneration, sessionId, sessionEpoch)
     ) {
@@ -239,6 +284,7 @@ export default function OrderCart() {
       await loadCart({ clearError: false, expectedGeneration: action.generation })
     } catch (reloadError) {
       if (!isCurrentAction(action)) return
+      if (handleSessionApiError(reloadError, action.sessionId, action.generation)) return
       console.error('重新取得購物車失敗：', reloadError)
     }
   }
@@ -258,6 +304,7 @@ export default function OrderCart() {
       await loadCart({ expectedGeneration: action.generation })
     } catch (err) {
       if (!isCurrentAction(action)) return
+      if (handleSessionApiError(err, action.sessionId, action.generation)) return
       await reloadAfterActionError(getCartErrorMessage(err), action)
     } finally {
       finishBusyAction(action)
@@ -275,6 +322,7 @@ export default function OrderCart() {
       await loadCart({ expectedGeneration: action.generation })
     } catch (err) {
       if (!isCurrentAction(action)) return
+      if (handleSessionApiError(err, action.sessionId, action.generation)) return
       await reloadAfterActionError(getCartErrorMessage(err), action)
     } finally {
       finishBusyAction(action)
@@ -302,6 +350,7 @@ export default function OrderCart() {
       ) {
         return
       }
+      if (handleSessionApiError(err, sessionId, expectedGeneration)) return
       setError(getCartErrorMessage(err))
     } finally {
       if (
@@ -325,6 +374,7 @@ export default function OrderCart() {
       navigate(`/order/submitted/${(result.orderTicketId ?? result.id)}`)
     } catch (err) {
       if (!isCurrentAction(action)) return
+      if (handleSessionApiError(err, action.sessionId, action.generation)) return
       await reloadAfterActionError(getCartErrorMessage(err), action)
     } finally {
       finishBusyAction(action)

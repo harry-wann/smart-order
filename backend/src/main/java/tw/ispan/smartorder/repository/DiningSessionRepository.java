@@ -44,6 +44,15 @@ public interface DiningSessionRepository extends JpaRepository<DiningSessionEnti
     )
     Optional<DiningSessionEntity> findWithLockById(@Param("id") Long id);
 
+    // Caller already holds this table row lock; a plain READ_COMMITTED query avoids
+    // locking another session and reversing the session -> table lock order.
+    @Query(value = """
+            SELECT id FROM dining_session
+            WHERE table_id = :tableId AND status = 'OPEN'
+            ORDER BY id
+            """, nativeQuery = true)
+    List<Long> findOpenSessionIdsByTableId(@Param("tableId") Long tableId);
+
     // S-02 桌況總覽：找出所有用餐中的紀錄，對應每桌的人數與開桌時間
     List<DiningSessionEntity> findByStatus(String status);
 }

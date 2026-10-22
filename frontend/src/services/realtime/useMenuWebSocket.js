@@ -11,7 +11,7 @@ export default function useMenuWebSocket(sessionId, onStatus, onReconnect, onSes
       try {
         await getCurrentDining()
       } catch (error) {
-        if (!disposed && error.status === 401) onSessionInvalid()
+        if (!disposed && error.status === 401) onSessionInvalid(error)
       }
     }
     const client = new Client({
@@ -27,8 +27,7 @@ export default function useMenuWebSocket(sessionId, onStatus, onReconnect, onSes
         client.subscribe('/user/queue/cart-updates', (message) => {
           try {
             const event = JSON.parse(message.body)
-            if (event?.type === 'SESSION_CLOSED' && String(event.sessionId) === String(sessionId)
-              && event.reason === 'PAID') {
+            if (event?.type === 'SESSION_CLOSED' && String(event.sessionId) === String(sessionId)) {
               onSessionClosed(event)
             }
           } catch (error) {
