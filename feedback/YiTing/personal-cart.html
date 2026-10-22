@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7fb">
+  <title>YiTing｜同桌購物車個人送單規格調整</title>
+  <link rel="stylesheet" href="../assets/feedback.css">
+</head>
+<body>
+  <div class="site-shell">
+    <nav class="topbar" aria-label="主要導覽">
+      <a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">鍋</span><span>實作回饋整理</span></a>
+      <a class="toplink" href="index.html">回 YiTing 首頁</a>
+    </nav>
+    <p class="breadcrumb"><a href="../index.html">成員索引</a> ／ <a href="index.html">YiTing</a> ／ 同桌購物車</p>
+
+    <header class="person-header">
+      <div class="meta-row">
+        <span class="scope-tag">工作包 C · 點餐交易</span>
+        <span class="status">已完成並驗證</span>
+      </div>
+      <h1>同桌購物車：由整桌送單改為本人送單</h1>
+      <p class="lede">本篇記錄 2026-10-22 使用者提出的新規格調整。這是產品規則改變，不是原作者的程式錯誤。</p>
+      <p class="intro-note"><strong>規格變更重點：</strong>原規格是同一桌共用購物車、按下送單會送出全桌內容。新規格改為本人和同桌客人的內容分區；他人內容唯讀；只送出本人加入的品項；送單後保留其他人的購物車。</p>
+    </header>
+
+    <main class="person-layout">
+      <nav class="toc" aria-label="本頁目錄">
+        <h2>本頁目錄</h2>
+        <ol>
+          <li><a href="#timeline">規格前後對照</a></li>
+          <li><a href="#scenario">實際情境</a></li>
+          <li><a href="#problem">規格改了哪裡</a></li>
+          <li><a href="#ownership">擁有者與權限</a></li>
+          <li><a href="#flow">修正流程</a></li>
+          <li><a href="#smoke">雙裝置手動確認</a></li>
+          <li><a href="#screenshots">手機畫面證據</a></li>
+          <li><a href="#evidence">提交與驗證證據</a></li>
+          <li><a href="#mentor">技術前輩角度建議</a></li>
+          <li><a href="#interview">報告與面試亮點</a></li>
+          <li><a href="#resume">履歷建議</a></li>
+          <li><a href="#terms">專有名詞</a></li>
+        </ol>
+      </nav>
+
+      <div class="content-stack">
+        <section class="scope-card" id="timeline">
+          <span class="section-kicker">01 · 規格時間線</span>
+          <h2>前後對照：交易範圍從整桌改成本人</h2>
+          <p class="section-intro">左側是 develop 已合併的原規格與送單流程；右側是 2026-10-22 新規格。本次產品規則調整由 commit <code>e323fac</code> 實作。</p>
+          <div class="compare-grid">
+            <div class="compare-side">
+              <div class="compare-label">原規格／原流程</div>
+              <ul class="prompt-list">
+                <li><span>同一用餐場次的客人看同一份購物車。</span></li>
+                <li><span>每一列保留加入者；加入者可修改自己的列。</span></li>
+                <li><span>任一客人送單時，原流程會把該場次購物車整份建立成訂單。</span></li>
+              </ul>
+            </div>
+            <div class="compare-side after">
+              <div class="compare-label">2026-10-22 新規格</div>
+              <ul class="prompt-list">
+                <li><span>畫面分出「本人」與「同桌客人」的購物車內容。</span></li>
+                <li><span>本人只能修改自己的品項；同桌其他人的品項唯讀。</span></li>
+                <li><span>按送單只送出本人加入的品項，其他人的內容繼續留在購物車。</span></li>
+              </ul>
+            </div>
+          </div>
+          <details class="details-card">
+            <summary>為什麼這不算原作者 bug？</summary>
+            <p>舊流程符合當時「送出整桌點餐」的規格。2026-10-22 使用者改了交易邊界：每位客人各自送出，且保留同桌其他人的未送內容。問題在新舊規格的行為不同，不應把原本符合規格的實作描述成作者犯錯。</p>
+          </details>
+        </section>
+
+        <section class="section-card" id="scenario">
+          <span class="section-kicker">02 · 實際情境</span>
+          <h2>兩位客人各自加菜</h2>
+          <p class="section-intro">以下以兩台裝置和兩位客人的操作呈現新規格要確認的行為。</p>
+          <ol class="step-list">
+            <li class="step-card"><p><strong>裝置 A：</strong>客人 A 加入牛肉與飲料。</p></li>
+            <li class="step-card"><p><strong>裝置 B：</strong>同桌客人 B 加入蔬菜與豆腐。</p></li>
+            <li class="step-card"><p><strong>檢視購物車：</strong>A 能辨認自己的品項與 B 的品項；A 的區域可操作，B 的區域只能查看。</p></li>
+            <li class="step-card"><p><strong>A 送單：</strong>預期只有 A 的品項送出，B 的購物車仍保留。</p></li>
+            <li class="step-card"><p><strong>B 再檢查：</strong>B 重新查看時，自己的品項仍在；B 可以自行修改並送出。</p></li>
+          </ol>
+        </section>
+
+        <section class="section-card" id="problem">
+          <span class="section-kicker">03 · 變更範圍</span>
+          <h2>規格改了哪裡</h2>
+          <p class="section-intro">這個調整不只改按鈕文字，還改變「一次送單」包含哪些資料。</p>
+          <div class="compare-grid">
+            <div class="compare-side">
+              <div class="compare-label">原送單範圍</div>
+              <p>原送單服務依用餐場次查出購物車列，整批建立成一張點餐單；提交者只記錄為誰按下送單，其他人的列也會一起被處理。</p>
+            </div>
+            <div class="compare-side after">
+              <div class="compare-label">新送單範圍</div>
+              <p>後端用目前 guest 身分查出本人列，只把這些列建立成訂單並刪除；同桌其他人的列留在共用購物車。</p>
+            </div>
+          </div>
+          <p class="intro-note">修正後送單服務以 <code>findByDiningSession_IdAndAddedByGuest_IdOrderByIdAsc(sessionId, guestId)</code> 查詢本人列，再依序建立點餐單。這個查詢方法由 repository（集中資料庫查詢的類別）中的 Spring Data JPA（協助依方法名稱產生查詢的工具；JPA — Java Persistence API（Java 持久化介面，現稱 Jakarta Persistence））處理。命名分段：<code>DiningSession_Id</code> 是「哪一次用餐」，<code>AddedByGuest_Id</code> 是「哪位客人加入」，<code>OrderByIdAsc</code> 是「依購物車列編號由小到大排序」。這是依 2026-10-22 新規格調整資料範圍，不是原作者 bug。</p>
+        </section>
+
+        <section class="section-card" id="ownership">
+          <span class="section-kicker">04 · 權限邊界</span>
+          <h2>「擁有者」是加入該列的客人</h2>
+          <p class="section-intro"><strong>owner（資料擁有者）</strong>在這個情境中指加入該購物車品項的用餐客人。不是誰正在看畫面，也不是由瀏覽器任意指定的一個人。</p>
+          <div class="evidence-grid">
+            <div class="note-card">
+              <h3>前端：讓操作方式看得懂</h3>
+              <p>畫面用 <code>isOwnItem</code> 把全桌品項分成本人區與他人區；本人區置頂，他人區唯讀，小計只加總本人列。實際按鈕狀態由 <code>isOwnItem</code> 搭配 <code>locked</code> 決定，前端沒有直接讀 <code>canEdit</code> 來控制按鈕。API（Application Programming Interface，應用程式介面）中的 <code>canEdit</code> 是對應的權限欄位；<code>locked</code> 由後端回傳，表示 session 已非 <code>OPEN</code>、本桌已停止點餐。單次請求處理中則由 <code>busy</code> 表示。隱藏或停用按鈕本身仍不能阻止直接送出請求。</p>
+            </div>
+            <div class="note-card feedback">
+              <h3>後端：每次操作重新確認身分</h3>
+              <p>伺服器從已驗證的用餐請求取得目前客人，再檢查品項所屬用餐場次與加入者。更新或刪除其他人的品項回 <code>403</code>（拒絕這次操作）；送單查詢也以目前客人的 <code>guestId</code> 篩選，因此只會建立本人的訂單列。不能只靠前端篩選。</p>
+            </div>
+          </div>
+          <details class="details-card">
+            <summary>前端與後端的差別</summary>
+            <p><code>isOwnItem</code> 表示「這列是不是目前 guest 加的」，用來分區並計算本人小計；<code>canEdit</code> 表示「目前是否允許編輯這列」，是 API 回傳的權限欄位。實際前端按鈕以 <code>isOwnItem</code> 和 <code>locked</code> 組合決定，沒有直接讀 <code>canEdit</code>。前端（瀏覽器裡的畫面）負責清楚呈現，後端（伺服器上的程式）則在每次修改、刪除與送單時再次檢查權限。前端分區方便使用，後端驗證才保護資料。</p>
+            <pre><code>本人區 = filter(items, isOwnItem 為 true)
+他人區 = filter(items, isOwnItem 為 false)
+本人小計 = 加總(本人區各列的 lineTotal)</code></pre>
+            <p><code>filter</code> 是「從清單挑出符合條件的列」；<code>lineTotal</code> 是單列金額，等於該列單價乘上份數。這段是邏輯示意：<code>isOwnItem</code> 用來決定列放在哪一區及哪些金額列入本人小計；按鈕是否能操作則依實作組合本人身分與 <code>locked</code> 狀態。前端計算只為了畫面顯示，送單範圍由後端再次查詢並核對。</p>
+          </details>
+        </section>
+
+        <section class="section-card" id="flow">
+          <span class="section-kicker">05 · 修正流程</span>
+          <h2>依新規格拆解的修正流程</h2>
+          <p class="section-intro">從客人身分、操作權限到送單後保留內容，逐段檢查同一個雙人情境。</p>
+          <ol class="step-list">
+            <li class="step-card"><p><strong>確認目前客人：</strong>沿用伺服器驗證的 guest 身分，避免把可偽造的裝置提示當作資料擁有者。</p></li>
+            <li class="step-card"><p><strong>查出本人列：</strong>repository 使用 <code>findByDiningSession_IdAndAddedByGuest_IdOrderByIdAsc(sessionId, guestId)</code>，同時依用餐場次和加入者查詢並依列編號排序。</p></li>
+            <li class="step-card"><p><strong>分區與計算：</strong>前端依 <code>isOwnItem</code> 篩成本人區和他人唯讀區，以 <code>isOwnItem</code> 搭配 <code>locked</code> 控制操作按鈕，僅將本人列的金額加成本人小計。</p></li>
+            <li class="step-card"><p><strong>交易只處理本人列：</strong>依序讀取本人列、建立點餐單、刪除本人已送列、更新帳單與通知；同桌其他人的購物車列保留。e323fac 的成果範圍是依 owner 篩選送單列與保留他人購物車。</p></li>
+            <li class="step-card"><p><strong>保護切桌後畫面：</strong>切換桌位時遞增請求 generation（世代編號）；非同步請求帶著送出時的編號，回來時若桌位已換，就忽略舊回應，不讓舊桌結果覆蓋新桌狀態。</p></li>
+          </ol>
+          <p class="intro-note">同桌有人同時送單時，後端以用餐場次資料列鎖（row lock）讓單號和帳單更新依序進行；交易（transaction）把相關資料庫步驟當成一組，避免只保存一半。這是在解釋整體流程中的併發保護，不是 e323fac 新增的功能範圍。</p>
+          <p class="intro-note">切桌 generation 是這次整合補強，目的是隔離上一桌尚未完成的請求，不應歸責原作者。確認範圍包含延遲的舊 <code>204</code>（成功、沒有回應內容）與舊 <code>409</code>（資料狀態衝突）返回後，新桌的 busy（等待處理）狀態、錯誤提示和導頁仍受保護。</p>
+        </section>
+
+        <section class="section-card" id="smoke">
+          <span class="section-kicker">06 · 手動確認</span>
+          <h2>雙裝置手動確認步驟</h2>
+          <p class="section-intro">基本操作確認（Smoke test，冒煙測試）是快速走過主要流程。實際驗證使用兩個隔離的瀏覽器身分模擬兩支手機，並搭配 HTTP（Hypertext Transfer Protocol，超文字傳輸協定）請求；不是兩台實體手機。以下步驟保留給讀者手動重做。</p>
+          <ol class="step-list">
+            <li class="step-card"><p><strong>準備：</strong>可使用兩台手機，或兩個彼此隔離的瀏覽器身分；讓 A、B 加入同一張桌的同一個用餐場次，確認各自持有不同的客人身分。</p></li>
+            <li class="step-card"><p><strong>分別加購：</strong>A 和 B 各加入不同品項，檢查雙方都看得到全桌內容，且本人區在上、他人區唯讀在下，小計只含本人列。</p></li>
+            <li class="step-card"><p><strong>檢查後端權限：</strong>以 A 的身分對 B 的列發出 <code>PATCH</code>（更新既有資料）與 <code>DELETE</code>（刪除資料）請求，兩者都應回 <code>403</code>；測試結果為兩項皆拒絕。</p></li>
+            <li class="step-card"><p><strong>分別送單：</strong>A 送出後確認訂單只有 A 的列、B 的列仍保留；再由 B 送出，B 的品項也能成立另一張單。</p></li>
+            <li class="step-card"><p><strong>確認空車邊界：</strong>A 沒有本人待送列時，即使 B 還有列，A 送單仍回 <code>409 CART_EMPTY</code>（資料狀態衝突），不會代送 B 的品項。</p></li>
+            <li class="step-card"><p><strong>確認重複請求：</strong>對同一 guest 同時送出兩個請求，確認一個回 <code>201</code>（成功建立），另一個回 <code>409 CART_EMPTY</code>；兩個不同 guest 各有品項時則各成立一張單。</p></li>
+            <li class="step-card"><p><strong>確認切桌保護：</strong>在 A 的請求仍等待時切換到另一桌，讓舊桌的延遲成功與錯誤回應返回；新桌的 busy 狀態、錯誤提示與導頁不應被舊回應改寫。</p></li>
+          </ol>
+        </section>
+
+        <section class="section-card" id="screenshots">
+          <span class="section-kicker">07 · 畫面證據</span>
+          <h2>手機寬度與本人空車畫面</h2>
+          <p class="section-intro">瀏覽器檢查涵蓋 320px 與 390px 寬度，未觀察到水平溢出；另確認本人購物車空時的提示畫面。</p>
+          <div class="screen-gallery">
+            <figure class="screen-shot"><img src="../assets/personal-cart-390px.png" alt="390 像素寬手機畫面：購物車本人品項列在上方，同桌其他客人品項位於下方唯讀區，金額只加總本人品項"><figcaption>390px：本人區在上、其他人唯讀區在下，本人小計分開顯示。</figcaption></figure>
+            <figure class="screen-shot"><img src="../assets/personal-cart-320px.png" alt="320 像素寬手機畫面：購物車分區與操作按鈕在窄螢幕內完整顯示"><figcaption>320px：窄螢幕下頁面仍可讀，未見水平溢出。</figcaption></figure>
+            <figure class="screen-shot"><img src="../assets/personal-cart-own-empty.png" alt="本人購物車為空、但同桌他人仍有品項時的送單提示畫面"><figcaption>本人空車：即使同桌其他人仍有待送品項，也顯示本人沒有待送品項。</figcaption></figure>
+          </div>
+        </section>
+
+        <section class="section-card" id="evidence">
+          <span class="section-kicker">08 · 驗證證據</span>
+          <h2>程式提交與確認證據</h2>
+          <p class="section-intro">Commit（版本提交）是將一組程式變更記進版本歷史，便於確認這篇說明對應哪一版程式。</p>
+          <div class="evidence-grid">
+            <div class="note-card">
+              <h3>修正提交</h3>
+              <p><code>e323fac</code> — <code>fix(yiting): separate personal cart items and submit only owned items</code></p>
+              <p>代表 2026-10-22 個人購物車送單規格調整的程式提交。</p>
+            </div>
+            <div class="note-card feedback">
+              <h3>操作確認</h3>
+              <p>後端 <code>clean package</code>（清理舊建置產物後打包）與前端 <code>build</code>（整理成可執行或部署的產物）通過；56 項 HTTP（Hypertext Transfer Protocol，超文字傳輸協定）檢查、23 項瀏覽器檢查通過；獨立檢視修正後沒有新發現。</p>
+              <p>他人 PATCH／DELETE 為 403；只送本人列並保留他人列及選項；本人空車為 409 <code>CART_EMPTY</code>；同 guest 同時送兩個請求為一個 201、一個 409。</p>
+              <p>HTTP 狀態碼白話：201 表示建立成功；204 表示操作成功但沒有回應內容；403 表示目前身分不允許操作；409 表示目前資料狀態不允許這次操作。</p>
+              <p>WebSocket（雙向即時通訊）新增曾單次觀察到 129ms，這是單次量測，不是效能保證。</p>
+              <p>切桌後，延遲返回的舊 204 與舊 409 都沒有改寫新桌 busy（等待處理）、錯誤或導頁狀態。</p>
+              <p>證據：<a href="../evidence/e323fac-http.json">HTTP 檢查資料</a>、<a href="../evidence/e323fac-browser.json">瀏覽器檢查資料</a>。</p>
+            </div>
+          </div>
+          <p class="muted">圖片：<code>../assets/personal-cart-390px.png</code>、<code>../assets/personal-cart-320px.png</code>、<code>../assets/personal-cart-own-empty.png</code>。</p>
+        </section>
+
+        <section class="section-card" id="mentor">
+          <span class="section-kicker">09 · 審查建議</span>
+          <h2>本次審查建議（技術前輩角度）</h2>
+          <div class="note-card feedback">
+            <p>先保留每列加入者與後端 ownership（擁有權）檢查這項基礎，再用雙人情境定義讀取、修改、送單與保留範圍。面試時應能以 A、B 操作證明他人列可讀不可改，以及 A 送單不會清掉 B 尚未送出的購物車。</p>
+          </div>
+        </section>
+
+        <section class="section-card" id="interview">
+          <span class="section-kicker">10 · 報告與面試</span>
+          <h2>可說明的技術亮點</h2>
+          <p class="section-intro">以下說法以這次已完成的規格調整與操作證據為準。</p>
+          <div class="note-card report">
+            <h3>報告可說明的技術亮點</h3>
+            <p>「需求從任一人送出全桌購物車，改成每位客人只送自己的列。我用 guest 身分查詢本人購物車，後端更新與刪除會驗 owner，前端則把本人可操作區和他人唯讀區分開；兩位 guest 的送單在同一 session 鎖下依序更新單號與帳單。」</p>
+            <p>可以用 A 能看 B 的品項、但不能改或刪 B 的列，以及 A 送單後 B 的購物車仍保留，說明「看得到」和「有權操作」是不同事情。</p>
+          </div>
+          <details class="details-card">
+            <summary>面試時可準備的追問</summary>
+            <p>為什麼不能只在畫面隱藏修改按鈕？購物車品項如何知道加入者？交易中如何確保只刪除已送出的列？另一位客人送單時會看到什麼？每題都要用實際程式或確認結果回答。</p>
+          </details>
+        </section>
+
+        <section class="section-card" id="resume">
+          <span class="section-kicker">11 · 履歷建議</span>
+          <h2>務實履歷句</h2>
+          <blockquote class="note-card report">
+            依產品新規格調整同桌共用購物車：以 guest 身分查詢並送出本人加入的品項，保留同桌其他人的未送內容；前端分區呈現本人可編輯與他人唯讀項目，後端驗證修改、刪除及送單範圍。
+          </blockquote>
+          <p class="muted">此句描述本次規格調整及驗證範圍；履歷使用時請依本人實際負責工作調整主詞。</p>
+        </section>
+
+        <section class="section-card" id="terms">
+          <span class="section-kicker">12 · 名詞說明</span>
+          <h2>專有名詞</h2>
+          <dl class="glossary">
+            <div class="term"><dt>API — Application Programming Interface（應用程式介面）</dt><dd>畫面向伺服器讀取資料或提出操作要求時使用的固定入口。</dd></div>
+            <div class="term"><dt>HTTP — Hypertext Transfer Protocol（超文字傳輸協定）</dt><dd>瀏覽器和伺服器交換請求、回應時使用的通訊規則。</dd></div>
+            <div class="term"><dt>owner（資料擁有者）</dt><dd>本案例中指加入該購物車列的用餐客人；擁有者應由伺服器驗證的身分決定。</dd></div>
+            <div class="term"><dt>guest（用餐客人）</dt><dd>加入某次用餐場次的其中一位客人；同桌每位客人各有自己的身分。</dd></div>
+            <div class="term"><dt>session（用餐場次）</dt><dd>某一桌從開桌到結帳或取消的這一次用餐紀錄。</dd></div>
+            <div class="term"><dt>guestToken（用餐客人權杖）</dt><dd>伺服器簽發或驗證的用餐身分憑證；後端用它判斷請求來自哪位客人，不應由畫面自行指定。</dd></div>
+            <div class="term"><dt>repository（資料查詢類別）</dt><dd>集中撰寫資料庫查詢與資料存取方法的程式類別，讓其他程式不必自己拼 SQL。</dd></div>
+            <div class="term"><dt>JPA — Java Persistence API（Java 持久化介面，現稱 Jakarta Persistence）</dt><dd>用 Java 物件表示資料並對應資料表的標準介面。Spring Data JPA 可依 repository 方法名稱產生常用查詢。</dd></div>
+            <div class="term"><dt>filter（篩選）</dt><dd>從一份清單挑出符合條件的資料列，例如把本人加入的購物車列挑出來。</dd></div>
+            <div class="term"><dt>lineTotal（單列金額）</dt><dd>這一列的單價乘上份數；本人小計只加總本人區各列的金額。</dd></div>
+            <div class="term"><dt>BigDecimal（精確十進位數字類別）</dt><dd>Java 用來表示金額等十進位數值的類別，避免一般二進位浮點數的近似誤差。</dd></div>
+            <div class="term"><dt>canEdit（是否可編輯）</dt><dd>API 回傳的權限欄位，描述目前是否可以編輯該列；這個畫面的按鈕實際以 <code>isOwnItem</code> 和 <code>locked</code> 組合控制。</dd></div>
+            <div class="term"><dt>isOwnItem（是否為本人品項）</dt><dd>表示購物車列是否由目前 guest 加入。前端可依它分區並計算本人小計；它回答「屬於誰」，不等同於目前一定能編輯。</dd></div>
+            <div class="term"><dt>addedByGuest（加入該列的客人）</dt><dd>購物車資料所記錄的加入者，用於把品項和客人身分對起來。</dd></div>
+            <div class="term"><dt>locked（本桌已停止點餐）</dt><dd>來自後端 <code>CartResponse.locked</code>；表示用餐 session 已不是 <code>OPEN</code>，例如本桌已結帳，因此不能再點餐。它不是單次請求的等待狀態。</dd></div>
+            <div class="term"><dt>busy（單次操作處理中）</dt><dd>前端表示某個請求尚在等待或處理中的狀態，例如送單按下後等待伺服器回應；和代表本桌已停止點餐的 <code>locked</code> 不同。</dd></div>
+            <div class="term"><dt>transaction（資料庫交易）</dt><dd>把多個資料庫步驟當成一組處理；成功時一起保存，失敗時可以一起取消，避免只完成一半。</dd></div>
+            <div class="term"><dt>row lock（資料列鎖）</dt><dd>暫時鎖住一筆資料，讓同一用餐場次的同時操作依序處理，避免單號或帳單互相覆蓋。</dd></div>
+            <div class="term"><dt>WebSocket（雙向即時通訊）</dt><dd>讓瀏覽器與伺服器維持連線，伺服器可即時通知同桌其他裝置購物車或訂單有變化。</dd></div>
+            <div class="term"><dt>build（建置）</dt><dd>整理並編譯程式，產生可執行或部署的檔案。</dd></div>
+            <div class="term"><dt>clean package（清理後打包）</dt><dd>先移除前一次的建置產物，再打包目前程式；用來確認乾淨狀態下仍可建置。</dd></div>
+            <div class="term"><dt>HTTP 201／204／403／409</dt><dd>201：建立成功；204：操作成功且沒有回應本文；403：不允許此身分操作；409：資料目前的狀態與請求衝突。</dd></div>
+            <div class="term"><dt>PATCH（部分更新）</dt><dd>只修改既有資料的一部分，例如購物車列的數量或備註。</dd></div>
+            <div class="term"><dt>DELETE（刪除）</dt><dd>要求移除指定資料，例如刪除自己加入的購物車列。</dd></div>
+            <div class="term"><dt>generation（世代編號）</dt><dd>切換用餐桌位時增加的流水編號。非同步請求回來時先比對編號，舊桌請求不能改動新桌畫面狀態。</dd></div>
+            <div class="term"><dt>Smoke test（冒煙測試）</dt><dd>快速走過主要操作路徑，確認基本流程能回應；它不等於完整測試。</dd></div>
+            <div class="term"><dt>SHA（Secure Hash Algorithm，安全雜湊演算法）</dt><dd>版本提交識別碼由雜湊值縮短而來；本文使用短識別碼 <code>e323fac</code> 對應修正提交。</dd></div>
+          </dl>
+        </section>
+
+        <footer class="page-footer">
+          <p>規格日期：2026-10-22。</p>
+          <div class="link-row"><a class="subtle-link" href="index.html">← 回 YiTing 首頁</a><a class="subtle-link" href="../index.html">回成員索引 →</a></div>
+        </footer>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
