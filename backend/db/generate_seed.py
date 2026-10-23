@@ -350,8 +350,8 @@ cart_item_option = Table('cart_item_option', ['cart_item_id', 'option_value_id']
 ticket = Table('order_ticket', ['id', 'dining_session_id', 'sequence_no', 'status', 'source', 'submitted_by_guest_id',
                                 'placed_at', 'cancel_reason', 'created_at'])
 order_item = Table('order_item', ['id', 'order_ticket_id', 'menu_item_id', 'item_name_snapshot', 'unit_price_snapshot',
-                                  'options_price', 'quantity', 'line_total', 'note', 'status', 'cancel_reason',
-                                  'served_at', 'created_at'])
+                                  'options_price', 'quantity', 'stock_deducted', 'line_total', 'note', 'status',
+                                  'cancel_reason', 'served_at', 'created_at'])
 order_item_option = Table('order_item_option', ['id', 'order_item_id', 'group_name_snapshot', 'value_name_snapshot',
                                                 'price_delta', 'created_at'])
 payment = Table('payment', ['id', 'dining_session_id', 'method', 'amount', 'status', 'paid_at', 'created_at'])
@@ -418,7 +418,7 @@ def add_ticket(s, placed, lines, status, guest_id=None, source='CUSTOMER', serve
     ticket.add(id=tid, dining_session_id=s.sid, sequence_no=s.seq, status=status, source=source,
                submitted_by_guest_id=guest_id, placed_at=placed, cancel_reason=None, created_at=placed)
     for n, (name, qty, st, opts, note, reason) in enumerate(lines):
-        iid, price, _ = ITEM[name]
+        iid, price, f = ITEM[name]
         if opts is None:
             opts = pick_options(iid)
         else:
@@ -431,7 +431,10 @@ def add_ticket(s, placed, lines, status, guest_id=None, source='CUSTOMER', serve
         line_total = (price + options_price) * qty
         oid = nid('item')
         order_item.add(id=oid, order_ticket_id=tid, menu_item_id=iid, item_name_snapshot=name,
-                       unit_price_snapshot=price, options_price=options_price, quantity=qty, line_total=line_total,
+                       unit_price_snapshot=price, options_price=options_price, quantity=qty,
+                       # 送單時有沒有扣庫存：跟上面 menu_item 的 track_inventory 同一條規則（免費續加不扣），
+                       # 取消假資料裡的單時後端看這欄決定要不要補庫存
+                       stock_deducted=int('refill' not in f), line_total=line_total,
                        note=note, status=st, cancel_reason=reason,
                        served_at=plus(placed, served_after + n * 2) if st == 'SERVED' else None, created_at=placed)
         for vid_, g, vname, delta in opts:

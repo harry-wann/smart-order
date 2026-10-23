@@ -47,8 +47,9 @@ public class OrderCancellationService {
         this.ticketStatusUpdater = ticketStatusUpdater;
     }
 
-    private record Item(Long id, Long menuItemId, int quantity, String status) {}
-    private record Menu(boolean trackInventory, boolean soldOut) {}
+    // stockDeducted：送單時有沒有扣庫存（order_item.stock_deducted），補不補回只看這個
+    private record Item(Long id, Long menuItemId, int quantity, String status, boolean stockDeducted) {}
+    private record Menu(boolean soldOut) {}
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void cancelItem(Long itemId, String requestedReason) {
@@ -61,7 +62,7 @@ public class OrderCancellationService {
         DiningSessionEntity session = lockOpenSession(sessionId);
         Long ticketId = jdbc.queryForObject("SELECT order_ticket_id FROM order_item WHERE id = ?", Long.class, itemId);
         String ticketStatus = jdbc.queryForObject("SELECT status FROM order_ticket WHERE id = ?", String.class, ticketId);
-        Item item = jdbc.query("SELECT id, menu_item_id, quantity, status FROM order_item WHERE id = ?",
+        Item item = jdbc.query("SELECT id, menu_item_id, quantity, status, stock_deducted FROM order_item WHERE id = ?",
                 rs -> rs.next() ? mapItem(rs) : null, itemId);
         if (item == null) throw ApiException.notFound("找不到這筆餐點");
         if ("CANCELLED".equals(item.status())) return;
@@ -101,7 +102,7 @@ public class OrderCancellationService {
             throw ApiException.conflict("TICKET_NOT_CANCELLABLE", "已出餐的整張訂單不能取消");
         }
         List<Item> items = jdbc.query("""
-                SELECT id, menu_item_id, quantity, status FROM order_item
+                SELECT id, menu_item_id, quantity, status, stock_deducted FROM order_item
                 WHERE order_ticket_id = ? ORDER BY id
                 """, (rs, row) -> mapItem(rs), ticketId);
         if (items.stream().anyMatch(item -> !"CANCELLED".equals(item.status()) && !isUnserved(item.status()))) {
@@ -145,18 +146,21 @@ public class OrderCancellationService {
         Map<Long, Menu> result = new HashMap<>();
         for (Long id : items.stream().map(Item::menuItemId).distinct().sorted().toList()) {
             Menu menu = jdbc.query("""
-                    SELECT track_inventory, sold_out FROM menu_item WHERE id = ? FOR UPDATE
-                    """, rs -> rs.next() ? new Menu(rs.getBoolean(1), rs.getBoolean(2)) : null, id);
+                    SELECT sold_out FROM menu_item WHERE id = ? FOR UPDATE
+                    """, rs -> rs.next() ? new Menu(rs.getBoolean(1)) : null, id);
             if (menu == null) throw ApiException.conflict("INVENTORY_MISSING", "商品已不存在");
             result.put(id, menu);
         }
         return result;
     }
 
+    // 只補回送單時真的有扣的（stock_deducted = 1），不看品項現在的 track_inventory：
+    // 店長可能在送單後才切換追蹤，看現在的設定會多補（原本沒扣）或漏補（原本有扣）。
+    // 售完狀態照舊看品項現在的 sold_out：有補回、品項現在標著售完就解除（補回後庫存一定大於 0）
     private void restoreInventory(List<Item> items, Map<Long, Menu> menus) {
         Map<Long, Integer> restore = new TreeMap<>();
         for (Item item : items) {
-            if (menus.get(item.menuItemId()).trackInventory()) {
+            if (item.stockDeducted()) {
                 restore.merge(item.menuItemId(), item.quantity(), Integer::sum);
             }
         }
@@ -189,6 +193,6 @@ public class OrderCancellationService {
 
     private Item mapItem(java.sql.ResultSet rs) throws java.sql.SQLException {
         return new Item(rs.getLong("id"), rs.getLong("menu_item_id"), rs.getInt("quantity"),
-                rs.getString("status"));
+                rs.getString("status"), rs.getBoolean("stock_deducted"));
     }
 }
