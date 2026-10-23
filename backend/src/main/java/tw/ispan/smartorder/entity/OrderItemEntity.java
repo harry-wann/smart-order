@@ -36,6 +36,11 @@ public class OrderItemEntity {
     @Column(name = "quantity")
     private Integer quantity;
 
+    // 送單時有沒有扣庫存；取消時依這個決定要不要補回，不看品項現在的 track_inventory（店長可能已經改過）。
+    // 欄位 NOT NULL，新增時一定要設，不設會在寫入時直接出錯
+    @Column(name = "stock_deducted", nullable = false)
+    private Boolean stockDeducted;
+
     @Column(name = "note")
     private String note;
 

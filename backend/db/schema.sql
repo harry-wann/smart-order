@@ -362,6 +362,7 @@ CREATE TABLE order_item (
   unit_price_snapshot DECIMAL(10,2)   NOT NULL,
   options_price       DECIMAL(10,2)   NOT NULL DEFAULT 0,
   quantity            INT             NOT NULL,
+  stock_deducted      TINYINT(1)      NOT NULL DEFAULT 0 COMMENT '送單時是否扣了庫存；取消時依此決定要不要補回，不看品項現在的 track_inventory',
   line_total          DECIMAL(10,2)   NOT NULL COMMENT '(unit_price + options_price) × quantity',
   note                VARCHAR(50)     NULL,
   status              VARCHAR(20)     NOT NULL DEFAULT 'PENDING' COMMENT 'PENDING / SERVED / CANCELLED',

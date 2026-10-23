@@ -188,6 +188,9 @@ public class OrderSubmitService {
             orderItem.setUnitPriceSnapshot(unitPrice);
             orderItem.setOptionsPrice(optionsPrice);
             orderItem.setQuantity(quantity);
+            // 跟上面扣庫存用同一個判斷（品項已鎖住，讀到的 track_inventory 不會中途被改），
+            // 記下這筆有沒有扣，取消時才知道要不要補回
+            orderItem.setStockDeducted(line.menu().trackInventory());
             orderItem.setNote(selection.note());
             orderItem.setStatus("PENDING");
             orderItem.setLineTotal(lineTotal);
