@@ -1,0 +1,63 @@
+{
+  "label": "vincent-guest-token",
+  "commit": "dcbba26",
+  "testedAt": "2026-10-23T12:31:39.781Z",
+  "passed": true,
+  "resultCount": 12,
+  "sanitized": true,
+  "notes": [
+    "Customer pages at 390x844 from the worktree build; two phones forged the same X-Device-Id on purpose."
+  ],
+  "results": [
+    {
+      "name": "Guest token browser: check-in page shows no made-up head count or time",
+      "passed": true
+    },
+    {
+      "name": "Guest token browser: both phones store a session token and a guest token after joining",
+      "passed": true
+    },
+    {
+      "name": "Guest token browser: same forged device id still yields two different guest tokens",
+      "passed": true
+    },
+    {
+      "name": "Guest token browser: A adds a cart line with session + guest token",
+      "passed": true,
+      "detail": "201"
+    },
+    {
+      "name": "Guest token browser: B's open cart shows A's line through WebSocket without reload (CONNECT with session token only)",
+      "passed": true
+    },
+    {
+      "name": "Guest token browser: B's cart API marks A's line as not editable",
+      "passed": true
+    },
+    {
+      "name": "Guest token browser: a phone with only the old session token is sent home and its token cleared",
+      "passed": true,
+      "detail": "/"
+    },
+    {
+      "name": "Guest token browser: a joined phone re-scanning its own table goes straight back to the menu",
+      "passed": true
+    },
+    {
+      "name": "Guest token browser: scanning another table keeps the current table tokens until the guest actually joins there",
+      "passed": true
+    },
+    {
+      "name": "Guest token browser: coming back to the original table is still the same guest",
+      "passed": true
+    },
+    {
+      "name": "Guest token browser: joining the other table does not send the old table tokens and switches to new ones",
+      "passed": true
+    },
+    {
+      "name": "Guest token browser: no page errors or API 5xx",
+      "passed": true
+    }
+  ]
+}

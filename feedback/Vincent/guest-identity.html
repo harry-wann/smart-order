@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7fb">
+  <title>Vincent｜同桌客人的身分憑證</title>
+  <link rel="stylesheet" href="../assets/feedback.css">
+</head>
+<body>
+  <div class="site-shell">
+    <nav class="topbar" aria-label="主要導覽">
+      <a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">鍋</span><span>實作回饋整理</span></a>
+      <a class="toplink" href="index.html">回 Vincent 工作包</a>
+    </nav>
+
+    <p class="breadcrumb"><a href="../index.html">成員索引</a> ／ <a href="index.html">Vincent</a> ／ 同桌身分憑證</p>
+    <header class="person-header">
+      <div class="meta-row"><span class="scope-tag">工作包 A（顧客入口與掃碼進入）</span><span class="status">同桌身分已驗證</span></div>
+      <h1>Vincent｜「識別碼」不是「密碼」：誰才是購物車裡的這位客人？</h1>
+      <p class="lede">同一桌好幾支手機一起點餐，每支手機都要被認出來是「哪一位客人」。這篇說明原本為什麼只要知道別人的裝置 ID 就能冒充他，以及怎麼改成由伺服器發一把只有本人拿得到的鑰匙。</p>
+    </header>
+
+    <main class="person-layout">
+      <nav class="toc" aria-label="文章目錄">
+        <h2>這篇會走過</h2>
+        <ol>
+          <li><a href="#situation">先看現場情境</a></li>
+          <li><a href="#problems">原本哪裡會錯</a></li>
+          <li><a href="#changes">實際改法</a></li>
+          <li><a href="#found">審查找到的回歸</a></li>
+          <li><a href="#walkthrough">手把手驗收</a></li>
+          <li><a href="#evidence">提交與驗證紀錄</a></li>
+          <li><a href="#feedback">前輩回饋、報告與履歷</a></li>
+          <li><a href="#terms">新手名詞表</a></li>
+        </ol>
+      </nav>
+
+      <div class="content-stack">
+        <section class="scope-card" id="scope">
+          <span class="section-kicker">本篇範圍</span>
+          <h2>一個安全問題、兩個小錯誤</h2>
+          <ul class="scope-list">
+            <li><strong>P1 冒用身分：</strong>只要知道同桌別人的裝置 ID，就能拿到他的身分、改他的購物車、用他的名義送單。</li>
+            <li><strong>裝置 ID 長度：</strong>超過資料表欄位長度時變成資料庫錯誤，而不是清楚的「資料格式不對」。</li>
+            <li><strong>掃碼頁假資料：</strong>每張桌都顯示寫死的「2 大 1 小 18:32 入座」。</li>
+            <li><strong>依據：</strong>API 規格 §1.4／§4.2 早已定好正確設計（伺服器簽發的 guest token、資料庫只存雜湊、裝置 ID 只當提示），這次讓程式跟上規格。</li>
+          </ul>
+          <p class="intro-note">這個修正同時碰到入桌（工作包 A）、購物車與送單（工作包 C）和共用驗證（L0），所以放在同一支分支一起改、一起驗收。</p>
+        </section>
+
+        <section class="section-card" id="situation">
+          <span class="section-kicker">情境 · 同一桌的三支手機</span>
+          <h2>系統要怎麼知道「這筆是誰點的」？</h2>
+          <p>A03 桌有三位客人，各自用手機掃同一張 QR 加入。購物車是全桌共用的：大家都看得到彼此加了什麼，但<strong>只有本人能改、刪、送出自己的品項</strong>。所以每個請求進來，後端都要回答：「這是哪一位客人？」</p>
+          <p>原本的答案是看手機自己帶來的 <code>X-Device-Id</code>（裝置 ID）。它是前端第一次開網頁時隨機產生、存在瀏覽器裡的一串 UUID。</p>
+          <div class="compare-grid">
+            <div class="compare-side"><div class="compare-label">識別碼（identifier）</div><p>用來「指出是誰」，像座號、學號。別人知道也沒關係，因為它本來就不是用來證明身分的。裝置 ID 就是這種。</p></div>
+            <div class="compare-side after"><div class="compare-label">憑證（credential）</div><p>用來「證明是本人」，像密碼、門禁卡。只有本人拿得到，伺服器也不能把它原樣存起來。guest token 是這種。</p></div>
+          </div>
+          <p>原本的問題，就是把識別碼當成憑證在用。</p>
+        </section>
+
+        <section class="section-card" id="problems">
+          <span class="section-kicker">原本哪裡會錯</span>
+          <h2>裝置 ID 可以被看到、被偽造，卻被拿來認人</h2>
+          <p>API 規格寫得很清楚：「<code>X-Device-Id</code> 客戶端提供，可偽造；只供顯示／診斷，不參與 guest 查找、身分驗證或授權」。但原本的程式在好幾個地方都拿它認人：</p>
+          <ul class="prompt-list">
+            <li><span><strong>查桌況（公開、不用登入）：</strong><code>GET /api/tables/A03/status</code> 帶上某個裝置 ID，如果這個 ID 已經加入過，回應裡就直接附上那位客人的 token。</span></li>
+            <li><span><strong>加入用餐：</strong>同一個裝置 ID 再加入一次，就拿回同一位客人的身分。</span></li>
+            <li><span><strong>購物車、送單、WebSocket 連線、付款收據：</strong>都用「token 裡的裝置 ID 等於 header 的裝置 ID」或「用裝置 ID 查客人」來判斷身分。</span></li>
+          </ul>
+          <p>那別人怎麼會知道我的裝置 ID？同桌的購物車即時通知裡就帶著「是哪個裝置 ID 加的」，所以<strong>同桌任何一支手機都收得到其他人的裝置 ID</strong>。拿到之後：</p>
+          <ol class="step-list">
+            <li class="step-card"><p>用對方的裝置 ID 呼叫公開的查桌況 API，拿到對方的 token。</p></li>
+            <li class="step-card"><p>帶著 token 和對方的裝置 ID 呼叫購物車 API，後端就當成是對方。</p></li>
+            <li class="step-card"><p>修改、刪除對方的品項，或用對方的名義送單。</p></li>
+          </ol>
+          <p>另外兩個小問題：加入用餐只擋「超過 128 字」的裝置 ID，但資料表欄位只有 36 字，37～128 字會變成資料庫錯誤；掃碼頁的「2 大 1 小 18:32 入座」是寫死的展示文字，每一桌都一樣。</p>
+        </section>
+
+        <section class="section-card" id="changes">
+          <span class="section-kicker">實際改法</span>
+          <h2>由伺服器發一把鑰匙，資料庫只留指紋</h2>
+
+          <h3>1. 加入用餐時發 guest token</h3>
+          <p>客人加入時，後端用 <code>SecureRandom</code>（密碼學等級的亂數）產生 32 bytes、也就是 256 位元的隨機值，編碼成文字後回給前端，這就是 <code>guestToken</code>。前端把它和原本的 <code>sessionToken</code> 一起存起來。</p>
+          <p>資料庫<strong>不存 guest token 本身</strong>，只存它的 SHA-256 雜湊（可以想成「指紋」）：同一個 token 算出來的指紋永遠一樣，但從指紋推不回 token。這樣就算資料庫外洩，別人也拿不到可以用的 token。因為 token 本身是 256 位元的亂數，不像人設的密碼容易被猜，所以用 SHA-256 就夠了。</p>
+
+          <h3>2. 每個請求都要「兩把鑰匙」對得上</h3>
+          <ul class="prompt-list">
+            <li><span><code>X-Session-Token</code>：原本的 JWT，裡面寫著「哪一次用餐、哪一位客人」。不再比對裝置 ID。</span></li>
+            <li><span><code>X-Guest-Token</code>：新發的鑰匙。後端把它算成指紋，到資料庫找客人，這位客人必須屬於 JWT 裡的那次用餐、而且就是 JWT 裡的那位客人。</span></li>
+            <li><span>任何一個缺少或對不上，回 <code>401 INVALID_GUEST_TOKEN</code>。只有兩個都驗過之後，才會告訴對方「這桌已經結帳」（PAID）之類的狀態，避免拿假 token 探測別桌狀況。</span></li>
+            <li><span>購物車服務改成直接用驗證過的客人 ID，不再用裝置 ID 查人。付款收據查詢也改成驗 guest token。</span></li>
+          </ul>
+
+          <h3>3. WebSocket 只用 session token</h3>
+          <p>規格規定 guest token 只用在一般的 HTTP 請求，不放進 WebSocket。即時推播的連線只驗 <code>X-Session-Token</code>，確認這位客人屬於這次用餐、用餐還在進行中。推播本身只是通知，所有真正改資料的動作都還是走需要兩把鑰匙的 HTTP API。</p>
+
+          <h3>4. 重新進入：兩把鑰匙都對才認回同一位</h3>
+          <p>客人關掉網頁再掃同一張 QR，前端會帶著手上的兩個 token 加入；兩個都屬於這桌目前的用餐，才恢復成同一位客人（購物車裡自己的品項還能改）。否則<strong>一律建立新的客人</strong>，就算裝置 ID 一模一樣也一樣。所以資料表原本「同一次用餐、同一個裝置 ID 只能有一位客人」的唯一索引，改成一般索引。</p>
+
+          <h3>5. 其他</h3>
+          <ul class="prompt-list">
+            <li><span>公開的查桌況 API 只回「桌號、有沒有開桌」，不再回任何 token。</span></li>
+            <li><span>裝置 ID 變成選填，有帶的話最多 36 字，超過回 <code>400 VALIDATION_FAILED</code>。</span></li>
+            <li><span>掃碼頁拿掉寫死的人數與時間。</span></li>
+            <li><span>資料庫新增 <code>guest_token_hash</code> 欄位，附一支不改舊資料的升級腳本；舊資料的客人沒有指紋，重新掃碼會成為新客人。</span></li>
+          </ul>
+
+          <h3>主要程式檔案</h3>
+          <ul class="prompt-list">
+            <li><span><code>backend/src/main/java/tw/ispan/smartorder/util/GuestToken.java</code>：產生亂數 token 與 SHA-256 指紋。</span></li>
+            <li><span><code>backend/src/main/java/tw/ispan/smartorder/service/DiningService.java</code>、<code>controller/DiningController.java</code>：查桌況與加入用餐。</span></li>
+            <li><span><code>backend/src/main/java/tw/ispan/smartorder/controller/SessionTokenFilter.java</code>、<code>ordercart/service/CurrentGuestServiceImpl.java</code>、<code>config/WebSocketConfig.java</code>、<code>controller/PaymentController.java</code>：各入口的身分驗證。</span></li>
+            <li><span><code>backend/db/schema.sql</code>、<code>backend/db/migrate_guest_token.sql</code>：資料表與升級腳本。</span></li>
+            <li><span><code>frontend/src/services/client/tokenStore.ts</code>、<code>auth.ts</code>、<code>customerClient.ts</code>、<code>frontend/src/features/customer/order/CheckIn.jsx</code>、付款頁：保存與送出兩個 token、掃碼頁。</span></li>
+          </ul>
+        </section>
+
+        <section class="section-card" id="found">
+          <span class="section-kicker">獨立審查找到的回歸</span>
+          <h2>掃錯桌，就回不去原本的自己</h2>
+          <p>審查發現掃碼頁有一行舊程式：如果手機手上的身分屬於別桌，就先把 token 全部清掉。以前這沒關係，因為回原桌時後端會用裝置 ID 找回同一位客人。但現在 token 是唯一能證明身分的東西：</p>
+          <ol class="step-list">
+            <li class="step-card"><p>客人在 A 桌，購物車裡有還沒送出的品項。</p></li>
+            <li class="step-card"><p>不小心掃到 B 桌的 QR（還沒按「開始點餐」），兩個 token 就被清掉了。</p></li>
+            <li class="step-card"><p>回 A 桌重新掃碼，只能成為新的客人；原本那些品項沒有人能改、刪或送出。</p></li>
+          </ol>
+          <p>修法：掃到別桌時先<strong>保留</strong> token，只記住「手上的 token 是別桌的」；真的按下「開始點餐」加入 B 桌時，不帶 A 桌的 token，加入成功後才換成 B 桌的。這也提醒我們：<strong>改掉一個安全機制時，要回頭檢查原本依賴它的程式</strong>。</p>
+        </section>
+
+        <section class="section-card" id="walkthrough">
+          <span class="section-kicker">手把手驗收 · 請在本機隔離資料庫</span>
+          <h2>你可以照著做一次</h2>
+          <ol class="step-list">
+            <li class="step-card"><p><strong>重現原本的攻擊。</strong>手機 A 加入 A03 並加一個品項。用 A 的裝置 ID 呼叫查桌況：回應只有 <code>{"tableNo","open"}</code>，沒有 token。再用 A 的裝置 ID 加入：拿到的是另一位客人。用這位「冒充者」去改、刪 A 的品項都回 <code>403</code>，送單回 <code>409 CART_EMPTY</code>（他自己沒有品項）。A 自己仍然可以修改。</p></li>
+            <li class="step-card"><p><strong>各種 header 組合。</strong>只帶 session token → <code>401 INVALID_GUEST_TOKEN</code>；自己的 session token 配別人的 guest token → <code>401</code>；亂打的 guest token → <code>401</code>；不帶裝置 ID 也能正常使用；換一個裝置 ID 不會變成別人。</p></li>
+            <li class="step-card"><p><strong>重新進入。</strong>帶自己的兩個 token 再加入：同一位客人、同一把 guest token。帶別桌的 token 加入：在這桌建立新客人。只帶 session token：建立新客人。</p></li>
+            <li class="step-card"><p><strong>裝置 ID 與儲存。</strong>37 字回 <code>400</code>；36 字或不帶都可以。資料庫裡存的是 token 的 SHA-256 指紋，找不到 token 原文；同一個裝置 ID 在同一次用餐可以有多位客人。</p></li>
+            <li class="step-card"><p><strong>回歸測試。</strong>個人購物車、訂單一致性、結帳、代客點餐、付款這幾組原本的 HTTP 測試，全部改成帶兩個 token 後重跑，確認都正常。</p></li>
+            <li class="step-card"><p><strong>瀏覽器（手機 390 像素寬）。</strong>兩支手機故意用同一個裝置 ID 掃碼加入：拿到不同的 guest token。A 加品項，B 的購物車頁不用重新整理就看到（WebSocket 只帶 session token）。只剩舊 token 的手機會被清掉 token、回到首頁。已加入的手機掃自己那桌，直接回菜單；掃到別桌再回來，仍是原本那位客人。</p></li>
+          </ol>
+        </section>
+
+        <section class="section-card" id="evidence">
+          <h2>提交與驗證紀錄</h2>
+          <p>程式版本：Git commit <code>dcbba26</code>。</p>
+          <div class="evidence-grid">
+            <div class="note-card report"><h3>HTTP 與資料庫檢查</h3><p>身分專項 38 項全部通過（含原本的冒用情境）；另有基線 36 項，以及回歸測試：個人購物車 56、訂單一致性 200、結帳 156、代客點餐 108、付款 127，全部通過。升級腳本在舊結構（108 位既有客人）上套用成功，舊資料不變。<a href="../evidence/dcbba26-http.json">查看完整 HTTP 紀錄</a>。</p></div>
+            <div class="note-card report"><h3>瀏覽器操作檢查</h3><p>手機 390 像素寬 12 項全部通過，包含兩支手機故意使用相同裝置 ID、WebSocket 只帶 session token 仍收到同桌更新、只剩舊 token 的手機被引導回首頁，以及審查找到的「掃到別桌再回原桌」回歸。<a href="../evidence/dcbba26-browser.json">查看完整瀏覽器紀錄</a>。</p></div>
+          </div>
+          <p class="intro-note">還沒處理、會在後續處理的：JWT 簽章金鑰目前寫死在程式碼裡（屬於 Harry 的共用技術地基 L0，WebSocket 只靠 JWT，所以這項要優先修）；同桌通知裡仍帶著裝置 ID，前端用它判斷「是不是自己剛做的」，只影響要不要跳通知，不影響權限。</p>
+        </section>
+
+        <section class="section-card" id="feedback">
+          <h2>前輩回饋、報告與履歷</h2>
+          <div class="evidence-grid">
+            <div class="note-card feedback">
+              <h3>技術前輩的建議</h3>
+              <p>看到一個欄位要被拿來「認人」時，先問：「誰能產生它？誰能看到它？」如果客戶端可以自己產生、或其他人看得到，它就只能當識別碼，不能當憑證。裝置 ID 兩個條件都不符合。</p>
+              <p>憑證要由伺服器產生、只交給本人、資料庫只存雜湊，這是密碼、API key、重設密碼連結都會用到的同一套原則。學會一次，以後很多地方都用得上。</p>
+            </div>
+            <div class="note-card report">
+              <h3>這個功能用到的技術</h3>
+              <ul>
+                <li>識別碼與憑證的區分、威脅建模（誰能看到、誰能偽造）</li>
+                <li><code>SecureRandom</code> 產生高熵 token、SHA-256 雜湊儲存</li>
+                <li>JWT 與資料庫雙重驗證、Servlet Filter、Spring WebSocket（STOMP）CONNECT 驗證</li>
+                <li>資料庫唯一索引調整與不改舊資料的升級腳本</li>
+                <li>前端 token 保存與 401 處理、跨模組回歸測試</li>
+              </ul>
+            </div>
+          </div>
+          <div class="note-card">
+            <h3>專題報告與履歷可以這樣寫</h3>
+            <p>報告：先示範「知道別人的裝置 ID 就能改他的購物車」（用修正前的版本），再解釋識別碼和憑證的差別，最後示範同樣的步驟現在被擋下。評審通常對「自己找到並修好安全問題」很有印象。</p>
+            <p>履歷：「參與多人同桌點餐的身分驗證改寫：以伺服器簽發的隨機 token（僅存 SHA-256 雜湊）取代可偽造的裝置識別碼，修正可冒用他人購物車的安全問題，並以 HTTP 與多裝置瀏覽器測試驗證。」請寫「參與」，這是跨工作包的整合修正。</p>
+          </div>
+        </section>
+
+        <section class="section-card" id="terms">
+          <h2>新手名詞表</h2>
+          <dl class="glossary">
+            <div class="term"><dt>識別碼（identifier）與憑證（credential）</dt><dd>識別碼只說「是誰」，別人知道也無妨；憑證用來證明「是本人」，只能本人持有。</dd></div>
+            <div class="term"><dt>X-Device-Id（裝置 ID）</dt><dd>前端隨機產生、存在瀏覽器的一串 ID，用來顯示或除錯；因為客戶端可以任意修改，不能用來認人。</dd></div>
+            <div class="term"><dt>token（權杖）</dt><dd>一段代表「你已經通過驗證」的文字，之後每個請求都帶著它。本案有 session token 與 guest token 兩種。</dd></div>
+            <div class="term"><dt>JWT（JSON Web Token，JSON 網頁權杖）</dt><dd>一種帶有簽章的 token，內容（例如用餐 ID、客人 ID）可以被讀出來，但沒有金鑰就無法偽造或竄改。</dd></div>
+            <div class="term"><dt>JSON（JavaScript Object Notation，JavaScript 物件表示法）</dt><dd>API 傳資料用的文字格式。</dd></div>
+            <div class="term"><dt>SecureRandom</dt><dd>Java 提供的密碼學等級亂數產生器，產生的值無法被預測，適合用來做 token。</dd></div>
+            <div class="term"><dt>SHA-256 與雜湊（hash）</dt><dd>SHA 是 Secure Hash Algorithm（安全雜湊演算法）。雜湊把任意資料算成固定長度的「指紋」，同樣的輸入得到同樣的指紋，但無法從指紋反推原文。</dd></div>
+            <div class="term"><dt>熵（entropy）</dt><dd>衡量一個值有多難猜。256 位元的亂數有 2<sup>256</sup> 種可能，實務上猜不到。</dd></div>
+            <div class="term"><dt>API（Application Programming Interface，應用程式介面）</dt><dd>前端呼叫後端功能的網址與規則。</dd></div>
+            <div class="term"><dt>HTTP 狀態碼 400／401／403／409</dt><dd>HTTP 是 Hypertext Transfer Protocol（超文字傳輸協定）。400 資料格式不對；401 沒有通過身分驗證；403 身分正確但沒有權限；409 跟目前資料狀態衝突。</dd></div>
+            <div class="term"><dt>Filter（過濾器）</dt><dd>請求進到各個 API 之前先經過的關卡，這裡統一檢查兩個 token。</dd></div>
+            <div class="term"><dt>WebSocket 與 STOMP</dt><dd>WebSocket 是保持開著的連線，伺服器可以主動推訊息；STOMP（Simple Text Oriented Messaging Protocol，簡單文字導向訊息協定）在連線一開始的 CONNECT 步驟驗證身分。</dd></div>
+            <div class="term"><dt>唯一索引（UNIQUE index）</dt><dd>資料庫規則：某些欄位的組合不能重複。這次拿掉「同一次用餐、同一個裝置 ID 只能一位客人」的限制。</dd></div>
+            <div class="term"><dt>migration（資料庫升級腳本）</dt><dd>把正在使用的資料庫從舊結構升級成新結構的一次性腳本，本案不刪、不改舊資料。</dd></div>
+            <div class="term"><dt>回歸（regression）</dt><dd>改了某處之後，原本正常的功能壞掉。所以修改後要重跑原本的測試。</dd></div>
+            <div class="term"><dt>L0（Level 0，共用技術地基）</dt><dd>全隊共用的基礎設定，例如驗證、金鑰與時區，由 Harry 負責整理。</dd></div>
+            <div class="term"><dt>SHA／Git commit</dt><dd>Git 用 SHA 幫每個版本（commit）產生識別碼，本文列的是短識別碼。</dd></div>
+          </dl>
+        </section>
+
+        <footer class="page-footer"><a href="index.html">← 回 Vincent 工作包</a></footer>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
