@@ -4,7 +4,7 @@ import InfoBox from "../../../components/InfoBox";
 import SOButton from "../../../components/SOButton";
 import { useParams, useNavigate } from "react-router";
 import { customerClient } from "@/services/client/customerClient";
-import { joinTable, leaveTable } from "@/services/client/auth";
+import { joinTable } from "@/services/client/auth";
 import { customerTokens } from "@/services/client/tokenStore";
 
 // 原檔名 Movein.jsx
@@ -38,6 +38,8 @@ export function CheckIn() {
   const [status, setStatus] = useState(null);
   const [error, setError] = useState("");
   const [joining, setJoining] = useState(false);
+  // 手上的權杖屬於別桌：先留著（客人可能只是掃錯，回原桌還要靠它認回同一位 guest），加入這桌時不帶
+  const [tokensFromOtherTable, setTokensFromOtherTable] = useState(false);
 
 
   useEffect(() => {
@@ -50,7 +52,7 @@ export function CheckIn() {
             navigate(ORDER_HOME, { replace: true }); 
             return;
           }
-          leaveTable(); 
+          setTokensFromOtherTable(true);
         } catch {
 
         }
@@ -70,12 +72,14 @@ export function CheckIn() {
   async function handleJoin() {
     setJoining(true);
     try {
+      // 手上還有這桌的用餐權杖與 guest 權杖就一起帶，後端兩個都對得上才會恢復原本的 guest；
+      // 沒有或對不上就建立新的 guest（X-Device-Id 只是提示，不會拿來認人）
       const { data } = await customerClient.post(
         `/tables/${tableNo}/join`,
         null,
-        { customerAuth: [] }
+        { customerAuth: tokensFromOtherTable ? [] : ["session"] }
       );
-      joinTable(data.sessionToken);
+      joinTable(data.sessionToken, data.guestToken);
       navigate(ORDER_HOME, { replace: true });
     } catch (e) {
       setError(e.message);
@@ -91,9 +95,6 @@ export function CheckIn() {
 
   const val = {
     tab: status?.tableNo ?? tableNo,
-    adult: 2,
-    child: 1,
-    time: "18:32",
   };
 
   return (
@@ -109,10 +110,7 @@ export function CheckIn() {
 
       <div className="flex flex-col items-center justify-center w-full py-section px-field">
         <Badge text="用餐中" col="rec" />
-        <h1 className="type-display pt-field">{val.tab}桌</h1>
-        <p className="type-body-sm py-field">
-          {val.adult}大 {val.child}小 {val.time}入座
-        </p>
+        <h1 className="type-display py-field">{val.tab}桌</h1>
         <InfoBox icon={info.icon} col={info.col} text="F" custimtext={info.text} />
 
         <SOButton

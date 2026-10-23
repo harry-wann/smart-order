@@ -4,7 +4,7 @@ import InfoBox from '@/components/InfoBox.tsx'
 import SOButton from '@/components/SOButton.tsx'
 import { SvgIconMap } from '@/assets/SvgIconMap.tsx'
 import { createApiClient } from '@/services/client/createApiClient.ts'
-import { customerTokens, getDeviceId } from '@/services/client/tokenStore.ts'
+import { customerTokens } from '@/services/client/tokenStore.ts'
 import { getPaymentCredentials } from './paymentCredentials.js'
 
 const METHOD_LABELS = { ECPAY: '綠界線上付款', CASH: '現金', CARD: '信用卡' }
@@ -14,15 +14,16 @@ const receiptClient = createApiClient()
 
 const money = (n) => `NT$ ${Number(n ?? 0).toLocaleString()}`
 
+// 優先用付款當下存起來的權杖；沒有才用目前手上的這一組
 async function getPayment(no, signal) {
   const savedCredentials = getPaymentCredentials(no)
   const credentials =
     savedCredentials ??
-    (customerTokens.session.get()
-      ? { sessionToken: customerTokens.session.get(), deviceId: getDeviceId() }
+    (customerTokens.session.get() && customerTokens.guest.get()
+      ? { sessionToken: customerTokens.session.get(), guestToken: customerTokens.guest.get() }
       : null)
 
-  if (!credentials?.sessionToken || !credentials?.deviceId) {
+  if (!credentials?.sessionToken || !credentials?.guestToken) {
     throw new Error('找不到這筆付款的驗證資訊，請使用原付款分頁查詢，或至櫃檯確認')
   }
 
@@ -30,7 +31,7 @@ async function getPayment(no, signal) {
     signal,
     headers: {
       'X-Session-Token': credentials.sessionToken,
-      'X-Device-Id': credentials.deviceId,
+      'X-Guest-Token': credentials.guestToken,
     },
   })
 

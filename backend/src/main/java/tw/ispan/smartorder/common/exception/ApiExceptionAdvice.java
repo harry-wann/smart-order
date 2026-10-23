@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import tw.ispan.smartorder.common.dto.ErrorDetail;
 import tw.ispan.smartorder.common.dto.ErrorResponse;
+import tw.ispan.smartorder.controller.DiningController;
 import tw.ispan.smartorder.controller.KitchenTicketsController;
 import tw.ispan.smartorder.controller.SeatController;
 import tw.ispan.smartorder.controller.TableController;
@@ -38,7 +39,7 @@ import java.util.List;
         "tw.ispan.smartorder.staff",
         "tw.ispan.smartorder.ordercart.controller"
 }, assignableTypes = {KitchenTicketsController.class, StaffOrderController.class, PaymentController.class,
-        TableController.class, SeatController.class, WaitlistController.class})
+        TableController.class, SeatController.class, WaitlistController.class, DiningController.class})
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class ApiExceptionAdvice {
 

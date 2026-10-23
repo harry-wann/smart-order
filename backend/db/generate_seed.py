@@ -443,6 +443,8 @@ def add_session(table, opened, adults, children, status='OPEN', closed=None, rid
 
 
 def add_guest(s, joined, name, mid=None):
+    # guest_token_hash 不寫，維持 NULL：X-Guest-Token 只在 join 時由後端簽發，假資料的 guest 沒有人拿得到原始值；
+    # device_id 只是顯示用的提示。要操作購物車請用手機掃碼加入，會建立新的 guest。
     gid = nid('guest')
     guest.add(id=gid, dining_session_id=s.sid, device_id=device(), display_name=name, member_id=mid, joined_at=joined,
               created_at=joined)

@@ -1,7 +1,9 @@
 const STORAGE_PREFIX = 'customer.paymentReceipt.'
 
-export function canSavePaymentCredentials(sessionToken, deviceId) {
-  if (!sessionToken || !deviceId) return false
+// 收據查詢要的是付款當下那位 guest 的兩個權杖（X-Session-Token＋X-Guest-Token），
+// 存在這個分頁的 sessionStorage，之後換桌或重新掃碼也查得到原本那筆
+export function canSavePaymentCredentials(sessionToken, guestToken) {
+  if (!sessionToken || !guestToken) return false
 
   let storage
   let probeKey
@@ -9,7 +11,7 @@ export function canSavePaymentCredentials(sessionToken, deviceId) {
     storage = globalThis.sessionStorage
     if (!storage) return false
 
-    const serialized = JSON.stringify({ sessionToken, deviceId })
+    const serialized = JSON.stringify({ sessionToken, guestToken })
     for (let attempt = 0; attempt < 3; attempt += 1) {
       const probeTransactionNo = createProbeTransactionNo()
       const candidateKey = `${STORAGE_PREFIX}${probeTransactionNo}`
@@ -34,15 +36,15 @@ export function canSavePaymentCredentials(sessionToken, deviceId) {
   }
 }
 
-export function savePaymentCredentials(transactionNo, sessionToken, deviceId) {
-  if (!transactionNo || !sessionToken || !deviceId) return false
+export function savePaymentCredentials(transactionNo, sessionToken, guestToken) {
+  if (!transactionNo || !sessionToken || !guestToken) return false
 
   try {
     const storage = globalThis.sessionStorage
     if (!storage) return false
     storage.setItem(
       `${STORAGE_PREFIX}${transactionNo}`,
-      JSON.stringify({ sessionToken, deviceId }),
+      JSON.stringify({ sessionToken, guestToken }),
     )
     return true
   } catch {
@@ -72,12 +74,13 @@ export function getPaymentCredentials(transactionNo) {
     const raw = storage.getItem(`${STORAGE_PREFIX}${transactionNo}`)
     if (!raw) return null
 
+    // 舊版只存了裝置識別碼、沒有 guestToken 的紀錄查不到收據，當作沒存
     const credentials = JSON.parse(raw)
     if (
       typeof credentials?.sessionToken !== 'string' ||
       !credentials.sessionToken ||
-      typeof credentials?.deviceId !== 'string' ||
-      !credentials.deviceId
+      typeof credentials?.guestToken !== 'string' ||
+      !credentials.guestToken
     ) {
       return null
     }

@@ -17,11 +17,13 @@ export const customerClient = createApiClient(clearRejectedToken)
 customerClient.interceptors.request.use(attachCustomerHeaders)
 
 function attachCustomerHeaders(config: InternalAxiosRequestConfig) {
+  // 只是提示，後端不拿它判斷身分
   config.headers.set('X-Device-Id', getDeviceId())
 
   for (const credential of config.customerAuth ?? DEFAULT_CREDENTIALS) {
-    const [name, value] = CREDENTIAL_HEADERS[credential]()
-    if (value) config.headers.set(name, value)
+    for (const [name, value] of CREDENTIAL_HEADERS[credential]()) {
+      if (value) config.headers.set(name, value)
+    }
   }
 
   return config
@@ -32,7 +34,11 @@ function clearRejectedToken(error: ApiError, config?: InternalAxiosRequestConfig
   if (error.status !== 401) return
 
   const sentSession = sentHeader(config, 'X-Session-Token')
-  if (error.code === 'INVALID_SESSION_TOKEN' && sentSession && sentSession === customerTokens.session.get()) {
+  if (
+    (error.code === 'INVALID_SESSION_TOKEN' || error.code === 'INVALID_GUEST_TOKEN')
+    && sentSession
+    && sentSession === customerTokens.session.get()
+  ) {
     leaveTable()
   }
 
@@ -44,10 +50,14 @@ function clearRejectedToken(error: ApiError, config?: InternalAxiosRequestConfig
 
 const DEFAULT_CREDENTIALS: CustomerCredential[] = ['session']
 
-const CREDENTIAL_HEADERS: Record<CustomerCredential, () => [string, string | null]> = {
-  session: () => ['X-Session-Token', customerTokens.session.get()],
-  member: () => ['Authorization', bearer(customerTokens.member.get())],
-  reservation: () => ['X-Reservation-Token', customerTokens.reservation.get()],
+// session 一次帶兩個：X-Session-Token 說坐哪一桌，X-Guest-Token 證明是哪位 guest
+const CREDENTIAL_HEADERS: Record<CustomerCredential, () => [string, string | null][]> = {
+  session: () => [
+    ['X-Session-Token', customerTokens.session.get()],
+    ['X-Guest-Token', customerTokens.guest.get()],
+  ],
+  member: () => [['Authorization', bearer(customerTokens.member.get())]],
+  reservation: () => [['X-Reservation-Token', customerTokens.reservation.get()]],
 }
 
 function bearer(token: string | null) {

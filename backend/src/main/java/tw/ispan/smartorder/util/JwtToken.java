@@ -9,25 +9,28 @@ import java.security.Key;
 import java.util.Date;
 
 public class JwtToken {
-    public record GuestIdentity(Long sessionId, Long guestId, String deviceId) {}
+    public record GuestIdentity(Long sessionId, Long guestId) {}
 
-    public static String createGuestToken(Long sessionId, Long guestId, String deviceId) {
+    // 用餐權杖（X-Session-Token）只說「坐哪一桌、自稱哪位 guest」；
+    // 要動購物車或送單，還要再帶 X-Guest-Token 證明真的是那位 guest（見 GuestToken）。
+    // 不再放 deviceId：裝置識別碼可偽造，不參與身分判斷。
+    public static String createGuestToken(Long sessionId, Long guestId) {
         return Jwts.builder().setSubject(sessionId.toString())
-                .claim("guestId", guestId).claim("deviceId", deviceId)
+                .claim("guestId", guestId)
                 .setId(java.util.UUID.randomUUID().toString())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 12 * 60 * 60 * 1000L))
                 .signWith(key).compact();
     }
 
-    public static GuestIdentity parseGuestToken(String token, String deviceId) {
+    // 舊版權杖裡的 deviceId claim 直接忽略
+    public static GuestIdentity parseGuestToken(String token) {
         var claims = Jwts.parserBuilder().setSigningKey(key).build()
                 .parseClaimsJws(token).getBody();
-        if (deviceId == null || deviceId.isBlank() || !deviceId.equals(claims.get("deviceId"))
-                || !(claims.get("guestId") instanceof Number guestId)) {
-            throw new IllegalArgumentException("客人憑證與裝置不符，請重新掃碼");
+        if (!(claims.get("guestId") instanceof Number guestId)) {
+            throw new IllegalArgumentException("用餐憑證格式不符，請重新掃碼");
         }
-        return new GuestIdentity(Long.valueOf(claims.getSubject()), guestId.longValue(), deviceId);
+        return new GuestIdentity(Long.valueOf(claims.getSubject()), guestId.longValue());
     }
 	private static final String SECRET = "asdfghjklvasdaswfesasdasdcvwsasdaddasdwfszxcd";
 	private static final long EXP_TIME=60*60*1000;
