@@ -5,7 +5,16 @@ export interface Category {
   id: string;
   name: string;
   count: number;
+  active?: boolean;
 }
+
+// 可以掛在品項上的選項群組（來自 /order/admin/optionGroups）
+export interface OptionGroupSummary {
+  id: number;
+  name: string;
+}
+
+const SPICY_LABELS = ['不辣', '小辣', '中辣', '大辣'];
 
 export interface Product {
   id: number;
@@ -17,6 +26,15 @@ export interface Product {
   status: 'active' | 'inactive';
   imageText: string;
   imageUrl?: string | null;
+  // 鍋底、免費續加、是否追蹤庫存、飲食標示（素食、含牛、辣度 0–3）
+  soupBase?: boolean;
+  refill?: boolean;
+  trackInventory?: boolean;
+  vegetarian?: boolean;
+  containsBeef?: boolean;
+  spicyLevel?: number;
+  // 掛在這個品項上的選項群組 id，陣列順序就是顧客端顯示順序
+  optionGroupIds?: number[];
 }
 
 interface ProductModalProps {
@@ -24,6 +42,7 @@ interface ProductModalProps {
   mode: 'add' | 'edit';
   initialData: Partial<Product>;
   categories: Category[];
+  optionGroups: OptionGroupSummary[];
   onClose: () => void;
   onSave: (productData: Partial<Product>) => void | Promise<void>;
   onDelete: (productId: number) => void | Promise<void>;
@@ -34,6 +53,7 @@ export default function ProductModal({
   mode,
   initialData,
   categories,
+  optionGroups,
   onClose,
   onSave,
   onDelete
@@ -53,6 +73,46 @@ export default function ProductModal({
   }, [isOpen, initialData, defaultCategoryId]);
 
   if (!isOpen) return null;
+
+  const selectedGroupIds = formData.optionGroupIds ?? [];
+  const availableGroups = optionGroups.filter(group => !selectedGroupIds.includes(group.id));
+  const isRefill = formData.refill === true;
+  const isTracked = formData.trackInventory !== false;
+
+  // 免費續加：價格固定 0、不追蹤庫存（仍會出單）；鍋底和免費續加不會同時成立
+  const toggleRefill = (checked: boolean) => {
+    setFormData(prev => checked
+      ? { ...prev, refill: true, soupBase: false, price: 0, trackInventory: false }
+      : { ...prev, refill: false });
+  };
+
+  const toggleSoupBase = (checked: boolean) => {
+    setFormData(prev => checked
+      ? { ...prev, soupBase: true, refill: false }
+      : { ...prev, soupBase: false });
+  };
+
+  const addOptionGroup = (groupId: number) => {
+    if (!Number.isInteger(groupId) || selectedGroupIds.includes(groupId)) return;
+    setFormData(prev => ({ ...prev, optionGroupIds: [...(prev.optionGroupIds ?? []), groupId] }));
+  };
+
+  const removeOptionGroup = (groupId: number) => {
+    setFormData(prev => ({
+      ...prev,
+      optionGroupIds: (prev.optionGroupIds ?? []).filter(id => id !== groupId),
+    }));
+  };
+
+  const moveOptionGroup = (index: number, direction: -1 | 1) => {
+    setFormData(prev => {
+      const ids = [...(prev.optionGroupIds ?? [])];
+      const target = index + direction;
+      if (target < 0 || target >= ids.length) return prev;
+      [ids[index], ids[target]] = [ids[target], ids[index]];
+      return { ...prev, optionGroupIds: ids };
+    });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,7 +181,7 @@ export default function ProductModal({
                 className="w-full px-3 py-2 text-sm border border-line rounded-lg focus:outline-none focus:border-brand-600 bg-surface cursor-pointer"
               >
                 {categories.filter(c => c.id !== 'all').map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  <option key={cat.id} value={cat.id}>{cat.name}{cat.active === false ? '（停用）' : ''}</option>
                 ))}
               </select>
             </div>
@@ -149,7 +209,8 @@ export default function ProductModal({
                   value={formData.price || 0}
                   onChange={e => setFormData({ ...formData, price: Number(e.target.value) })}
                   required
-                  className="w-full pl-7 pr-3 py-2 text-sm border border-line rounded-lg focus:outline-none focus:border-brand-600 bg-surface"
+                  disabled={isRefill}
+                  className="w-full pl-7 pr-3 py-2 text-sm border border-line rounded-lg focus:outline-none focus:border-brand-600 bg-surface disabled:bg-surface-2 disabled:text-ink-400"
                 />
               </div>
             </div>
@@ -161,9 +222,123 @@ export default function ProductModal({
                 value={formData.stock ?? 0}
                 onChange={e => setFormData({ ...formData, stock: Number(e.target.value) })}
                 required
-                className="w-full px-3 py-2 text-sm border border-line rounded-lg focus:outline-none focus:border-brand-600 bg-surface"
+                disabled={!isTracked}
+                className="w-full px-3 py-2 text-sm border border-line rounded-lg focus:outline-none focus:border-brand-600 bg-surface disabled:bg-surface-2 disabled:text-ink-400"
               />
             </div>
+          </div>
+
+          <div>
+            <span className="block text-xs font-medium text-ink-600 mb-2">品項標示</span>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-ink-900">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.soupBase === true}
+                  onChange={e => toggleSoupBase(e.target.checked)}
+                />
+                鍋底（每桌至少一份）
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isRefill}
+                  onChange={e => toggleRefill(e.target.checked)}
+                />
+                免費續加（價格 0、不扣庫存）
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isTracked}
+                  disabled={isRefill}
+                  onChange={e => setFormData({ ...formData, trackInventory: e.target.checked })}
+                />
+                追蹤庫存
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.vegetarian === true}
+                  onChange={e => setFormData({ ...formData, vegetarian: e.target.checked })}
+                />
+                素食
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.containsBeef === true}
+                  onChange={e => setFormData({ ...formData, containsBeef: e.target.checked })}
+                />
+                含牛肉
+              </label>
+              <label className="flex items-center gap-2">
+                辣度
+                <select
+                  value={formData.spicyLevel ?? 0}
+                  onChange={e => setFormData({ ...formData, spicyLevel: Number(e.target.value) })}
+                  className="flex-1 px-2 py-1 text-sm border border-line rounded-lg focus:outline-none focus:border-brand-600 bg-surface cursor-pointer"
+                >
+                  {SPICY_LABELS.map((label, level) => (
+                    <option key={level} value={level}>{level}　{label}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <span className="block text-xs font-medium text-ink-600 mb-1">選項群組（份量、辣度、加點…）</span>
+            {selectedGroupIds.length === 0 ? (
+              <p className="text-xs text-ink-400 mb-2">尚未掛上任何選項群組</p>
+            ) : (
+              <ul className="flex flex-col gap-1 mb-2">
+                {selectedGroupIds.map((groupId, index) => (
+                  <li key={groupId} className="flex items-center gap-2 rounded-lg border border-line px-3 py-1.5 text-sm text-ink-900">
+                    <span className="w-4 text-xs text-ink-400 tabular-nums">{index + 1}</span>
+                    <span className="flex-1 truncate">
+                      {optionGroups.find(group => group.id === groupId)?.name ?? `群組 #${groupId}`}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label="上移"
+                      disabled={index === 0}
+                      onClick={() => moveOptionGroup(index, -1)}
+                      className="px-1.5 text-ink-600 hover:text-ink-900 disabled:opacity-30 cursor-pointer"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="下移"
+                      disabled={index === selectedGroupIds.length - 1}
+                      onClick={() => moveOptionGroup(index, 1)}
+                      className="px-1.5 text-ink-600 hover:text-ink-900 disabled:opacity-30 cursor-pointer"
+                    >
+                      ↓
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeOptionGroup(groupId)}
+                      className="text-xs text-danger hover:text-red-700 cursor-pointer"
+                    >
+                      移除
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <select
+              value=""
+              disabled={availableGroups.length === 0}
+              onChange={e => addOptionGroup(Number(e.target.value))}
+              className="w-full px-3 py-2 text-sm border border-line rounded-lg focus:outline-none focus:border-brand-600 bg-surface cursor-pointer disabled:opacity-50"
+            >
+              <option value="">{availableGroups.length === 0 ? '沒有可加入的選項群組' : '加入選項群組…'}</option>
+              {availableGroups.map(group => (
+                <option key={group.id} value={group.id}>{group.name}</option>
+              ))}
+            </select>
           </div>
 
           <div className="flex justify-end gap-3 pt-6 mt-2 border-t border-line">

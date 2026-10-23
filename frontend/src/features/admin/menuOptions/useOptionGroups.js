@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { createApiClient } from '@/services/client/createApiClient';
+import { describeApiError } from '@/services/client/ApiError';
+import { employeeClient } from '@/services/client/employeeClient';
 import { validateOptionGroup } from './validation';
 
-const optionGroupsClient = createApiClient();
-
+// 選項群組 API（/order/admin）只給店長，要帶員工 token，所以用 employeeClient
 export default function useOptionGroups() {
   const [groups, setGroups] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState(null);
@@ -29,7 +29,7 @@ export default function useOptionGroups() {
 
     async function loadOptionGroups() {
       try {
-        const { data } = await optionGroupsClient.get('/order/admin/optionGroups');
+        const { data } = await employeeClient.get('/order/admin/optionGroups');
         if (!isCurrentRequest) return;
 
         const fetchedGroups = data.map(group => ({
@@ -45,7 +45,7 @@ export default function useOptionGroups() {
         setSelectedGroupId(fetchedGroups[0]?.id ?? null);
       } catch (error) {
         if (isCurrentRequest) {
-          setLoadError(error instanceof Error ? error.message : '載入選項群組失敗');
+          setLoadError(describeApiError(error, '載入選項群組失敗'));
         }
       } finally {
         if (isCurrentRequest) setIsLoading(false);
@@ -80,7 +80,7 @@ export default function useOptionGroups() {
     setIsSavingGroup(true);
     setAddGroupError('');
     try {
-      const { data } = await optionGroupsClient.post('/order/admin/optionGroups', {
+      const { data } = await employeeClient.post('/order/admin/optionGroups', {
         name,
         minSelect,
         maxSelect,
@@ -100,7 +100,7 @@ export default function useOptionGroups() {
       setSelectedGroupId(createdGroup.id);
       setIsAddingGroup(false);
     } catch (error) {
-      setAddGroupError(error instanceof Error ? error.message : '新增群組失敗，請稍後再試');
+      setAddGroupError(describeApiError(error, '新增群組失敗，請稍後再試'));
     } finally {
       setIsSavingGroup(false);
     }
@@ -137,7 +137,7 @@ export default function useOptionGroups() {
     setIsSavingGroupEdit(true);
     setEditGroupError('');
     try {
-      const { data } = await optionGroupsClient.put(
+      const { data } = await employeeClient.put(
         `/order/admin/optionGroups/${editingGroup.id}`,
         { name, minSelect, maxSelect, sortOrder }
       );
@@ -156,7 +156,7 @@ export default function useOptionGroups() {
         .sort((first, second) => first.sortOrder - second.sortOrder));
       setEditingGroup(null);
     } catch (error) {
-      setEditGroupError(error instanceof Error ? error.message : '更新選項群組失敗，請稍後再試');
+      setEditGroupError(describeApiError(error, '更新選項群組失敗，請稍後再試'));
     } finally {
       setIsSavingGroupEdit(false);
     }
@@ -169,7 +169,7 @@ export default function useOptionGroups() {
     setIsSavingGroupEdit(true);
     setEditGroupError('');
     try {
-      await optionGroupsClient.delete(`/order/admin/optionGroups/${editingGroup.id}`);
+      await employeeClient.delete(`/order/admin/optionGroups/${editingGroup.id}`);
       const remainingGroups = groups.filter(group => group.id !== editingGroup.id);
       setGroups(prevGroups => prevGroups.filter(group => group.id !== editingGroup.id));
       setSelectedGroupId(previousId => (
@@ -177,7 +177,7 @@ export default function useOptionGroups() {
       ));
       setEditingGroup(null);
     } catch (error) {
-      setEditGroupError(error instanceof Error ? error.message : '刪除選項群組失敗，請稍後再試');
+      setEditGroupError(describeApiError(error, '刪除選項群組失敗，請稍後再試'));
     } finally {
       setIsSavingGroupEdit(false);
     }
@@ -207,7 +207,7 @@ export default function useOptionGroups() {
 
     try {
       const saveResults = await Promise.allSettled(groupsWithUpdatedOrder.map(group => (
-        optionGroupsClient.put(`/order/admin/optionGroups/${group.id}`, {
+        employeeClient.put(`/order/admin/optionGroups/${group.id}`, {
           name: group.name,
           minSelect: group.minSelect,
           maxSelect: group.maxSelect,
@@ -218,7 +218,7 @@ export default function useOptionGroups() {
       if (failedSave) throw failedSave.reason;
     } catch (error) {
       const rollbackResults = await Promise.allSettled(previousGroups.map(group => (
-        optionGroupsClient.put(`/order/admin/optionGroups/${group.id}`, {
+        employeeClient.put(`/order/admin/optionGroups/${group.id}`, {
           name: group.name,
           minSelect: group.minSelect,
           maxSelect: group.maxSelect,
@@ -227,7 +227,7 @@ export default function useOptionGroups() {
       )));
       setGroups(previousGroups);
       setReorderGroupsError(
-        `${error instanceof Error ? error.message : '重新排序選項群組失敗'}${
+        `${describeApiError(error, '重新排序選項群組失敗')}${
           rollbackResults.some(result => result.status === 'rejected')
             ? '；部分排序未能還原，請重新整理頁面。'
             : ''

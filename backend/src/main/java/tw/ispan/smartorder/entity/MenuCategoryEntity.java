@@ -22,7 +22,8 @@ public class MenuCategoryEntity {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    // 只用來查詢（算品項數量）。不要加 cascade：加了 ALL 之後刪分類會連底下的品項一起刪
+    @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
     @JsonIgnore
     private List<MenuItemEntity> menuItems;
 }

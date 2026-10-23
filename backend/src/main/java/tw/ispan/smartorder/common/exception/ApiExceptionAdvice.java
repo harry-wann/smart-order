@@ -18,6 +18,7 @@ import tw.ispan.smartorder.common.dto.ErrorResponse;
 import tw.ispan.smartorder.controller.DiningController;
 import tw.ispan.smartorder.controller.KitchenTicketsController;
 import tw.ispan.smartorder.controller.MemberAuthController;
+import tw.ispan.smartorder.controller.MenuController;
 import tw.ispan.smartorder.controller.SeatController;
 import tw.ispan.smartorder.controller.TableController;
 import tw.ispan.smartorder.controller.WaitlistController;
@@ -42,7 +43,7 @@ import java.util.List;
         "tw.ispan.smartorder.ordercart.controller"
 }, assignableTypes = {KitchenTicketsController.class, StaffOrderController.class, PaymentController.class,
         TableController.class, SeatController.class, WaitlistController.class, DiningController.class,
-        MemberAuthController.class})
+        MemberAuthController.class, MenuController.class})
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class ApiExceptionAdvice {
 

@@ -1,0 +1,91 @@
+{
+  "label": "clara-menu-admin-browser",
+  "commit": "528f45b",
+  "followUpCommit": "4b9a521",
+  "testedAt": "2026-10-23T13:56:35.070Z",
+  "passed": true,
+  "resultCount": 17,
+  "notes": [
+    "Vite on 127.0.0.1:5173 serving the main tree; manager and counter tokens from the isolated smoke context; customer menu at 390px."
+  ],
+  "results": [
+    {
+      "name": "Menu admin browser: 1024px: the first row edit button is visible without scrolling",
+      "passed": true,
+      "detail": "991px"
+    },
+    {
+      "name": "Menu admin browser: 1024px: no page-level horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "Menu admin browser: 1024px: the first row on/off switch is visible without scrolling (S-05 quick toggle)",
+      "passed": true,
+      "detail": "851–897px"
+    },
+    {
+      "name": "Menu admin browser: 1024px: the menu table needs no sideways scrolling",
+      "passed": true,
+      "detail": "{\"scroll\":558,\"client\":558}"
+    },
+    {
+      "name": "Menu admin browser: 1440px: the full column set is shown",
+      "passed": true,
+      "detail": "縮圖|品項|分類|價格|庫存|上架狀態|操作"
+    },
+    {
+      "name": "Menu admin browser: 1440px: no page-level horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "Menu admin browser: category rename from the sidebar is saved",
+      "passed": true
+    },
+    {
+      "name": "Menu admin browser: the sidebar disable sends only active (no stale name)",
+      "passed": true,
+      "detail": "{\"active\":false}"
+    },
+    {
+      "name": "Menu admin browser: disabling asks for confirmation first",
+      "passed": true,
+      "detail": "停用「畫面改名85378」後，顧客端看不到這個分類和底下的所有品項，確定嗎？"
+    },
+    {
+      "name": "Menu admin browser: the sidebar disable button calls the API successfully",
+      "passed": true,
+      "detail": "200"
+    },
+    {
+      "name": "Menu admin browser: disabling from the sidebar hides the category from customers",
+      "passed": true
+    },
+    {
+      "name": "Menu admin browser: product modal offers soup base, refill, inventory tracking, vegetarian, spiciness and option groups",
+      "passed": true
+    },
+    {
+      "name": "Menu admin browser: option groups page loads with the employee token",
+      "passed": true,
+      "detail": "200,200,200"
+    },
+    {
+      "name": "Menu admin browser: counter staff get 403 from menu admin APIs",
+      "passed": true,
+      "detail": "403,403,403,403,403,403"
+    },
+    {
+      "name": "Menu admin browser: counter staff see a clear permission notice",
+      "passed": true
+    },
+    {
+      "name": "Menu admin browser: customer menu drops a disabled category without reloading",
+      "passed": true,
+      "detail": "46ms"
+    },
+    {
+      "name": "Menu admin browser: no page errors or API 5xx",
+      "passed": true
+    }
+  ]
+}

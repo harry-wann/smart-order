@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7fb">
+  <title>Clara｜菜單管理</title>
+  <link rel="stylesheet" href="../assets/feedback.css">
+</head>
+<body>
+  <div class="site-shell">
+    <nav class="topbar" aria-label="主要導覽">
+      <a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">鍋</span><span>實作回饋整理</span></a>
+      <a class="toplink" href="index.html">回 Clara 工作包</a>
+    </nav>
+
+    <p class="breadcrumb"><a href="../index.html">成員索引</a> ／ <a href="index.html">Clara</a> ／ 菜單管理</p>
+    <header class="person-header">
+      <div class="meta-row"><span class="scope-tag">工作包 B（菜單）</span><span class="status">菜單管理已驗證</span></div>
+      <h1>Clara｜菜單管理：先把門鎖上，再把功能補齊</h1>
+      <p class="lede">S-05 菜單管理是店長每天都會用的後台：新增分類、改價錢、上下架、替品項掛上「份量」「辣度」這類選項。整合時發現，這組 API 完全沒有登入檢查，沒登入的人也能新增、修改、刪除菜單。這篇說明怎麼用 Spring Security 只讓店長進來，也把規格 M1 要求、但還沒做完的分類管理與品項標示補齊。</p>
+    </header>
+
+    <main class="person-layout">
+      <nav class="toc" aria-label="文章目錄">
+        <h2>這篇會走過</h2>
+        <ol>
+          <li><a href="#situation">先看現場情境</a></li>
+          <li><a href="#problems">原本哪裡會錯</a></li>
+          <li><a href="#changes">實際改法</a></li>
+          <li><a href="#added">補上的基本功能</a></li>
+          <li><a href="#review">審查後再修的地方</a></li>
+          <li><a href="#walkthrough">手把手驗收</a></li>
+          <li><a href="#evidence">提交與驗證紀錄</a></li>
+          <li><a href="#feedback">前輩回饋、報告與履歷</a></li>
+          <li><a href="#terms">新手名詞表</a></li>
+        </ol>
+      </nav>
+
+      <div class="content-stack">
+        <section class="scope-card" id="scope">
+          <span class="section-kicker">本篇範圍</span>
+          <h2>一個安全問題、兩個資料錯誤、一串補上的功能</h2>
+          <ul class="scope-list">
+            <li><strong>P1 菜單後台誰都能改：</strong>沒登入也能新增、修改、刪除分類與品項。修正前實測，四種操作都成功。</li>
+            <li><strong>停用的分類，顧客照樣看得到：</strong>分類本身、底下的品項、品項詳情頁都還在顧客的菜單上。</li>
+            <li><strong>刪除還有品項的分類，回 500 錯誤：</strong>後端想把品項一起刪掉，被庫存資料擋下，店長只看到「伺服器錯誤」。</li>
+            <li><strong>補上的基本功能：</strong>
+              <ul>
+                <li>分類可以改名、排序、停用。</li>
+                <li>品項可以標示鍋底、免費續加、是否追蹤庫存、素食／含牛／辣度，並掛上選項群組。</li>
+                <li>1024px 寬的平板上，看得到上架開關與編輯按鈕。</li>
+                <li>菜單圖片上傳只給店長。</li>
+              </ul>
+            </li>
+          </ul>
+          <p class="intro-note">依據 M1 菜單與品項規格 1.1–1.11、API 規格 §2.4（菜單管理只給店長 MANAGER）與 UI 規格 S-05。規格寫的路徑是 <code>/api/admin/menu/**</code>，實作掛在 <code>/api/order/admin/**</code>；這次以實作為準，只補上權限，不搬路徑。</p>
+        </section>
+
+        <section class="section-card" id="situation">
+          <span class="section-kicker">情境 · 店長在平板上改菜單</span>
+          <h2>後台 API 每次都要回答兩個問題</h2>
+          <p>任何後台請求進來，伺服器都要先回答：</p>
+          <ol>
+            <li><strong>你是誰？</strong>這叫<strong>認證</strong>（authentication）。員工登入後拿到一張 JWT（登入憑證），之後每個請求都帶著它。</li>
+            <li><strong>你可以做這件事嗎？</strong>這叫<strong>授權</strong>（authorization）。JWT 裡寫著角色：店長 <code>MANAGER</code>、櫃檯 <code>COUNTER</code>、廚房 <code>KITCHEN</code>。API 規格 §2.4 寫明：菜單管理只給店長。櫃檯不能改價錢，廚房也不能刪品項。</li>
+          </ol>
+          <p>在 Spring Boot 裡，這兩件事由 <strong>Spring Security</strong> 負責。專案的規則都寫在 <code>SecurityConfig.java</code>：一條一條由上往下比對，<strong>第一條符合的規則就決定結果</strong>。最後一條是「其他 <code>/api/**</code> 一律放行」，讓顧客端不用登入也能看菜單。</p>
+        </section>
+
+        <section class="section-card" id="problems">
+          <span class="section-kicker">原本哪裡會錯</span>
+          <h2>門沒鎖、停用沒用、刪除會爆</h2>
+
+          <h3>1. 菜單後台的路徑掉進了「一律放行」</h3>
+          <p><code>SecurityConfig</code> 裡有訂位、出菜、候位等後台路徑的規則，但沒有 <code>/api/order/admin/**</code>。比對到最後，它符合「其他 <code>/api/**</code> 一律放行」，所以誰都能呼叫。修正前在隔離環境實測，沒有帶任何憑證：</p>
+          <div class="compare-grid">
+            <div class="compare-side"><div class="compare-label">沒登入的人做得到</div><p>新增分類（200）、讀取含下架品項的後台菜單（200）、把品項上下架（200）、刪除分類（200）。</p></div>
+            <div class="compare-side"><div class="compare-label">為什麼平常沒發現</div><p>選項群組頁呼叫 API 時根本沒帶員工憑證，也一樣能用。門沒鎖的時候，<strong>「沒帶鑰匙」和「有帶鑰匙」看起來完全一樣</strong>。</p></div>
+          </div>
+          <p>還有一個藏得更深的地方：負責讀員工 JWT 的過濾器 <code>StaffJwtFilter</code>，原本只處理 <code>/api/admin/</code> 開頭的路徑。所以就算只在 <code>SecurityConfig</code> 加上「需要店長」的規則，伺服器也不知道這個人是店長（憑證沒被讀），結果會變成連店長都被擋掉。<strong>規則和讀憑證的地方要一起改</strong>。</p>
+          <p>菜單圖片上傳也有類似問題：原本只有一個環境變數開關 <code>R2_ALLOW_ANONYMOUS_UPLOADS</code>，關掉時沒人能上傳，打開時所有人都能上傳，沒有「只給店長」這個選項。</p>
+
+          <h3>2. 停用的分類，顧客還看得到</h3>
+          <p>顧客端查分類用的是 <code>findAll()</code>，也就是「全部拿出來」，沒有看 <code>active</code>（啟用）欄位。查品項時只看品項自己有沒有上架，沒有看它所屬的分類。修正前實測：把一個分類設成停用後，顧客的分類清單裡還有它，品項清單和品項詳情頁也照樣打得開。另外，新分類的排序值一律是 0，顧客端也沒有照排序值排列，店長沒辦法決定分類的先後。</p>
+
+          <h3>3. 刪除還有品項的分類，回 500</h3>
+          <p>分類實體 <code>MenuCategoryEntity</code> 設定了 <code>cascade = CascadeType.ALL</code>（連帶操作）：刪分類時，JPA 會試著把底下的品項一起刪掉。但每個品項都有一筆庫存資料指向它，Hibernate 因此丟出例外，前端只拿到 500（伺服器內部錯誤）。修正前實測：回 500，分類和品項都還在，店長不知道為什麼刪不掉。就算真的刪成功了也不對，因為那些品項可能已經出現在客人的訂單裡。</p>
+
+          <h3>4. 平板上看不到編輯按鈕</h3>
+          <p>店家端畫面規格從 1024px 起。1024px 時，扣掉側欄與分類欄，表格只剩 558px 可以顯示，但表格最小寬度是 780px，右邊有 222px 看不到，剛好是「上架狀態」和「操作」兩欄。外框又把捲軸藏起來了，店長根本不知道可以往右捲。</p>
+        </section>
+
+        <section class="section-card" id="changes">
+          <span class="section-kicker">實際改法</span>
+          <h2>規則、讀憑證、查詢條件，三個地方一起改</h2>
+
+          <h3>1. 菜單管理只放店長進來</h3>
+          <p>在「一律放行」之前加一條規則。注意 <code>GET</code> 也要擋，因為後台清單包含已下架的品項和停用的分類：</p>
+          <pre><code>// 菜單管理（分類、品項、選項群組）：所有動詞都要店長，包含 GET
+authorize.requestMatchers("/api/order/admin/**").hasRole("MANAGER");
+// 菜單圖片的簽發、確認上傳也只給店長，拿掉匿名開關
+authorize.requestMatchers(HttpMethod.POST,
+        "/api/uploads/presign", "/api/uploads/complete").hasRole("MANAGER");</code></pre>
+          <p><code>StaffJwtFilter</code> 改成看一份路徑前綴清單：<code>/api/admin/</code>、<code>/api/order/admin/</code>、<code>/api/uploads/</code>。程式註解提醒之後的人：新增需要員工登入的路徑群組時，這份清單也要一起加。</p>
+          <ul class="prompt-list">
+            <li><span><strong>沒登入</strong>（沒帶憑證、過期、被竄改）→ <code>401 UNAUTHORIZED</code>。前端看到 401 會清掉憑證，導回登入頁。</span></li>
+            <li><span><strong>登入了但角色不對</strong>（例如櫃檯）→ <code>403 FORBIDDEN</code>。前端只顯示「權限不足」，不會把人踢回登入頁。</span></li>
+            <li><span>選項群組頁改用會自動帶員工憑證的 <code>employeeClient</code>。</span></li>
+          </ul>
+          <p>顧客端的 <code>/api/order/category</code>、<code>/api/order/items</code> 不在 <code>/api/order/admin/</code> 底下，仍然公開，客人不用登入就能看菜單。</p>
+
+          <h3>2. 顧客只看得到「品項上架、分類也啟用」的東西</h3>
+          <p>分類查詢改成只拿啟用的、依排序值排列（<code>findByActiveTrueOrderBySortOrderAscIdAsc</code>）。品項清單、搜尋、品項詳情的查詢都 <code>JOIN</code> 分類，加上 <code>category.active = true</code>，並依「分類排序 → 品項排序 → id」排列，順序才會固定。</p>
+
+          <h3>3. 有品項的分類不能刪，請改用停用</h3>
+          <p>刪除前先問資料庫「這個分類底下還有沒有品項（含下架的）」。有的話回 <code>409 CATEGORY_NOT_EMPTY</code>，訊息寫「請先移走或刪除品項；暫時不賣可改為停用」。空的分類才真的刪除，回 204。</p>
+
+          <h3>4. 錯誤格式統一</h3>
+          <p>原本菜單相關的錯誤，有的回 Spring 預設格式，有的直接 500。這次 <code>MenuController</code> 加入全專案共用的錯誤處理 <code>ApiExceptionAdvice</code>，錯誤一律是 <code>{ code, message, details }</code>，前端可以照錯誤碼顯示清楚的訊息。</p>
+        </section>
+
+        <section class="section-card" id="added">
+          <span class="section-kicker">補上的基本功能 · 整合成果</span>
+          <h2>M1 規格要求、還沒做完的部分</h2>
+          <ul class="prompt-list">
+            <li><span><strong>分類管理（1.1）：</strong>
+              <ul>
+                <li>新分類排在最後。</li>
+                <li>可以改名，重名回 <code>409 CATEGORY_NAME_DUPLICATED</code>。</li>
+                <li>可以上移、下移：前端把<strong>全部分類的新順序</strong>送給後端。清單和資料庫對不上時（例如別人剛新增或刪除分類），回 <code>409 CATEGORY_LIST_CHANGED</code>，請前端重新整理，不猜著排。</li>
+                <li>停用前會跳確認：「停用後，顧客端看不到這個分類和底下的所有品項」。</li>
+                <li>操作列只在選取分類後出現，平板上用手指也點得到，不靠滑鼠移過去才出現。</li>
+              </ul>
+            </span></li>
+            <li><span><strong>品項標示（1.6、1.9、1.10）：</strong>鍋底、免費續加、是否追蹤庫存、素食、含牛、辣度 0–3。後端會檢查：
+              <ul>
+                <li>免費續加的價格必須是 0，而且不追蹤庫存。</li>
+                <li>鍋底不能同時是免費續加。</li>
+                <li>辣度只能 0–3。</li>
+              </ul>
+              不合規則回 <code>400 VALIDATION_FAILED</code>，並說明原因，不會偷偷幫你改數字。舊的呼叫端沒有送這些欄位時，修改品項會<strong>維持原值</strong>，不會把標示洗掉。</span></li>
+            <li><span><strong>售完是算出來的（1.8）：</strong>只有「追蹤庫存而且庫存 ≤ 0」才算售完。免費續加這類不追蹤庫存的品項，庫存 0 也照樣可以點。</span></li>
+            <li><span><strong>掛選項群組（1.4）：</strong><code>optionGroupIds</code> 有三種意思：
+              <ul>
+                <li>省略：不動原本的關聯。</li>
+                <li>空陣列：全部移除。</li>
+                <li>有值：整批取代，陣列順序就是顧客端的顯示順序。</li>
+              </ul>
+              更新時只刪掉不要的關聯、改留下來的順序、新增新的，不會「全刪再重建」。</span></li>
+            <li><span><strong>表格標示：</strong>鍋底、素食、辣度等做成品項名稱下方的小標籤，不另外加欄位，避免表格更寬。</span></li>
+          </ul>
+          <h3>主要程式檔案</h3>
+          <ul class="prompt-list">
+            <li><span><code>backend/src/main/java/tw/ispan/smartorder/config/SecurityConfig.java</code>、<code>staff/security/StaffJwtFilter.java</code>：權限規則與讀憑證的路徑。</span></li>
+            <li><span><code>backend/src/main/java/tw/ispan/smartorder/service/MenuCategoryService.java</code>、<code>MenuItemService.java</code>：分類管理、品項規則、選項群組關聯。</span></li>
+            <li><span><code>backend/src/main/java/tw/ispan/smartorder/repository/MenuItemRepository.java</code>、<code>MenuCategoryRepository.java</code>：顧客端查詢條件與排序。</span></li>
+            <li><span><code>frontend/src/features/admin/adminMenu/AdminMenu.tsx</code>、<code>frontend/src/components/adminMenu/CategorySidebar.tsx</code>、<code>ProductModal.tsx</code>：後台畫面。</span></li>
+            <li><span><code>frontend/src/features/admin/menuOptions/useOptionGroups.js</code>、<code>useOptionValues.js</code>：改用員工憑證。</span></li>
+          </ul>
+        </section>
+
+        <section class="section-card" id="review">
+          <span class="section-kicker">審查後再修的地方</span>
+          <h2>停用要真的停賣，兩位店長同時改也不能出錯</h2>
+          <p>第一版（commit <code>528f45b</code>）補好權限與功能後，安排一位沒參與實作的審查者看程式碼。結果沒有 P1，有一個 P2、幾個 P3；整合者自己在 1024px 畫面上又找到一個問題，跑測試時再抓到一個 500。這些都在第二個 commit <code>4b9a521</code> 修好。</p>
+
+          <h3>1. P2：停用分類只是「藏起來」，沒有「停止販售」</h3>
+          <p>第一版讓顧客<strong>看不到</strong>停用的分類，但「加入購物車」和「送出點餐」只檢查品項本身有沒有上架，沒有看分類。所以只要客人在停用前就打開了菜單，或購物車裡已經有那道菜，照樣能點、廚房照樣收到單。偏偏系統自己的提示寫著「暫時不賣可改為停用」，店長會以為停用就是停賣。</p>
+          <ul class="prompt-list">
+            <li><span><strong>兩個加入購物車的入口、送單驗證都加上「分類要啟用」</strong>。不合格時回 <code>409</code>，送單沿用品項下架時的 <code>ITEM_SOLD_OUT</code>「○○ 已下架或售完」，不另外發明新錯誤碼。</span></li>
+            <li><span><strong>送單和停用要排隊：</strong>送單時對這幾個分類加<strong>共享鎖</strong>（<code>LOCK IN SHARE MODE</code>），後台停用時對分類加<strong>排他鎖</strong>（<code>FOR UPDATE</code>）。共享鎖之間不互相擋，所以很多桌同時點同一類的菜不會變慢；只有「停用」會和「送單」排隊。停用先到，後面的送單就看到已停用；送單先到，停用就等那張單做完。</span></li>
+            <li><span><strong>顧客菜單即時更新：</strong>分類的啟用狀態改變，交易提交後推 <code>MENU_CATEGORY_CHANGED</code> 到 <code>/topic/menu</code>，打開中的菜單頁會自己重抓。實測 49 毫秒內，分類就從客人的畫面上消失。</span></li>
+          </ul>
+
+          <h3>2. P3：兩位店長同時改分類</h3>
+          <p>審查者推演出幾種情境：</p>
+          <ul class="prompt-list">
+            <li><span>一位店長在排序、另一位剛好刪除分類 → Hibernate 丟出例外，回 500。</span></li>
+            <li><span>排序會把整列寫回去，可能把別人剛改好的名稱或停用狀態蓋回舊值。</span></li>
+            <li><span>按「停用」時，前端會把<strong>畫面上的舊名稱</strong>一起送出。如果另一位店長剛改過名字，就會被改回來。</span></li>
+          </ul>
+          <p>修法：</p>
+          <ul class="prompt-list">
+            <li><span>改名／停用、排序、刪除，都先用 <code>SELECT … FOR UPDATE</code> 鎖住分類列；多列一律照 id 由小到大鎖。鎖完才讀到的資料是最新的，所以不會寫回舊值。排序撞上刪除時，後到的那個看到清單已經變了，回 <code>409 CATEGORY_LIST_CHANGED</code>。</span></li>
+            <li><span>更新分類時 <code>name</code> 可以省略。前端的停用／啟用只送 <code>{"active": false}</code>，不再帶畫面上的舊名稱。</span></li>
+            <li><span>拿掉分類對品項的 <code>cascade = ALL</code>，以後不會不小心連品項一起刪。</span></li>
+          </ul>
+
+          <h3>3. 跑測試才抓到的 500：MySQL 5.7 不認得的語法</h3>
+          <p>第一次加鎖用的是 JPA 的 <code>@Lock(PESSIMISTIC_WRITE)</code>。結果連最單純的「改名」都回 500，後端紀錄寫著 <code>You have an error in your SQL syntax … near 'of mce1_0'</code>。原因是 Hibernate 產生的 SQL 是 <code>FOR UPDATE OF 別名</code>，這是 MySQL 8 才有的語法，團隊用的 MySQL 5.7 不支援。改成跟專案其他 repository 一樣的原生 SQL：<code>SELECT * FROM menu_category WHERE id = :id FOR UPDATE</code>。</p>
+          <div class="note-card">
+            <h3>這件事教我們什麼</h3>
+            <p>框架幫你產生的 SQL，不一定每個資料庫版本都能跑。<strong>測試一定要在團隊實際使用的資料庫版本上跑</strong>。只讀程式碼的審查看不出這種問題，要真的執行過才會發現。</p>
+          </div>
+
+          <h3>4. 平板上看不到快速上下架開關</h3>
+          <p>第一版只把「操作」欄用 sticky 釘在右邊，1024px 時「庫存」和「上架狀態」兩欄還是藏在捲軸後面。但 S-05 規格寫明「快速下架開關直接放在表格列上（店家最常用的操作）」。改成依寬度分兩種版面：</p>
+          <ul class="prompt-list">
+            <li><span><strong>1280px 以上：</strong>欄位和原本一樣。</span></li>
+            <li><span><strong>1024–1279px：</strong>
+              <ul>
+                <li>縮圖變小，「分類」欄拿掉，改成品項名稱下方的「分類：鍋底」小字。</li>
+                <li>上架欄只留開關，下架的品項在名稱旁加「已下架」標籤。</li>
+              </ul>
+              整張表不用左右捲動，開關在 851–897px、編輯按鈕在 991px，都在畫面內。</span></li>
+          </ul>
+
+          <h3>5. 其他小修</h3>
+          <ul class="prompt-list">
+            <li><span>選項群組頁：驗證失敗時顯示具體原因，例如「價差最多 8 位整數與 2 位小數」，不再只顯示「欄位格式不正確」。</span></li>
+            <li><span>排序回 409 之後自動重抓分類清單，不會之後每移一次都撞 409。</span></li>
+            <li><span>櫃檯人員打開菜單管理，畫面顯示「權限不足：菜單管理只有店長可以使用」，而不是一張空表格。</span></li>
+            <li><span><code>SecurityConfig</code> 的註解改成符合實際行為：沒登入被擋的請求一律回 401。</span></li>
+            <li><span>文件網站的 R2 上傳指南拿掉已經不存在的匿名開關。</span></li>
+          </ul>
+
+          <h3>已知限制（這次沒處理）</h3>
+          <ul class="prompt-list">
+            <li><span>兩位店長在同一瞬間新增同名分類，可能兩筆都成功，因為資料表沒有名稱唯一索引。</span></li>
+            <li><span>排序只檢查「分類的成員一樣」，如果成員一樣、但你畫面上的順序是舊的，還是會蓋過別人剛排好的順序。</span></li>
+            <li><span>品項改過「是否追蹤庫存」之後，再取消改之前的訂單，補庫存會依<strong>現在</strong>的設定判斷。這是取消流程原本的寫法，後台能切換這個設定後才比較容易遇到。</span></li>
+            <li><span>極少見的三方情境：品項剛被搬進一個正在停用的分類，同時又有人送單。MySQL 會偵測到死結，取消其中一個請求並回錯誤，不會卡住。</span></li>
+          </ul>
+        </section>
+
+        <section class="section-card" id="walkthrough">
+          <span class="section-kicker">手把手驗收 · 請在本機隔離資料庫</span>
+          <h2>你可以照著做一次</h2>
+          <ol class="step-list">
+            <li class="step-card"><p><strong>先重現問題（修正前的版本）。</strong></p>
+              <ul>
+                <li>不帶任何憑證，對 <code>/api/order/admin/categories</code> 送 <code>POST</code>，會成功新增分類。</li>
+                <li>用 SQL 把一個分類設成 <code>active = 0</code>，顧客端 <code>/api/order/category</code> 還看得到它。</li>
+                <li>刪除一個還有品項的分類，回 500。</li>
+              </ul>
+            </li>
+            <li class="step-card"><p><strong>權限（修正後）。</strong></p>
+              <ul>
+                <li>不帶憑證打分類、品項、選項群組的讀寫，以及上傳簽發、確認，都回 401。</li>
+                <li>用櫃檯帳號打同樣的 API，都回 403。</li>
+                <li>資料庫裡沒有多出任何「匿名」資料。</li>
+                <li>顧客端的分類清單仍然公開。</li>
+              </ul>
+            </li>
+            <li class="step-card"><p><strong>分類。</strong></p>
+              <ul>
+                <li>新增分類，重名回 409；改名成功。</li>
+                <li>停用後，顧客端看不到這個分類、底下的品項清單和詳情（404），但後台清單還在。</li>
+                <li>停用後，加入購物車回 409；購物車裡原本就有的，送單回 409 <code>ITEM_SOLD_OUT</code>，不會產生訂單。重新啟用後又能送單。</li>
+                <li>同時操作各 3 輪：送單對停用、排序對刪除（回 409 和 204，不再是 500）、排序對改名（兩邊的修改都保留）。</li>
+                <li>排序移到第一個，顧客端順序跟著變；少送一個分類回 409。</li>
+                <li>刪除有品項的分類回 409，品項還在；空分類可以刪除（204）。</li>
+              </ul>
+            </li>
+            <li class="step-card"><p><strong>品項。</strong></p>
+              <ul>
+                <li>新增一個免費續加品項，並掛兩個選項群組：庫存 0 也不算售完，選項群組照指定順序回傳，資料庫的順序欄位也一致。</li>
+                <li>以下都回 400：續加卻有價格、辣度 4、價格負數、名稱空白、鍋底同時是續加。</li>
+                <li>不送 <code>optionGroupIds</code>，關聯不變；送空陣列，全部移除。</li>
+                <li>改成追蹤庫存、庫存 0，就變售完。</li>
+              </ul>
+            </li>
+            <li class="step-card"><p><strong>瀏覽器（1024px）。</strong></p>
+              <ul>
+                <li>第一列的上架開關和編輯按鈕不用捲動就看得到，整頁沒有橫向溢出；1440px 欄位完整。</li>
+                <li>在側欄改分類名稱會存檔。</li>
+                <li>按「停用」會先跳確認，確認後顧客端就看不到這個分類。</li>
+                <li>品項編輯視窗有鍋底、續加、追蹤庫存、素食、辣度與選項群組。</li>
+                <li>選項群組頁用員工憑證載入成功。</li>
+                <li>櫃檯帳號打開菜單管理，API 都回 403，畫面顯示「權限不足」。</li>
+                <li>客人開著菜單時，店長停用分類，客人畫面不用重新整理就看不到那個分類。</li>
+              </ul>
+            </li>
+          </ol>
+        </section>
+
+        <section class="section-card" id="evidence">
+          <h2>提交與驗證紀錄</h2>
+          <p>程式版本：Git commit <code>528f45b</code>（權限與功能）、<code>4b9a521</code>（審查後修正）。</p>
+          <div class="evidence-grid">
+            <div class="note-card report"><h3>HTTP 與資料庫檢查</h3><p>菜單管理專項 95 項、基線 36 項，共 131 項全部通過。其中三種同時操作（送單對停用、排序對刪除、排序對改名）各跑 3 輪。紀錄裡也附上修正前版本的重現結果。同一份後端上，點餐、購物車與結帳的回歸測試（56、200、108、156 項）也都通過。<a href="../evidence/528f45b-http.json">查看完整 HTTP 紀錄</a>。</p></div>
+            <div class="note-card report"><h3>瀏覽器操作檢查</h3><p>17 項全部通過，包含：</p>
+              <ul>
+                <li>1024px 開關與編輯按鈕可見、1440px 欄位完整。</li>
+                <li>側欄改名、停用（只送 active）。</li>
+                <li>櫃檯看到權限不足。</li>
+                <li>顧客菜單即時拿掉停用的分類。</li>
+              </ul>
+              <p><a href="../evidence/528f45b-browser.json">查看完整瀏覽器紀錄</a>。</p></div>
+          </div>
+          <div class="screen-gallery">
+            <figure class="screen-shot">
+              <a href="../assets/clara-menu-admin-1024.png"><img src="../assets/clara-menu-admin-1024.png" alt="1024 像素寬的菜單管理頁，表格不用捲動就看得到上架開關與編輯按鈕"></a>
+              <figcaption>1024px：分類改成名稱下方的小字，上架開關與編輯按鈕都在畫面內。</figcaption>
+            </figure>
+            <figure class="screen-shot">
+              <a href="../assets/clara-menu-admin-1440.png"><img src="../assets/clara-menu-admin-1440.png" alt="1440 像素寬的菜單管理頁，顯示完整的縮圖、品項、分類、價格、庫存、上架狀態與操作欄"></a>
+              <figcaption>1440px：完整欄位，鍋底、含牛、辣度等標示在品項名稱下方。</figcaption>
+            </figure>
+          </div>
+          <p class="intro-note">測試在隔離的 MySQL 5.7 容器進行，每次正式跑之前都用 <code>schema.sql</code>、<code>seed.sql</code> 重建。沒有連到真的 R2 儲存空間，上傳只測權限。獨立審查沒有 P1；P2 和 P3 的處理見上一節。</p>
+        </section>
+
+        <section class="section-card" id="feedback">
+          <h2>前輩回饋、報告與履歷</h2>
+          <div class="evidence-grid">
+            <div class="note-card feedback">
+              <h3>技術前輩的建議</h3>
+              <p>寫後台 API 時，先問「這個網址誰打得到」，再寫功能。最好的習慣是<strong>預設拒絕、明確放行</strong>：新路徑沒寫規則時應該被擋下，而不是被放行。這個專案目前是反過來的（最後一條一律放行），所以每新增一組後台路徑，都要記得補規則。</p>
+              <p>測權限時，<strong>一定要拿「沒有憑證」和「角色不對」各打一次</strong>。只用店長帳號測，功能看起來全部正常，門沒鎖也看不出來。</p>
+              <p>「刪除」要特別小心：資料一旦被訂單引用，就應該改成「停用」，而不是真的刪掉。<code>cascade = ALL</code> 很方便，但它會在你沒注意的時候，連別的資料一起刪。</p>
+            </div>
+            <div class="note-card report">
+              <h3>這個功能用到的技術</h3>
+              <ul>
+                <li>Spring Security 規則順序、<code>hasRole</code>、401 與 403 的分工</li>
+                <li>JWT 員工憑證與自訂過濾器（<code>OncePerRequestFilter</code>）</li>
+                <li>Spring Data JPA 查詢方法命名、JPQL <code>JOIN</code> 條件與排序</li>
+                <li>JPA <code>cascade</code> 的風險、用 409 擋下不該刪的資料</li>
+                <li>Bean Validation 與統一錯誤格式</li>
+                <li>React 表格 sticky 欄位、平板寬度的版面</li>
+              </ul>
+            </div>
+          </div>
+          <div class="note-card">
+            <h3>專題報告與履歷可以這樣寫</h3>
+            <p>報告：先用修正前的版本示範「沒登入也能刪菜單」（用 curl 或 Postman 打一次），再展示修正後同一個請求回 401、櫃檯帳號回 403。接著示範停用分類後，顧客端立刻看不到；最後展示平板寬度的菜單管理畫面。</p>
+            <p>履歷：「負責餐廳系統菜單管理：以 Spring Security 角色規則與 JWT 過濾器，修正後台菜單 API 可被匿名呼叫的權限漏洞；實作分類排序、停用與防誤刪，品項鍋底／免費續加／飲食標示與選項群組的關聯管理，並讓後台在 1024px 平板正常操作。」</p>
+          </div>
+        </section>
+
+        <section class="section-card" id="terms">
+          <h2>新手名詞表</h2>
+          <dl class="glossary">
+            <div class="term"><dt>API（Application Programming Interface，應用程式介面）</dt><dd>前端和後端溝通的窗口，例如 <code>POST /api/order/admin/categories</code> 是「新增分類」。</dd></div>
+            <div class="term"><dt>認證（authentication）與授權（authorization）</dt><dd>認證是確認「你是誰」，授權是確認「你能不能做這件事」。登入解決認證，角色規則解決授權。</dd></div>
+            <div class="term"><dt>JWT（JSON Web Token，JSON 網頁權杖）</dt><dd>登入後拿到的憑證，裡面記著員工編號、角色和過期時間，並有簽章防止竄改。</dd></div>
+            <div class="term"><dt>Spring Security</dt><dd>Spring 的安全框架，負責在請求進到程式之前，檢查有沒有登入、角色夠不夠。</dd></div>
+            <div class="term"><dt>過濾器（filter）</dt><dd>請求進到 controller 之前，先經過的一段程式。<code>StaffJwtFilter</code> 負責讀員工 JWT，告訴 Spring Security「這個人是誰、什麼角色」。</dd></div>
+            <div class="term"><dt>permitAll／hasRole</dt><dd>Spring Security 的規則寫法：<code>permitAll</code> 是誰都可以，<code>hasRole("MANAGER")</code> 是只有店長可以。</dd></div>
+            <div class="term"><dt>HTTP 401 與 403</dt><dd>HTTP 是 Hypertext Transfer Protocol（超文字傳輸協定）。401 是「沒登入」，前端會導回登入頁；403 是「登入了但權限不夠」，前端只顯示權限不足。</dd></div>
+            <div class="term"><dt>HTTP 409 Conflict（衝突）</dt><dd>請求本身沒錯，但跟目前資料狀態衝突，例如分類底下還有品項不能刪、分類清單已經被別人改過。</dd></div>
+            <div class="term"><dt>JPA（Jakarta Persistence API）與 Hibernate</dt><dd>JPA 是 Java 操作資料庫的標準寫法，Hibernate 是本專案用的實作。它讓我們用物件存取資料表。</dd></div>
+            <div class="term"><dt>cascade（連帶操作）</dt><dd>JPA 設定：對父資料（分類）做的操作，也自動套到子資料（品項）。<code>CascadeType.ALL</code> 包含刪除，所以刪分類會連品項一起刪。</dd></div>
+            <div class="term"><dt>DTO（Data Transfer Object，資料傳輸物件）</dt><dd>專門用來裝「API 要收或要回的資料」的物件，例如 <code>SaveMenuItemRequest</code>。</dd></div>
+            <div class="term"><dt>sticky（黏住）</dt><dd>CSS 的定位方式：表格左右捲動時，被設成 sticky 的欄位會一直黏在畫面邊緣。</dd></div>
+            <div class="term"><dt>R2 與預簽網址（presigned URL）</dt><dd>R2 是 Cloudflare 的檔案儲存服務。預簽網址是後端簽發、有時效的上傳網址，前端拿到後直接把圖片傳上去。</dd></div>
+            <div class="term"><dt>MANAGER／COUNTER／KITCHEN</dt><dd>員工角色：店長、櫃檯、廚房。</dd></div>
+            <div class="term"><dt>M1／S-05</dt><dd>M1 是「菜單與品項」模組規格；S-05 是 UI（User Interface，使用者介面）規格裡「菜單管理」畫面的編號。</dd></div>
+            <div class="term"><dt>SHA／Git commit</dt><dd>SHA 是 Secure Hash Algorithm（安全雜湊演算法）；Git 用它幫每個版本（commit）產生識別碼。</dd></div>
+          </dl>
+        </section>
+
+        <footer class="page-footer"><a href="index.html">← 回 Clara 工作包</a></footer>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

@@ -12,6 +12,8 @@ import tw.ispan.smartorder.dto.AdminOptionGroupDto;
 import tw.ispan.smartorder.dto.MenuItemOptionDetailDto;
 import tw.ispan.smartorder.dto.request.CreateOptionGroupRequest;
 import tw.ispan.smartorder.dto.request.CreateOptionValueRequest;
+import tw.ispan.smartorder.dto.request.ReorderMenuCategoriesRequest;
+import tw.ispan.smartorder.dto.request.SaveMenuCategoryRequest;
 import tw.ispan.smartorder.dto.request.SaveMenuItemRequest;
 import tw.ispan.smartorder.dto.request.ReorderOptionValuesRequest;
 import tw.ispan.smartorder.dto.request.UpdateOptionValueStatusRequest;
@@ -28,6 +30,8 @@ import tw.ispan.smartorder.ordercart.service.CurrentGuestService;
 
 import java.util.List;
 
+// /api/order/admin/** 是菜單管理 API，只給店長（MANAGER），規則在 SecurityConfig；
+// 其他路徑（category、items、cart/items）是顧客端點餐用，維持公開
 @RestController
 @RequestMapping("/api/order")
 public class MenuController {
@@ -46,14 +50,14 @@ public class MenuController {
     @Autowired
     private CurrentGuestService currentGuestService;
 
-    // Menu 畫面 提取類別
+    // Menu 畫面 提取類別（只有啟用的分類，依 sort_order 排序）
     @GetMapping("/category")
     public ResponseEntity<List<MenuCategoryEntity>> category(){
-        List<MenuCategoryEntity> category = menuCategoryService.findMenuCategory(1L);
+        List<MenuCategoryEntity> category = menuCategoryService.findActiveMenuCategories();
         return ResponseEntity.ok(category);
     }
 
-    // AdminMenu 畫面 提取類別與商品數量
+    // AdminMenu 畫面 提取類別與商品數量（含停用的分類，依 sort_order 排序）
     @GetMapping("/admin/categories")
     public ResponseEntity<List<AdminMenuCategoryDto>> getAdminCategories() {
         return ResponseEntity.ok(menuCategoryService.findAdminCategoriesWithItemCount());
@@ -143,22 +147,39 @@ public class MenuController {
         return ResponseEntity.noContent().build();
     }
 
-    // AdminMenu 畫面 新增商品分類
+    // AdminMenu 畫面 新增商品分類（name 必填，排在最後面；active 省略代表啟用）
     @PostMapping("/admin/categories")
-    public ResponseEntity<MenuCategoryEntity> createAdminCategory(
-            @RequestBody MenuCategoryEntity category
+    public ResponseEntity<AdminMenuCategoryDto> createAdminCategory(
+            @Valid @RequestBody SaveMenuCategoryRequest request
     ) {
-        MenuCategoryEntity createdCategory = menuCategoryService.createMenuCategory(category);
-        return ResponseEntity.ok(createdCategory);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(menuCategoryService.createMenuCategory(request));
     }
 
-    // AdminMenu 畫面 依 categoryId 刪除商品分類
+    // AdminMenu 畫面 依 categoryId 改名、停用／啟用分類（name、active 省略都代表不變）
+    @PutMapping("/admin/categories/{categoryId}")
+    public ResponseEntity<AdminMenuCategoryDto> updateAdminCategory(
+            @PathVariable Long categoryId,
+            @Valid @RequestBody SaveMenuCategoryRequest request
+    ) {
+        return ResponseEntity.ok(menuCategoryService.updateMenuCategory(categoryId, request));
+    }
+
+    // AdminMenu 畫面 調整分類排序：依顯示順序傳入全部分類 id，回傳排好的分類清單
+    @PatchMapping("/admin/categories/sort-order")
+    public ResponseEntity<List<AdminMenuCategoryDto>> reorderAdminCategories(
+            @Valid @RequestBody ReorderMenuCategoriesRequest request
+    ) {
+        return ResponseEntity.ok(menuCategoryService.reorderMenuCategories(request.categoryIds()));
+    }
+
+    // AdminMenu 畫面 依 categoryId 刪除商品分類（底下還有品項回 409 CATEGORY_NOT_EMPTY）
     @DeleteMapping("/admin/categories/{categoryId}")
-    public ResponseEntity<MenuCategoryEntity> deleteAdminCategory(
+    public ResponseEntity<Void> deleteAdminCategory(
             @PathVariable Long categoryId
     ) {
-        MenuCategoryEntity deletedCategory = menuCategoryService.deleteMenuCategory(categoryId);
-        return ResponseEntity.ok(deletedCategory);
+        menuCategoryService.deleteMenuCategory(categoryId);
+        return ResponseEntity.noContent().build();
     }
 
     // MenuOptions 畫面 提取所有選項群組資訊

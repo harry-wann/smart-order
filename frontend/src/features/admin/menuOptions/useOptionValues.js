@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { createApiClient } from '@/services/client/createApiClient';
+import { describeApiError } from '@/services/client/ApiError';
+import { employeeClient } from '@/services/client/employeeClient';
 import { validateOptionValue } from './validation';
 
-const optionGroupsClient = createApiClient();
-
+// 選項群組 API（/order/admin）只給店長，要帶員工 token，所以用 employeeClient
 export default function useOptionValues({ selectedGroupId, currentGroup, setGroups }) {
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [detailsError, setDetailsError] = useState('');
@@ -31,7 +31,7 @@ export default function useOptionValues({ selectedGroupId, currentGroup, setGrou
       setIsLoadingDetails(true);
       setDetailsError('');
       try {
-        const { data } = await optionGroupsClient.get(
+        const { data } = await employeeClient.get(
           `/order/admin/optionGroups/${selectedGroupId}`
         );
         if (!isCurrentRequest) return;
@@ -53,7 +53,7 @@ export default function useOptionValues({ selectedGroupId, currentGroup, setGrou
         )));
       } catch (error) {
         if (isCurrentRequest) {
-          setDetailsError(error instanceof Error ? error.message : '載入選項群組資料失敗');
+          setDetailsError(describeApiError(error, '載入選項群組資料失敗'));
         }
       } finally {
         if (isCurrentRequest) setIsLoadingDetails(false);
@@ -99,7 +99,7 @@ export default function useOptionValues({ selectedGroupId, currentGroup, setGrou
     setIsSavingItem(true);
     setAddItemError('');
     try {
-      const { data } = await optionGroupsClient.post(
+      const { data } = await employeeClient.post(
         `/order/admin/optionGroups/${currentGroup.id}/items`,
         { name, priceDelta }
       );
@@ -118,7 +118,7 @@ export default function useOptionValues({ selectedGroupId, currentGroup, setGrou
       )));
       setIsAddingItem(false);
     } catch (error) {
-      setAddItemError(error instanceof Error ? error.message : '新增選項失敗，請稍後再試');
+      setAddItemError(describeApiError(error, '新增選項失敗，請稍後再試'));
     } finally {
       setIsSavingItem(false);
     }
@@ -143,7 +143,7 @@ export default function useOptionValues({ selectedGroupId, currentGroup, setGrou
     setIsSavingItemEdit(true);
     setEditItemError('');
     try {
-      const { data } = await optionGroupsClient.put(
+      const { data } = await employeeClient.put(
         `/order/admin/optionGroups/${currentGroup.id}/items/${editingItem.id}`,
         { name, priceDelta }
       );
@@ -161,7 +161,7 @@ export default function useOptionValues({ selectedGroupId, currentGroup, setGrou
       )));
       setEditingItem(null);
     } catch (error) {
-      setEditItemError(error instanceof Error ? error.message : '更新選項失敗，請稍後再試');
+      setEditItemError(describeApiError(error, '更新選項失敗，請稍後再試'));
     } finally {
       setIsSavingItemEdit(false);
     }
@@ -174,7 +174,7 @@ export default function useOptionValues({ selectedGroupId, currentGroup, setGrou
     setIsDeletingItem(true);
     setEditItemError('');
     try {
-      await optionGroupsClient.delete(
+      await employeeClient.delete(
         `/order/admin/optionGroups/${currentGroup.id}/items/${editingItem.id}`
       );
       setGroups(prevGroups => prevGroups.map(group => (
@@ -184,7 +184,7 @@ export default function useOptionValues({ selectedGroupId, currentGroup, setGrou
       )));
       setEditingItem(null);
     } catch (error) {
-      setEditItemError(error instanceof Error ? error.message : '刪除選項失敗，請稍後再試');
+      setEditItemError(describeApiError(error, '刪除選項失敗，請稍後再試'));
     } finally {
       setIsDeletingItem(false);
     }
@@ -196,7 +196,7 @@ export default function useOptionValues({ selectedGroupId, currentGroup, setGrou
     setTogglingItemId(item.id);
     setToggleItemError('');
     try {
-      const { data } = await optionGroupsClient.patch(
+      const { data } = await employeeClient.patch(
         `/order/admin/optionGroups/${currentGroup.id}/items/${item.id}/status`,
         { active: item.status !== 'active' }
       );
@@ -213,7 +213,7 @@ export default function useOptionValues({ selectedGroupId, currentGroup, setGrou
           : group
       )));
     } catch (error) {
-      setToggleItemError(error instanceof Error ? error.message : '更新選項狀態失敗，請稍後再試');
+      setToggleItemError(describeApiError(error, '更新選項狀態失敗，請稍後再試'));
     } finally {
       setTogglingItemId(null);
     }
@@ -245,7 +245,7 @@ export default function useOptionValues({ selectedGroupId, currentGroup, setGrou
     )));
 
     try {
-      await optionGroupsClient.patch(
+      await employeeClient.patch(
         `/order/admin/optionGroups/${currentGroup.id}/items/sort-order`,
         { optionValueIds: itemsWithUpdatedOrder.map(item => item.id) }
       );
@@ -255,7 +255,7 @@ export default function useOptionValues({ selectedGroupId, currentGroup, setGrou
           ? { ...group, items: previousItems }
           : group
       )));
-      setReorderItemsError(error instanceof Error ? error.message : '重新排序選項失敗');
+      setReorderItemsError(describeApiError(error, '重新排序選項失敗'));
     } finally {
       setIsReorderingItems(false);
     }

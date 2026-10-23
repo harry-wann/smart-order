@@ -9,10 +9,20 @@ import tw.ispan.smartorder.dto.AdminAssociatedMenuItemDto;
 import tw.ispan.smartorder.entity.MenuItemOptionGroupEntity;
 import tw.ispan.smartorder.entity.embeddable.MenuOptionEntity;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface MenuItemOptionGroupRepository extends JpaRepository<MenuItemOptionGroupEntity, MenuOptionEntity> {
     List<MenuItemOptionGroupEntity> findById_MenuItemId(Long menuItemId);
+
+    // 一次抓多個品項的關聯，依品項、再依該品項上的顯示順序排；後台清單用，避免每個品項各查一次
+    @Query("""
+            SELECT relation
+            FROM MenuItemOptionGroupEntity relation
+            WHERE relation.id.menuItemId IN :menuItemIds
+            ORDER BY relation.id.menuItemId, relation.sortOrder, relation.id.optionGroupId
+            """)
+    List<MenuItemOptionGroupEntity> findByMenuItemIds(@Param("menuItemIds") Collection<Long> menuItemIds);
 
     @Modifying
     @Transactional
