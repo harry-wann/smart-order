@@ -189,6 +189,12 @@
             </div>
           </div>
           <p class="muted">圖片：<code>../assets/personal-cart-390px.png</code>、<code>../assets/personal-cart-320px.png</code>、<code>../assets/personal-cart-own-empty.png</code>。</p>
+          <div class="note-card" id="quantity-notification">
+            <h3>後續修正：通知要計算餐點份數</h3>
+            <p>原本送單通知直接計算購物車有幾列。例如同一列白飯選了 3 份，通知卻只說送出 1 項，其他客人容易誤解實際送單數量。修正後逐列加總數量：一列 3 份加上一列 2 份，通知顯示 5 項；訂單本身的餐點數量並沒有因此改變。</p>
+            <p>修正提交為 <code>de2a129</code>。顧客送單與櫃檯代客加點共用這個計算方式，通知等資料庫交易成功後才發出。交易是把相關寫入當作一組處理，避免資料還沒保存就先通知大家成功。</p>
+            <p>追加驗證見 <a href="../evidence/de2a129-http.json">代客加點介面檢查</a>與<a href="../evidence/de2a129-browser.json">瀏覽器操作檢查</a>；原本 56／23 項的證據仍對應 <code>e323fac</code>。</p>
+          </div>
         </section>
 
         <section class="section-card" id="mentor">

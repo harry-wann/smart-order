@@ -24,16 +24,29 @@ public class CartNotificationService {
 
     public record TableActivity(String eventId, Long sessionId, String type, String actorDeviceId,
             String actorName, String itemName, int quantity, java.util.List<String> options,
-            Integer sequenceNo, int itemCount, java.math.BigDecimal amount, String occurredAt) {}
+            Integer sequenceNo, int itemCount, java.math.BigDecimal amount, String occurredAt,
+            String byGuest, Long byGuestId) {}
 
     public void notifyTableAfterCommit(Long sessionId, Long guestId, String type, String itemName,
             int quantity, java.util.List<String> options, Integer sequenceNo, int itemCount,
             java.math.BigDecimal amount) {
         var actor = guests.findById(guestId).orElseThrow();
-        var recipients = guests.findByDiningSessionId(sessionId).stream().map(g -> g.getId()).toList();
         var event = new TableActivity(java.util.UUID.randomUUID().toString(), sessionId, type,
                 actor.getDeviceId(), actor.getDisplayName(), itemName, quantity, java.util.List.copyOf(options),
-                sequenceNo, itemCount, amount, java.time.Instant.now().toString());
+                sequenceNo, itemCount, amount, java.time.Instant.now().toString(), actor.getDisplayName(), guestId);
+        notifyActivityAfterCommit(sessionId, event);
+    }
+
+    public void notifyStaffOrderAfterCommit(Long sessionId, int sequenceNo, int quantity,
+            java.math.BigDecimal amount) {
+        var event = new TableActivity(java.util.UUID.randomUUID().toString(), sessionId, "ORDER_SUBMITTED",
+                null, "櫃檯", null, quantity, java.util.List.of(), sequenceNo, quantity,
+                amount, java.time.Instant.now().toString(), "櫃檯", null);
+        notifyActivityAfterCommit(sessionId, event);
+    }
+
+    private void notifyActivityAfterCommit(Long sessionId, TableActivity event) {
+        var recipients = guests.findByDiningSessionId(sessionId).stream().map(g -> g.getId()).toList();
         if (!TransactionSynchronizationManager.isActualTransactionActive()) {
             throw new IllegalStateException("同桌通知必須在交易中註冊");
         }

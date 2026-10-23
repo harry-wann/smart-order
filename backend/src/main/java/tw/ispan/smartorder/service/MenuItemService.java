@@ -186,10 +186,13 @@ public class MenuItemService {
 
     private List<MenuItemEntity> withCurrentSoldOutStatus(List<MenuItemEntity> items) {
         for (MenuItemEntity item : items) {
-            int stock = inventoryRepository.findByMenuItem_Id(item.getId())
-                    .map(inventory -> inventory.getQuantity() == null ? 0 : inventory.getQuantity())
-                    .orElse(0);
-            boolean soldOut = stock == 0;
+            boolean soldOut = false;
+            if (!Boolean.FALSE.equals(item.getTrackInventory())) {
+                int stock = inventoryRepository.findByMenuItem_Id(item.getId())
+                        .map(inventory -> inventory.getQuantity() == null ? 0 : inventory.getQuantity())
+                        .orElse(0);
+                soldOut = stock <= 0;
+            }
             if (!Boolean.valueOf(soldOut).equals(item.getSoldOut())) {
                 item.setSoldOut(soldOut);
                 item.setUpdatedAt(LocalDateTime.now());

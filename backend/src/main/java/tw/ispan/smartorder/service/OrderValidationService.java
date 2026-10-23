@@ -5,14 +5,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import tw.ispan.smartorder.common.exception.ApiException;
-import tw.ispan.smartorder.entity.CartItemEntity;
-import tw.ispan.smartorder.entity.CartItemOptionEntity;
-import tw.ispan.smartorder.repository.CartItemOptionRepository;
 
 import javax.sql.DataSource;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -26,26 +22,44 @@ import java.util.TreeSet;
 @Service
 public class OrderValidationService {
     private final JdbcTemplate jdbc;
-    private final CartItemOptionRepository cartOptions;
 
-    public OrderValidationService(@Qualifier("smartOrderDataSource") DataSource dataSource,
-                                  CartItemOptionRepository cartOptions) {
+    public OrderValidationService(@Qualifier("smartOrderDataSource") DataSource dataSource) {
         this.jdbc = new JdbcTemplate(dataSource);
-        this.cartOptions = cartOptions;
     }
 
     public record MenuSnapshot(Long id, String name, BigDecimal price, boolean soupBase,
                                boolean trackInventory) {}
     public record OptionSnapshot(Long id, String groupName, String valueName, BigDecimal priceDelta) {}
-    public record Line(CartItemEntity cart, MenuSnapshot menu, List<OptionSnapshot> options) {}
+    public record Selection(Long menuItemId, Integer quantity, List<Long> optionValueIds, String note) {}
+    public record Line(Selection selection, MenuSnapshot menu, List<OptionSnapshot> options) {}
     private record Group(Long id, String name, int min, int max) {}
     private record Value(Long id, Long groupId, String name, BigDecimal priceDelta, boolean active) {}
 
-    public List<Line> validate(Long sessionId, List<CartItemEntity> carts) {
+    public List<Line> validate(Long sessionId, List<Selection> selections) {
+        if (selections == null || selections.isEmpty()) throw ApiException.badRequest("請選擇至少一項商品");
+        for (Selection selection : selections) {
+            if (selection == null || selection.menuItemId() == null || selection.menuItemId() <= 0) {
+                throw ApiException.badRequest("商品編號不正確");
+            }
+            if (selection.quantity() == null || selection.quantity() < 1 || selection.quantity() > 10) {
+                throw ApiException.badRequest("商品數量必須介於 1 到 10");
+            }
+            // order_item.note is VARCHAR(50); reject oversized input before writing snapshots.
+            if (selection.note() != null
+                    && selection.note().codePointCount(0, selection.note().length()) > 50) {
+                throw ApiException.badRequest("備註不可超過 50 字");
+            }
+            if (selection.optionValueIds() == null) throw ApiException.badRequest("商品選項格式不正確");
+            Set<Long> seen = new HashSet<>();
+            for (Long valueId : selection.optionValueIds()) {
+                if (valueId == null || valueId <= 0) throw ApiException.badRequest("商品選項編號不正確");
+                if (!seen.add(valueId)) throw ApiException.badRequest("商品選項重複");
+            }
+        }
         Map<Long, MenuSnapshot> menus = new HashMap<>();
         Map<Long, Map<Long, Group>> groupsByMenu = new HashMap<>();
         // Lock each resource type for the whole ticket in ID order: menu, relation, group, value.
-        List<Long> menuIds = carts.stream().map(c -> c.getMenuItem().getId()).distinct().sorted().toList();
+        List<Long> menuIds = selections.stream().map(Selection::menuItemId).distinct().sorted().toList();
         for (Long menuId : menuIds) {
             MenuSnapshot menu = jdbc.query("""
                     SELECT id, name, price, is_soup_base, track_inventory, active, sold_out
@@ -59,7 +73,7 @@ public class OrderValidationService {
                 return new MenuSnapshot(rs.getLong("id"), rs.getString("name"), rs.getBigDecimal("price"),
                         rs.getBoolean("is_soup_base"), rs.getBoolean("track_inventory"));
             }, menuId);
-            if (menu == null) throw ApiException.conflict("ITEM_SOLD_OUT", "商品已不存在");
+            if (menu == null) throw ApiException.badRequest("商品不存在");
             menus.put(menuId, menu);
         }
 
@@ -97,13 +111,8 @@ public class OrderValidationService {
             groupsByMenu.put(menuId, groups);
         }
 
-        Map<Long, List<CartItemOptionEntity>> selectedByCart = new HashMap<>();
         Set<Long> selectedValueIds = new TreeSet<>();
-        for (CartItemEntity cart : carts) {
-            List<CartItemOptionEntity> selected = cartOptions.findByCartItem_Id(cart.getId());
-            selectedByCart.put(cart.getId(), selected);
-            for (CartItemOptionEntity option : selected) selectedValueIds.add(option.getOptionValue().getId());
-        }
+        for (Selection selection : selections) selectedValueIds.addAll(selection.optionValueIds());
         Map<Long, Value> lockedValues = new HashMap<>();
         for (Long valueId : selectedValueIds) {
             Value value = jdbc.query("""
@@ -115,19 +124,12 @@ public class OrderValidationService {
         }
 
         List<Line> lines = new ArrayList<>();
-        for (CartItemEntity cart : carts) {
-            int quantity = cart.getQuantity() == null ? 0 : cart.getQuantity();
-            if (quantity < 1 || quantity > 10) throw ApiException.badRequest("商品數量必須介於 1 到 10");
-            MenuSnapshot menu = menus.get(cart.getMenuItem().getId());
+        for (Selection selection : selections) {
+            MenuSnapshot menu = menus.get(selection.menuItemId());
             Map<Long, Group> groups = groupsByMenu.get(menu.id());
-            List<CartItemOptionEntity> selected = selectedByCart.get(cart.getId());
-            Set<Long> seen = new HashSet<>();
             Map<Long, Integer> countByGroup = new HashMap<>();
             List<OptionSnapshot> options = new ArrayList<>();
-            for (CartItemOptionEntity selectedOption : selected.stream()
-                    .sorted(Comparator.comparing(o -> o.getOptionValue().getId())).toList()) {
-                Long valueId = selectedOption.getOptionValue().getId();
-                if (!seen.add(valueId)) throw ApiException.badRequest("商品選項重複");
+            for (Long valueId : selection.optionValueIds().stream().sorted().toList()) {
                 Value value = lockedValues.get(valueId);
                 if (value == null || !value.active() || !groups.containsKey(value.groupId())) {
                     throw ApiException.badRequest("商品選項已失效或不屬於此商品");
@@ -142,7 +144,7 @@ public class OrderValidationService {
                     throw ApiException.badRequest("請依規則選擇" + group.name());
                 }
             }
-            lines.add(new Line(cart, menu, List.copyOf(options)));
+            lines.add(new Line(selection, menu, List.copyOf(options)));
         }
 
         boolean thisSubmissionHasSoup = lines.stream().anyMatch(line -> line.menu().soupBase());
