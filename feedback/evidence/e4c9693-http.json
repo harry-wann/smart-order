@@ -1,0 +1,1354 @@
+{
+  "label": "iris-waitlist-flow",
+  "commit": "e4c9693",
+  "testedAt": "2026-10-23T18:54:45.122935+08:00",
+  "passed": true,
+  "resultCount": 164,
+  "waitlistCheckCount": 128,
+  "baselineCheckCount": 36,
+  "sanitized": true,
+  "notes": [
+    "Isolated MySQL 5.7 container rebuilt from backend/db/schema.sql + seed.sql of this commit; no production data.",
+    "Checks named \"aged\" moved called_at/created_at back with SQL instead of waiting 10 real minutes.",
+    "The 20 parallel registrations and every race pair were sent concurrently with a thread pool; outcomes are in \"actual\".",
+    "Baseline checks (health, logins, menu, reservations, guest session) were rerun with the waitlist suite and are listed first.",
+    "No SMS or email is sent; calls are pushed only over the in-store WebSocket topic."
+  ],
+  "results": [
+    {
+      "name": "Backend health",
+      "method": "GET",
+      "path": "/actuator/health",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu categories",
+      "method": "GET",
+      "path": "/api/order/category",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu items",
+      "method": "GET",
+      "path": "/api/order/items?categoryId=1",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Invalid staff login",
+      "method": "POST",
+      "path": "/api/admin/auth/login",
+      "expected": 401,
+      "actual": 401,
+      "passed": true
+    },
+    {
+      "name": "Manager login",
+      "method": "POST",
+      "path": "/api/admin/auth/login",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Counter login",
+      "method": "POST",
+      "path": "/api/admin/auth/login",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Table overview",
+      "method": "GET",
+      "path": "/api/admin/tables",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Seat configuration",
+      "method": "GET",
+      "path": "/api/admin/tables-config",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Waitlist listing",
+      "method": "GET",
+      "path": "/api/admin/waitlist",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Kitchen tickets",
+      "method": "GET",
+      "path": "/api/admin/kitchen/tickets",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu administration",
+      "method": "GET",
+      "path": "/api/order/admin/menu",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Option groups",
+      "method": "GET",
+      "path": "/api/order/admin/optionGroups",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Reservation list requires staff",
+      "method": "GET",
+      "path": "/api/admin/reservations?date=2026-10-23",
+      "expected": 401,
+      "actual": 401,
+      "passed": true
+    },
+    {
+      "name": "Reservation listing/projections",
+      "method": "GET",
+      "path": "/api/admin/reservations?date=2026-10-23",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Available tables/JSON record names",
+      "method": "GET",
+      "path": "/api/admin/tables/available?partySize=2",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Open options/projections",
+      "method": "GET",
+      "path": "/api/admin/tables/1/open-options",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Scheduler rejects counter",
+      "method": "POST",
+      "path": "/api/admin/scheduler/mark-no-show",
+      "expected": 403,
+      "actual": 403,
+      "passed": true
+    },
+    {
+      "name": "No-show scheduler",
+      "method": "POST",
+      "path": "/api/admin/scheduler/mark-no-show",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Reminder scheduler",
+      "method": "POST",
+      "path": "/api/admin/scheduler/send-reminders",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Availability/settings defaults",
+      "method": "GET",
+      "path": "/api/reservations/availability?date=2026-10-25&partySize=2",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Missing reservation fields",
+      "method": "POST",
+      "path": "/api/reservations",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Guest reservation/default child count",
+      "method": "POST",
+      "path": "/api/reservations",
+      "expected": 201,
+      "actual": 201,
+      "passed": true
+    },
+    {
+      "name": "Reservation access required",
+      "method": "GET",
+      "path": "/api/reservations/81",
+      "expected": 401,
+      "actual": 401,
+      "passed": true
+    },
+    {
+      "name": "Wrong reservation token hidden",
+      "method": "GET",
+      "path": "/api/reservations/81",
+      "expected": 404,
+      "actual": 404,
+      "passed": true
+    },
+    {
+      "name": "Reservation detail/default values",
+      "method": "GET",
+      "path": "/api/reservations/81",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Cancel reservation",
+      "method": "DELETE",
+      "path": "/api/reservations/81",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Repeated cancellation rejected",
+      "method": "DELETE",
+      "path": "/api/reservations/81",
+      "expected": 409,
+      "actual": 409,
+      "passed": true
+    },
+    {
+      "name": "Explicit null child count",
+      "method": "POST",
+      "path": "/api/reservations",
+      "expected": 201,
+      "actual": 201,
+      "passed": true
+    },
+    {
+      "name": "Explicit null defaults to zero",
+      "method": "GET",
+      "path": "/api/reservations/82",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Staff cancellation without optional body",
+      "method": "POST",
+      "path": "/api/admin/reservations/82/cancel",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Explicit null required count validation",
+      "method": "POST",
+      "path": "/api/reservations",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Join occupied table",
+      "method": "POST",
+      "path": "/api/tables/A03/join",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Current guest session",
+      "method": "GET",
+      "path": "/api/dining/current",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Shared cart visibility",
+      "method": "GET",
+      "path": "/api/dining-sessions/50/cart",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Table orders",
+      "method": "GET",
+      "path": "/api/dining/orders",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Dining session auth required",
+      "method": "GET",
+      "path": "/api/dining/current",
+      "expected": 401,
+      "actual": 401,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: anonymous list rejected",
+      "method": "GET",
+      "path": "/api/admin/waitlist",
+      "expected": 401,
+      "actual": 401,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: anonymous today summary rejected",
+      "method": "GET",
+      "path": "/api/admin/waitlist/today-summary",
+      "expected": 401,
+      "actual": 401,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: anonymous registration rejected",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 401,
+      "actual": 401,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: counter cannot run manual expiry",
+      "method": "POST",
+      "path": "/api/admin/scheduler/expire-waitlist",
+      "expected": 403,
+      "actual": 403,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: manager manual expiry endpoint",
+      "method": "POST",
+      "path": "/api/admin/scheduler/expire-waitlist",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: reject empty body",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: reject blank name",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: reject 51-character name",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: reject null phone",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: reject letters in phone",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: reject five-digit phone",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: reject zero people",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: reject negative people",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: reject 21 people",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: reject null people",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: invalid registrations create no rows and consume no ticket number",
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: accept 50-character name and 20 people",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: cleanup accepted edge registration",
+      "method": "DELETE",
+      "path": "/api/admin/waitlist/118",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: 20 parallel registrations all succeed",
+      "passed": true,
+      "actual": [
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200
+      ]
+    },
+    {
+      "name": "Iris waitlist: parallel registrations receive distinct consecutive numbers",
+      "passed": true,
+      "actual": [
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        144,
+        145,
+        146
+      ]
+    },
+    {
+      "name": "Iris waitlist: ticket counter advanced exactly once per ticket",
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: database has no duplicate ticket numbers",
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: register W1",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: available tables for 2",
+      "method": "GET",
+      "path": "/api/admin/tables/available?partySize=2",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: WAITING cannot skip call and seat",
+      "method": "POST",
+      "path": "/api/admin/waitlist/139/seat",
+      "expected": 409,
+      "actual": 409,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: rejected direct seat leaves no session",
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: call WAITING",
+      "method": "POST",
+      "path": "/api/admin/waitlist/139/call",
+      "expected": 200,
+      "actual": 200,
+      "passed": "2026-10-23T18:54:36.397684"
+    },
+    {
+      "name": "Iris waitlist: recall within window",
+      "method": "POST",
+      "path": "/api/admin/waitlist/139/call",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: recall does not move called_at or extend deadline",
+      "passed": true,
+      "actual": {
+        "before": "2026-10-23 18:54:36.398",
+        "after": "2026-10-23 18:54:36.398"
+      }
+    },
+    {
+      "name": "Iris waitlist: seat without table rejected",
+      "method": "POST",
+      "path": "/api/admin/waitlist/139/seat",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: seat onto occupied table rejected",
+      "method": "POST",
+      "path": "/api/admin/waitlist/139/seat",
+      "expected": 409,
+      "actual": 409,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: failed table open rolls back waitlist state",
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: register W-big",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: call large party",
+      "method": "POST",
+      "path": "/api/admin/waitlist/140/call",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: party larger than table capacity rejected",
+      "method": "POST",
+      "path": "/api/admin/waitlist/140/seat",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: capacity rejection keeps party CALLED without session",
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: abandon CALLED large party",
+      "method": "DELETE",
+      "path": "/api/admin/waitlist/140",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: register W2",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: abandon WAITING",
+      "method": "DELETE",
+      "path": "/api/admin/waitlist/141",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: available tables for 2",
+      "method": "GET",
+      "path": "/api/admin/tables/available?partySize=2",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: ABANDONED terminal rejects call",
+      "method": "POST",
+      "path": "/api/admin/waitlist/141/call",
+      "expected": 409,
+      "actual": 409,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: ABANDONED terminal rejects seat",
+      "method": "POST",
+      "path": "/api/admin/waitlist/141/seat",
+      "expected": 409,
+      "actual": 409,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: ABANDONED terminal rejects abandon again",
+      "method": "DELETE",
+      "path": "/api/admin/waitlist/141",
+      "expected": 409,
+      "actual": 409,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: unknown ticket is not found",
+      "method": "POST",
+      "path": "/api/admin/waitlist/999999999/call",
+      "expected": 404,
+      "actual": 404,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: register double-seat-0",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: call double-seat round 0",
+      "method": "POST",
+      "path": "/api/admin/waitlist/142/call",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: available tables for 2",
+      "method": "GET",
+      "path": "/api/admin/tables/available?partySize=2",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: round 0: same ticket on two tables succeeds once",
+      "passed": true,
+      "actual": {
+        "codes": [
+          200,
+          409
+        ],
+        "loser": "WAITLIST_STATUS"
+      }
+    },
+    {
+      "name": "Iris waitlist: round 0: exactly one session and both FK sides agree",
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: round 0: only the winning table became occupied",
+      "passed": true,
+      "actual": "1"
+    },
+    {
+      "name": "Iris waitlist: SEATED terminal rejects call (round 0)",
+      "method": "POST",
+      "path": "/api/admin/waitlist/142/call",
+      "expected": 409,
+      "actual": 409,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: SEATED terminal rejects abandon (round 0)",
+      "method": "DELETE",
+      "path": "/api/admin/waitlist/142",
+      "expected": 409,
+      "actual": 409,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: available tables for 2",
+      "method": "GET",
+      "path": "/api/admin/tables/available?partySize=2",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: SEATED terminal rejects a second seat (round 0)",
+      "method": "POST",
+      "path": "/api/admin/waitlist/142/seat",
+      "expected": 409,
+      "actual": 409,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: register double-seat-1",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: call double-seat round 1",
+      "method": "POST",
+      "path": "/api/admin/waitlist/143/call",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: available tables for 2",
+      "method": "GET",
+      "path": "/api/admin/tables/available?partySize=2",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: round 1: same ticket on two tables succeeds once",
+      "passed": true,
+      "actual": {
+        "codes": [
+          200,
+          409
+        ],
+        "loser": "WAITLIST_STATUS"
+      }
+    },
+    {
+      "name": "Iris waitlist: round 1: exactly one session and both FK sides agree",
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: round 1: only the winning table became occupied",
+      "passed": true,
+      "actual": "1"
+    },
+    {
+      "name": "Iris waitlist: SEATED terminal rejects call (round 1)",
+      "method": "POST",
+      "path": "/api/admin/waitlist/143/call",
+      "expected": 409,
+      "actual": 409,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: SEATED terminal rejects abandon (round 1)",
+      "method": "DELETE",
+      "path": "/api/admin/waitlist/143",
+      "expected": 409,
+      "actual": 409,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: available tables for 2",
+      "method": "GET",
+      "path": "/api/admin/tables/available?partySize=2",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: SEATED terminal rejects a second seat (round 1)",
+      "method": "POST",
+      "path": "/api/admin/waitlist/143/seat",
+      "expected": 409,
+      "actual": 409,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: register seat-abandon-0",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: call seat/abandon round 0",
+      "method": "POST",
+      "path": "/api/admin/waitlist/144/call",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: available tables for 2",
+      "method": "GET",
+      "path": "/api/admin/tables/available?partySize=2",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: round 0: seat vs abandon leaves one consistent terminal state",
+      "passed": true,
+      "actual": {
+        "codes": [
+          409,
+          200
+        ],
+        "status": "ABANDONED",
+        "sessions": 0
+      }
+    },
+    {
+      "name": "Iris waitlist: register seat-abandon-1",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: call seat/abandon round 1",
+      "method": "POST",
+      "path": "/api/admin/waitlist/145/call",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: available tables for 2",
+      "method": "GET",
+      "path": "/api/admin/tables/available?partySize=2",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: round 1: seat vs abandon leaves one consistent terminal state",
+      "passed": true,
+      "actual": {
+        "codes": [
+          409,
+          200
+        ],
+        "status": "ABANDONED",
+        "sessions": 0
+      }
+    },
+    {
+      "name": "Iris waitlist: register seat-abandon-2",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: call seat/abandon round 2",
+      "method": "POST",
+      "path": "/api/admin/waitlist/146/call",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: available tables for 2",
+      "method": "GET",
+      "path": "/api/admin/tables/available?partySize=2",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: round 2: seat vs abandon leaves one consistent terminal state",
+      "passed": true,
+      "actual": {
+        "codes": [
+          200,
+          409
+        ],
+        "status": "SEATED",
+        "sessions": 1
+      }
+    },
+    {
+      "name": "Iris waitlist: register call-abandon-0",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: round 0: call vs abandon ends ABANDONED without server error",
+      "passed": true,
+      "actual": [
+        200,
+        200
+      ]
+    },
+    {
+      "name": "Iris waitlist: register call-abandon-1",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: round 1: call vs abandon ends ABANDONED without server error",
+      "passed": true,
+      "actual": [
+        409,
+        200
+      ]
+    },
+    {
+      "name": "Iris waitlist: register call-abandon-2",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: round 2: call vs abandon ends ABANDONED without server error",
+      "passed": true,
+      "actual": [
+        200,
+        200
+      ]
+    },
+    {
+      "name": "Iris waitlist: register overdue",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: call overdue ticket",
+      "method": "POST",
+      "path": "/api/admin/waitlist/150/call",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: available tables for 2",
+      "method": "GET",
+      "path": "/api/admin/tables/available?partySize=2",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: seat after 10 minutes rejected (called_at aged 11 min in SQL)",
+      "passed": true,
+      "actual": [
+        409,
+        "WAITLIST_EXPIRED"
+      ]
+    },
+    {
+      "name": "Iris waitlist: recall after 10 minutes rejected and does not extend the deadline (aged)",
+      "passed": true,
+      "actual": [
+        409,
+        "WAITLIST_EXPIRED"
+      ]
+    },
+    {
+      "name": "Iris waitlist: overdue seat attempt opened no session",
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: register expiring",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: call expiring ticket",
+      "method": "POST",
+      "path": "/api/admin/waitlist/151/call",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: register near-deadline",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: call near-deadline ticket",
+      "method": "POST",
+      "path": "/api/admin/waitlist/152/call",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: manager manual expiry marks overdue CALLED",
+      "method": "POST",
+      "path": "/api/admin/scheduler/expire-waitlist",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: overdue ticket became EXPIRED with expired_at recorded",
+      "passed": true,
+      "actual": {
+        "status": "EXPIRED",
+        "calledAt": "2026-10-23 18:43:40.456",
+        "seatedAt": "",
+        "expiredAt": "2026-10-23 18:54:40.673",
+        "sessionId": ""
+      }
+    },
+    {
+      "name": "Iris waitlist: ticket 9 minutes after call is not expired",
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: recall 9 minutes after call still allowed (aged 9 min)",
+      "method": "POST",
+      "path": "/api/admin/waitlist/152/call",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: available tables for 2",
+      "method": "GET",
+      "path": "/api/admin/tables/available?partySize=2",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: EXPIRED terminal rejects recall",
+      "method": "POST",
+      "path": "/api/admin/waitlist/151/call",
+      "expected": 409,
+      "actual": 409,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: EXPIRED terminal rejects abandon",
+      "method": "DELETE",
+      "path": "/api/admin/waitlist/151",
+      "expected": 409,
+      "actual": 409,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: EXPIRED terminal rejects seat",
+      "method": "POST",
+      "path": "/api/admin/waitlist/151/seat",
+      "expected": 409,
+      "actual": 409,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: register long-waiting",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: expiry run with a 30-minute WAITING ticket (aged created_at)",
+      "method": "POST",
+      "path": "/api/admin/scheduler/expire-waitlist",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: WAITING ticket is never auto-expired",
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: register seat-expire-0",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: call seat/expire round 0",
+      "method": "POST",
+      "path": "/api/admin/waitlist/154/call",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: available tables for 2",
+      "method": "GET",
+      "path": "/api/admin/tables/available?partySize=2",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: round 0: seat vs expiry at deadline stays consistent (aged 9m59.5s)",
+      "passed": true,
+      "actual": {
+        "codes": [
+          200,
+          200
+        ],
+        "status": "SEATED",
+        "sessions": 1
+      }
+    },
+    {
+      "name": "Iris waitlist: register seat-expire-1",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: call seat/expire round 1",
+      "method": "POST",
+      "path": "/api/admin/waitlist/155/call",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: available tables for 2",
+      "method": "GET",
+      "path": "/api/admin/tables/available?partySize=2",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: round 1: seat vs expiry at deadline stays consistent (aged 9m59.5s)",
+      "passed": true,
+      "actual": {
+        "codes": [
+          200,
+          200
+        ],
+        "status": "SEATED",
+        "sessions": 1
+      }
+    },
+    {
+      "name": "Iris waitlist: register seat-expire-2",
+      "method": "POST",
+      "path": "/api/admin/waitlist",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: call seat/expire round 2",
+      "method": "POST",
+      "path": "/api/admin/waitlist/156/call",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: available tables for 2",
+      "method": "GET",
+      "path": "/api/admin/tables/available?partySize=2",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: round 2: seat vs expiry at deadline stays consistent (aged 9m59.5s)",
+      "passed": true,
+      "actual": {
+        "codes": [
+          200,
+          200
+        ],
+        "status": "SEATED",
+        "sessions": 1
+      }
+    },
+    {
+      "name": "Iris waitlist: unique keys exist for ticket number and session-to-waitlist link",
+      "passed": true,
+      "actual": "2"
+    },
+    {
+      "name": "Iris waitlist: database itself rejects a duplicate ticket number",
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: counter reads today summary",
+      "method": "GET",
+      "path": "/api/admin/waitlist/today-summary",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: today summary counts match the database for Asia/Taipei day",
+      "passed": true,
+      "actual": {
+        "api": {
+          "date": "2026-10-23",
+          "timezone": "Asia/Taipei",
+          "waitingCount": 13,
+          "calledCount": 4,
+          "seatedCount": 16,
+          "expiredCount": 9,
+          "abandonedCount": 113,
+          "averageWaitMinutes": 0.8773625
+        },
+        "db": {
+          "ABANDONED": 113,
+          "CALLED": 4,
+          "EXPIRED": 9,
+          "SEATED": 16,
+          "WAITING": 13
+        }
+      }
+    },
+    {
+      "name": "Iris waitlist: today summary includes terminal rows (expired and seated are non-zero)",
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: average wait matches seated rows",
+      "passed": true,
+      "actual": {
+        "api": 0.8773625,
+        "db": 0.8773625
+      }
+    },
+    {
+      "name": "Iris waitlist: active list keeps only WAITING and CALLED",
+      "method": "GET",
+      "path": "/api/admin/waitlist",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: cleanup synthetic seated session 69",
+      "method": "POST",
+      "path": "/api/admin/dining-sessions/69/cancel",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: cleanup synthetic seated session 70",
+      "method": "POST",
+      "path": "/api/admin/dining-sessions/70/cancel",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: cleanup synthetic seated session 71",
+      "method": "POST",
+      "path": "/api/admin/dining-sessions/71/cancel",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: cleanup synthetic seated session 72",
+      "method": "POST",
+      "path": "/api/admin/dining-sessions/72/cancel",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: cleanup synthetic seated session 73",
+      "method": "POST",
+      "path": "/api/admin/dining-sessions/73/cancel",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist: cleanup synthetic seated session 74",
+      "method": "POST",
+      "path": "/api/admin/dining-sessions/74/cancel",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    }
+  ]
+}
