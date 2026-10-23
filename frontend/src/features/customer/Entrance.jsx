@@ -21,7 +21,7 @@ export default function Entrance() {
     icon: SvgIconMap.OrderCheck,
     textH2: "我的預約",
     textP: "查看或取消訂位",
-    onclick:()=>navigate("/member")
+    onclick:()=>navigate("/member/reservations")
   }
   const member = {
     icon: SvgIconMap.OrderMember,
@@ -46,7 +46,7 @@ export default function Entrance() {
         <CardLink data={ent} />
         <CardLink data={member} />
       </div>
-      <div onClick={()=>navigate("/reserve/guest")} className="px-4">
+      <div onClick={()=>navigate("/order/checkin/A03")} className="px-4">
         <InfoBox outicon={SvgIconMap.OrderQrcode} col="quiet" text="F" custimtext={
             <>
               <p>
