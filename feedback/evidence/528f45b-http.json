@@ -1,0 +1,1137 @@
+{
+  "label": "clara-menu-admin",
+  "commit": "528f45b",
+  "followUpCommit": "4b9a521",
+  "testedAt": "2026-10-23T21:56:37.984995+08:00",
+  "passed": true,
+  "resultCount": 131,
+  "sanitized": true,
+  "notes": [
+    "Final run on fix/clara/menu-admin 4b9a521 (based on develop 5c85c70); isolated MySQL 5.7 reseeded from schema.sql and seed.sql.",
+    "95 menu admin checks (names start with \"Menu admin:\") plus 36 baseline checks; races (submit vs disable, reorder vs delete, reorder vs rename) ran 3 rounds each.",
+    "Regression suites on the same backend build: personal-cart 56/56 PASS, order-integrity 200/200 PASS, staff-order 108/108 PASS, checkout 156/156 PASS.",
+    "beforeFix: develop c999ace (pre-fix JAR) on the same isolated database; anonymous writes succeeded, an inactive category stayed visible, deleting a non-empty category returned 500."
+  ],
+  "regressions": {
+    "personal-cart": {
+      "passed": true,
+      "resultCount": 56,
+      "testedAt": "2026-10-23T21:53:28.125590+08:00"
+    },
+    "order-integrity": {
+      "passed": true,
+      "resultCount": 200,
+      "testedAt": "2026-10-23T21:53:38.783071+08:00"
+    },
+    "staff-order": {
+      "passed": true,
+      "resultCount": 108,
+      "testedAt": "2026-10-23T21:53:56.600793+08:00"
+    },
+    "checkout": {
+      "passed": true,
+      "resultCount": 156,
+      "testedAt": "2026-10-23T21:54:01.551936+08:00"
+    }
+  },
+  "beforeFix": [
+    {
+      "label": "menu-admin-before-fix",
+      "build": "develop c999ace",
+      "testedAt": "2026-10-23T21:25:36.726014",
+      "results": [
+        {
+          "name": "anonymous creates a menu category",
+          "status": 200
+        },
+        {
+          "name": "anonymous reads the admin menu",
+          "status": 200
+        },
+        {
+          "name": "anonymous changes an item on/off status (set back to on)",
+          "status": 200
+        },
+        {
+          "name": "anonymous deletes the category it just created",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "label": "menu-admin-before-fix-behaviour",
+      "build": "develop c999ace on port 8090",
+      "testedAt": "2026-10-23T21:32:35+08:00",
+      "results": [
+        {
+          "name": "anonymous creates a category",
+          "status": 200
+        },
+        {
+          "name": "anonymous creates an item in it",
+          "status": 201
+        },
+        {
+          "name": "new category sort_order",
+          "sortOrder": 0,
+          "customerListOrderedBySortOrder": false
+        },
+        {
+          "name": "customer category list after the category is set inactive in the database",
+          "status": 200,
+          "inactiveCategoryStillListed": true
+        },
+        {
+          "name": "customer item list for the inactive category",
+          "status": 200,
+          "itemStillListed": true
+        },
+        {
+          "name": "customer item detail in the inactive category",
+          "status": 200
+        },
+        {
+          "name": "anonymous deletes the non-empty category",
+          "status": 500,
+          "categoryRowsLeft": 1,
+          "itemRowsLeft": 1,
+          "cause": "org.hibernate.TransientPropertyValueException: InventoryEntity references an unsaved transient instance of MenuItemEntity (category cascade tried to delete the item while its inventory row still pointed at it)"
+        }
+      ]
+    }
+  ],
+  "results": [
+    {
+      "name": "Backend health",
+      "method": "GET",
+      "path": "/actuator/health",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu categories",
+      "method": "GET",
+      "path": "/api/order/category",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu items",
+      "method": "GET",
+      "path": "/api/order/items?categoryId=1",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Invalid staff login",
+      "method": "POST",
+      "path": "/api/admin/auth/login",
+      "expected": 401,
+      "actual": 401,
+      "passed": true
+    },
+    {
+      "name": "Manager login",
+      "method": "POST",
+      "path": "/api/admin/auth/login",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Counter login",
+      "method": "POST",
+      "path": "/api/admin/auth/login",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Table overview",
+      "method": "GET",
+      "path": "/api/admin/tables",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Seat configuration",
+      "method": "GET",
+      "path": "/api/admin/tables-config",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Waitlist listing",
+      "method": "GET",
+      "path": "/api/admin/waitlist",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Kitchen tickets",
+      "method": "GET",
+      "path": "/api/admin/kitchen/tickets",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu administration",
+      "method": "GET",
+      "path": "/api/order/admin/menu",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Option groups",
+      "method": "GET",
+      "path": "/api/order/admin/optionGroups",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Reservation list requires staff",
+      "method": "GET",
+      "path": "/api/admin/reservations?date=2026-10-23",
+      "expected": 401,
+      "actual": 401,
+      "passed": true
+    },
+    {
+      "name": "Reservation listing/projections",
+      "method": "GET",
+      "path": "/api/admin/reservations?date=2026-10-23",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Available tables/JSON record names",
+      "method": "GET",
+      "path": "/api/admin/tables/available?partySize=2",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Open options/projections",
+      "method": "GET",
+      "path": "/api/admin/tables/1/open-options",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Scheduler rejects counter",
+      "method": "POST",
+      "path": "/api/admin/scheduler/mark-no-show",
+      "expected": 403,
+      "actual": 403,
+      "passed": true
+    },
+    {
+      "name": "No-show scheduler",
+      "method": "POST",
+      "path": "/api/admin/scheduler/mark-no-show",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Reminder scheduler",
+      "method": "POST",
+      "path": "/api/admin/scheduler/send-reminders",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Availability/settings defaults",
+      "method": "GET",
+      "path": "/api/reservations/availability?date=2026-10-25&partySize=2",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Missing reservation fields",
+      "method": "POST",
+      "path": "/api/reservations",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Guest reservation/default child count",
+      "method": "POST",
+      "path": "/api/reservations",
+      "expected": 201,
+      "actual": 201,
+      "passed": true
+    },
+    {
+      "name": "Reservation access required",
+      "method": "GET",
+      "path": "/api/reservations/73",
+      "expected": 401,
+      "actual": 401,
+      "passed": true
+    },
+    {
+      "name": "Wrong reservation token hidden",
+      "method": "GET",
+      "path": "/api/reservations/73",
+      "expected": 404,
+      "actual": 404,
+      "passed": true
+    },
+    {
+      "name": "Reservation detail/default values",
+      "method": "GET",
+      "path": "/api/reservations/73",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Cancel reservation",
+      "method": "DELETE",
+      "path": "/api/reservations/73",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Repeated cancellation rejected",
+      "method": "DELETE",
+      "path": "/api/reservations/73",
+      "expected": 409,
+      "actual": 409,
+      "passed": true
+    },
+    {
+      "name": "Explicit null child count",
+      "method": "POST",
+      "path": "/api/reservations",
+      "expected": 201,
+      "actual": 201,
+      "passed": true
+    },
+    {
+      "name": "Explicit null defaults to zero",
+      "method": "GET",
+      "path": "/api/reservations/74",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Staff cancellation without optional body",
+      "method": "POST",
+      "path": "/api/admin/reservations/74/cancel",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Explicit null required count validation",
+      "method": "POST",
+      "path": "/api/reservations",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Join occupied table",
+      "method": "POST",
+      "path": "/api/tables/A03/join",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Current guest session",
+      "method": "GET",
+      "path": "/api/dining/current",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Shared cart visibility",
+      "method": "GET",
+      "path": "/api/dining-sessions/50/cart",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Table orders",
+      "method": "GET",
+      "path": "/api/dining/orders",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Dining session auth required",
+      "method": "GET",
+      "path": "/api/dining/current",
+      "expected": 401,
+      "actual": 401,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: anonymous GET /categories rejected",
+      "method": "GET",
+      "path": "/api/order/admin/categories",
+      "expected": 401,
+      "actual": 401,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: counter GET /categories forbidden",
+      "method": "GET",
+      "path": "/api/order/admin/categories",
+      "expected": 403,
+      "actual": 403,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: anonymous POST /categories rejected",
+      "method": "POST",
+      "path": "/api/order/admin/categories",
+      "expected": 401,
+      "actual": 401,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: counter POST /categories forbidden",
+      "method": "POST",
+      "path": "/api/order/admin/categories",
+      "expected": 403,
+      "actual": 403,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: anonymous GET /menu rejected",
+      "method": "GET",
+      "path": "/api/order/admin/menu",
+      "expected": 401,
+      "actual": 401,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: counter GET /menu forbidden",
+      "method": "GET",
+      "path": "/api/order/admin/menu",
+      "expected": 403,
+      "actual": 403,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: anonymous GET /optionGroups rejected",
+      "method": "GET",
+      "path": "/api/order/admin/optionGroups",
+      "expected": 401,
+      "actual": 401,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: counter GET /optionGroups forbidden",
+      "method": "GET",
+      "path": "/api/order/admin/optionGroups",
+      "expected": 403,
+      "actual": 403,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: anonymous POST /items rejected",
+      "method": "POST",
+      "path": "/api/order/admin/items",
+      "expected": 401,
+      "actual": 401,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: counter POST /items forbidden",
+      "method": "POST",
+      "path": "/api/order/admin/items",
+      "expected": 403,
+      "actual": 403,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: no anonymous category or item was created",
+      "passed": true
+    },
+    {
+      "name": "Menu admin: anonymous /api/uploads/presign rejected",
+      "method": "POST",
+      "path": "/api/uploads/presign",
+      "expected": 401,
+      "actual": 401,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: counter /api/uploads/presign forbidden",
+      "method": "POST",
+      "path": "/api/uploads/presign",
+      "expected": 403,
+      "actual": 403,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: anonymous /api/uploads/complete rejected",
+      "method": "POST",
+      "path": "/api/uploads/complete",
+      "expected": 401,
+      "actual": 401,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: counter /api/uploads/complete forbidden",
+      "method": "POST",
+      "path": "/api/uploads/complete",
+      "expected": 403,
+      "actual": 403,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: customer category list stays public",
+      "method": "GET",
+      "path": "/api/order/category",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: create category",
+      "method": "POST",
+      "path": "/api/order/admin/categories",
+      "expected": 201,
+      "actual": 201,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: duplicate category name rejected",
+      "method": "POST",
+      "path": "/api/order/admin/categories",
+      "expected": 409,
+      "actual": 409,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: rename category",
+      "method": "PUT",
+      "path": "/api/order/admin/categories/11",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: option groups for linking",
+      "method": "GET",
+      "path": "/api/order/admin/optionGroups",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: create untracked refill item with labels and two option groups",
+      "method": "POST",
+      "path": "/api/order/admin/items",
+      "expected": 201,
+      "actual": 201,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: untracked item with stock 0 still has a detail page",
+      "method": "GET",
+      "path": "/api/order/items/66",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: untracked item with stock 0 is not sold out in the menu",
+      "method": "GET",
+      "path": "/api/order/items?categoryId=11",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: option groups come back in the chosen order",
+      "passed": true,
+      "actual": [
+        2,
+        1
+      ]
+    },
+    {
+      "name": "Menu admin: database stores the link order",
+      "passed": true,
+      "actual": [
+        "2",
+        "1"
+      ]
+    },
+    {
+      "name": "Menu admin: the unchanged valid body is accepted",
+      "method": "PUT",
+      "path": "/api/order/admin/items/66",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: reject refill with a price",
+      "method": "PUT",
+      "path": "/api/order/admin/items/66",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: reject spiciness 4",
+      "method": "PUT",
+      "path": "/api/order/admin/items/66",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: reject negative price",
+      "method": "PUT",
+      "path": "/api/order/admin/items/66",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: reject blank name",
+      "method": "PUT",
+      "path": "/api/order/admin/items/66",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: reject soup base and refill together",
+      "method": "PUT",
+      "path": "/api/order/admin/items/66",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: omitted optionGroupIds keeps links",
+      "method": "PUT",
+      "path": "/api/order/admin/items/66",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: links unchanged when optionGroupIds is omitted",
+      "passed": true
+    },
+    {
+      "name": "Menu admin: switch to a tracked paid item with stock 0",
+      "method": "PUT",
+      "path": "/api/order/admin/items/66",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: tracked item with stock 0 is sold out in the menu",
+      "method": "GET",
+      "path": "/api/order/items?categoryId=11",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: empty optionGroupIds removes all links",
+      "passed": true
+    },
+    {
+      "name": "Menu admin: restock for customer checks",
+      "method": "PUT",
+      "path": "/api/order/admin/items/66",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: customer sees the new category",
+      "method": "GET",
+      "path": "/api/order/category",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: deactivate category",
+      "method": "PUT",
+      "path": "/api/order/admin/categories/11",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: customer no longer sees the inactive category",
+      "method": "GET",
+      "path": "/api/order/category",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: items of an inactive category are hidden from the menu",
+      "method": "GET",
+      "path": "/api/order/items",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: item detail of an inactive category is not found",
+      "method": "GET",
+      "path": "/api/order/items/66",
+      "expected": 404,
+      "actual": 404,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: admin list still shows the inactive category",
+      "method": "GET",
+      "path": "/api/order/admin/categories",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: reactivate category",
+      "method": "PUT",
+      "path": "/api/order/admin/categories/11",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: guest joins A03",
+      "method": "POST",
+      "path": "/api/tables/A03/join",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: guest session",
+      "method": "GET",
+      "path": "/api/dining/current",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: guest puts the item in the cart while the category is active",
+      "method": "POST",
+      "path": "/api/dining-sessions/50/cart/items",
+      "expected": 201,
+      "actual": 201,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: disable with only active keeps the name",
+      "method": "PUT",
+      "path": "/api/order/admin/categories/11",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: shared cart refuses an item of a disabled category",
+      "method": "POST",
+      "path": "/api/dining-sessions/50/cart/items",
+      "expected": 409,
+      "actual": 409,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: item-detail cart refuses an item of a disabled category",
+      "method": "POST",
+      "path": "/api/order/cart/items",
+      "expected": 409,
+      "actual": 409,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: submitting a cart that already holds it is refused",
+      "method": "POST",
+      "path": "/api/dining-sessions/50/orders",
+      "expected": 409,
+      "actual": 409,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: the refused submission created no ticket",
+      "passed": true,
+      "actual": [
+        "2",
+        "2"
+      ]
+    },
+    {
+      "name": "Menu admin: blank category name rejected",
+      "method": "PUT",
+      "path": "/api/order/admin/categories/11",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: enable with only active",
+      "method": "PUT",
+      "path": "/api/order/admin/categories/11",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: submitting works again after the category is enabled",
+      "method": "POST",
+      "path": "/api/dining-sessions/50/orders",
+      "expected": 201,
+      "actual": 201,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: race fixture cart",
+      "method": "POST",
+      "path": "/api/dining-sessions/50/cart/items",
+      "expected": 201,
+      "actual": 201,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: submit racing a disable is either accepted first or refused after it (round 1)",
+      "passed": true,
+      "actual": {
+        "submit": 409,
+        "disable": 200
+      }
+    },
+    {
+      "name": "Menu admin: re-enable after the race",
+      "method": "PUT",
+      "path": "/api/order/admin/categories/11",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: the kept cart submits once enabled",
+      "method": "POST",
+      "path": "/api/dining-sessions/50/orders",
+      "expected": 201,
+      "actual": 201,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: race fixture cart",
+      "method": "POST",
+      "path": "/api/dining-sessions/50/cart/items",
+      "expected": 201,
+      "actual": 201,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: submit racing a disable is either accepted first or refused after it (round 2)",
+      "passed": true,
+      "actual": {
+        "submit": 409,
+        "disable": 200
+      }
+    },
+    {
+      "name": "Menu admin: re-enable after the race",
+      "method": "PUT",
+      "path": "/api/order/admin/categories/11",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: the kept cart submits once enabled",
+      "method": "POST",
+      "path": "/api/dining-sessions/50/orders",
+      "expected": 201,
+      "actual": 201,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: race fixture cart",
+      "method": "POST",
+      "path": "/api/dining-sessions/50/cart/items",
+      "expected": 201,
+      "actual": 201,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: submit racing a disable is either accepted first or refused after it (round 3)",
+      "passed": true,
+      "actual": {
+        "submit": 409,
+        "disable": 200
+      }
+    },
+    {
+      "name": "Menu admin: re-enable after the race",
+      "method": "PUT",
+      "path": "/api/order/admin/categories/11",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: the kept cart submits once enabled",
+      "method": "POST",
+      "path": "/api/dining-sessions/50/orders",
+      "expected": 201,
+      "actual": 201,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: category order before",
+      "method": "GET",
+      "path": "/api/order/admin/categories",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: move the new category to the top",
+      "method": "PATCH",
+      "path": "/api/order/admin/categories/sort-order",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: customer category order follows sort order",
+      "method": "GET",
+      "path": "/api/order/category",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: stale category list rejected",
+      "method": "PATCH",
+      "path": "/api/order/admin/categories/sort-order",
+      "expected": 409,
+      "actual": 409,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: deleting a category that still has items is refused",
+      "method": "DELETE",
+      "path": "/api/order/admin/categories/11",
+      "expected": 409,
+      "actual": 409,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: the item survived the refused delete",
+      "passed": true
+    },
+    {
+      "name": "Menu admin: create an empty category",
+      "method": "POST",
+      "path": "/api/order/admin/categories",
+      "expected": 201,
+      "actual": 201,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: delete the empty category",
+      "method": "DELETE",
+      "path": "/api/order/admin/categories/12",
+      "expected": 204,
+      "actual": 204,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: create a spare category",
+      "method": "POST",
+      "path": "/api/order/admin/categories",
+      "expected": 201,
+      "actual": 201,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: category list",
+      "method": "GET",
+      "path": "/api/order/admin/categories",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: reorder racing a delete ends in 200/409 and 204, never 500 (round 1)",
+      "passed": true,
+      "actual": {
+        "sort": 409,
+        "delete": 204
+      }
+    },
+    {
+      "name": "Menu admin: create a spare category",
+      "method": "POST",
+      "path": "/api/order/admin/categories",
+      "expected": 201,
+      "actual": 201,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: category list",
+      "method": "GET",
+      "path": "/api/order/admin/categories",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: reorder racing a delete ends in 200/409 and 204, never 500 (round 2)",
+      "passed": true,
+      "actual": {
+        "sort": 409,
+        "delete": 204
+      }
+    },
+    {
+      "name": "Menu admin: create a spare category",
+      "method": "POST",
+      "path": "/api/order/admin/categories",
+      "expected": 201,
+      "actual": 201,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: category list",
+      "method": "GET",
+      "path": "/api/order/admin/categories",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: reorder racing a delete ends in 200/409 and 204, never 500 (round 3)",
+      "passed": true,
+      "actual": {
+        "sort": 409,
+        "delete": 204
+      }
+    },
+    {
+      "name": "Menu admin: category list",
+      "method": "GET",
+      "path": "/api/order/admin/categories",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: category list after the race",
+      "method": "GET",
+      "path": "/api/order/admin/categories",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: reorder racing a rename keeps both changes (round 1)",
+      "passed": true,
+      "actual": {
+        "sort": 200,
+        "rename": 200
+      }
+    },
+    {
+      "name": "Menu admin: category list",
+      "method": "GET",
+      "path": "/api/order/admin/categories",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: category list after the race",
+      "method": "GET",
+      "path": "/api/order/admin/categories",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: reorder racing a rename keeps both changes (round 2)",
+      "passed": true,
+      "actual": {
+        "sort": 200,
+        "rename": 200
+      }
+    },
+    {
+      "name": "Menu admin: category list",
+      "method": "GET",
+      "path": "/api/order/admin/categories",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: category list after the race",
+      "method": "GET",
+      "path": "/api/order/admin/categories",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: reorder racing a rename keeps both changes (round 3)",
+      "passed": true,
+      "actual": {
+        "sort": 200,
+        "rename": 200
+      }
+    },
+    {
+      "name": "Menu admin: restore original category order",
+      "method": "PATCH",
+      "path": "/api/order/admin/categories/sort-order",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu admin: hide the synthetic category again",
+      "method": "PUT",
+      "path": "/api/order/admin/categories/11",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    }
+  ]
+}

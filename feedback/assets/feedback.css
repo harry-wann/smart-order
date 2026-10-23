@@ -108,6 +108,12 @@ h3 { margin-bottom: 7px; color: var(--navy); font-size: 1.04rem; line-height: 1.
 .prompt-list { display: grid; gap: 9px; margin: 14px 0 0; padding: 0; list-style: none; }
 .prompt-list li { display: flex; gap: 10px; align-items: flex-start; padding: 11px 13px; border: 1px solid var(--soft-line); border-radius: 12px; background: #fcfdff; }
 .prompt-list li::before { flex: 0 0 auto; width: 8px; height: 8px; margin-top: .55em; border-radius: 50%; background: var(--purple); content: ""; }
+/* 卡片清單裡的子清單：一般圓點，不再套卡片外框 */
+.scope-list li ul, .prompt-list li ul { display: block; margin: 6px 0 0; padding-left: 1.2em; list-style: disc; }
+.scope-list li li, .prompt-list li li { display: list-item; padding: 0; margin: 3px 0 0; border: 0; border-radius: 0; background: none; }
+.prompt-list li li::before { content: none; }
+.step-card ul { margin: 6px 0 0; padding-left: 1.2em; color: var(--muted); }
+.step-card li + li { margin-top: 3px; }
 .step-list { display: grid; gap: 11px; margin: 15px 0 0; padding: 0; list-style: none; counter-reset: steps; }
 .step-card { position: relative; padding: 15px 16px 15px 58px; border-radius: 15px; box-shadow: none; counter-increment: steps; }
 .step-card::before { position: absolute; top: 15px; left: 16px; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9px; color: #fff; background: var(--navy); font-size: .85rem; font-weight: 800; content: counter(steps); }
