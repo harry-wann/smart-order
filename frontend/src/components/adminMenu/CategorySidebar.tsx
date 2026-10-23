@@ -101,7 +101,7 @@ export default function CategorySidebar({
     'rounded-md border border-line px-2 py-1 text-xs text-ink-600 transition-colors hover:bg-surface-3 disabled:cursor-not-allowed disabled:opacity-40';
 
   return (
-    <div className="no-scrollbar h-full w-[184px] shrink-0 overflow-y-auto">
+    <div className="h-full w-[184px] shrink-0 overflow-y-auto">
       {/* 標題 */}
       <div className="type-caption text-ink-600 px-3 pb-2">分類</div>
 

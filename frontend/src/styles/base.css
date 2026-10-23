@@ -37,6 +37,16 @@
   }
 
   /* 數字一律等寬，金額與時間在列表裡才不會左右跳動（§3.1）。 */
+  /* 隱藏各瀏覽器的捲軸外觀，保留容器原本的捲動行為。 */
+  * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  *::-webkit-scrollbar {
+    display: none;
+  }
+
   :where(input, table, time, output) {
     font-variant-numeric: tabular-nums;
   }
