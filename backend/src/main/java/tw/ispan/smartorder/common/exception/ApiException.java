@@ -13,11 +13,18 @@ public class ApiException extends RuntimeException {
 
     private final HttpStatus status;
     private final String code;
+    // 只有 429 TOO_MANY_ATTEMPTS 會帶：還要等幾秒才能再試，前端拿來顯示倒數；其他錯誤都是 null
+    private final Long retryAfterSeconds;
 
     public ApiException(HttpStatus status, String code, String message) {
+        this(status, code, message, null);
+    }
+
+    private ApiException(HttpStatus status, String code, String message, Long retryAfterSeconds) {
         super(message);
         this.status = status;
         this.code = code;
+        this.retryAfterSeconds = retryAfterSeconds;
     }
 
     // 400、401、403、404 的 code 固定一個；409 每種衝突的 code 都不一樣
@@ -40,5 +47,10 @@ public class ApiException extends RuntimeException {
 
     public static ApiException forbidden(String message) {
         return new ApiException(HttpStatus.FORBIDDEN, "FORBIDDEN", message);
+    }
+
+    // 04 §1.3：要太多次（例如驗證碼 10 分鐘內超過 3 次），回應多帶 retryAfterSeconds
+    public static ApiException tooManyAttempts(String message, long retryAfterSeconds) {
+        return new ApiException(HttpStatus.TOO_MANY_REQUESTS, "TOO_MANY_ATTEMPTS", message, retryAfterSeconds);
     }
 }

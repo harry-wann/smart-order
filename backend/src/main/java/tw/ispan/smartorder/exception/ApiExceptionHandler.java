@@ -78,13 +78,6 @@ public class ApiExceptionHandler {
         return response(HttpStatus.NOT_FOUND,exception.getMessage(),request);
     }
 
-    @ExceptionHandler(OtpFailedException.class)
-    public ResponseEntity<ApiError> handleOtpFailed(
-            OtpFailedException exception,HttpServletRequest request
-    ){
-        return response(HttpStatus.BAD_REQUEST,exception.getMessage(),request);
-    }
-
     @ExceptionHandler(MemberUnauthorizedException.class)
     public ResponseEntity<Map<String, Object>> handleMemberUnauthorized(
             MemberUnauthorizedException exception, HttpServletRequest request) {

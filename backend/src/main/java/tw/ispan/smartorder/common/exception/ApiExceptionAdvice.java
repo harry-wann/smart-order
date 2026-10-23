@@ -3,6 +3,7 @@ package tw.ispan.smartorder.common.exception;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -16,6 +17,7 @@ import tw.ispan.smartorder.common.dto.ErrorDetail;
 import tw.ispan.smartorder.common.dto.ErrorResponse;
 import tw.ispan.smartorder.controller.DiningController;
 import tw.ispan.smartorder.controller.KitchenTicketsController;
+import tw.ispan.smartorder.controller.MemberAuthController;
 import tw.ispan.smartorder.controller.SeatController;
 import tw.ispan.smartorder.controller.TableController;
 import tw.ispan.smartorder.controller.WaitlistController;
@@ -39,14 +41,24 @@ import java.util.List;
         "tw.ispan.smartorder.staff",
         "tw.ispan.smartorder.ordercart.controller"
 }, assignableTypes = {KitchenTicketsController.class, StaffOrderController.class, PaymentController.class,
-        TableController.class, SeatController.class, WaitlistController.class, DiningController.class})
+        TableController.class, SeatController.class, WaitlistController.class, DiningController.class,
+        MemberAuthController.class})
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class ApiExceptionAdvice {
 
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ErrorResponse> handleApi(ApiException exception, HttpServletRequest request) {
         String message = exception.getMessage() != null ? exception.getMessage() : "請求無法完成";
-        return response(exception.getStatus(), exception.getCode(), message, request, List.of());
+        Long retryAfter = exception.getRetryAfterSeconds();
+        if (retryAfter == null) {
+            return response(exception.getStatus(), exception.getCode(), message, request, List.of());
+        }
+        // 429：body 帶 retryAfterSeconds 給前端倒數，標頭也照 HTTP 慣例帶 Retry-After（秒）
+        ErrorResponse body = new ErrorResponse(OffsetDateTime.now(), exception.getStatus().value(),
+                exception.getCode(), message, request.getRequestURI(), List.of(), retryAfter);
+        return ResponseEntity.status(exception.getStatus())
+                .header(HttpHeaders.RETRY_AFTER, retryAfter.toString())
+                .body(body);
     }
 
     // @Valid 沒過：每個欄位一筆放進 details，訊息就是 DTO 上寫的那句，外層 message 只是總稱

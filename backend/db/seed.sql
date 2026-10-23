@@ -38,6 +38,7 @@ DELETE FROM option_group;
 DELETE FROM menu_item;
 DELETE FROM menu_category;
 DELETE FROM staff;
+DELETE FROM verification_phone_lock;
 DELETE FROM verification_code;
 DELETE FROM member;
 

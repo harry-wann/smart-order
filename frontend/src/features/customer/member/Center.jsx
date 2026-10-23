@@ -119,18 +119,7 @@ export function Center() {
     textP: '暱稱、生日、手機號碼',
     onclick: () => navigate('/member/register', { state: { mode: 'edit' } }),
   }
-  const consumption = {
-    icon: SvgIconMap.MemberLog,
-    textH2: '消費紀錄',
-    textP: '每一次來吃了什麼、花了多少',
-    onclick: () => navigate('/member'),
-  }
-  const point = {
-    icon: SvgIconMap.MemberPoints,
-    textH2: '點數與優惠券',
-    textP: '1,248 點・1 張券可用',
-    onclick: () => navigate('/member'),
-  }
+  // 「消費紀錄」（A1）、「點數與優惠券」（A6）是進階功能，基礎版的會員中心不放這兩個入口（M8 8.7）
 
   return (
     <div className="flex h-full w-full flex-col">
@@ -145,8 +134,6 @@ export function Center() {
         <div className="grid grid-cols-1 gap-2">
           <CardLink data={reserve} />
           <CardLink data={personal} />
-          <CardLink data={consumption} />
-          <CardLink data={point} />
         </div>
 
         <InfoBox

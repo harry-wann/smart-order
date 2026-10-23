@@ -1,14 +1,19 @@
 import { queryClient, queryScope } from './queryClient'
 import { customerTokens, employeeToken } from './tokenStore'
 
+// 出菜看板的快取 key 不在 employee 範圍內，換帳號時要一起清，避免下一位看到上一位的工單
+const KITCHEN_QUERY_KEY = ['kitchen']
+
 export function signInEmployee(token: string) {
   queryClient.removeQueries({ queryKey: queryScope.employee })
+  queryClient.removeQueries({ queryKey: KITCHEN_QUERY_KEY })
   employeeToken.set(token)
 }
 
 export function signOutEmployee() {
   employeeToken.clear()
   queryClient.removeQueries({ queryKey: queryScope.employee })
+  queryClient.removeQueries({ queryKey: KITCHEN_QUERY_KEY })
 }
 
 export function signInMember(token: string) {

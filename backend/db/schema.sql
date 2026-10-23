@@ -45,6 +45,7 @@ DROP TABLE IF EXISTS option_group;
 DROP TABLE IF EXISTS menu_item;
 DROP TABLE IF EXISTS menu_category;
 DROP TABLE IF EXISTS staff;
+DROP TABLE IF EXISTS verification_phone_lock;
 DROP TABLE IF EXISTS verification_code;
 DROP TABLE IF EXISTS member;
 
@@ -78,6 +79,15 @@ CREATE TABLE verification_code (
   PRIMARY KEY (id),
   KEY idx_verification_code_phone (phone, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='手機驗證碼';
+
+-- 一支手機一列，只拿來排隊：要驗證碼、驗證之前都先鎖住這一列，同一支手機同時來的請求一個一個做，
+-- 「10 分鐘最多 3 次」的計數和「錯 3 次作廢」才不會被同時送出的請求算錯（見 MemberAuthService）。
+-- 第一次要驗證碼時建立，之後不刪；seed.sql 重置時清空。
+CREATE TABLE verification_phone_lock (
+  phone             VARCHAR(20)     NOT NULL,
+  last_requested_at DATETIME(3)     NOT NULL COMMENT '最後一次要驗證碼的時間',
+  PRIMARY KEY (phone)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='手機驗證碼的每手機鎖';
 
 CREATE TABLE staff (
   id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

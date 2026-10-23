@@ -17,6 +17,12 @@ public record ErrorResponse(
         String message,
         String path,
         // 只有欄位驗證失敗才有，一個欄位一筆，前端放在對應的輸入框底下
-        List<ErrorDetail> details
+        List<ErrorDetail> details,
+        // 只有 429 TOO_MANY_ATTEMPTS 才有：還要等幾秒才能再試，前端顯示倒數；null 不輸出
+        Long retryAfterSeconds
 ) {
+    public ErrorResponse(OffsetDateTime timestamp, int status, String code, String message, String path,
+                         List<ErrorDetail> details) {
+        this(timestamp, status, code, message, path, details, null);
+    }
 }
