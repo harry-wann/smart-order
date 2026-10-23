@@ -1,6 +1,7 @@
 package tw.ispan.smartorder.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tw.ispan.smartorder.common.exception.ApiException;
@@ -11,6 +12,7 @@ import tw.ispan.smartorder.repository.MenuCategoryRepository;
 import tw.ispan.smartorder.repository.MenuItemRepository;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +22,12 @@ import java.util.stream.Collectors;
 
 @Service
 public class MenuCategoryService {
+
+    // 分類名稱的唯一索引（schema.sql／migrate_menu_category_guards.sql）。
+    // collation 是 utf8mb4_unicode_ci，不分大小寫，跟 existsByNameIgnoreCase 的檢查一致
+    private static final String UNIQUE_CATEGORY_NAME = "uk_menu_category_name";
+    // 新增分類沒帶出餐順序時用 2（菜盤），跟資料表的預設值一樣
+    private static final int DEFAULT_COOK_ORDER = 2;
 
     @Autowired
     private MenuCategoryRepository menuCategoryRepository;
@@ -51,13 +59,14 @@ public class MenuCategoryService {
         category.setName(name);
         // 新分類排在最後；之後用排序 API 調整
         category.setSortOrder(menuCategoryRepository.findMaxSortOrder() + 1);
+        category.setCookOrder(request.cookOrder() == null ? DEFAULT_COOK_ORDER : request.cookOrder());
         category.setActive(request.active() == null || request.active());
         category.setCreatedAt(now);
         category.setUpdatedAt(now);
-        return toDto(menuCategoryRepository.save(category));
+        return toDto(saveCheckingName(category));
     }
 
-    // 改名、停用／啟用。name、active 省略都代表不變。
+    // 改名、停用／啟用、改出餐順序。name、active、cookOrder 省略都代表不變。
     // 先鎖住這一列（FOR UPDATE）再改：同一分類的改名、排序、刪除排隊，不會互相蓋掉。
     // 停用／啟用有變動時，交易提交後推一個事件，開著菜單的顧客端會重新抓分類與品項
     @Transactional
@@ -75,8 +84,11 @@ public class MenuCategoryService {
             activeChanged = !request.active().equals(category.getActive());
             category.setActive(request.active());
         }
+        if (request.cookOrder() != null) {
+            category.setCookOrder(request.cookOrder());
+        }
         category.setUpdatedAt(LocalDateTime.now());
-        MenuCategoryEntity saved = menuCategoryRepository.save(category);
+        MenuCategoryEntity saved = saveCheckingName(category);
         if (activeChanged) {
             menuStatusNotifier.notifyCategoryChangedAfterCommit(categoryId, saved.getActive());
         }
@@ -84,12 +96,14 @@ public class MenuCategoryService {
     }
 
     // 照傳入順序重排全部分類。先依 id 由小到大鎖住所有分類列，再比對清單：
-    // 清單必須剛好是目前所有分類（含停用的），少一個或多一個代表畫面上的清單過期了（別人新增／刪除過），
-    // 回 409 CATEGORY_LIST_CHANGED 請前端重新整理，不猜著排。
-    // 鎖完才讀到最新的名稱與停用狀態，整列寫回不會把別人剛改的值蓋回舊的；
+    // 1. categoryIds 必須剛好是目前所有分類（含停用的），少一個或多一個代表畫面上的清單過期了（別人新增／刪除過）
+    // 2. 有帶 expectedCategoryIds（移動前畫面上的順序）的話，還要跟資料庫目前的順序（sort_order, id）一模一樣；
+    //    成員一樣但順序不同，代表別人剛排過，照畫面上的舊順序移動會把別人排好的蓋掉
+    // 兩種都回 409 CATEGORY_LIST_CHANGED 請前端重新整理，不猜著排。沒帶 expectedCategoryIds 的舊呼叫端只檢查第 1 點。
+    // 鎖完才讀到最新的名稱、停用狀態與順序，整列寫回不會把別人剛改的值蓋回舊的；
     // 排序和刪除同時發生時，排在後面的看到的是前一個交易提交後的結果，不會丟出樂觀鎖例外
     @Transactional
-    public List<AdminMenuCategoryDto> reorderMenuCategories(List<Long> categoryIds) {
+    public List<AdminMenuCategoryDto> reorderMenuCategories(List<Long> categoryIds, List<Long> expectedCategoryIds) {
         Set<Long> requestedIds = new HashSet<>(categoryIds);
         if (requestedIds.size() != categoryIds.size()) {
             throw ApiException.badRequest("分類排序資料有重複的分類");
@@ -98,6 +112,18 @@ public class MenuCategoryService {
         Set<Long> existingIds = categories.stream().map(MenuCategoryEntity::getId).collect(Collectors.toSet());
         if (!requestedIds.equals(existingIds)) {
             throw ApiException.conflict("CATEGORY_LIST_CHANGED", "分類清單已變動，請重新整理後再調整排序");
+        }
+        if (expectedCategoryIds != null) {
+            // 跟後台清單（findAdminCategoriesWithItemCount）同一個排法：sort_order 小的在前，同值再比 id
+            List<Long> currentOrder = categories.stream()
+                    .sorted(Comparator.comparing(MenuCategoryEntity::getSortOrder,
+                                    Comparator.nullsLast(Comparator.naturalOrder()))
+                            .thenComparing(MenuCategoryEntity::getId))
+                    .map(MenuCategoryEntity::getId)
+                    .toList();
+            if (!currentOrder.equals(expectedCategoryIds)) {
+                throw ApiException.conflict("CATEGORY_LIST_CHANGED", "分類順序剛被調整過，請重新整理後再調整排序");
+            }
         }
 
         Map<Long, MenuCategoryEntity> categoriesById = categories.stream()
@@ -132,10 +158,27 @@ public class MenuCategoryService {
                 .orElseThrow(() -> ApiException.notFound("找不到商品分類"));
     }
 
+    // 新增、修改都走這裡：立刻寫進資料庫（saveAndFlush），撞到唯一索引才會在這個 try 裡丟出來，
+    // 不會拖到交易提交時才炸、catch 接不到。
+    // 前面的 existsByNameIgnoreCase 擋得住一般情況；兩位店長同一瞬間送出同名分類時兩邊都會通過檢查，
+    // 最後由 uk_menu_category_name 擋下其中一個，一樣回 409 CATEGORY_NAME_DUPLICATED，不回 500。
+    // 其他約束錯誤（外鍵、NOT NULL）是程式或資料的問題，講成名稱重複會把 bug 蓋掉，照常往外丟
+    private MenuCategoryEntity saveCheckingName(MenuCategoryEntity category) {
+        try {
+            return menuCategoryRepository.saveAndFlush(category);
+        } catch (DataIntegrityViolationException e) {
+            String message = e.getMostSpecificCause().getMessage();
+            if (message == null || !message.contains(UNIQUE_CATEGORY_NAME)) {
+                throw e;
+            }
+            throw duplicatedName();
+        }
+    }
+
     private AdminMenuCategoryDto toDto(MenuCategoryEntity category) {
         return new AdminMenuCategoryDto(category.getId(), category.getName(),
                 menuItemRepository.countByCategory_Id(category.getId()),
-                category.getSortOrder(), category.getActive());
+                category.getSortOrder(), category.getActive(), category.getCookOrder());
     }
 
     // 名稱不可是 null 或全空白（含全形空白）；回傳 trim 過的值

@@ -15,18 +15,19 @@ public interface MenuCategoryRepository extends JpaRepository<MenuCategoryEntity
     // 顧客端：只給啟用的分類，依排序值、同值再依 id
     List<MenuCategoryEntity> findByActiveTrueOrderBySortOrderAscIdAsc();
 
-    // 後台：全部分類（含停用）與品項數量，順序跟顧客端一致
+    // 後台：全部分類（含停用）與品項數量、出餐順序，順序跟顧客端一致
     @Query("""
     SELECT new tw.ispan.smartorder.dto.AdminMenuCategoryDto(
         category.id,
         category.name,
         COUNT(item.id),
         category.sortOrder,
-        category.active
+        category.active,
+        category.cookOrder
     )
     FROM MenuCategoryEntity category
     LEFT JOIN category.menuItems item
-    GROUP BY category.id, category.name, category.sortOrder, category.active
+    GROUP BY category.id, category.name, category.sortOrder, category.active, category.cookOrder
     ORDER BY category.sortOrder, category.id
     """)
     List<AdminMenuCategoryDto> findAdminCategoriesWithItemCount();
@@ -45,7 +46,8 @@ public interface MenuCategoryRepository extends JpaRepository<MenuCategoryEntity
     @Query("SELECT COALESCE(MAX(category.sortOrder), 0) FROM MenuCategoryEntity category")
     Integer findMaxSortOrder();
 
-    // 分類名稱不重複（不分大小寫）；改名時要排除自己
+    // 分類名稱不重複（不分大小寫）；改名時要排除自己。
+    // 這是先擋一般情況、給好懂的錯誤；同一瞬間的同名新增由唯一索引 uk_menu_category_name 擋（見 MenuCategoryService）
     boolean existsByNameIgnoreCase(String name);
 
     boolean existsByNameIgnoreCaseAndIdNot(String name, Long id);
