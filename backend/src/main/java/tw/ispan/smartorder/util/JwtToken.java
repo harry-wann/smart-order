@@ -6,6 +6,7 @@ import io.jsonwebtoken.security.Keys;
 
 
 import java.security.Key;
+import java.time.Duration;
 import java.util.Date;
 
 public class JwtToken {
@@ -44,6 +45,16 @@ public class JwtToken {
 						.signWith(key)
 						.compact();
 		return token;
+	}
+
+	// 效期由呼叫的人決定：會員 JWT 是 7 天（見 MemberAuthService），上面那支固定 1 小時不適用
+	public static String createToken(String subject, Duration ttl){
+		return Jwts.builder()
+						.setSubject(subject)
+						.setIssuedAt(new Date())
+						.setExpiration(new Date(System.currentTimeMillis()+ttl.toMillis()))
+						.signWith(key)
+						.compact();
 	}
 
 	public static String parseToken(String token){

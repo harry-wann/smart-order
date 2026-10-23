@@ -4,6 +4,7 @@ import { Routes, Route, Navigate } from 'react-router'
 import CustomerRootLayout from './layouts/customer/CustomerRootLayout'
 import CustomerLayout from './layouts/customer/CustomerLayout'
 import DashboardLayout from './layouts/admin/DashboardLayout'
+import RequireEmployee from './layouts/admin/RequireEmployee'
 
 // 顧客端
 import Entrance from './features/customer/Entrance'
@@ -99,11 +100,25 @@ function App() {
 
       {/* 店家端 - 員工登入是整頁版面，不套 DashboardLayout */}
       <Route path="/admin/login" element={<Login />} />
-      {/* 店家端 - 候位叫號螢幕給客人看，整頁版面不帶側欄 */}
-      <Route path="/admin/waitlist/display" element={<WaitlistDisplay />} />
+      {/* 店家端 - 候位叫號螢幕給客人看，整頁版面不帶側欄；它也要員工 token 才能訂閱推播，一樣要先登入 */}
+      <Route
+        path="/admin/waitlist/display"
+        element={
+          <RequireEmployee>
+            <WaitlistDisplay />
+          </RequireEmployee>
+        }
+      />
 
-      {/* 店家端頁面路徑 */}
-      <Route path="/admin" element={<DashboardLayout />}>
+      {/* 店家端頁面路徑：登入頁以外都包 RequireEmployee，沒有員工 token 先導到登入頁 */}
+      <Route
+        path="/admin"
+        element={
+          <RequireEmployee>
+            <DashboardLayout />
+          </RequireEmployee>
+        }
+      >
         <Route index element={<Navigate to="/admin/table_overview" replace />} />
         <Route path="table_overview" element={<TableOverview />} />
         <Route path="table_overview/:tableNo/open" element={<TableOpen />} />

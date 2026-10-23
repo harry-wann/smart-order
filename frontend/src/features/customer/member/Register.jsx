@@ -97,7 +97,8 @@ export function Register() {
       await customerClient.put('/member/me/profile', body, { customerAuth: ['member'] })
       goNext(body.nickname)
     } catch (e) {
-      setError(e.message)
+      // 欄位不對時（例如生日選到未來），後端把哪一欄、哪裡不對放在 details
+      setError(e.details?.[0]?.message ?? e.message)
     } finally {
       setSaving(false)
     }

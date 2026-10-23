@@ -8,6 +8,7 @@ import CardMap from "../../../components/card/CardMap";
 import { SvgIconMap } from "@/assets/SvgIconMap";
 import { customerClient } from "@/services/client/customerClient";
 import { customerTokens } from "@/services/client/tokenStore";   
+import { formatCountdown, useRetryCountdown } from "@/hooks/member/useRetryCountdown";
 
 const iconSvg = (Icon) => {
   return <Icon aria-hidden="true" className="svg-icon mx-3 w-5 h-5 shrink-0 text-brand-600" />;
@@ -30,28 +31,53 @@ const cardData = [
   },
 ];
 
+// 「先不登入，繼續」要回哪裡：看是從哪一頁被帶來登入的（C-12：從訂位進來的改走匿名訂位）
+function skipLoginPath(state) {
+  // 驗證碼頁按「改號碼」回來時，已經算好帶回來了
+  if (state?.skipTo) return state.skipTo;
+  // 掃碼入桌頁：回那一桌。入桌頁目前還沒有會員登入的入口，之後加的話帶 state: { tableNo } 進來
+  if (state?.tableNo) return `/order/checkin/${state.tableNo}`;
+  // 訂位選「用會員訂」進來的：改走直接訂位（C-16b）
+  if (state?.reservationType === "MEMBER") return "/reserve/guest";
+  // 我的預約按「登入／註冊會員」進來的：回去看這支手機記住的匿名訂位
+  if (state?.returnTo?.startsWith("/member/reservations")) return "/member/reservations";
+  // 入口頁的「會員登入」或直接打網址：回入口頁 C-00
+  return "/";
+}
+
 export function MemberLogin() {
   const navigate = useNavigate();
   const location = useLocation();
   const returnTo = location.state?.returnTo;
   const reservationType = location.state?.reservationType;
+  const skipTo = skipLoginPath(location.state);
 
   const [phone, setPhone] = useState("");
   const [error, setError] = useState("");          
   const [sending, setSending] = useState(false);   
+  // 被限流的是哪支手機：換一支號碼就不用等
+  const [limitedPhone, setLimitedPhone] = useState("");
+  const { secondsLeft, start: startCountdown } = useRetryCountdown();
+
+  const cleanPhone = phone.replace(/\D/g, ""); 
+  const waiting = secondsLeft > 0 && limitedPhone === cleanPhone;
 
   async function handleSendCode() {
-  const cleanPhone = phone.replace(/\D/g, ""); 
-
   setError("");
   setSending(true);
   try {
     const { data } = await customerClient.post("/member/otp", { phone: cleanPhone }, { customerAuth: [] });
     navigate("/member/verify", {
-      state: { returnTo, reservationType, phone: cleanPhone, demoCode: data.demoCode },
+      state: { returnTo, reservationType, skipTo, phone: cleanPhone, demoCode: data.demoCode },
     });
     } catch (e) {
-      setError(e.message);
+      // 同一支手機 10 分鐘內要超過 3 次：後端回 429 和還要等幾秒，按鈕停用並倒數
+      if (e.code === "TOO_MANY_ATTEMPTS") {
+        setLimitedPhone(cleanPhone);
+        startCountdown(e.retryAfterSeconds ?? 0);
+      }
+      // 手機格式不對時，後端把哪裡不對放在 details
+      setError(e.details?.[0]?.message ?? e.message);
     } finally {
       setSending(false);
     }
@@ -85,8 +111,8 @@ export function MemberLogin() {
 
         <div className="pt-section">
           <SOButton
-            text={sending ? "傳送中…" : "傳送驗證碼"}
-            disabled={sending || !phone}
+            text={waiting ? `${formatCountdown(secondsLeft)} 後可以再傳送` : sending ? "傳送中…" : "傳送驗證碼"}
+            disabled={sending || !phone || waiting}
             height="h-12"
             onClick={handleSendCode}                                       
           />
@@ -111,7 +137,7 @@ export function MemberLogin() {
         </div>
 
         <div className="flex w-full justify-center pt-section type-body text-ink-600">
-          <a href="/order/checkin">先不登入，繼續</a>
+          <button type="button" onClick={() => navigate(skipTo, { replace: true })}>先不登入，繼續</button>
         </div>
       </div>
     </div>

@@ -729,7 +729,7 @@ add_reservation(day(3, '19:00'), None, 4, 'CANCELLED', mid=10, created=day(-3, '
 DELETE_ORDER = ['payment', 'inventory_item', 'order_item_option', 'order_item', 'order_ticket', 'cart_item_option',
                   'cart_item', 'dining_session_guest', 'dining_session', 'waitlist', 'reservation', 'dining_table',
                   'menu_item_option_group', 'option_value', 'option_group', 'menu_item', 'menu_category', 'staff',
-                  'verification_code', 'member']
+                  'verification_phone_lock', 'verification_code', 'member']
 
 parts = [f"""-- ============================================================================
 -- smartorder 假資料（基礎版）

@@ -1,11 +1,23 @@
+import { useNavigate } from 'react-router'
 import SideBarSection, { type DashboardMenu } from './SideBarSection'
 import { SvgIconMap } from '@/assets/SvgIconMap'
+import { signOutEmployee } from '@/services/client/auth'
+import { EMPLOYEE_LOGIN_PATH } from '@/services/client/employeeClient'
 
 export type Props = {
   shopTitle: string
 }
 
 function SideBar({ shopTitle }: Props) {
+  const navigate = useNavigate()
+
+  // 登出：清掉這台裝置存的員工 token 和店家端快取，再回登入頁。
+  // JWT 本身到期前還是有效（見 M8 問題 4），這裡做的是讓這台裝置忘掉它
+  function handleLogout() {
+    signOutEmployee()
+    navigate(EMPLOYEE_LOGIN_PATH, { replace: true })
+  }
+
   return (
     <div className="flex h-full w-52 shrink-0 flex-col border-r border-r-line bg-surface-2 px-3 py-4">
       <span className="px-3 type-price font-black text-ink-900">{shopTitle}</span>
@@ -14,6 +26,14 @@ function SideBar({ shopTitle }: Props) {
       {menuGroups.map((menu) => (
         <SideBarSection key={menu.title} menu={menu} />
       ))}
+
+      <button
+        type="button"
+        className="mt-auto flex h-11 flex-row items-center gap-3 p-3 type-dashboard-menu text-ink-600"
+        onClick={handleLogout}
+      >
+        登出
+      </button>
     </div>
   )
 }

@@ -4,17 +4,21 @@
 
 | 檔案 | 內容 |
 |---|---|
-| `schema.sql` | 建 21 張資料表（**會先刪掉同名的表**） |
+| `schema.sql` | 建 22 張資料表（**會先刪掉同名的表**） |
 | `seed.sql` | 假資料（**會先清空所有表**再寫入） |
 | `generate_seed.py` | 產生 `seed.sql` 的程式；要改假資料改這支，再重新產生 |
 | `migrate_waitlist_flow.sql` | 已有資料庫的一次性候位約束／序號升級，不重編舊號 |
 | `migrate_guest_token.sql` | 已有資料庫的一次性同桌 guest token 升級（新增 `guest_token_hash`、拿掉裝置唯一索引），不改舊資料 |
+| `migrate_member_otp.sql` | 已有資料庫的一次性會員驗證碼升級：加上每支手機一列的鎖（`verification_phone_lock`） |
 
 進階功能（服務鈴、庫存異動紀錄、預先點餐、點數與優惠券）的表與欄位不在這裡，做到時再加。
 
 已有資料庫若只升級候位流程，先停止候位登記與入座寫入，檢查 `migrate_waitlist_flow.sql` 開頭的重複號碼／重複候位 session 查詢，再執行該檔一次。MySQL DDL 逐句提交；若唯一索引因歷史重複而失敗，應先人工審查資料，不能自動刪除或重編歷史。舊的已過號列無法推回真實過號時間，`expired_at` 會維持 `NULL`；升級後的過號會記錄實際標記時間。
 
 已有資料庫若要升級同桌 guest token，**先執行 `migrate_guest_token.sql` 一次，再啟動新版後端**（新版會讀 `guest_token_hash`，欄位不在會直接出錯）。先看檔案開頭的檢查查詢：最好在沒有用餐中桌次時升級；升級前就加入的 guest 沒有 token（`guest_token_hash` 為 `NULL`），那些手機要重新掃碼、會變成新的 guest。腳本只新增欄位、換索引、把 `device_id` 放寬成可為 `NULL`，不刪也不改舊資料。`seed.sql` 的 guest 也一樣沒有 token，重跑假資料後要用手機掃碼加入才會拿到。
+
+已有資料庫要升級會員驗證碼（同一支手機 10 分鐘最多要 3 次、錯 3 次作廢在同時送出時也算得對），請先停止舊版後端，再執行 `migrate_member_otp.sql`，然後啟動新版後端（舊後端在升級期間發出的驗證碼不會登記到鎖表，新後端會要求重新取得）。這份檔案可以重複執行，啟動前再跑一次也沒問題。
+它只新增 `verification_phone_lock` 一張表，並替升級前要過驗證碼的手機各補一列，不刪也不改既有資料，重跑也沒關係。
 
 ## 匯入
 

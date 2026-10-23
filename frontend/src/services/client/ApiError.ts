@@ -12,6 +12,8 @@ export type ApiErrorBody = {
   details?: ApiErrorDetail[]
   reason?: string
   bill?: unknown
+  // 只有 429 TOO_MANY_ATTEMPTS 會帶：還要等幾秒才能再試
+  retryAfterSeconds?: number
 }
 
 export class ApiError extends Error {
@@ -20,6 +22,7 @@ export class ApiError extends Error {
   readonly details: ApiErrorDetail[]
   readonly reason?: string
   readonly bill?: unknown
+  readonly retryAfterSeconds?: number
 
   constructor(status: number, body: ApiErrorBody, cause?: unknown) {
     super(body.message ?? DEFAULT_MESSAGE[body.code ?? ''] ?? DEFAULT_MESSAGE.UNKNOWN_ERROR, { cause })
@@ -29,6 +32,7 @@ export class ApiError extends Error {
     this.details = body.details ?? []
     this.reason = body.reason
     this.bill = body.bill
+    this.retryAfterSeconds = body.retryAfterSeconds
   }
 }
 
