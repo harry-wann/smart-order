@@ -49,6 +49,9 @@ import AxiosRestDemo from './features/demo/northwind/AxiosRestDemo'
 import TanStackRestDemo from './features/demo/northwind/TanStackRestDemo'
 import R2UploadDemo from './features/demo/R2UploadDemo'
 import { ToastManager } from './components/toast/ToastManager'
+import OrderDetails from './features/customer/payment/OrderDetails.jsx'
+import Payment from './features/customer/payment/Payment.jsx'
+import PayFinsh from './features/customer/payment/PayFinsh.jsx'
 
 function App() {
   return (
@@ -67,6 +70,9 @@ function App() {
           <Route path="cart/:sessionId" element={<OrderCart />} />
           <Route path="submitted/:orderTicketId" element={<OrderSubmitted />} />
           <Route path="history" element={<OrderHistory />} />
+          <Route path="checkout" element={<OrderDetails />} />
+          <Route path="checkout/payment" element={<Payment />} />
+          <Route path="checkout/finish" element={<PayFinsh />} />
         </Route>
         {/* 掃碼進入是整頁版面，不套 CustomerLayout */}
         <Route path="/order/checkin/:tableNo" element={<CheckIn />} />
