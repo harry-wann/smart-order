@@ -1,0 +1,81 @@
+{
+  "label": "vincent-member-otp",
+  "commit": "6c5c17b",
+  "testedAt": "2026-10-23T12:38:19.059Z",
+  "passed": true,
+  "resultCount": 15,
+  "sanitized": true,
+  "notes": [
+    "Admin pages at 1024x768 and member pages at 390x844; served from 127.0.0.1:5173 because another local service occupies the wildcard address on port 5173."
+  ],
+  "results": [
+    {
+      "name": "Member OTP browser: without an employee token /admin/table_overview goes to the login page",
+      "passed": true,
+      "detail": "/admin/login"
+    },
+    {
+      "name": "Member OTP browser: without an employee token /admin/waitlist/display goes to the login page",
+      "passed": true,
+      "detail": "/admin/login"
+    },
+    {
+      "name": "Member OTP browser: without an employee token /admin/seats goes to the login page",
+      "passed": true,
+      "detail": "/admin/login"
+    },
+    {
+      "name": "Member OTP browser: with an employee token the dashboard opens",
+      "passed": true
+    },
+    {
+      "name": "Member OTP browser: logout clears the employee token and returns to login",
+      "passed": true
+    },
+    {
+      "name": "Member OTP browser: direct login page: skip returns to the entrance",
+      "passed": true,
+      "detail": "/"
+    },
+    {
+      "name": "Member OTP browser: from the reservation choice: skip goes to direct (anonymous) booking",
+      "passed": true,
+      "detail": "/reserve/guest"
+    },
+    {
+      "name": "Member OTP browser: from my reservations: skip returns to my reservations",
+      "passed": true,
+      "detail": "/member/reservations"
+    },
+    {
+      "name": "Member OTP browser: verify page offers a working resend button",
+      "passed": true
+    },
+    {
+      "name": "Member OTP browser: resend calls the same OTP API",
+      "passed": true
+    },
+    {
+      "name": "Member OTP browser: verify page skip button now navigates (was a dead link)",
+      "passed": true,
+      "detail": "/"
+    },
+    {
+      "name": "Member OTP browser: a limited phone sees a countdown and a disabled send button",
+      "passed": true,
+      "detail": "10:00 後可以再傳送"
+    },
+    {
+      "name": "Member OTP browser: another phone number is not blocked by that countdown",
+      "passed": true
+    },
+    {
+      "name": "Member OTP browser: member center shows no made-up points or purchase history entry",
+      "passed": true
+    },
+    {
+      "name": "Member OTP browser: no page errors",
+      "passed": true
+    }
+  ]
+}
