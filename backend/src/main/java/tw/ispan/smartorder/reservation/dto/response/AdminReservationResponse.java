@@ -32,5 +32,7 @@ public record AdminReservationResponse(
         OffsetDateTime cancelledAt,
         String cancelledByStaffName,
         // 預先點餐是進階功能，還沒做，目前固定 0；欄位先留著，之後前端不用改
-        int preorderItemCount) {
+        int preorderItemCount,
+        // 訂位提醒（模擬簡訊）送出的時間；還沒提醒是 null。後面新增的欄位，前面的欄位都沒變
+        OffsetDateTime reminderSentAt) {
 }

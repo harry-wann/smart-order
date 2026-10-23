@@ -23,6 +23,8 @@ export type AdminReservation = {
   cancelledAt: string | null
   cancelledByStaffName: string | null
   preorderItemCount: number
+  // 訂位提醒（模擬簡訊，不是真的簡訊）送出的時間；還沒提醒是 null
+  reminderSentAt: string | null
 }
 
 // GET /admin/reservations?date=：這一天的全部訂位，含已取消

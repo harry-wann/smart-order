@@ -28,12 +28,13 @@ public class ReservationScheduler {
         }
     }
 
-    // 每 15 分鐘，間隔要等於 ReservationJobService.REMIND_INTERVAL_MINUTES，提醒窗才接得起來
+    // 每 15 分鐘。提醒窗是「現在 ～ 現在 + 2 小時」，靠 reminder_sent_at 去重，跟間隔長短無關；
+    // 間隔只決定訂位進入 2 小時內之後最晚多久會被提醒到（最多晚 15 分）
     @Scheduled(cron = "0 */15 * * * *", zone = "${reservation.zone}")
     public void sendReminders() {
         int count = jobService.sendReminders();
         if (count > 0) {
-            log.info("訂位提醒排程送出 {} 筆", count);
+            log.info("訂位提醒排程新提醒 {} 筆（模擬簡訊）", count);
         }
     }
 }

@@ -55,6 +55,12 @@ public class ReservationEntity {
     @Enumerated(EnumType.STRING)
     private CancelSource cancelSource;
 
+    // 訂位提醒（模擬簡訊，M7 7.12）送出的時間，NULL 是還沒提醒。
+    // 只由 ReservationRepository.markReminded 的條件式 UPDATE 寫入，JPA 不寫（insertable / updatable 關掉）：
+    // 取消、報到這些載入舊值的交易 commit 時整列寫回，會把剛標好的提醒時間蓋回 NULL
+    @Column(insertable = false, updatable = false)
+    private LocalDateTime reminderSentAt;
+
     // created_at / updated_at 由資料庫的 DEFAULT 和 ON UPDATE 填，JPA 不寫，所以 insertable / updatable 都關
     @Column(insertable = false, updatable = false)
     private LocalDateTime createdAt;

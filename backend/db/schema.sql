@@ -211,6 +211,7 @@ CREATE TABLE reservation (
   cancelled_at          DATETIME(3)     NULL,
   cancelled_by_staff_id BIGINT UNSIGNED NULL     COMMENT '櫃檯代客取消的員工',
   cancel_source         VARCHAR(10)     NULL     COMMENT 'CUSTOMER / STAFF',
+  reminder_sent_at      DATETIME(3)     NULL     COMMENT '訂位提醒（模擬簡訊）送出的時間；NULL = 還沒提醒。只由條件式 UPDATE（WHERE reminder_sent_at IS NULL）寫入，同一筆只提醒一次',
   created_at            DATETIME(3)     NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at            DATETIME(3)     NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (id),

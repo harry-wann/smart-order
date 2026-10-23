@@ -30,6 +30,7 @@ type Reservation = {
   preorder?: { itemCount: number; estimated: number }
   status: ReservationStatus
   cancelledBy?: string
+  reminderSentAt?: Date
 }
 
 type RowState = 'NOT_YET' | 'CHECKIN_OPEN' | 'OVERDUE' | 'SEATED' | 'CANCELLED'
@@ -324,6 +325,7 @@ function toReservation(row: AdminReservation): Reservation {
     status: row.status,
     // 只有櫃檯代客取消才顯示「店家代取消・小美」
     cancelledBy: row.cancelSource === 'STAFF' ? (row.cancelledByStaffName ?? undefined) : undefined,
+    reminderSentAt: row.reminderSentAt ? new Date(row.reminderSentAt) : undefined,
   }
 }
 
@@ -417,7 +419,7 @@ function ReservationRow({
   onViewTable,
   onDetails,
 }: RowProps) {
-  const { startAt, name, phone, partySize, tableNo, seatedTableNo, preorder, cancelledBy } =
+  const { startAt, name, phone, partySize, tableNo, seatedTableNo, preorder, cancelledBy, reminderSentAt } =
     reservation
   const state = getRowState(reservation, now)
   const pill = STATE_PILL[state]
@@ -461,6 +463,12 @@ function ReservationRow({
             </span>
           )}
         </div>
+        {/* 訂位提醒是模擬簡訊（只寫後端日誌，沒有真的發簡訊），標清楚；取消的訂位不再提醒，不顯示 */}
+        {reminderSentAt && state !== 'CANCELLED' && (
+          <p className="mt-1 type-caption text-ink-600 tabular-nums">
+            已提醒 {formatTime(reminderSentAt)}（模擬簡訊）
+          </p>
+        )}
       </td>
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
