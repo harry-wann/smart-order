@@ -1,0 +1,140 @@
+{
+  "label": "harry-l0-foundation",
+  "commit": "408cf18",
+  "passed": true,
+  "sanitized": true,
+  "notes": [
+    "before ran on develop c999ace and is expected to fail; after ran on this branch. Forged tokens were built locally from the old key in git history; no token or key is written here.",
+    "Regression suites rerun on this branch: see regression."
+  ],
+  "before": [
+    {
+      "name": "L0: an item served right after ordering is not served before it was ordered",
+      "passed": false,
+      "actual": "-28799 s"
+    },
+    {
+      "name": "L0: a database-filled created_at is Taipei time (within 2 minutes of now)",
+      "passed": false,
+      "actual": "28800 s from Taipei now"
+    },
+    {
+      "name": "L0: a member token forged with the repository's old key is rejected (no typ)",
+      "passed": false,
+      "actual": 200
+    },
+    {
+      "name": "L0: a member token forged with the repository's old key is rejected (typ=member)",
+      "passed": false,
+      "actual": 200
+    },
+    {
+      "name": "L0: a real member token still works",
+      "passed": true,
+      "actual": 200
+    },
+    {
+      "name": "L0: a member token cannot be used as a table session token",
+      "passed": true,
+      "actual": 401
+    }
+  ],
+  "after": [
+    {
+      "name": "L0: an item served right after ordering is not served before it was ordered",
+      "passed": true,
+      "actual": "0 s"
+    },
+    {
+      "name": "L0: a database-filled created_at is Taipei time (within 2 minutes of now)",
+      "passed": true,
+      "actual": "0 s from Taipei now"
+    },
+    {
+      "name": "L0: a member token forged with the repository's old key is rejected (no typ)",
+      "passed": true,
+      "actual": 401
+    },
+    {
+      "name": "L0: a member token forged with the repository's old key is rejected (typ=member)",
+      "passed": true,
+      "actual": 401
+    },
+    {
+      "name": "L0: a real member token still works",
+      "passed": true,
+      "actual": 200
+    },
+    {
+      "name": "L0: a member token cannot be used as a table session token",
+      "passed": true,
+      "actual": 401
+    }
+  ],
+  "websocketBefore": [
+    {
+      "name": "L0 WebSocket: anonymous subscribing /topic/counter is rejected",
+      "passed": false,
+      "detail": "CONNECTED"
+    },
+    {
+      "name": "L0 WebSocket: anonymous subscribing /topic/billing is rejected",
+      "passed": true,
+      "detail": "CONNECTED,ERROR"
+    },
+    {
+      "name": "L0 WebSocket: counter subscribing /topic/counter is accepted",
+      "passed": true,
+      "detail": "CONNECTED"
+    },
+    {
+      "name": "L0 WebSocket: counter subscribing /topic/billing is accepted",
+      "passed": false,
+      "detail": "CONNECTED,ERROR"
+    }
+  ],
+  "websocketAfter": [
+    {
+      "name": "L0 WebSocket: anonymous subscribing /topic/counter is rejected",
+      "passed": true,
+      "detail": "CONNECTED,ERROR"
+    },
+    {
+      "name": "L0 WebSocket: anonymous subscribing /topic/billing is rejected",
+      "passed": true,
+      "detail": "CONNECTED,ERROR"
+    },
+    {
+      "name": "L0 WebSocket: counter subscribing /topic/counter is accepted",
+      "passed": true,
+      "detail": "CONNECTED"
+    },
+    {
+      "name": "L0 WebSocket: counter subscribing /topic/billing is accepted",
+      "passed": true,
+      "detail": "CONNECTED"
+    }
+  ],
+  "regression": {
+    "member-otp": {
+      "checks": 75,
+      "passed": true,
+      "testedAt": "2026-10-23T20:53:02.012306+08:00"
+    },
+    "guest-token": {
+      "checks": 74,
+      "passed": true,
+      "testedAt": "2026-10-23T20:53:03.663453+08:00"
+    },
+    "personal-cart": {
+      "checks": 56,
+      "passed": true,
+      "testedAt": "2026-10-23T20:53:04.992846+08:00"
+    },
+    "checkout": {
+      "checks": 156,
+      "passed": true,
+      "testedAt": "2026-10-23T20:53:10.496506+08:00"
+    }
+  }
+}

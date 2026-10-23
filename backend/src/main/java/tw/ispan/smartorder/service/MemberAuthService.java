@@ -40,6 +40,9 @@ public class MemberAuthService {
 	@Autowired
 	private MemberRepository memberRepo;
 
+	@Autowired
+	private JwtToken jwtToken;
+
 	private final SecureRandom random = new SecureRandom();
 
 	// 限流要擋得住「同一支手機同時送出好幾個請求」（例如連按 5 下）：先數再新增的話，5 個請求可能同時數到 0 次、全部通過。
@@ -93,7 +96,7 @@ public class MemberAuthService {
 			throw ApiException.badRequest("此帳號已停用，請洽店家");
 		}
 
-		String token = JwtToken.createToken("member:" + member.getId(), MEMBER_TOKEN_TTL);
+		String token = jwtToken.createMemberToken(member.getId(), MEMBER_TOKEN_TTL);
 		return new MemberLoginResponse(token, member.getProfileCompleted(), newMember, member.getNickname());
 	}
 
@@ -155,12 +158,9 @@ public class MemberAuthService {
 		if (authHeader == null || !authHeader.startsWith("Bearer ")) {
 			throw new MemberUnauthorizedException();
 		}
+		// 簽章不對、過期、不是會員 token（例如拿用餐權杖或員工 token 來）都當作沒登入
 		try {
-			String subject = JwtToken.parseToken(authHeader.substring(7));
-			if (!subject.startsWith("member:")) {
-				throw new MemberUnauthorizedException();
-			}
-			return Long.valueOf(subject.substring(7));
+			return jwtToken.parseMemberId(authHeader.substring(7));
 		} catch (JwtException | IllegalArgumentException e) {
 			throw new MemberUnauthorizedException();
 		}

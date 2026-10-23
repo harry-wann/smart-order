@@ -28,10 +28,12 @@ import java.util.Map;
 public class PaymentController {
     private final EcpayService ecpayService;
     private final DiningSessionGuestRepository guests;
+    private final JwtToken jwtToken;
 
-    public PaymentController(EcpayService ecpayService, DiningSessionGuestRepository guests) {
+    public PaymentController(EcpayService ecpayService, DiningSessionGuestRepository guests, JwtToken jwtToken) {
         this.ecpayService = ecpayService;
         this.guests = guests;
+        this.jwtToken = jwtToken;
     }
 
     @PostMapping("/dining/payments/ecpay")
@@ -59,7 +61,7 @@ public class PaymentController {
             @RequestHeader(value = "X-Guest-Token", required = false) String guestToken) {
         JwtToken.GuestIdentity identity;
         try {
-            identity = JwtToken.parseGuestToken(token);
+            identity = jwtToken.parseGuestToken(token);
         } catch (JwtException | IllegalArgumentException exception) {
             throw ApiException.unauthorized("點餐憑證已失效，請重新掃碼");
         }

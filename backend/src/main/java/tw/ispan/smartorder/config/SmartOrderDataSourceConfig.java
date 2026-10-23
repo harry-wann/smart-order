@@ -1,5 +1,6 @@
 package tw.ispan.smartorder.config;
 
+import com.zaxxer.hikari.HikariDataSource;
 import jakarta.persistence.EntityManagerFactory;
 import org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -50,7 +51,17 @@ public class SmartOrderDataSourceConfig {
     @Primary
     DataSource smartOrderDataSource(
             @Qualifier("smartOrderDataSourceProperties") DataSourceProperties properties) {
-        return properties.initializeDataSourceBuilder().build();
+        HikariDataSource dataSource = properties.initializeDataSourceBuilder().type(HikariDataSource.class).build();
+        // 每條連線建立時，把「這條連線」的時區設成台北。
+        // MySQL 的 NOW()、CURRENT_TIMESTAMP 和欄位的 DEFAULT CURRENT_TIMESTAMP 用的是連線的時區，
+        // MySQL 沒設定時區時跟著主機走，backend/compose.yaml 的 Docker 容器、雲端主機都是 UTC，寫進去的時間會比台北早 8 小時；
+        // 程式這邊 LocalDateTime.now() 是台北時間（JVM 時區在 SmartOrderApplication 固定），兩種寫法混在同一張表就對不起來
+        // （實測：order_ticket.placed_at 由程式寫、order_item.served_at 由 SQL 寫，出餐時間比下單時間早 8 小時）。
+        // 兩邊都要設：只設 JVM，SQL 寫的時間還是 UTC；只設這裡，部署在 UTC 機器上時程式寫的時間又會錯。
+        // 寫 '+08:00' 不寫 'Asia/Taipei'：用時區名稱要 MySQL 先載入時區資料表，很多人的 MySQL 沒載入，會連不上；
+        // 台灣沒有日光節約時間，兩者結果一樣。只改 smartorder 這組連線，不動 MySQL 全域設定，也不影響 northwind
+        dataSource.setConnectionInitSql("SET time_zone = '+08:00'");
+        return dataSource;
     }
 
     @Bean(ENTITY_MANAGER_FACTORY)
