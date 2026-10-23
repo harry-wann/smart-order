@@ -120,7 +120,8 @@ export default function OrderHistory() {
       PENDING: '待製作',
     }[status] || status,
     color: status === 'SERVED' ? 'done' : status === 'CANCELLED' || status === 'WASTED' ? 'plain' : 'wait',
-    icon: status === 'SERVED' ? 'check' : 'clock',
+    // 已取消、已退菜不會再上桌，用淡色的 ×，不要跟「待製作」共用時鐘
+    icon: status === 'SERVED' ? 'check' : status === 'CANCELLED' || status === 'WASTED' ? 'none' : 'clock',
   })
 
   return (
@@ -189,6 +190,12 @@ export default function OrderHistory() {
                           role="img"
                           aria-label={itemStatus.text}
                           className="h-6 w-5.5 shrink-0"
+                        />
+                      ) : itemStatus.icon === 'none' ? (
+                        <SvgIconMap.ModalClose
+                          role="img"
+                          aria-label={itemStatus.text}
+                          className="h-6 w-5.5 shrink-0 p-1 text-ink-400"
                         />
                       ) : (
                         <SvgIconMap.TicketTime
