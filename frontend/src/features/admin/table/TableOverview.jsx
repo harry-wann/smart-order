@@ -47,7 +47,7 @@ function StatItem({ count, label, swatchClass, countClass = 'text-ink-900' }) {
 }
 
 //正中間 > 12格桌卡
-//用餐中(isOvertime)而且時間超過100minutes、加上紅色外框
+//用餐中(isOvertime)而且時間超過100minutes、加上紅色外框，分鐘數再加上閃爍（系統設定減少動態效果時不閃）
 function TableCard({ table, onCleanClick }) {
   const style = statusStyles[table.status]
   const isOvertime = table.status === 'occupied' && table.minutes > 100
@@ -83,7 +83,8 @@ function TableCard({ table, onCleanClick }) {
       {table.status === 'occupied' && (
         <>
           <span className="type-caption tabular-nums">
-            {table.adults} 大 {table.kids} 小・{table.minutes} 分
+            {table.adults} 大 {table.kids} 小・
+            <span className={isOvertime ? 'font-bold motion-safe:animate-pulse' : ''}>{table.minutes} 分</span>
           </span>
           {table.amount != null && (
             <span className="type-caption font-bold tabular-nums">NT$ {table.amount.toLocaleString()}</span>
@@ -101,6 +102,46 @@ function TableCard({ table, onCleanClick }) {
         </span>
       )}
     </button>
+  )
+}
+
+// 桌位提醒列：用餐超時（紅）、待清理太久（黃）。排程每分鐘都會推，所以同一桌同一種只留一筆、只更新分鐘數
+// 點文字：用餐超時 → 前往該桌用餐頁；待清理 → 打開清潔確認；點 × 先把這筆收起來
+function ReminderBar({ reminders, onOpen, onDismiss }) {
+  if (reminders.length === 0) return null
+  return (
+    <ul aria-label="桌位提醒" className="flex flex-wrap gap-2">
+      {reminders.map((reminder) => {
+        const isOvertime = reminder.kind === 'overtime'
+        return (
+          <li
+            key={reminder.key}
+            className={`flex max-w-full items-center rounded-pill type-body-sm ${
+              isOvertime
+                ? 'bg-danger-bg text-danger-ink shadow-[inset_0_0_0_1.5px_var(--color-danger)]'
+                : 'bg-warning-bg text-hold-ink shadow-[inset_0_0_0_1px_var(--color-warning-line)]'
+            }`}
+          >
+            <button
+              type="button"
+              onClick={() => onOpen(reminder)}
+              title={isOvertime ? `前往 ${reminder.tableNo} 桌的用餐頁` : `開啟 ${reminder.tableNo} 桌的清潔確認`}
+              className="min-w-0 cursor-pointer truncate rounded-pill py-1.5 pr-1 pl-3 font-bold tabular-nums hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+            >
+              {reminder.tableNo} {isOvertime ? '用餐已' : '待清理已'} {reminder.minutes} 分鐘
+            </button>
+            <button
+              type="button"
+              aria-label={`關閉 ${reminder.tableNo} ${isOvertime ? '用餐超時' : '待清理'}提醒`}
+              onClick={() => onDismiss(reminder.key)}
+              className="mr-1 flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full hover:bg-ink-900/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+            >
+              ×
+            </button>
+          </li>
+        )
+      })}
+    </ul>
   )
 }
 
@@ -270,8 +311,10 @@ function TableOverview() {
 
   const [viewState, setViewState] = useState('loading')
   const [reloadKey, setReloadKey] = useState(0)
+  // 後端排程推來的提醒（用餐超時、待清理太久），key 是「桌號:種類」，同一桌同一種只留一筆
+  const [reminders, setReminders] = useState({})
   // 別台櫃檯開桌、清潔完成時，後端推 TABLE_STATUS → 重抓桌況和候位
-  const isLive = useTableStatusSocket(() => setReloadKey((k) => k + 1))
+  const isLive = useTableStatusSocket(() => setReloadKey((k) => k + 1), undefined, handleReminder)
 
   // 保留窗只會隨時間開始或結束，沒有桌況事件；每分鐘重抓並讓用餐時間即時前進。
   useEffect(() => {
@@ -293,6 +336,8 @@ function TableOverview() {
     fetchTables(controller.signal)
       .then((data) => {
         setTableData(data)
+        // 桌子已經結帳、清潔完或換狀態了，對應的提醒跟著移除
+        setReminders((current) => pruneReminders(current, data))
         setViewState('ready')
       })
       .catch(() => {
@@ -331,6 +376,38 @@ function TableOverview() {
       alert(`清潔失敗：${err.message}`)
     }
   }
+
+  // 收到提醒：同一桌同一種覆蓋成最新分鐘數；已按 × 收起的維持收起，等桌況變了（被清掉）才會再出現
+  function handleReminder(data) {
+    if (!data.tableNo) return
+    const kind = data.type === 'TABLE_OVERTIME' ? 'overtime' : 'cleaning'
+    // 推播和桌況重抓可能前後交錯：桌子剛結帳或清潔完，目前桌況已經對不上，就不加這筆
+    const table = tableData.find((t) => t.tableNo === data.tableNo)
+    if (table && (table.displayStatus ?? table.status).toLowerCase() !== (kind === 'overtime' ? 'occupied' : 'cleaning')) return
+    const key = `${data.tableNo}:${kind}`
+    setReminders((current) => ({
+      ...current,
+      [key]: { key, kind, tableNo: data.tableNo, minutes: data.minutes, dismissed: current[key]?.dismissed ?? false },
+    }))
+  }
+
+  function handleDismissReminder(key) {
+    setReminders((current) => (current[key] ? { ...current, [key]: { ...current[key], dismissed: true } } : current))
+  }
+
+  // 用餐超時 → 該桌用餐頁；待清理 → 沿用桌卡點擊的清潔確認
+  function handleOpenReminder(reminder) {
+    if (reminder.kind === 'overtime') {
+      navigate(`/admin/table/${reminder.tableNo}`)
+      return
+    }
+    const card = tableList.find((table) => table.id === reminder.tableNo && table.status === 'cleaning')
+    if (card) setCleaningTable(card)
+  }
+
+  const visibleReminders = Object.values(reminders)
+    .filter((reminder) => !reminder.dismissed)
+    .sort((a, b) => a.tableNo.localeCompare(b.tableNo) || a.kind.localeCompare(b.kind))
 
   function handleRetry() {
     setViewState('loading')
@@ -398,6 +475,8 @@ function TableOverview() {
               <StatItem count={waitinglist.length} label="組候位中" />
             </div>
 
+            <ReminderBar reminders={visibleReminders} onOpen={handleOpenReminder} onDismiss={handleDismissReminder} />
+
             <div className="grid grid-cols-2 gap-card-gap md:grid-cols-3 xl:grid-cols-4">
               {tableList.map((table) => (
                 <TableCard key={table.id} table={table} onCleanClick={setCleaningTable} />
@@ -459,6 +538,15 @@ function toTableCard(t, now) {
     minutes: Number.isFinite(openedAt) ? Math.max(0, Math.floor((now.getTime() - openedAt) / 60000)) : null,
     heldFor: t.heldFor,
   }
+}
+
+// 桌況重抓後，把已經不是用餐中／待清理的桌的提醒拿掉；沒有變動就回傳原本的物件，避免多餘的重繪
+function pruneReminders(reminders, tables) {
+  const statusByTableNo = new Map(tables.map((t) => [t.tableNo, (t.displayStatus ?? t.status).toLowerCase()]))
+  const kept = Object.entries(reminders).filter(
+    ([, reminder]) => statusByTableNo.get(reminder.tableNo) === (reminder.kind === 'overtime' ? 'occupied' : 'cleaning'),
+  )
+  return kept.length === Object.keys(reminders).length ? reminders : Object.fromEntries(kept)
 }
 
 function toLocalDate(date) {
