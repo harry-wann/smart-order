@@ -1,0 +1,265 @@
+{
+  "label": "harry-l0-foundation",
+  "commit": "408cf18",
+  "passed": true,
+  "sanitized": true,
+  "notes": [
+    "Counter-channel pages rerun after the WebSocket whitelist change: waitlist (with 15 route checks) and reminders.",
+    "Role routing after login checked for kitchen, counter and manager accounts."
+  ],
+  "suites": {
+    "iris-waitlist": {
+      "testedAt": "2026-10-23T12:53:46.662Z",
+      "results": [
+        {
+          "path": "/admin/table_overview",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "path": "/admin/seats",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "path": "/admin/waitlist",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "path": "/admin/reservations",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "path": "/admin/kitchen",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "path": "/admin/menu",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "path": "/admin/options",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "path": "/admin/table/A03",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "path": "/",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "path": "/order/menu",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "path": "/order/cart/50",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "path": "/order/history",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "path": "/member/login",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "path": "/reserve/guest",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "path": "/reserve/datetime",
+          "passed": true,
+          "errors": []
+        },
+        {
+          "name": "Iris waitlist browser: display opens in its own window and S-10 stays open",
+          "passed": true
+        },
+        {
+          "name": "Iris waitlist browser: display is a full-page screen without the admin side bar",
+          "passed": true
+        },
+        {
+          "name": "Iris waitlist browser: deskA shows the live WebSocket connection",
+          "passed": true
+        },
+        {
+          "name": "Iris waitlist browser: deskB shows the live WebSocket connection",
+          "passed": true
+        },
+        {
+          "name": "Iris waitlist browser: display shows the live WebSocket connection",
+          "passed": true
+        },
+        {
+          "name": "Iris waitlist browser: stats match the list and today summary",
+          "passed": true,
+          "detail": "1 組候位中 0 已叫號待報到 14 分・平均等待 3 今日過號 重新整理"
+        },
+        {
+          "name": "Iris waitlist browser: take-number stays disabled with only three phone digits",
+          "passed": true
+        },
+        {
+          "name": "Iris waitlist browser: UI registration adds the real ticket row",
+          "passed": true,
+          "detail": "A15"
+        },
+        {
+          "name": "Iris waitlist browser: second desk shows the new ticket through WAITLIST_UPDATED without reload",
+          "passed": true,
+          "detail": "106ms"
+        },
+        {
+          "name": "Iris waitlist browser: display announces the called number in real time",
+          "passed": true,
+          "detail": "148ms"
+        },
+        {
+          "name": "Iris waitlist browser: display lists the called ticket",
+          "passed": true
+        },
+        {
+          "name": "Iris waitlist browser: second desk sees the called status without reload",
+          "passed": true
+        },
+        {
+          "name": "Iris waitlist browser: S-10 shows the remaining check-in minutes",
+          "passed": true
+        },
+        {
+          "name": "Iris waitlist browser: recall sends the backend request and re-announces on the display",
+          "passed": true
+        },
+        {
+          "name": "Iris waitlist browser: recall keeps the original called_at deadline",
+          "passed": true,
+          "detail": "2026-10-23 20:53:43.508"
+        },
+        {
+          "name": "Iris waitlist browser: Esc and backdrop do not close the dialog while the seat request is in flight",
+          "passed": true
+        },
+        {
+          "name": "Iris waitlist browser: seat onto the table another desk just opened is rejected by the backend",
+          "passed": true,
+          "detail": "409"
+        },
+        {
+          "name": "Iris waitlist browser: table taken by another desk: error stays in dialog, list is refetched, nothing is auto-selected",
+          "passed": true,
+          "detail": "B06 gone"
+        },
+        {
+          "name": "Iris waitlist browser: second choice seats the party on the real table",
+          "passed": true,
+          "detail": "C04"
+        },
+        {
+          "name": "Iris waitlist browser: second desk and display drop the seated ticket without reload",
+          "passed": true
+        },
+        {
+          "name": "Iris waitlist browser: ticket already seated elsewhere: dialog closes and S-10 shows why",
+          "passed": true,
+          "detail": "這組候位已經入座了\n重試"
+        },
+        {
+          "name": "Iris waitlist browser: abandon removes the ticket on both desks",
+          "passed": true
+        },
+        {
+          "name": "Iris waitlist browser: overdue CALLED row shows no seat or recall buttons (called_at aged 11 min in SQL)",
+          "passed": true
+        },
+        {
+          "name": "Iris waitlist browser: display hides a call whose 10 minutes have passed even before it is marked EXPIRED",
+          "passed": true
+        },
+        {
+          "name": "Iris waitlist browser: manual expiry removes the overdue ticket on both desks through WebSocket",
+          "passed": true
+        },
+        {
+          "name": "Iris waitlist browser: no page errors or API 5xx on the three pages",
+          "passed": true
+        }
+      ]
+    },
+    "iris-reminders": {
+      "testedAt": "2026-10-23T12:55:00.987Z",
+      "results": [
+        {
+          "name": "Iris reminders browser: manual overtime scan pushes TABLE_OVERTIME and S-02 shows the reminder",
+          "passed": true,
+          "detail": "B06 101 min"
+        },
+        {
+          "name": "Iris reminders browser: table at exactly 100 minutes gets no reminder (rule is more than 100)",
+          "passed": true
+        },
+        {
+          "name": "Iris reminders browser: overtime tile minutes pulse (motion-safe) on the red-framed tile",
+          "passed": true
+        },
+        {
+          "name": "Iris reminders browser: a repeated push keeps one reminder per table",
+          "passed": true
+        },
+        {
+          "name": "Iris reminders browser: manual cleaning scan shows the 15+ minute cleaning reminder",
+          "passed": true
+        },
+        {
+          "name": "Iris reminders browser: 10-minute cleaning table gets no reminder",
+          "passed": true
+        },
+        {
+          "name": "Iris reminders browser: reminder bar fits 1024px without horizontal overflow",
+          "passed": true
+        },
+        {
+          "name": "Iris reminders browser: cleaning reminder opens the clean dialog; confirming frees the table and removes the reminder",
+          "passed": true
+        },
+        {
+          "name": "Iris reminders browser: dismissed overtime reminder stays closed on the next push",
+          "passed": true
+        },
+        {
+          "name": "Iris reminders browser: the every-minute scheduler pushes TABLE_OVERTIME on its own",
+          "passed": true,
+          "detail": "51s after waiting"
+        },
+        {
+          "name": "Iris reminders browser: overtime reminder opens the table detail page",
+          "passed": true
+        },
+        {
+          "name": "Iris reminders browser: no page errors or API 5xx",
+          "passed": true
+        }
+      ]
+    }
+  },
+  "loginRouting": {
+    "kitchen": "/admin/kitchen",
+    "counter": "/admin/table_overview",
+    "manager": "/admin/table_overview"
+  }
+}

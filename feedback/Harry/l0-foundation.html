@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7fb">
+  <title>Harry｜共用地基：金鑰、時區與推播權限</title>
+  <link rel="stylesheet" href="../assets/feedback.css">
+</head>
+<body>
+  <div class="site-shell">
+    <nav class="topbar" aria-label="主要導覽">
+      <a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">鍋</span><span>實作回饋整理</span></a>
+      <a class="toplink" href="index.html">回 Harry 工作包</a>
+    </nav>
+
+    <p class="breadcrumb"><a href="../index.html">成員索引</a> ／ <a href="index.html">Harry</a> ／ 共用地基</p>
+    <header class="person-header">
+      <div class="meta-row"><span class="scope-tag">L0（Level 0，全隊共用技術地基）</span><span class="status">共用地基已驗證</span></div>
+      <h1>Harry｜三個看不見、但全隊都會踩到的地基問題</h1>
+      <p class="lede">金鑰寫在程式碼裡、資料庫和程式用不同的時區、即時推播的頻道誰都能聽。這三件事平常完全看不出來，畫面也都正常，但每一件都可能讓整個系統出錯。這篇說明它們怎麼被發現、怎麼修，以及修完怎麼證明。</p>
+    </header>
+
+    <main class="person-layout">
+      <nav class="toc" aria-label="文章目錄">
+        <h2>這篇會走過</h2>
+        <ol>
+          <li><a href="#jwt">金鑰寫在程式碼裡</a></li>
+          <li><a href="#tz">出餐時間比下單還早 8 小時</a></li>
+          <li><a href="#ws">誰都能聽櫃檯的推播</a></li>
+          <li><a href="#audit">匿名 API 盤點</a></li>
+          <li><a href="#walkthrough">手把手驗收</a></li>
+          <li><a href="#evidence">提交與驗證紀錄</a></li>
+          <li><a href="#feedback">前輩回饋、報告與履歷</a></li>
+          <li><a href="#terms">新手名詞表</a></li>
+        </ol>
+      </nav>
+
+      <div class="content-stack">
+        <section class="scope-card" id="scope">
+          <span class="section-kicker">本篇範圍</span>
+          <h2>L0 是全隊共用的地基</h2>
+          <ul class="scope-list">
+            <li><strong>P1 金鑰：</strong>會員與同桌點餐的 JWT 簽章金鑰寫死在程式碼，拿到程式碼就能偽造任何會員。</li>
+            <li><strong>P1 時區：</strong>資料庫用 UTC、程式用台北時間，出餐時間被記成比下單早 8 小時。</li>
+            <li><strong>P1 推播權限：</strong>不用登入就能訂閱櫃檯的即時推播（桌況、候位、提醒、服務鈴）。</li>
+            <li><strong>附帶修正：</strong>櫃檯桌位詳情的帳單推播頻道沒有列進允許清單，員工訂閱一律被拒，畫面每 5 秒重連一次。</li>
+          </ul>
+          <p class="intro-note">這些問題來自 Codex 先前的審查報告與整合時的實測。每一項都先在修正前的版本實際重現，再在修正後證明已經消失。</p>
+        </section>
+
+        <section class="section-card" id="jwt">
+          <span class="section-kicker">P1 · 金鑰寫在程式碼裡</span>
+          <h2>簽章的意義，是「只有伺服器簽得出來」</h2>
+          <p>JWT 的內容任何人都讀得到，它之所以能當登入憑證，是因為後面有一段<strong>簽章</strong>：只有知道金鑰的人才算得出正確的簽章，伺服器收到時重新算一次，對得上才相信。</p>
+          <p>原本 <code>JwtToken.java</code> 把金鑰直接寫成程式裡的字串常數。專案放在 GitHub 上，任何能看到程式碼的人都知道這把金鑰，於是可以自己簽出「我是會員 1 號」的 token。修正前實測：用 repo 裡的舊金鑰自己簽一張會員 token，呼叫 <code>GET /api/member/me</code> 回 <strong>200</strong>，等於可以讀取、修改任何會員的資料和訂位。</p>
+          <h3>修法：照專案裡已經做對的寫法</h3>
+          <p>員工登入的 <code>StaffJwtProvider</code> 早就用了正確的做法，這次讓會員與同桌點餐的 JWT 也一樣：</p>
+          <ul class="prompt-list">
+            <li><span>金鑰從設定 <code>app.customer-jwt.secret</code> 讀，正式環境用環境變數 <code>CUSTOMER_JWT_SECRET</code> 提供；<code>.env.example</code> 只放說明，不放真的金鑰。</span></li>
+            <li><span>本機開發可以用 repo 裡的開發用預設值，方便大家直接跑；但<strong>伺服器不是只聽本機時，還在用開發預設值就拒絕啟動</strong>，錯誤訊息直接告訴你要設哪個環境變數。寧可起不來，也不要悄悄用公開的金鑰上線。</span></li>
+            <li><span>金鑰至少 32 bytes，太短也會在啟動時擋下。</span></li>
+            <li><span>會員 token 與同桌 token 加上類型標記 <code>typ</code>（member／guest），各自只接受自己那一種，員工 token 原本就是 staff，三種 token 不能互相冒用。</span></li>
+          </ul>
+          <p>修正後同樣用舊金鑰偽造的 token，不管有沒有加 <code>typ</code>，都回 <strong>401</strong>。代價是：換金鑰後，舊的會員登入與用餐權杖都失效，大家要重新登入、重新掃碼（只影響開發環境，正式上線前做一次就好）。</p>
+        </section>
+
+        <section class="section-card" id="tz">
+          <span class="section-kicker">P1 · 時區</span>
+          <h2>同一個「現在」，程式和資料庫各說各話</h2>
+          <p>整合測試時發現：客人送單後馬上出餐，資料庫裡的出餐時間卻比下單時間<strong>早 28,799 秒（8 小時）</strong>。原因是同一件事有兩個人在報時：</p>
+          <div class="compare-grid">
+            <div class="compare-side"><div class="compare-label">程式（JVM）報時</div><p>下單時用 Java 的 <code>LocalDateTime.now()</code> 寫 <code>placed_at</code>，用的是這台電腦的時區（台北）：20:30。</p></div>
+            <div class="compare-side"><div class="compare-label">資料庫報時</div><p>出餐時用 SQL 的 <code>CURRENT_TIMESTAMP</code> 寫 <code>served_at</code>。團隊 compose 裡的 MySQL 沒設時區，預設 UTC：12:30。</p></div>
+          </div>
+          <p>資料表的時間欄位是 <code>DATETIME</code>，它只存「幾點幾分」、不存時區，所以兩個數字被當成同一個時區直接相減，就差了 8 小時。所有用資料庫預設值 <code>DEFAULT CURRENT_TIMESTAMP</code> 填的建立時間（會員、訂位、員工、用餐紀錄……）也都早了 8 小時。這是全隊每個人的環境都會遇到的問題，所以屬於共用地基。</p>
+          <h3>修法：兩邊都固定成台北</h3>
+          <ul class="prompt-list">
+            <li><span><strong>資料庫連線：</strong>smartorder 這組連線在每條連線建立時執行 <code>SET time_zone = '+08:00'</code>（HikariCP 的 <code>connectionInitSql</code>）。只影響這個專案的連線，不改 MySQL 的全域設定，也不影響 northwind 練習資料庫。用 <code>'+08:00'</code> 而不是 <code>'Asia/Taipei'</code>，因為後者需要 MySQL 先載入時區資料表，台灣也沒有日光節約時間。</span></li>
+            <li><span><strong>程式：</strong>在 <code>SmartOrderApplication</code> 一啟動就把 JVM 預設時區設成 Asia/Taipei，不依賴部署機器的設定。</span></li>
+            <li><span><strong>為什麼兩邊都要：</strong>只設程式，SQL 寫的時間還是 UTC；只設資料庫，程式部署到 UTC 的伺服器時又會錯。</span></li>
+          </ul>
+          <p>修正後同樣的測試：出餐時間與下單時間相差 0 秒；新會員的建立時間與台北現在時間相差 0 秒。</p>
+        </section>
+
+        <section class="section-card" id="ws">
+          <span class="section-kicker">P1 · 即時推播權限</span>
+          <h2>WebSocket 也要檢查「你能不能聽這個頻道」</h2>
+          <p>櫃檯畫面靠 WebSocket 的 <code>/topic/counter</code> 頻道即時收到桌況、候位數、用餐超時與待清理提醒、服務鈴。原本這個頻道被寫成「公開推播」：任何能連上 <code>/ws</code> 的人，不用登入就能訂閱。修正前實測：匿名 STOMP 連線訂閱 <code>/topic/counter</code>，伺服器回 CONNECTED，沒有拒絕。</p>
+          <p>修正後只有連線時帶了員工 JWT、角色是櫃檯或店長的人才能訂閱；匿名訂閱會收到 ERROR。前端櫃檯的推播 hook 本來就會帶員工 token，所以櫃檯與店長的畫面不受影響（候位、提醒、桌況的瀏覽器測試全部重跑通過）。審查提醒：廚房帳號登入後原本預設進入桌況總覽，現在訂閱會被拒、每 5 秒重連一次，所以登入後改成依角色導頁，廚房帳號直接進出菜看板（三種角色實測都到正確頁面）。廚房帳號若自己打開桌況頁，那頁的 API 原本就不給它用。</p>
+          <p>檢查頻道時順便發現：櫃檯桌位詳情頁會訂閱 <code>/topic/billing</code> 收帳單變動，但這個頻道從一開始就沒列進允許清單，員工訂閱一律被拒，前端每 5 秒重連、每次重連又重抓一次帳單。這是之前結帳整合時漏掉的，這次一起加上「只限櫃檯與店長」。</p>
+        </section>
+
+        <section class="section-card" id="audit">
+          <span class="section-kicker">匿名 API 盤點</span>
+          <h2>哪些 API 不用登入就能呼叫？每一支都要有理由</h2>
+          <p>Spring Security 設定最後一條是「其他 <code>/api/**</code> 都放行」，所以每新增一支 API，如果忘了加規則，就會變成匿名可用。這次逐一盤點：</p>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>端點</th><th>判斷</th></tr></thead>
+              <tbody>
+                <tr><td>掃碼查桌況、加入用餐、菜單查詢、會員 OTP、訂位</td><td>本來就是給客人用的，合理公開；需要身分的部分另外由用餐權杖、guest token、會員 JWT 或訂位 token 保護。</td></tr>
+                <tr><td>綠界付款回呼</td><td>由綠界的伺服器呼叫，用 CheckMacValue 驗證，合理公開。</td></tr>
+                <tr><td><code>/api/admin/**</code> 底下所有店家 API</td><td>每一支都有角色規則，沒有漏掉。</td></tr>
+                <tr><td><code>/api/order/admin/**</code>（菜單管理）</td><td><strong>不合理：匿名可以新增、修改、刪除菜單。</strong>前端選項群組頁目前用不帶員工憑證的方式呼叫，要和前端一起改，交由 Clara 的菜單管理分支處理。</td></tr>
+                <tr><td>northwind 練習 API、Swagger 文件</td><td>開發與教學用，正式部署時要關閉。</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>建議之後在設定裡加一條「<code>/api/admin/**</code> 至少要登入」當最後一道防線，讓忘了加規則的新 API 預設是關的，而不是開的。</p>
+          <h3>主要程式檔案</h3>
+          <ul class="prompt-list">
+            <li><span><code>backend/src/main/java/tw/ispan/smartorder/util/JwtToken.java</code>、<code>backend/src/main/resources/application.properties</code>、<code>backend/.env.example</code>：金鑰設定。</span></li>
+            <li><span><code>backend/src/main/java/tw/ispan/smartorder/config/SmartOrderDataSourceConfig.java</code>、<code>SmartOrderApplication.java</code>：時區。</span></li>
+            <li><span><code>backend/src/main/java/tw/ispan/smartorder/config/WebSocketConfig.java</code>：頻道權限。</span></li>
+          </ul>
+        </section>
+
+        <section class="section-card" id="walkthrough">
+          <span class="section-kicker">手把手驗收 · 請在本機隔離資料庫</span>
+          <h2>修正前、修正後各跑一次</h2>
+          <ol class="step-list">
+            <li class="step-card"><p><strong>時區。</strong>客人下一張單，廚房馬上出餐，查 <code>TIMESTAMPDIFF(SECOND, placed_at, served_at)</code>：修正前 −28,799，修正後 0。新會員註冊後查 <code>member.created_at</code> 與台北現在時間的差：修正前 28,800 秒，修正後 0。</p></li>
+            <li class="step-card"><p><strong>金鑰。</strong>用 repo 裡舊的寫死金鑰自己簽一張會員 token 呼叫會員資料 API：修正前 200，修正後 401（有沒有加 <code>typ</code> 都一樣）。真的登入拿到的 token 仍然可以用；會員 token 拿去當用餐權杖會被拒。</p></li>
+            <li class="step-card"><p><strong>推播頻道。</strong>用原始 STOMP 訊框連線：匿名訂閱 <code>/topic/counter</code> 修正前被接受、修正後被拒；櫃檯身分訂閱 <code>/topic/billing</code> 修正前被拒、修正後被接受。</p></li>
+            <li class="step-card"><p><strong>回歸。</strong>JWT 的使用方式改了，所以重跑會員 OTP、同桌身分、個人購物車、結帳的 HTTP 測試，以及候位、提醒、15 條頁面路由的瀏覽器測試，全部通過。</p></li>
+          </ol>
+        </section>
+
+        <section class="section-card" id="evidence">
+          <h2>提交與驗證紀錄</h2>
+          <p>程式版本：Git commit <code>408cf18</code>。</p>
+          <div class="evidence-grid">
+            <div class="note-card report"><h3>修正前後對照</h3><p>修正前（develop <code>c999ace</code>）6 項中 4 項失敗、WebSocket 4 項中 2 項失敗；修正後 6 項與 4 項全部通過。<a href="../evidence/408cf18-http.json">查看完整紀錄</a>。</p></div>
+            <div class="note-card report"><h3>回歸測試</h3><p>會員 OTP 75、同桌身分 74、個人購物車 56、結帳 156 項 HTTP，候位＋頁面路由 41 項與提醒 12 項瀏覽器，全部通過。<a href="../evidence/408cf18-browser.json">查看瀏覽器紀錄</a>。</p></div>
+          </div>
+          <p class="intro-note">獨立高風險審查沒有 P1／P2，確認金鑰注入沒有遺漏的呼叫端、三種 token 不能互用、連線池設定與 northwind 不受影響、<code>DATETIME</code> 不會因改連線時區而位移、所有前端訂閱的頻道都在允許清單內。它提出的「廚房帳號重連」已用登入後依角色導頁處理。提醒：只要伺服器只聽本機，開發用預設金鑰仍會被接受，部署清單必須設定 <code>CUSTOMER_JWT_SECRET</code>；修正前寫進資料庫的舊時間不會被回頭校正。</p>
+        </section>
+
+        <section class="section-card" id="feedback">
+          <h2>前輩回饋、報告與履歷</h2>
+          <div class="evidence-grid">
+            <div class="note-card feedback">
+              <h3>技術前輩的建議</h3>
+              <p>「金鑰、密碼不進版本控制」是第一天就要養成的習慣。好在專案裡員工登入已經示範了完整做法（環境變數、開發預設值只限本機、太短就拒絕啟動），這次只是讓另一把金鑰跟上。看到同一個專案裡兩種寫法，就是統一的好時機。</p>
+              <p>時間相關的 bug 很難從畫面看出來。只要資料庫欄位不帶時區，就要決定「全系統用哪個時區」，並讓程式和資料庫都遵守。測試時故意比較兩個由不同地方寫入的時間，是抓這類問題最快的方法。</p>
+            </div>
+            <div class="note-card report">
+              <h3>這次用到的技術</h3>
+              <ul>
+                <li>JWT 簽章與金鑰管理、環境變數、啟動時的安全檢查（fail fast）</li>
+                <li>token 類型區分（<code>typ</code> claim），防止不同用途的 token 互相冒用</li>
+                <li>HikariCP <code>connectionInitSql</code>、MySQL session 時區、JVM 預設時區、<code>DATETIME</code> 不帶時區的特性</li>
+                <li>Spring WebSocket（STOMP）訂閱授權（ChannelInterceptor）</li>
+                <li>Spring Security 規則盤點、修正前後對照測試</li>
+              </ul>
+            </div>
+          </div>
+          <div class="note-card">
+            <h3>專題報告與履歷可以這樣寫</h3>
+            <p>報告：三個問題各用一張「修正前／修正後」對照：偽造 token 從 200 變 401、出餐時間差從 −8 小時變 0、匿名訂閱從接受變拒絕。這種「看不見的地基」最能展現對系統整體的理解。</p>
+            <p>履歷：「負責專案共用技術地基：將 JWT 金鑰改為環境變數管理並在非本機環境強制設定，修正資料庫與應用程式時區不一致造成的 8 小時時間差，並收斂 WebSocket 頻道權限；以修正前後對照測試驗證。」</p>
+          </div>
+        </section>
+
+        <section class="section-card" id="terms">
+          <h2>新手名詞表</h2>
+          <dl class="glossary">
+            <div class="term"><dt>L0（Level 0，共用技術地基）</dt><dd>全隊共用的基礎：登入驗證、金鑰、資料庫連線、時區、即時推播等。</dd></div>
+            <div class="term"><dt>JWT（JSON Web Token，JSON 網頁權杖）與簽章</dt><dd>JWT 的內容誰都能讀；後面的簽章只有持有金鑰的伺服器算得出來，所以能證明 token 沒被偽造或竄改。</dd></div>
+            <div class="term"><dt>環境變數（environment variable）</dt><dd>在程式外面設定的值，例如 <code>CUSTOMER_JWT_SECRET</code>。金鑰放這裡，就不會跟著程式碼被上傳到 GitHub。</dd></div>
+            <div class="term"><dt>fail fast（及早失敗）</dt><dd>設定有問題時讓程式在啟動時就停下來，而不是帶著錯誤設定繼續跑。</dd></div>
+            <div class="term"><dt>UTC（Coordinated Universal Time，協調世界時）</dt><dd>國際標準時間；台北時間是 UTC+8。</dd></div>
+            <div class="term"><dt>JVM（Java Virtual Machine，Java 虛擬機）</dt><dd>執行 Java 程式的環境，有自己的「預設時區」。</dd></div>
+            <div class="term"><dt>DATETIME 與 CURRENT_TIMESTAMP</dt><dd><code>DATETIME</code> 只存日期與時間、不存時區；<code>CURRENT_TIMESTAMP</code> 是資料庫依「目前連線的時區」給的現在時間。</dd></div>
+            <div class="term"><dt>HikariCP 與 connectionInitSql</dt><dd>HikariCP 是 Spring Boot 預設的資料庫連線池；<code>connectionInitSql</code> 是每條連線建立時先執行的一句 SQL。</dd></div>
+            <div class="term"><dt>WebSocket 與 STOMP</dt><dd>WebSocket 是保持開著的連線；STOMP（Simple Text Oriented Messaging Protocol，簡單文字導向訊息協定）讓客戶端訂閱頻道，伺服器可以在訂閱時檢查權限。</dd></div>
+            <div class="term"><dt>Spring Security 與 permitAll</dt><dd>Spring 的安全框架；<code>permitAll</code> 代表這些路徑不用登入就能呼叫。</dd></div>
+            <div class="term"><dt>COUNTER／MANAGER</dt><dd>店員角色：COUNTER 是櫃檯，MANAGER 是店長。</dd></div>
+            <div class="term"><dt>HTTP 狀態碼 200／401</dt><dd>HTTP 是 Hypertext Transfer Protocol（超文字傳輸協定）。200 成功；401 沒有通過身分驗證。</dd></div>
+            <div class="term"><dt>SHA／Git commit</dt><dd>SHA 是 Secure Hash Algorithm（安全雜湊演算法）；Git 用它幫每個版本（commit）產生識別碼。</dd></div>
+          </dl>
+        </section>
+
+        <footer class="page-footer"><a href="index.html">← 回 Harry 工作包</a></footer>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
