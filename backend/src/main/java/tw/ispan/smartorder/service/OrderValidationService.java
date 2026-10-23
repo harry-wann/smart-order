@@ -58,15 +58,36 @@ public class OrderValidationService {
         }
         Map<Long, MenuSnapshot> menus = new HashMap<>();
         Map<Long, Map<Long, Group>> groupsByMenu = new HashMap<>();
-        // Lock each resource type for the whole ticket in ID order: menu, relation, group, value.
+        // Lock each resource type for the whole ticket in ID order: category, menu, relation, group, value.
         List<Long> menuIds = selections.stream().map(Selection::menuItemId).distinct().sorted().toList();
+
+        // 分類：後台停用分類會對分類列加排他鎖（FOR UPDATE），這裡先用不鎖定的查詢看各品項屬於哪個分類，
+        // 再把這些分類列依 id 由小到大加共享鎖（LOCK IN SHARE MODE）直到交易結束，
+        // 所以「停用分類」和「送單」會排隊：停用先到，送單看到的是已停用；送單先到，停用等這張單做完。
+        // 共享鎖之間不互相擋，同一類的多張單可以同時送；一律由小到大鎖，和後台排序（鎖全部分類）才不會互等。
+        // 分類只被後台鎖，後台不會再去鎖品項或用餐場次，所以和「場次 → 品項」的順序不會形成環
+        Set<Long> categoryIds = new TreeSet<>();
+        for (Long menuId : menuIds) {
+            jdbc.query("SELECT category_id FROM menu_item WHERE id = ?", rs -> {
+                categoryIds.add(rs.getLong(1));
+            }, menuId);
+        }
+        Map<Long, Boolean> categoryActive = new HashMap<>();
+        for (Long categoryId : categoryIds) {
+            jdbc.query("SELECT active FROM menu_category WHERE id = ? LOCK IN SHARE MODE", rs -> {
+                categoryActive.put(categoryId, rs.getBoolean(1));
+            }, categoryId);
+        }
+
         for (Long menuId : menuIds) {
             MenuSnapshot menu = jdbc.query("""
-                    SELECT id, name, price, is_soup_base, track_inventory, active, sold_out
+                    SELECT id, name, price, is_soup_base, track_inventory, active, sold_out, category_id
                     FROM menu_item WHERE id = ? FOR UPDATE
                     """, rs -> {
                 if (!rs.next()) return null;
+                // 分類不在上面鎖住的清單（品項剛好被搬到別的分類）也一律當作無法販售，請客人重新整理菜單
                 if (!rs.getBoolean("active")
+                        || !Boolean.TRUE.equals(categoryActive.get(rs.getLong("category_id")))
                         || (rs.getBoolean("track_inventory") && rs.getBoolean("sold_out"))) {
                     throw ApiException.conflict("ITEM_SOLD_OUT", rs.getString("name") + " 已下架或售完");
                 }

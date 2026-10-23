@@ -128,6 +128,8 @@ export default function Menu() {
     menuStatusOverrides.current.clear();
     unlistedMenuItems.current.clear();
     setRetryCount((count) => count + 1);
+    // 分類也要重抓：重新連線、店長停用／啟用分類後，分類頁籤可能已經不一樣
+    setCategoryRetryCount((count) => count + 1);
   }, []);
   useMenuWebSocket(sessionId, receiveMenuStatus, refreshMenu, handleClosedSessionEvent, handleSessionApiError);
   const seenEvents = useRef(new Set())
@@ -224,7 +226,10 @@ export default function Menu() {
         })
         if (!isCurrentRequest) return;
         setCategory(visibleCategories);
-        setActiveCategoryId(visibleCategories[0]?.id ?? null);
+        // 重抓分類時（例如店長停用了某個分類）停在原本選的分類；它不見了才回到第一個
+        setActiveCategoryId((current) => visibleCategories.some((item) => item.id === current)
+          ? current
+          : visibleCategories[0]?.id ?? null);
         setCategoryStatus('success');
       } catch (error) {
         if (isCurrentRequest) {

@@ -2,11 +2,13 @@ package tw.ispan.smartorder.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import tw.ispan.smartorder.dto.AdminMenuCategoryDto;
 import tw.ispan.smartorder.entity.MenuCategoryEntity;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface MenuCategoryRepository extends JpaRepository<MenuCategoryEntity,Long> {
@@ -29,7 +31,15 @@ public interface MenuCategoryRepository extends JpaRepository<MenuCategoryEntity
     """)
     List<AdminMenuCategoryDto> findAdminCategoriesWithItemCount();
 
-    List<MenuCategoryEntity> findAllByOrderBySortOrderAscIdAsc();
+    // 後台寫入分類前先鎖列（SELECT ... FOR UPDATE）：改名／停用、排序、刪除彼此排隊，鎖到交易結束。
+    // 鎖完才讀到的是最新資料，整列寫回不會把別人剛改的名稱或停用狀態改回舊值。
+    // 一次鎖多列一定照 id 由小到大，才不會兩個交易互相等對方
+    // 用原生 SQL 的 FOR UPDATE（跟其他 repository 一樣）：@Lock 會產生 MySQL 8 才有的 FOR UPDATE OF，團隊的 MySQL 5.7 不支援
+    @Query(nativeQuery = true, value = "SELECT * FROM menu_category WHERE id = :categoryId FOR UPDATE")
+    Optional<MenuCategoryEntity> findByIdForUpdate(@Param("categoryId") Long categoryId);
+
+    @Query(nativeQuery = true, value = "SELECT * FROM menu_category ORDER BY id FOR UPDATE")
+    List<MenuCategoryEntity> findAllForUpdateOrderById();
 
     // 新分類排在最後面：取目前最大的排序值再加 1
     @Query("SELECT COALESCE(MAX(category.sortOrder), 0) FROM MenuCategoryEntity category")

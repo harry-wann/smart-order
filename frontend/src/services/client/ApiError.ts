@@ -40,6 +40,17 @@ export function isApiError(error: unknown, code?: string): error is ApiError {
   return error instanceof ApiError && (code === undefined || error.code === code)
 }
 
+// 給使用者看的錯誤訊息。後端 @Valid 沒過時，message 只是固定的總稱（「欄位格式不正確」），
+// 具體原因（例如「分類名稱最多 50 個字元」）放在 details，所以有 details 就優先顯示它們；
+// 不是 ApiError 的一般 Error 用它自己的 message，都沒有就用 fallback
+export function describeApiError(error: unknown, fallback: string) {
+  if (error instanceof ApiError) {
+    const details = error.details.map((detail) => detail.message).filter(Boolean)
+    return details.length > 0 ? details.join('、') : error.message
+  }
+  return error instanceof Error ? error.message : fallback
+}
+
 export function toApiError(error: unknown) {
   if (error instanceof ApiError || isCancel(error)) return error
   if (!isAxiosError(error)) return new ApiError(0, { code: 'UNKNOWN_ERROR' }, error)

@@ -106,9 +106,11 @@ public class SecurityConfig {
                             ).permitAll()
                             .anyRequest().authenticated();
                 })
-                // 沒登入（或 token 過期、被改過）打 /api/admin/**、/api/order/admin/**、上傳簽發／確認
-                // 回 401 JSON，前端看到 401 會清掉員工權杖、導回登入頁；
-                // entry point 只套這幾組店家端路徑，其他路徑（例如 denyAll 的其他上傳路徑）不動，維持原本的 403。
+                // 沒登入（或 token 過期、被改過）而被擋下來的請求回 401 JSON，前端看到 401 會清掉員工權杖、導回登入頁。
+                // 注意範圍比下面列出的路徑大：ExceptionHandlingConfigurer 沒有另外設預設 entry point 時，
+                // 會拿「第一個登記的」當預設（Spring Security 7.1.1 實測行為），所以其他匿名被擋的路徑
+                // （例如 denyAll 的其他 /api/uploads 路徑）也是回 401，不是 403。
+                // 下面照樣把店家端路徑逐一列出，是為了讓意圖寫在程式裡，不要靠預設值的副作用。
                 // 登入了但角色不夠（例如 COUNTER 去按排程）走 accessDeniedHandler 回 403，
                 // 前端只顯示「權限不足」，不能跟 401 混在一起導回登入頁
                 .exceptionHandling(handling -> {

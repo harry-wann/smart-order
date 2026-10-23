@@ -147,7 +147,7 @@ public class MenuController {
         return ResponseEntity.noContent().build();
     }
 
-    // AdminMenu 畫面 新增商品分類（排在最後面；active 省略代表啟用）
+    // AdminMenu 畫面 新增商品分類（name 必填，排在最後面；active 省略代表啟用）
     @PostMapping("/admin/categories")
     public ResponseEntity<AdminMenuCategoryDto> createAdminCategory(
             @Valid @RequestBody SaveMenuCategoryRequest request
@@ -156,7 +156,7 @@ public class MenuController {
                 .body(menuCategoryService.createMenuCategory(request));
     }
 
-    // AdminMenu 畫面 依 categoryId 改名、停用／啟用分類（active 省略代表不變）
+    // AdminMenu 畫面 依 categoryId 改名、停用／啟用分類（name、active 省略都代表不變）
     @PutMapping("/admin/categories/{categoryId}")
     public ResponseEntity<AdminMenuCategoryDto> updateAdminCategory(
             @PathVariable Long categoryId,

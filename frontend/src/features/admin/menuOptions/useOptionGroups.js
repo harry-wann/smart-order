@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { describeApiError } from '@/services/client/ApiError';
 import { employeeClient } from '@/services/client/employeeClient';
 import { validateOptionGroup } from './validation';
 
@@ -44,7 +45,7 @@ export default function useOptionGroups() {
         setSelectedGroupId(fetchedGroups[0]?.id ?? null);
       } catch (error) {
         if (isCurrentRequest) {
-          setLoadError(error instanceof Error ? error.message : '載入選項群組失敗');
+          setLoadError(describeApiError(error, '載入選項群組失敗'));
         }
       } finally {
         if (isCurrentRequest) setIsLoading(false);
@@ -99,7 +100,7 @@ export default function useOptionGroups() {
       setSelectedGroupId(createdGroup.id);
       setIsAddingGroup(false);
     } catch (error) {
-      setAddGroupError(error instanceof Error ? error.message : '新增群組失敗，請稍後再試');
+      setAddGroupError(describeApiError(error, '新增群組失敗，請稍後再試'));
     } finally {
       setIsSavingGroup(false);
     }
@@ -155,7 +156,7 @@ export default function useOptionGroups() {
         .sort((first, second) => first.sortOrder - second.sortOrder));
       setEditingGroup(null);
     } catch (error) {
-      setEditGroupError(error instanceof Error ? error.message : '更新選項群組失敗，請稍後再試');
+      setEditGroupError(describeApiError(error, '更新選項群組失敗，請稍後再試'));
     } finally {
       setIsSavingGroupEdit(false);
     }
@@ -176,7 +177,7 @@ export default function useOptionGroups() {
       ));
       setEditingGroup(null);
     } catch (error) {
-      setEditGroupError(error instanceof Error ? error.message : '刪除選項群組失敗，請稍後再試');
+      setEditGroupError(describeApiError(error, '刪除選項群組失敗，請稍後再試'));
     } finally {
       setIsSavingGroupEdit(false);
     }
@@ -226,7 +227,7 @@ export default function useOptionGroups() {
       )));
       setGroups(previousGroups);
       setReorderGroupsError(
-        `${error instanceof Error ? error.message : '重新排序選項群組失敗'}${
+        `${describeApiError(error, '重新排序選項群組失敗')}${
           rollbackResults.some(result => result.status === 'rejected')
             ? '；部分排序未能還原，請重新整理頁面。'
             : ''

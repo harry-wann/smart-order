@@ -15,9 +15,15 @@ public class MenuStatusNotifier {
 
     public record MenuStatusMessage(String type, Long menuItemId, boolean soldOut) {}
     public record MenuVisibilityMessage(String type, Long menuItemId) {}
+    public record MenuCategoryMessage(String type, Long categoryId, boolean active) {}
 
     public void notifyVisibilityAfterCommit(Long itemId, boolean active) {
         publishAfterCommit(new MenuVisibilityMessage(active ? "MENU_LISTED" : "MENU_UNLISTED", itemId));
+    }
+
+    // 分類停用／啟用：整類品項在顧客端出現或消失，前端收到後重新抓分類與品項
+    public void notifyCategoryChangedAfterCommit(Long categoryId, boolean active) {
+        publishAfterCommit(new MenuCategoryMessage("MENU_CATEGORY_CHANGED", categoryId, active));
     }
 
     public void notifyAfterCommit(Long itemId, boolean soldOut) {

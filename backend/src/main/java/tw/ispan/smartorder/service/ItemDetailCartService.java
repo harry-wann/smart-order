@@ -138,9 +138,11 @@ public class ItemDetailCartService {
     }
 
     private MenuItem findAvailableItem(long menuItemId) {
+        // 品項上架且所屬分類也啟用才能加入購物車（停用分類等於整類暫停販售）
         List<MenuItem> items = jdbcTemplate.query("""
-                SELECT name, price FROM menu_item
-                WHERE id = ? AND active = 1 AND sold_out = 0
+                SELECT mi.name, mi.price FROM menu_item mi
+                JOIN menu_category mc ON mc.id = mi.category_id
+                WHERE mi.id = ? AND mi.active = 1 AND mc.active = 1 AND mi.sold_out = 0
                 """, (resultSet, rowNum) -> new MenuItem(
                 resultSet.getString("name"), resultSet.getBigDecimal("price")), menuItemId);
         if (items.isEmpty()) {

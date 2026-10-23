@@ -37,6 +37,11 @@ export default function useMenuWebSocket(sessionId, onStatus, onReconnect, onSes
         client.subscribe('/topic/menu', (message) => {
           try {
             const event = JSON.parse(message.body)
+            // 店長停用／啟用整個分類：沒有單一品項可更新，直接當成重新連線處理，整份菜單（分類＋品項）重抓
+            if (event?.type === 'MENU_CATEGORY_CHANGED') {
+              onReconnect()
+              return
+            }
             if (event && ['MENU_SOLD_OUT', 'MENU_AVAILABLE', 'MENU_UNLISTED', 'MENU_LISTED'].includes(event.type)
               && ['string', 'number'].includes(typeof event.menuItemId)) {
               onStatus(event.menuItemId, event.type === 'MENU_SOLD_OUT', event.type)

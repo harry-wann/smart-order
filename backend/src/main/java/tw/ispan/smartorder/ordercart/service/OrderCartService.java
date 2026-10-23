@@ -45,8 +45,10 @@ public class OrderCartService {
         var session = checkSessionOpenForUpdate(sessionId);
         var guest = guests.findById(guestId).filter(g -> sessionId.equals(g.getDiningSessionId()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "客人不屬於此桌"));
+        // 品項上架且所屬分類也啟用才能加入購物車（資料庫的 category_id 是 NOT NULL，null 判斷只是防禦）
         var menu = menuItems.findById(request.menuItemId())
-                .filter(m -> Boolean.TRUE.equals(m.getActive()) && !Boolean.TRUE.equals(m.getSoldOut()))
+                .filter(m -> Boolean.TRUE.equals(m.getActive()) && !Boolean.TRUE.equals(m.getSoldOut())
+                        && (m.getCategory() == null || Boolean.TRUE.equals(m.getCategory().getActive())))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT, "商品已下架或售完"));
         var ids = request.optionValueIds() == null ? List.<Long>of() : request.optionValueIds();
         if (ids.stream().anyMatch(java.util.Objects::isNull) || new java.util.HashSet<>(ids).size() != ids.size()) {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { describeApiError } from '@/services/client/ApiError';
 import { employeeClient } from '@/services/client/employeeClient';
 import { validateOptionValue } from './validation';
 
@@ -52,7 +53,7 @@ export default function useOptionValues({ selectedGroupId, currentGroup, setGrou
         )));
       } catch (error) {
         if (isCurrentRequest) {
-          setDetailsError(error instanceof Error ? error.message : '載入選項群組資料失敗');
+          setDetailsError(describeApiError(error, '載入選項群組資料失敗'));
         }
       } finally {
         if (isCurrentRequest) setIsLoadingDetails(false);
@@ -117,7 +118,7 @@ export default function useOptionValues({ selectedGroupId, currentGroup, setGrou
       )));
       setIsAddingItem(false);
     } catch (error) {
-      setAddItemError(error instanceof Error ? error.message : '新增選項失敗，請稍後再試');
+      setAddItemError(describeApiError(error, '新增選項失敗，請稍後再試'));
     } finally {
       setIsSavingItem(false);
     }
@@ -160,7 +161,7 @@ export default function useOptionValues({ selectedGroupId, currentGroup, setGrou
       )));
       setEditingItem(null);
     } catch (error) {
-      setEditItemError(error instanceof Error ? error.message : '更新選項失敗，請稍後再試');
+      setEditItemError(describeApiError(error, '更新選項失敗，請稍後再試'));
     } finally {
       setIsSavingItemEdit(false);
     }
@@ -183,7 +184,7 @@ export default function useOptionValues({ selectedGroupId, currentGroup, setGrou
       )));
       setEditingItem(null);
     } catch (error) {
-      setEditItemError(error instanceof Error ? error.message : '刪除選項失敗，請稍後再試');
+      setEditItemError(describeApiError(error, '刪除選項失敗，請稍後再試'));
     } finally {
       setIsDeletingItem(false);
     }
@@ -212,7 +213,7 @@ export default function useOptionValues({ selectedGroupId, currentGroup, setGrou
           : group
       )));
     } catch (error) {
-      setToggleItemError(error instanceof Error ? error.message : '更新選項狀態失敗，請稍後再試');
+      setToggleItemError(describeApiError(error, '更新選項狀態失敗，請稍後再試'));
     } finally {
       setTogglingItemId(null);
     }
@@ -254,7 +255,7 @@ export default function useOptionValues({ selectedGroupId, currentGroup, setGrou
           ? { ...group, items: previousItems }
           : group
       )));
-      setReorderItemsError(error instanceof Error ? error.message : '重新排序選項失敗');
+      setReorderItemsError(describeApiError(error, '重新排序選項失敗'));
     } finally {
       setIsReorderingItems(false);
     }
