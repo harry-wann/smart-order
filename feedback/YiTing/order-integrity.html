@@ -208,7 +208,7 @@
             <p><strong>庫存競爭：</strong>送單先鎖用餐場次，再依菜單品項編號排序取得品項列鎖；實際扣庫存由 <code>InventoryRepository.decreaseIfEnough()</code> 以「庫存足夠才扣」的單一更新完成。若任何品項不足，回傳 <code>ITEM_SOLD_OUT</code>，同筆交易已執行的扣庫存，以及後續若已執行的訂單、帳單和購物車變更都會回滾，不會留下半張訂單或只刪除部分購物車。庫存扣到零時只更新 <code>sold_out</code>，不會改動 <code>active</code>。</p>
             <p><strong>取消與回補：</strong><code>OrderCancellationService.restoreInventory()</code> 只回補 <code>track_inventory=true</code> 的品項，按品項編號排序更新庫存；不追蹤庫存的免費續加不會因此增加數量。回補後依有效明細重算帳單；庫存恢復時只解除售完標記，不會自動重新上架或改動 <code>active</code>。</p>
             <p><strong>避免重複回補：</strong>取消服務鎖用餐場次，且用狀態條件更新明細和點餐單。已取消的明細或訂單再次送取消會直接結束，不再回補第二次；兩個請求同時取消時，後續請求會看到已變更狀態，不會再次成功更新。</p>
-            <p><strong>可取消範圍：</strong>單項取消只接受尚未出餐的明細。整單取消若包含已出餐明細就拒絕，已結帳或已關閉的場次也拒絕取消。已出餐餐點的報廢或退料屬於另一套政策，本篇不處理。</p>
+            <p><strong>可取消範圍：</strong>單項取消只接受尚未出餐的明細。整單取消若包含已出餐明細就拒絕，已結帳或已關閉的場次也拒絕取消。已出餐餐點的報廢或退料屬於另一套政策，本篇不處理；後來在出菜看板補上了報廢（退菜）功能，見 <a href="../Clara/kds-progress.html">Clara 的出菜看板文章</a>。</p>
             <p><strong>即時通知時機：</strong>訂單、取消和售完狀態的通知會透過 <code>afterCommit</code> 在資料庫交易成功提交後送出。若交易回滾，就不會先讓其他畫面收到一個尚未保存的狀態。</p>
           <p><strong>讀程式位置：</strong><code>backend/src/main/java/tw/ispan/smartorder/ordersubmitted/service/OrderSubmitService.java</code> 的 <code>submitOrder()</code>；<code>backend/src/main/java/tw/ispan/smartorder/service/OrderValidationService.java</code> 的 <code>validate()</code>；<code>backend/src/main/java/tw/ispan/smartorder/repository/InventoryRepository.java</code> 的 <code>decreaseIfEnough()</code> 與 <code>increase()</code>；<code>backend/src/main/java/tw/ispan/smartorder/service/OrderCancellationService.java</code> 的取消、鎖定與回補方法；<code>backend/src/main/java/tw/ispan/smartorder/service/BillingCalculator.java</code> 的金額計算方法。</p>
           </div>
