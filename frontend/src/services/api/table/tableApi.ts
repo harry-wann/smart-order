@@ -52,6 +52,58 @@ export type CancelSessionResponse = {
   tableStatus: 'AVAILABLE'
 }
 
+export type StaffOrderCategory = {
+  id: number | string
+  name: string
+}
+
+export type StaffOrderMenuItem = {
+  id: number | string
+  name: string
+  price: number | string
+  soldOut?: boolean | null
+  isSoupBase?: boolean | null
+}
+
+export type StaffOrderMenuItemDetail = {
+  id: number | string
+  name: string
+  description?: string | null
+  price: number | string
+  optionGroups?: Array<{
+    optionGroupId: number | string
+    name: string
+    minSelect: number
+    maxSelect: number
+    optionValues: Array<{
+      optionValueId: number | string
+      name: string
+      priceDelta: number | string
+    }>
+  }>
+}
+
+export type StaffOrderItemRequest = {
+  menuItemId: number
+  quantity: number
+  optionValueIds: number[]
+  note: string
+}
+
+export type StaffOrderResponse = {
+  id: number | string
+  sequenceNo: number
+  status: string
+  items: Array<{
+    id: number | string
+    name: string
+    quantity: number
+    options: string[]
+    note?: string | null
+    status: string
+  }>
+}
+
 // 櫃檯使用精確用餐場次的帳單資料，避免桌號重用時誤關新場次。
 export async function getTableDetail(tableNumber: string, signal?: AbortSignal) {
   const { data } = await employeeClient.get<TableDetail>(
@@ -85,6 +137,36 @@ export async function settleDiningSession(
 export async function cancelDiningSession(sessionId: number | string) {
   const { data } = await employeeClient.post<CancelSessionResponse>(
     `/admin/dining-sessions/${encodeURIComponent(String(sessionId))}/cancel`,
+  )
+  return data
+}
+
+// 代客加點沿用公開菜單讀取 API，但以員工用戶端呼叫，不讀寫顧客購物車。
+export async function getStaffOrderCategories(signal?: AbortSignal) {
+  const { data } = await employeeClient.get<StaffOrderCategory[]>('/order/category', { signal })
+  return data
+}
+
+export async function getStaffOrderMenuItems(categoryId: number | string, signal?: AbortSignal) {
+  const { data } = await employeeClient.get<StaffOrderMenuItem[]>('/order/items', {
+    params: { categoryId },
+    signal,
+  })
+  return data
+}
+
+export async function getStaffOrderMenuItemDetail(menuItemId: number | string, signal?: AbortSignal) {
+  const { data } = await employeeClient.get<StaffOrderMenuItemDetail>(
+    `/order/items/${encodeURIComponent(String(menuItemId))}`,
+    { signal },
+  )
+  return data
+}
+
+export async function submitStaffOrder(sessionId: number | string, items: StaffOrderItemRequest[]) {
+  const { data } = await employeeClient.post<StaffOrderResponse>(
+    `/admin/dining-sessions/${encodeURIComponent(String(sessionId))}/orders`,
+    { items },
   )
   return data
 }

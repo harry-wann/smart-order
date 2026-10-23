@@ -86,7 +86,7 @@ public interface MenuItemRepository extends JpaRepository<MenuItemEntity,Long> {
     LEFT JOIN mi.inventory inventory
     WHERE mi.id = :menuItemId
       AND mi.active = true
-      AND COALESCE(inventory.quantity, 0) > 0
+      AND (mi.trackInventory = false OR COALESCE(inventory.quantity, 0) > 0)
     ORDER BY mog.sortOrder, og.sortOrder, ov.sortOrder
     """)
     List<MenuItemOptionDetailRow> findOptionValuesByMenuItemId(@Param("menuItemId") Long menuItemId);

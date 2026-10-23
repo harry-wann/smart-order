@@ -67,11 +67,7 @@ public class OrderSubmitService {
         }
 
         // 所有同桌的送單、修改購物車都必須先取得同一筆 session 鎖。
-        DiningSessionEntity session = sessionRepository.findWithLockById(sessionId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到用餐場次"));
-        if (!"OPEN".equals(session.getStatus())) {
-            throw ApiException.conflict("SESSION_CLOSED", "此桌已停止點餐");
-        }
+        DiningSessionEntity session = lockOpenSession(sessionId);
 
         List<CartItemEntity> cartItems = cartItemRepository
                 .findByDiningSession_IdAndAddedByGuest_IdOrderByIdAsc(sessionId, guestId);
@@ -79,12 +75,62 @@ public class OrderSubmitService {
             throw ApiException.conflict("CART_EMPTY", "你的購物車沒有商品");
         }
 
-        List<OrderValidationService.Line> lines = validationService.validate(sessionId, cartItems);
+        Map<Long, List<CartItemOptionEntity>> cartOptions = new HashMap<>();
+        List<OrderValidationService.Selection> selections = new ArrayList<>();
+        for (CartItemEntity cart : cartItems) {
+            List<CartItemOptionEntity> selected = cartItemOptionRepository.findByCartItem_Id(cart.getId());
+            cartOptions.put(cart.getId(), selected);
+            selections.add(new OrderValidationService.Selection(cart.getMenuItem().getId(), cart.getQuantity(),
+                    selected.stream().map(option -> option.getOptionValue().getId()).toList(), cart.getNote()));
+        }
+        CreatedOrder created = createOrder(session, guestId, "CUSTOMER", selections);
+        session.increaseCartVersion();
+        sessionRepository.save(session);
+
+        // 只刪除當前 guest 的購物車，先刪選項再刪商品。
+        for (CartItemEntity cart : cartItems) {
+            cartItemOptionRepository.deleteAll(cartOptions.get(cart.getId()));
+        }
+        cartItemOptionRepository.flush();
+        cartItemRepository.deleteAll(cartItems);
+        cartItemRepository.flush();
+
+        notifications.notifyTableAfterCommit(sessionId, guestId, "ORDER_SUBMITTED", null, created.quantity(),
+                List.of(), created.sequenceNo(), created.quantity(), created.subtotal());
+        return getOrder(created.ticketId(), sessionId);
+    }
+
+    @Transactional
+    public OrderSubmittedResponse submitStaffOrder(Long sessionId, List<OrderValidationService.Selection> selections) {
+        if (sessionId == null || sessionId <= 0) throw ApiException.badRequest("用餐場次編號不正確");
+        DiningSessionEntity session = lockOpenSession(sessionId);
+        CreatedOrder created = createOrder(session, null, "STAFF", selections);
+        notifications.notifyStaffOrderAfterCommit(sessionId, created.sequenceNo(),
+                created.quantity(), created.subtotal());
+        return getOrder(created.ticketId(), sessionId);
+    }
+
+    private DiningSessionEntity lockOpenSession(Long sessionId) {
+        DiningSessionEntity session = sessionRepository.findWithLockById(sessionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到用餐場次"));
+        if (!"OPEN".equals(session.getStatus())) {
+            throw ApiException.conflict("SESSION_CLOSED", "此桌已停止點餐");
+        }
+        return session;
+    }
+
+    private record CreatedOrder(Long ticketId, int sequenceNo, int quantity, BigDecimal subtotal) {}
+
+    /** Caller holds the session lock before any menu or inventory lock. */
+    private CreatedOrder createOrder(DiningSessionEntity session, Long guestId, String source,
+                                     List<OrderValidationService.Selection> selections) {
+        Long sessionId = session.getId();
+        List<OrderValidationService.Line> lines = validationService.validate(sessionId, selections);
         Map<Long, Integer> stockNeeded = new TreeMap<>();
         Map<Long, String> itemNames = new HashMap<>();
         for (OrderValidationService.Line line : lines) {
             if (line.menu().trackInventory()) {
-                stockNeeded.merge(line.menu().id(), line.cart().getQuantity(), Integer::sum);
+                stockNeeded.merge(line.menu().id(), line.selection().quantity(), Integer::sum);
                 itemNames.put(line.menu().id(), line.menu().name());
             }
         }
@@ -113,14 +159,16 @@ public class OrderSubmitService {
         ticket.setSubmittedByGuestId(guestId);
         ticket.setSequenceNo(nextSequence);
         ticket.setStatus("PENDING");
-        ticket.setSource("CUSTOMER"); // 請與資料庫 source 欄位允許的值核對。
+        ticket.setSource(source);
         ticket.setPlacedAt(LocalDateTime.now());
         ticket = ticketRepository.saveAndFlush(ticket);
 
         BigDecimal addedSubtotal = BigDecimal.ZERO;
+        int quantitySum = 0;
         for (OrderValidationService.Line line : lines) {
-            CartItemEntity cart = line.cart();
-            int quantity = cart.getQuantity();
+            OrderValidationService.Selection selection = line.selection();
+            int quantity = selection.quantity();
+            quantitySum += quantity;
             BigDecimal optionsPrice = line.options().stream()
                     .map(option -> money(option.priceDelta()))
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -135,7 +183,7 @@ public class OrderSubmitService {
             orderItem.setUnitPriceSnapshot(unitPrice);
             orderItem.setOptionsPrice(optionsPrice);
             orderItem.setQuantity(quantity);
-            orderItem.setNote(cart.getNote());
+            orderItem.setNote(selection.note());
             orderItem.setStatus("PENDING");
             orderItem.setLineTotal(lineTotal);
             orderItem = itemRepository.saveAndFlush(orderItem);
@@ -152,25 +200,8 @@ public class OrderSubmitService {
         }
 
         billingCalculator.recalculateAndStore(session);
-        session.increaseCartVersion();
-        sessionRepository.save(session);
-
-        // 只刪除當前 guest 的購物車，先刪選項再刪商品。
-        for (CartItemEntity cart : cartItems) {
-            List<CartItemOptionEntity> cartOptions = cartItemOptionRepository.findByCartItem_Id(cart.getId());
-            cartItemOptionRepository.deleteAll(cartOptions);
-        }
-        cartItemOptionRepository.flush();
-        cartItemRepository.deleteAll(cartItems);
-        cartItemRepository.flush();
-
-        notifications.notifyTableAfterCommit(sessionId, guestId, "ORDER_SUBMITTED", null, 0,
-                List.of(), nextSequence, cartItems.size(), addedSubtotal);
-
-        // 如果注入失敗，應用程式通常會在啟動時報錯
         kitchenNotificationService.notifyNewTicketAfterCommit(ticket.getId());
-
-        return getOrder(ticket.getId(), sessionId);
+        return new CreatedOrder(ticket.getId(), nextSequence, quantitySum, addedSubtotal);
     }
 
     @Transactional(readOnly = true)

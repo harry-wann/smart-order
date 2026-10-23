@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { useNavigate, useParams } from 'react-router'
 
 import OrderRecord from './OrderRecord'
+import StaffOrderDialog from './StaffOrderDialog'
 import Checkout from './Checkout'
 import PaymentProcessing from './PaymentProcessing'
 import TopBar from '../../../components/dashboard/TopBar.tsx'
@@ -12,6 +13,7 @@ import {
     getDiningSessionDetail,
     getTableDetail,
     settleDiningSession,
+    submitStaffOrder,
 } from '@/services/api/table/tableApi'
 import { isApiError } from '@/services/client/ApiError'
 import { employeeToken } from '@/services/client/tokenStore'
@@ -67,6 +69,8 @@ export default function TableDetail() {
     const [notice, setNotice] = useState('')
     const [payment, setPayment] = useState(null)
     const [isSettling, setIsSettling] = useState(false)
+    const [staffOrderAttempt, setStaffOrderAttempt] = useState(null)
+    const [isStaffOrderSubmitting, setIsStaffOrderSubmitting] = useState(false)
     const [cancelConfirmationOpen, setCancelConfirmationOpen] = useState(false)
     const [isCancelling, setIsCancelling] = useState(false)
     const [cancelError, setCancelError] = useState('')
@@ -80,6 +84,9 @@ export default function TableDetail() {
     const paymentAttemptRef = useRef(null)
     const settlementBusyRef = useRef(false)
     const cancellationBusyRef = useRef(false)
+    const staffOrderSequenceRef = useRef(0)
+    const staffOrderAttemptRef = useRef(null)
+    const staffOrderBusyRef = useRef(false)
     const cancelSequenceRef = useRef(0)
     const cancelAttemptRef = useRef(null)
 
@@ -100,6 +107,9 @@ export default function TableDetail() {
             cancelAttemptRef.current = null
             settlementBusyRef.current = false
             cancellationBusyRef.current = false
+            staffOrderSequenceRef.current += 1
+            staffOrderAttemptRef.current = null
+            staffOrderBusyRef.current = false
         }
     }, [tableNumber])
 
@@ -112,11 +122,16 @@ export default function TableDetail() {
         setNotice('')
         setPayment(null)
         setIsSettling(false)
+        setStaffOrderAttempt(null)
+        setIsStaffOrderSubmitting(false)
         setCancelConfirmationOpen(false)
         setIsCancelling(false)
         setCancelError('')
         settlementBusyRef.current = false
         cancellationBusyRef.current = false
+        staffOrderSequenceRef.current += 1
+        staffOrderAttemptRef.current = null
+        staffOrderBusyRef.current = false
 
         getTableDetail(expectedTableNumber, controller.signal)
             .then((detail) => {
@@ -198,6 +213,7 @@ export default function TableDetail() {
 
     const role = readEmployeeRole()
     const isManager = role === 'MANAGER'
+    const canUseStaffOrder = role === 'COUNTER' || isManager
     const canSettle = Boolean(tableData && sessionId != null && tableData.sessionStatus === 'OPEN')
     const canCancelSession = Boolean(
         isManager &&
@@ -206,6 +222,93 @@ export default function TableDetail() {
         tableData.sessionStatus === 'OPEN' &&
         tableData.hasOrderHistory === false,
     )
+    const canAddStaffOrder = Boolean(
+        canUseStaffOrder &&
+        canSettle &&
+        !paymentAttemptRef.current &&
+        !settlementBusyRef.current &&
+        !cancellationBusyRef.current &&
+        !cancelConfirmationOpen &&
+        !staffOrderBusyRef.current &&
+        !staffOrderAttemptRef.current,
+    )
+
+    const isCurrentStaffAttempt = useCallback((attemptId) => {
+        const attempt = staffOrderAttemptRef.current
+        return Boolean(
+            attempt &&
+            attempt.id === attemptId &&
+            isCurrent({
+                lifecycle: attempt.lifecycle,
+                tableNumber: attempt.tableNumber,
+                sessionId: String(attempt.sessionId),
+            }),
+        )
+    }, [isCurrent])
+
+    const openStaffOrder = () => {
+        if (
+            !canAddStaffOrder ||
+            paymentAttemptRef.current ||
+            settlementBusyRef.current ||
+            cancellationBusyRef.current ||
+            cancelConfirmationOpen ||
+            staffOrderAttemptRef.current ||
+            sessionId == null
+        ) return
+
+        const attempt = {
+            id: ++staffOrderSequenceRef.current,
+            lifecycle: lifecycleRef.current,
+            tableNumber,
+            sessionId: String(sessionId),
+        }
+        staffOrderAttemptRef.current = attempt
+        setStaffOrderAttempt(attempt)
+    }
+
+    const closeStaffOrder = (attemptId) => {
+        if (!isCurrentStaffAttempt(attemptId) || staffOrderBusyRef.current) return
+        staffOrderAttemptRef.current = null
+        staffOrderSequenceRef.current += 1
+        setStaffOrderAttempt(null)
+    }
+
+    const submitStaffOrderDraft = useCallback(async (attemptId, items) => {
+        const attempt = staffOrderAttemptRef.current
+        if (
+            !attempt ||
+            attempt.id !== attemptId ||
+            staffOrderBusyRef.current ||
+            paymentAttemptRef.current ||
+            settlementBusyRef.current ||
+            cancellationBusyRef.current ||
+            !isCurrentStaffAttempt(attemptId)
+        ) return { stale: true }
+
+        staffOrderBusyRef.current = true
+        setIsStaffOrderSubmitting(true)
+        try {
+            await submitStaffOrder(attempt.sessionId, items)
+            if (!isCurrentStaffAttempt(attemptId)) return { stale: true }
+
+            staffOrderBusyRef.current = false
+            setIsStaffOrderSubmitting(false)
+            staffOrderAttemptRef.current = null
+            staffOrderSequenceRef.current += 1
+            setStaffOrderAttempt(null)
+            void refreshBilling()
+            return { ok: true }
+        } catch (error) {
+            if (!isCurrentStaffAttempt(attemptId)) return { stale: true }
+            return { ok: false, error }
+        } finally {
+            if (isCurrentStaffAttempt(attemptId)) {
+                staffOrderBusyRef.current = false
+                setIsStaffOrderSubmitting(false)
+            }
+        }
+    }, [isCurrentStaffAttempt, refreshBilling])
 
     useEffect(() => {
         if (!canCancelSession) setCancelConfirmationOpen(false)
@@ -218,6 +321,8 @@ export default function TableDetail() {
             paymentAttemptRef.current ||
             settlementBusyRef.current ||
             cancellationBusyRef.current ||
+            staffOrderAttemptRef.current ||
+            staffOrderBusyRef.current ||
             cancelConfirmationOpen
         ) return
 
@@ -339,7 +444,13 @@ export default function TableDetail() {
     }
 
     const openCancelConfirmation = () => {
-        if (!canCancelSession || paymentAttemptRef.current || cancellationBusyRef.current) return
+        if (
+            !canCancelSession ||
+            paymentAttemptRef.current ||
+            cancellationBusyRef.current ||
+            staffOrderAttemptRef.current ||
+            staffOrderBusyRef.current
+        ) return
         setCancelError('')
         setCancelConfirmationOpen(true)
     }
@@ -349,6 +460,8 @@ export default function TableDetail() {
             !canCancelSession ||
             sessionId == null ||
             cancellationBusyRef.current ||
+            staffOrderAttemptRef.current ||
+            staffOrderBusyRef.current ||
             settlementBusyRef.current
         ) return
 
@@ -433,6 +546,9 @@ export default function TableDetail() {
     const visiblePayment = payment?.tableNumber === tableNumber && String(payment.sessionId) === String(sessionId)
         ? payment
         : null
+    const visibleStaffOrder = staffOrderAttempt?.tableNumber === tableNumber && String(staffOrderAttempt.sessionId) === String(sessionId)
+        ? staffOrderAttempt
+        : null
 
     return (
         <div className="flex min-h-0 flex-1 flex-col bg-surface text-ink-900">
@@ -458,7 +574,11 @@ export default function TableDetail() {
 
             <main className="flex min-h-0 flex-1 flex-col gap-6 p-4 sm:p-6 lg:flex-row">
                 <section className="min-w-0 flex-1">
-                    <OrderRecord orders={tableData.orders} />
+                    <OrderRecord
+                        orders={tableData.orders}
+                        canAddOrder={canAddStaffOrder}
+                        onAddOrder={openStaffOrder}
+                    />
                 </section>
 
                 <aside className="w-full shrink-0 lg:w-90">
@@ -470,8 +590,8 @@ export default function TableDetail() {
                         adultCount={tableData.adultCount}
                         childCount={tableData.childCount}
                         canSettle={canSettle}
-                        isBusy={isSettling || isCancelling || cancelConfirmationOpen}
-                        showCancelSession={canCancelSession && !visiblePayment}
+                        isBusy={isSettling || isCancelling || cancelConfirmationOpen || Boolean(visibleStaffOrder)}
+                        showCancelSession={canCancelSession && !visiblePayment && !visibleStaffOrder}
                         onCash={() => startPayment('CASH')}
                         onCreditCard={() => startPayment('CARD')}
                         onBarcode={() => startPayment('BARCODE')}
@@ -488,6 +608,19 @@ export default function TableDetail() {
                     onCancel={cancelPayment}
                     onComplete={submitPayment}
                     onSuccess={finishPayment}
+                />
+            )}
+
+            {visibleStaffOrder && (
+                <StaffOrderDialog
+                    key={visibleStaffOrder.id}
+                    attemptId={visibleStaffOrder.id}
+                    sessionId={visibleStaffOrder.sessionId}
+                    tableLabel={`${tableData.tableNumber} 桌 · 代客加點`}
+                    isCurrentAttempt={isCurrentStaffAttempt}
+                    isSubmitting={isStaffOrderSubmitting}
+                    onClose={() => closeStaffOrder(visibleStaffOrder.id)}
+                    onSubmit={(items) => submitStaffOrderDraft(visibleStaffOrder.id, items)}
                 />
             )}
 

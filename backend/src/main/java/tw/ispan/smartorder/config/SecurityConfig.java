@@ -69,6 +69,8 @@ public class SecurityConfig {
                             .hasAnyRole("COUNTER", "MANAGER");
                     authorize.requestMatchers(HttpMethod.GET, "/api/admin/dining-sessions/*")
                             .hasAnyRole("COUNTER", "MANAGER");
+                    authorize.requestMatchers(HttpMethod.POST, "/api/admin/dining-sessions/*/orders")
+                            .hasAnyRole("COUNTER", "MANAGER");
                     authorize.requestMatchers(HttpMethod.POST, "/api/admin/dining-sessions/*/settle")
                             .hasAnyRole("COUNTER", "MANAGER");
                     authorize.requestMatchers(HttpMethod.POST, "/api/admin/dining-sessions/*/cancel")

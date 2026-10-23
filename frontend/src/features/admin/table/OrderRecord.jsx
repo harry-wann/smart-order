@@ -80,7 +80,7 @@ function OrderCard({ order }) {
   )
 }
 
-export default function OrderRecord({ orders = [], onAddOrder }) {
+export default function OrderRecord({ orders = [], onAddOrder, canAddOrder = false }) {
   return (
     <div className="flex h-full min-h-173 flex-col">
       <div className="mb-3 flex items-center justify-between">
@@ -91,6 +91,7 @@ export default function OrderRecord({ orders = [], onAddOrder }) {
         <div className="w-26.2">
           <SOButton
             variant="secondary"
+            disabled={!canAddOrder}
             onClick={onAddOrder}
             content={[
               <div key="add-order" className="flex w-full items-center gap-1">
