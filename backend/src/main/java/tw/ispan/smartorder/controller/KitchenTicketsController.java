@@ -10,12 +10,14 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.http.HttpStatus;
 import tw.ispan.smartorder.dto.KitchenTicketResponse;
 import tw.ispan.smartorder.dto.CancelTicketRequest;
+import tw.ispan.smartorder.dto.WasteOrderItemRequest;
 import tw.ispan.smartorder.service.KitchenTicketService;
 
 import java.util.List;
 
 // KitchenOverview 畫面
-// WebSocket 事件類型 'NEW_TICKET', 'ITEM_SERVED', 'ITEM_UNSERVED', 'ITEM_CANCELLED', 'TICKET_COMPLETED', 'TICKET_CANCELLED'
+// WebSocket 事件類型 'NEW_TICKET', 'ITEM_SERVED', 'ITEM_UNSERVED', 'ITEM_CANCELLED', 'ITEM_WASTED', 'TICKET_SERVED', 'TICKET_CANCELLED'
+// 除了 NEW_TICKET，其他事件也會推給該桌每位客人的個人 queue（C-08 出餐進度）
 @RestController
 @RequestMapping("/api/admin")
 public class KitchenTicketsController {
@@ -25,7 +27,7 @@ public class KitchenTicketsController {
         this.kitchenTicketService = kitchenTicketService;
     }
 
-    // 拿到訂單資料，只取 PENDING 或 PREPARING 的廚房訂單，並排除已取消品項
+    // 拿到訂單資料，只取 PENDING 或 PREPARING 的廚房訂單，並排除已取消品項；同一張單內依鍋底、菜盤、肉品排序
     @GetMapping("/kitchen/tickets")
     public List<KitchenTicketResponse> getKitchenTickets() {
         return kitchenTicketService.getKitchenTickets();
@@ -37,14 +39,14 @@ public class KitchenTicketsController {
         return kitchenTicketService.getCompletedTicketCountLast24Hours();
     }
 
-    // 把整張訂單狀態更新為 SERVED 隱藏 - webSocket 事件類型 TICKET_COMPLETED
+    // 整單出完：把還沒出的品項全部標成已出餐，單由品項推導成 SERVED - webSocket 事件類型 TICKET_SERVED
     @PatchMapping("/kitchen/tickets/{ticketId}/complete")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void completeTicket(@PathVariable Long ticketId) {
         kitchenTicketService.completeTicket(ticketId);
     }
 
-    // 更新 order_item status - webSocket 事件類型 ITEM_SERVED
+    // 更新 order_item status - webSocket 事件類型 ITEM_SERVED（勾完最後一項再加 TICKET_SERVED）
     @PatchMapping("/order-items/{itemId}/serve")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void serveOrderItem(@PathVariable Long itemId) {
@@ -63,6 +65,13 @@ public class KitchenTicketsController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void cancelOrderItem(@PathVariable Long itemId, @RequestBody CancelTicketRequest request) {
         kitchenTicketService.cancelOrderItem(itemId, request.cancelReason());
+    }
+
+    // 報廢／退菜細項：記原因、庫存不回補、不計入帳單 - webSocket 事件類型 ITEM_WASTED
+    @PatchMapping("/order-items/{itemId}/waste")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void wasteOrderItem(@PathVariable Long itemId, @RequestBody WasteOrderItemRequest request) {
+        kitchenTicketService.wasteOrderItem(itemId, request.reason());
     }
 
     // 取消訂單，把 order_ticket 的狀態改為 CANCELLED，從畫面中移除 - webSocket 事件類型 TICKET_CANCELLED

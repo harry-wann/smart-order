@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7fb">
+  <title>Clara｜出菜看板與出餐進度</title>
+  <link rel="stylesheet" href="../assets/feedback.css">
+</head>
+<body>
+  <div class="site-shell">
+    <nav class="topbar" aria-label="主要導覽">
+      <a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">鍋</span><span>實作回饋整理</span></a>
+      <a class="toplink" href="index.html">回 Clara 工作包</a>
+    </nav>
+
+    <p class="breadcrumb"><a href="../index.html">成員索引</a> ／ <a href="index.html">Clara</a> ／ 出菜看板與出餐進度</p>
+    <header class="person-header">
+      <div class="meta-row"><span class="scope-tag">工作包 B（出菜）</span><span class="status">出菜看板已驗證</span></div>
+      <h1>Clara｜出菜看板：讓「單的狀態」跟著品項走</h1>
+      <p class="lede">廚房每出一道菜就勾一格，全部勾完，卡片要淡出；客人手機上的「本桌訂單」也要跟著變成「已出餐」。整合時發現，單和品項的狀態各記各的、各改各的：勾完了卡片不消失，按了「整單完成」客人卻還看到「待製作」。這篇說明兩個設計：<strong>單的狀態由品項推導</strong>，以及<strong>把出餐進度推給同桌每位客人</strong>，並補上報廢（退菜）功能。</p>
+    </header>
+
+    <main class="person-layout">
+      <nav class="toc" aria-label="文章目錄">
+        <h2>這篇會走過</h2>
+        <ol>
+          <li><a href="#situation">先看現場情境</a></li>
+          <li><a href="#problems">原本哪裡會錯</a></li>
+          <li><a href="#changes">實際改法</a></li>
+          <li><a href="#added">補上的基本功能</a></li>
+          <li><a href="#review">審查後再修的地方</a></li>
+          <li><a href="#walkthrough">手把手驗收</a></li>
+          <li><a href="#evidence">提交與驗證紀錄</a></li>
+          <li><a href="#feedback">前輩回饋、報告與履歷</a></li>
+          <li><a href="#terms">新手名詞表</a></li>
+        </ol>
+      </nav>
+
+      <div class="content-stack">
+        <section class="scope-card" id="scope">
+          <span class="section-kicker">本篇範圍</span>
+          <h2>一個狀態設計問題、一個假的即時、一串補上的功能</h2>
+          <ul class="scope-list">
+            <li><strong>單的狀態跟品項對不上：</strong>品項全部勾完，單還是「待製作」，卡片留在看板上；按「整單完成」只改了單，品項還是待製作，客人看到的也是待製作；取消最後一個沒出的品項，單也卡住。</li>
+            <li><strong>客人的出餐進度不是即時的：</strong>C-08「本桌訂單」每 15 秒重抓一次，畫面上卻一直寫著「即時同步中」。</li>
+            <li><strong>補上的基本功能：</strong>
+              <ul>
+                <li>報廢（退菜）API 與畫面。</li>
+                <li>久候 15 分鐘警示。</li>
+                <li>同一張單內「鍋底 → 菜盤 → 肉品」的出餐順序。</li>
+                <li>深色看板、40×40 勾選框、卡片 0.5 秒淡出、斷線提示。</li>
+              </ul>
+            </li>
+          </ul>
+          <p class="intro-note">依據 M4 出菜看板規格 4.1–4.12、API 規格 §2.4 與 §3（WebSocket）、UI 規格 S-04 與設計系統 §5.1。4.8「預約優先」要有 M7 的預先點餐才會有這種單，這次不做。</p>
+        </section>
+
+        <section class="section-card" id="situation">
+          <span class="section-kicker">情境 · 廚房牆上的那塊螢幕</span>
+          <h2>一張卡片 = 一張點餐單</h2>
+          <p>KDS（Kitchen Display System，廚房出菜看板）取代傳統的出單機紙條：客人一送出點餐，看板上就跳出一張卡片，寫著桌號和要做的菜。資料庫裡是兩層：</p>
+          <ul class="prompt-list">
+            <li><span><code>order_ticket</code>（點餐單）：一次送出就是一張，狀態有 <code>PENDING</code> 待製作、<code>PREPARING</code> 製作中、<code>SERVED</code> 已出餐、<code>CANCELLED</code> 已取消。</span></li>
+            <li><span><code>order_item</code>（品項）：單裡的每一道菜，各自有 <code>PENDING</code>／<code>SERVED</code>／<code>CANCELLED</code>。</span></li>
+          </ul>
+          <p>M4 規格「問題 1」直接寫了答案：<strong>單的狀態要由品項自動算出來，不能手動設</strong>。否則兩個廚師同時勾不同品項、或取消一個品項時忘了重算，單的狀態就會跟實際內容對不起來。這叫「單一真相來源」：真正的資料只有品項，單的狀態只是從品項算出來的結果。</p>
+        </section>
+
+        <section class="section-card" id="problems">
+          <span class="section-kicker">原本哪裡會錯</span>
+          <h2>三個入口，三種改法，結果都不一樣</h2>
+          <p>原本「勾一道菜」「整單完成」「取消一道菜」各自直接改資料，沒有共用的推導。修正前在隔離環境實測：</p>
+          <div class="compare-grid">
+            <div class="compare-side"><div class="compare-label">一道一道勾完</div><p>兩個品項都變成已出餐，但單還是 <code>PENDING</code>，卡片留在看板上，廚師只能再按一次「整單完成」。</p></div>
+            <div class="compare-side"><div class="compare-label">按「整單完成」</div><p>單變成 <code>SERVED</code>，但兩個品項都還是 <code>PENDING</code>。客人手機上的「本桌訂單」顯示「待製作」，菜明明已經上桌了。</p></div>
+          </div>
+          <div class="compare-grid">
+            <div class="compare-side"><div class="compare-label">取消最後一道沒出的菜</div><p>另一道已經出了，這張單照理已經全部完成，但它停在 <code>PENDING</code>，卡片收不掉。</p></div>
+            <div class="compare-side"><div class="compare-label">做壞了要退菜</div><p>規格 4.9 的報廢 API（<code>PATCH /api/admin/order-items/{id}/waste</code>）不存在，呼叫回 404。</p></div>
+          </div>
+          <p>客人那一端：廚房的事件只推到廚房的頻道 <code>/topic/kitchen</code>，客人收不到。C-08 只能每 15 秒重抓一次，上方的「即時同步中」是寫死的，連線斷了也照樣顯示。</p>
+        </section>
+
+        <section class="section-card" id="changes">
+          <span class="section-kicker">實際改法</span>
+          <h2>一個推導元件，所有入口都呼叫它</h2>
+
+          <h3>1. 推導規則只寫一次</h3>
+          <p>新增 <code>OrderTicketStatusUpdater</code>，方法 <code>refreshFromItems(ticketId, …)</code>。每次品項狀態改變後呼叫它，依「沒被取消的品項」算出單的狀態：</p>
+          <ul class="prompt-list">
+            <li><span>全部已出 → <code>SERVED</code>，推 <code>TICKET_SERVED</code>，卡片淡出。</span></li>
+            <li><span>出了一部分 → <code>PREPARING</code>。</span></li>
+            <li><span>一道都還沒出 → <code>PENDING</code>。</span></li>
+            <li><span>全部被取消或報廢 → <code>CANCELLED</code>，推 <code>TICKET_CANCELLED</code>。</span></li>
+          </ul>
+          <p>勾選、取消勾選、整單完成、報廢，以及櫃檯的「取消品項」（另一位組員寫的 <code>OrderCancellationService</code>），全部呼叫同一個方法。狀態有變才寫入、才推播。取消勾選一張已完成單上的品項時，單會變回製作中，卡片重新出現。</p>
+
+          <h3>2. 「整單完成」改成「把沒出的品項都標成已出」</h3>
+          <p>整單完成不再直接改單的狀態，而是在同一個交易裡把還沒出的品項標成 <code>SERVED</code>，再交給推導。這樣客人看到的品項狀態，和廚房看到的永遠一致。重複按也算成功；已取消的單回 <code>409 TICKET_NOT_COMPLETABLE</code>。</p>
+
+          <h3>3. 兩個廚師同時勾，結果也要對</h3>
+          <p>每條路徑都先鎖住這一桌的用餐場次（<code>dining_session</code> 那一列，<code>SELECT … FOR UPDATE</code>），再鎖單、鎖品項，交易用 <code>READ_COMMITTED</code>（讀取已提交資料）。</p>
+          <ul class="prompt-list">
+            <li><span><strong>同一桌的操作會排隊：</strong>送單、取消、出餐都先搶同一把場次鎖。第二個廚師拿到鎖時，讀得到第一個廚師剛存好的結果，再拿去推導。</span></li>
+            <li><span><strong>不會互相卡死：</strong>大家搶鎖的順序都是「先場次、再其他」，不會出現「你等我、我等你」的死結。</span></li>
+          </ul>
+
+          <h3>4. 出餐進度推給同桌每位客人</h3>
+          <p>交易提交後（不是之前，免得推出去的事後又被取消），除了推廚房頻道，也用 <code>convertAndSendToUser("guest-{id}", "/queue/cart-updates", …)</code> 推給這一桌的每位客人。訊息格式是 <code>{type, payload, serverTime}</code>：</p>
+          <ul class="prompt-list">
+            <li><span><code>ITEM_SERVED</code>、<code>ITEM_UNSERVED</code>、<code>ITEM_CANCELLED</code>、<code>ITEM_WASTED</code>、<code>TICKET_SERVED</code>、<code>TICKET_CANCELLED</code>。</span></li>
+            <li><span>最外層<strong>不放 <code>sessionId</code></strong>：購物車頁也聽同一個 queue，靠 <code>sessionId</code> 判斷「這是購物車變動」。不放就不會被誤認。</span></li>
+            <li><span>只推給這一桌的客人，別桌收不到。</span></li>
+            <li><span>推給客人的版本<strong>不帶員工寫的原因</strong>（例如「掉到地上」）。C-08 收到事件只會重抓，用不到原因；廚房頻道才保留原因。</span></li>
+          </ul>
+          <p>C-08 新增 <code>useOrderProgressSocket</code>：收到上面的事件、同桌送出新單（<code>ORDER_SUBMITTED</code>）或結帳（<code>SESSION_CLOSED</code>）就重抓。每次連上或重新連上也重抓一次，因為 WebSocket 保證快，不保證不漏，斷線期間的事件收不到。上方的連線指示改成看<strong>真實</strong>的連線狀態，輪詢保留當備援（連上時 60 秒一次，斷線時 15 秒一次）。</p>
+        </section>
+
+        <section class="section-card" id="added">
+          <span class="section-kicker">補上的基本功能 · 整合成果</span>
+          <h2>M4 規格要求、還沒做完的部分</h2>
+          <ul class="prompt-list">
+            <li><span><strong>報廢／退菜（4.9）：</strong><code>PATCH /api/admin/order-items/{id}/waste</code>，只給廚房和店長。
+              <ul>
+                <li>原因必填，1–100 字。</li>
+                <li>寫成 <code>CANCELLED</code>，加上原因與報廢時間 <code>wasted_at</code>。<strong>庫存不補回</strong>，因為食材已經用掉了。</li>
+                <li>同一個交易裡重算帳單，報廢的菜不收錢。</li>
+                <li>重送也回成功，保留第一次的原因。就算第一次成功後這桌剛好結帳，網路逾時重送也一樣回成功。</li>
+                <li>已結帳的桌、一般取消過的品項都不能報廢（409）。</li>
+                <li>客人那邊顯示「已退菜」。</li>
+              </ul>
+              用「<code>CANCELLED</code> 加上 <code>wasted_at</code>」而不是新增一種狀態，所以帳單、櫃檯明細、送單回應都不用改。權限規則寫在 <code>SecurityConfig</code>，跟其他出菜 API 放在一起；實作者第一版是在 controller 裡自己檢查角色，整合時搬回 <code>SecurityConfig</code>，權限才不會散在各處。</span></li>
+            <li><span><strong>出餐順序（4.7）：</strong>同一張單內，鍋底排最前、菜盤其次、肉品最後；同一級裡照點餐順序。排序寫在 SQL 裡，前端照順序顯示。</span></li>
+            <li><span><strong>久候警示（4.6）：</strong>等超過 15 分鐘，卡片邊框變紅，加上「久候」標籤，時間閃爍。看板每秒更新時鐘，不用等新資料進來。</span></li>
+            <li><span><strong>深色、大字、大勾選框（4.3、4.10、4.11）：</strong>色票照設計系統 §5.1 放在 <code>kds.colors.css</code>，桌號 32px、品項 20px，勾選框 40×40，整列都可以點。</span></li>
+            <li><span><strong>勾選手感：</strong>勾下去畫面先變，再送 API；失敗就重抓、還原。卡片淡出 0.5 秒後才移除。開了「減少動態效果」的話，直接消失。</span></li>
+            <li><span><strong>斷線提示：</strong>看板頂列顯示 WebSocket 斷線、正在重新連線。</span></li>
+          </ul>
+          <h3>主要程式檔案</h3>
+          <ul class="prompt-list">
+            <li><span><code>backend/src/main/java/tw/ispan/smartorder/service/OrderTicketStatusUpdater.java</code>：狀態推導。</span></li>
+            <li><span><code>backend/src/main/java/tw/ispan/smartorder/service/KitchenTicketService.java</code>：看板查詢與排序、出餐、整單完成、報廢。</span></li>
+            <li><span><code>backend/src/main/java/tw/ispan/smartorder/service/KitchenNotificationService.java</code>：提交後推給廚房與同桌客人。</span></li>
+            <li><span><code>backend/src/main/java/tw/ispan/smartorder/service/OrderCancellationService.java</code>：取消品項後也走同一套推導。</span></li>
+            <li><span><code>backend/db/schema.sql</code>、<code>backend/db/migrate_order_item_waste.sql</code>：<code>order_item.wasted_at</code> 與可重複執行的升級腳本。</span></li>
+            <li><span><code>frontend/src/features/admin/kitchen/KitchenOverview.jsx</code>、<code>frontend/src/components/OrderCard.jsx</code>、<code>kds.colors.css</code>：看板畫面。</span></li>
+            <li><span><code>frontend/src/features/customer/order/OrderHistory.jsx</code>、<code>frontend/src/services/realtime/useOrderProgressSocket.js</code>：C-08 出餐進度。</span></li>
+          </ul>
+        </section>
+
+        <section class="section-card" id="review">
+          <span class="section-kicker">審查後再修的地方</span>
+          <h2>舊資料、隱私、重送與畫面細節</h2>
+          <p>第一版是 commit <code>2d5574c</code>，獨立審查沒有 P1／P2。下面的 P3 修在 <code>0e43f01</code>；整合者最後看截圖時又發現一個圖示問題，修在 <code>0cd7df6</code>。</p>
+
+          <h3>1. 舊版程式留下的錯誤資料，升級時一起修好</h3>
+          <p>修正前的程式會留下兩種「對不起來」的單：品項都出完了單還是待製作，或者單已完成、品項卻還是待製作。新版只保證<strong>以後</strong>不會再產生，已經存在的錯誤資料還在。所以升級腳本 <code>migrate_order_item_waste.sql</code> 多做兩件事，而且只處理<strong>還在用餐中</strong>的桌：</p>
+          <ul class="prompt-list">
+            <li><span>「單已完成、品項待製作」的品項補成已出餐。出餐時間用那張單最後更新的時間，比跑腳本的當下更接近真實時間。</span></li>
+            <li><span>再用和 <code>OrderTicketStatusUpdater</code> 相同的規則，從品項重算每張單的狀態。</span></li>
+          </ul>
+          <p>實測方式：先用修正前的後端做出三張錯誤的單，停掉後端，連續跑兩次腳本。結果三張都修好，跑兩次也不會出錯；已結帳桌次的單與品項，前後算出的 MD5（一種資料指紋）完全一樣，代表歷史資料沒有被動到。</p>
+
+          <h3>2. 員工寫的原因，不要推到客人手機</h3>
+          <p>第一版把報廢、取消的原因放在推給客人的事件裡。畫面不會顯示，但客人打開瀏覽器的開發者工具就看得到「掉到地上」這種內部備註。現在推給客人的版本拿掉原因，只有廚房頻道保留。</p>
+
+          <h3>3. 重送報廢不會誤報失敗</h3>
+          <p>廚房第一次報廢已經成功，但網路逾時，畫面又自動重送；如果這段時間這桌剛好結帳，原本重送會先撞上「這桌已結帳」而回 409，畫面顯示失敗。現在鎖住這桌之後，先檢查「這道菜是不是已經報廢過」，是的話直接回成功，再做其他檢查。這種「同一個請求送幾次結果都一樣」的性質叫<strong>冪等</strong>。</p>
+
+          <h3>4. 連續勾選時，勾勾不會閃回去</h3>
+          <p>連續勾 A、B 兩道菜時，A 完成後的重抓如果比 B 先回來，B 會短暫變回沒勾。現在送出中的勾選會疊在伺服器資料上面，等重抓完成才拿掉。</p>
+
+          <h3>5. 規格文件跟實作對齊</h3>
+          <p>API 規格 §2.4、§3.4 改成實際的路徑：整單出完是 <code>PATCH /api/admin/kitchen/tickets/{id}/complete</code>。也補上六個出餐事件各自推到哪個頻道、payload 長怎樣。</p>
+
+          <h3>6. 整合時發現：已退菜旁邊是「等待中」的時鐘</h3>
+          <p>C-08 的「已取消」「已退菜」沿用了待製作的橘色時鐘圖示，客人會以為還在做。改成淡灰色的 ×，只有真的還在做的菜才顯示時鐘。</p>
+
+          <h3>已知限制（這次沒處理）</h3>
+          <ul class="prompt-list">
+            <li><span><strong>出餐順序靠分類名稱「肉品」判斷。</strong>菜單管理已經可以改分類名稱，店長如果把「肉品」改名或另外新增「牛肉」分類，肉類會被排到菜盤那一級。比較穩的做法是在分類上加一個「出餐順序」欄位。</span></li>
+            <li><span><strong>誤勾最後一道菜，畫面上沒辦法復原。</strong>卡片會在 0.5 秒內淡出。後端支援「取消勾選」並重新打開這張單，但 UI 規格裡的「最近完成」分頁還沒做（不在 M4 驗收表），所以只能從 API 復原。</span></li>
+            <li><span><strong>4.8 預約優先</strong>要有 M7 的預先點餐才會有這種單，這次不做。</span></li>
+            <li><span>報廢會讓帳單變少，但沒有記錄是哪位員工操作的。以後如果要追查退菜金額，可以加上操作者。</span></li>
+          </ul>
+        </section>
+
+        <section class="section-card" id="walkthrough">
+          <span class="section-kicker">手把手驗收 · 請在本機隔離資料庫</span>
+          <h2>你可以照著做一次</h2>
+          <ol class="step-list">
+            <li class="step-card"><p><strong>先重現問題（修正前的版本）。</strong></p>
+              <ul>
+                <li>送一張兩道菜的單，一道一道勾完：單還是 <code>PENDING</code>，卡片還在看板上。</li>
+                <li>另送一張，按整單完成：品項還是 <code>PENDING</code>，客人的 C-08 顯示「待製作」。</li>
+                <li>呼叫報廢 API：回 404。</li>
+              </ul>
+            </li>
+            <li class="step-card"><p><strong>狀態推導（修正後）。</strong></p>
+              <ul>
+                <li>勾一道 → <code>PREPARING</code>；取消勾選 → <code>PENDING</code>；全部勾完 → <code>SERVED</code>，卡片離開看板。</li>
+                <li>再取消勾選一道 → 單回到 <code>PREPARING</code>，卡片回到看板。</li>
+                <li>整單完成 → 每道菜都變 <code>SERVED</code>；再按一次也成功。</li>
+                <li>一道已出、取消另一道 → 單變 <code>SERVED</code>；全部取消 → <code>CANCELLED</code>，這時按整單完成回 409。</li>
+              </ul>
+            </li>
+            <li class="step-card"><p><strong>報廢。</strong></p>
+              <ul>
+                <li>沒登入回 401，櫃檯帳號回 403；原因空白、或超過 100 字，回 400，資料不變。</li>
+                <li>廚房報廢成功後，資料庫有原因與報廢時間，庫存沒有加回去，帳單少了這道菜、服務費跟著重算。</li>
+                <li>重送保留第一次的原因，C-08 顯示「已退菜」。</li>
+                <li>一般取消過的品項不能報廢；已結帳那一桌的品項也不能報廢。第一次報廢成功後這桌才結帳，重送仍回 204。</li>
+              </ul>
+            </li>
+            <li class="step-card"><p><strong>同時操作（各 3 輪）。</strong></p>
+              <ul>
+                <li>三個廚師同時勾同一張單的三道菜：都成功，單是 <code>SERVED</code>。</li>
+                <li>「整單完成」和「取消品項」同時送：結果一定一致，單的狀態等於從品項推導出來的狀態。</li>
+                <li>最後檢查兩桌所有的單，每一張都對得上推導結果，帳單也對得上。</li>
+              </ul>
+            </li>
+            <li class="step-card"><p><strong>瀏覽器（看板 1920×1080、C-08 手機 390px）。</strong></p>
+              <ul>
+                <li>看板是深色，勾選框 40×40；客人送單後，卡片在 1 秒內出現。</li>
+                <li>廚房勾一道菜，客人手機不用重新整理就變「已出餐」，而且只有這一桌的客人收到事件。</li>
+                <li>等待超過 15 分鐘的卡片出現「久候」和紅框。</li>
+                <li>從選單報廢一道菜，客人看到「已退菜」。</li>
+                <li>按整單完成，卡片淡出後移除。</li>
+              </ul>
+            </li>
+            <li class="step-card"><p><strong>升級腳本。</strong></p>
+              <ul>
+                <li>先用修正前的後端做出錯誤的單，停掉後端，連續跑兩次 <code>migrate_order_item_waste.sql</code>：兩次都成功，錯誤的單都修好。</li>
+                <li>已結帳桌次的資料前後完全一樣。</li>
+              </ul>
+            </li>
+          </ol>
+        </section>
+
+        <section class="section-card" id="evidence">
+          <h2>提交與驗證紀錄</h2>
+          <p>程式版本：Git commit <code>2d5574c</code>（狀態推導、推播、報廢與看板），<code>0e43f01</code>（審查後修正），<code>0cd7df6</code>（C-08 圖示）。</p>
+          <div class="evidence-grid">
+            <div class="note-card report"><h3>HTTP 與資料庫檢查</h3><p>出菜看板專項 102 項、基線 36 項，共 138 項全部通過。三個廚師同時勾、整單完成對取消，各跑 3 輪。紀錄裡也附上修正前版本的觀察結果，以及升級腳本修補舊資料的實測。同一份後端上，菜單管理、購物車、點餐交易、櫃檯代客點餐、結帳的回歸測試（131、56、200、108、156 項）都通過。<a href="../evidence/2d5574c-http.json">查看完整 HTTP 紀錄</a>。</p></div>
+            <div class="note-card report"><h3>瀏覽器與 WebSocket 檢查</h3><p>19 項全部通過，包含：</p>
+              <ul>
+                <li>看板深色與 40×40 勾選框，新單在 1 秒內出現。</li>
+                <li>勾選後 C-08 約 0.1 秒更新，別桌收不到事件。</li>
+                <li>推給客人的報廢事件沒有原因。</li>
+                <li>久候警示、從選單報廢、整單出完淡出。</li>
+              </ul>
+              <p><a href="../evidence/2d5574c-browser.json">查看完整瀏覽器紀錄</a>。</p></div>
+          </div>
+          <div class="screen-gallery">
+            <figure class="screen-shot">
+              <a href="../assets/clara-kds-1920.png"><img src="../assets/clara-kds-1920.png" alt="1920 乘 1080 的深色出菜看板，一排五張卡片，久候的卡片有紅框與久候標籤"></a>
+              <figcaption>1920×1080 出菜看板：深色、一排 5 張卡；等超過 15 分鐘的卡片有紅框和「久候」。</figcaption>
+            </figure>
+            <figure class="screen-shot">
+              <a href="../assets/clara-c08-390.png"><img src="../assets/clara-c08-390.png" alt="手機寬度的本桌訂單頁，顯示即時同步中，品項分別是已出餐、待製作與已退菜"></a>
+              <figcaption>C-08 本桌訂單：真實的「即時同步中」，已出餐、待製作、已退菜各有不同圖示。</figcaption>
+            </figure>
+          </div>
+          <p class="intro-note">測試在隔離的 MySQL 5.7 容器進行，每次正式跑之前都用分支的 <code>schema.sql</code>、<code>seed.sql</code> 重建。「這桌已結帳後重送報廢」那一項，是直接用 SQL 把場次改成已結帳來模擬，測完再改回。看板依 UI 規格固定用 1920×1080 檢查（KDS 不做 RWD）。</p>
+        </section>
+
+        <section class="section-card" id="feedback">
+          <h2>前輩回饋、報告與履歷</h2>
+          <div class="evidence-grid">
+            <div class="note-card feedback">
+              <h3>技術前輩的建議</h3>
+              <p>遇到「一個東西的狀態，其實是另一群東西的總結」時，不要讓每個入口各自去改它，寫一個推導方法，所有入口都呼叫它。這個專案裡，勾選、整單完成、取消、報廢四個入口，原本有三種寫法，結果三種錯法。</p>
+              <p>即時推播有兩個重點：<strong>交易提交後才推</strong>，<strong>重新連線時要重抓一次</strong>。另外，畫面上的「即時同步中」一定要接真實的連線狀態，寫死的狀態指示比沒有更糟，因為它會讓人相信錯的東西。</p>
+            </div>
+            <div class="note-card report">
+              <h3>這個功能用到的技術</h3>
+              <ul>
+                <li>狀態推導（單一真相來源）與交易內一致更新</li>
+                <li>MySQL 資料列鎖、固定的鎖順序、<code>READ_COMMITTED</code></li>
+                <li>Spring WebSocket／STOMP：主題頻道與個人 queue、提交後推播</li>
+                <li>帳單重算與報廢不回補庫存的業務規則</li>
+                <li>可重複執行的資料庫升級腳本</li>
+                <li>React 樂觀更新、每秒時鐘、淡出動畫、深色主題</li>
+              </ul>
+            </div>
+          </div>
+          <div class="note-card">
+            <h3>專題報告與履歷可以這樣寫</h3>
+            <p>報告：左邊開廚房看板，右邊開客人手機。先示範修正前「勾完卡片不消失、整單完成客人卻看到待製作」，再示範修正後：廚師一勾，客人手機馬上變「已出餐」，全部勾完卡片淡出。最後示範報廢一道菜，帳單自動扣掉。</p>
+            <p>履歷：「負責餐廳系統廚房出菜看板（KDS）：將點餐單狀態改為由品項推導、統一勾選／整單完成／取消／報廢四個入口，並以固定鎖順序處理多名廚師同時操作；以 WebSocket（STOMP）在交易提交後把出餐進度推送給同桌每位顧客，實作退菜紀錄與帳單重算。」</p>
+          </div>
+        </section>
+
+        <section class="section-card" id="terms">
+          <h2>新手名詞表</h2>
+          <dl class="glossary">
+            <div class="term"><dt>KDS（Kitchen Display System，廚房出菜看板）</dt><dd>掛在廚房的螢幕，取代出單機紙條，顯示每張點餐單要做的菜。</dd></div>
+            <div class="term"><dt>狀態推導、單一真相來源（single source of truth）</dt><dd>真正的資料只存一份（品項狀態），其他狀態（單的狀態）都從它算出來，所以不會對不起來。</dd></div>
+            <div class="term"><dt>交易（transaction）</dt><dd>把一組資料庫操作當成一次完整的動作：全部成功，或全部取消。</dd></div>
+            <div class="term"><dt>資料列鎖、SELECT … FOR UPDATE</dt><dd>讀資料的同時鎖住那一列，其他想改它的人要排隊等。</dd></div>
+            <div class="term"><dt>死結（deadlock）</dt><dd>兩個請求各拿著一把鎖、又在等對方的鎖，誰都無法繼續。固定「先鎖誰、再鎖誰」的順序可以避免。</dd></div>
+            <div class="term"><dt>READ_COMMITTED（讀取已提交資料）</dt><dd>資料庫隔離層級的一種：每次查詢都讀得到別的交易已經存檔的最新結果。</dd></div>
+            <div class="term"><dt>WebSocket 與 STOMP</dt><dd>WebSocket 是瀏覽器和伺服器之間一直開著的連線，伺服器可以主動推訊息；STOMP（Simple Text Oriented Messaging Protocol，簡單文字訊息協定）是在上面約定「訂閱哪個頻道、訊息長怎樣」的格式。</dd></div>
+            <div class="term"><dt>topic 與 queue</dt><dd><code>/topic/kitchen</code> 是大家都能訂閱的廣播頻道；<code>/user/queue/cart-updates</code> 是每個人自己的信箱，別人收不到。</dd></div>
+            <div class="term"><dt>afterCommit（提交後）</dt><dd>等交易真的存檔成功才做的事。推播放在這裡，才不會推出「其實沒存成功」的消息。</dd></div>
+            <div class="term"><dt>樂觀更新（optimistic update）</dt><dd>按下去畫面先變，再送請求給後端；失敗再改回來。操作起來比較順手。</dd></div>
+            <div class="term"><dt>migration（資料庫升級腳本）</dt><dd>把正在使用的資料庫升級成新結構的腳本；本案的腳本欄位已存在就略過，可以重複執行。</dd></div>
+            <div class="term"><dt>C-08／S-04／M4</dt><dd>C-08 是顧客端「本桌訂單」畫面，S-04 是店家端出菜看板畫面，M4 是出菜看板的模組規格。</dd></div>
+            <div class="term"><dt>SHA／Git commit</dt><dd>SHA 是 Secure Hash Algorithm（安全雜湊演算法）；Git 用它幫每個版本（commit）產生識別碼。</dd></div>
+          </dl>
+        </section>
+
+        <footer class="page-footer"><a href="index.html">← 回 Clara 工作包</a></footer>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

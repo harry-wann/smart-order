@@ -183,8 +183,8 @@
 | GET | `/api/admin/members/lookup` | 櫃檯用手機查會員（`?phone=`，回暱稱與生日讓客人確認，**進階 8.10**，見 4.8a） | COUNTER, MANAGER |
 | GET | `/api/admin/kitchen/tickets` | KDS 看板 | KITCHEN, MANAGER |
 | PATCH | `/api/admin/order-items/{id}/serve` | 勾選已出餐 | KITCHEN, MANAGER |
-| PATCH | `/api/admin/order-tickets/{id}/serve-all` | 整單出完 | KITCHEN, MANAGER |
-| PATCH | `/api/admin/order-items/{id}/waste` | 退菜／廢棄 | KITCHEN, MANAGER |
+| PATCH | `/api/admin/kitchen/tickets/{id}/complete` | 整單出完：同一個交易把這張單還沒出的品項全部標成已出餐，單由品項推導成 `SERVED`（單的狀態一律由品項推導，見 [M4 問題 1](modules/M4-出菜看板.md)）；重複按回 `204`，已取消的單回 `409 TICKET_NOT_COMPLETABLE` | KITCHEN, MANAGER |
+| PATCH | `/api/admin/order-items/{id}/waste` | 退菜／報廢（M4 4.9）：body `{ "reason": "煮過頭" }`，原因必填、1～100 字；已出餐、未出餐都可以報。品項改成 `CANCELLED` 並記 `cancel_reason`、`wasted_at`，**庫存不回補**、從帳單拿掉（M6 不做退菜折讓，所以只在結帳前）。已報廢過的重送直接回 `204`（先於桌況檢查）；桌已結帳或取消回 `409 SESSION_CLOSED`、有線上付款進行中回 `409 PAYMENT_PENDING`、已被一般取消或整單已取消回 `409 ITEM_NOT_WASTABLE` | KITCHEN, MANAGER |
 | GET/POST | `/api/admin/waitlist` | 候位清單／登記 | COUNTER, MANAGER |
 | POST | `/api/admin/waitlist/{id}/call` | 叫號 | COUNTER, MANAGER |
 | POST | `/api/admin/waitlist/{id}/seat` | 報到入座並開桌（**帶 `tableId`**；保留中回 `409 TABLE_RESERVED`） | COUNTER, MANAGER |
@@ -266,10 +266,12 @@
 |---|---|---|---|
 | `CART_UPDATED` | session | `{ version, cart: { items, totalQuantity }, change: { action: ADDED\|UPDATED\|REMOVED, byGuest: "陳小美", byGuestId: 2, itemName, quantity, optionSummary } }`；事件中的 `cart` 是不含目前 guest 權限欄位與個人小計的全桌快照 | **`version` 比本地大才套用 `cart`**（小於等於就整包丟掉，見 3.4.1）；前端依自己的 `guest.id` 對 `addedBy.guestId` 計算 `isOwnItem`、`canEdit` 與本人小計，或重抓個人化的 `GET /me/cart`；`change.action` 是 `ADDED` 且 `change.byGuestId` 不是自己時，跳 C-04b 通知條 |
 | `NEW_TICKET` | session、kitchen | `OrderTicketDto`（含 `quantity`＝這張單的份數加總；推給同桌的那份多帶 `byGuest`、`byGuestId`，櫃檯代客加點是 `"櫃檯"`／`null`，預點轉單兩個都是 `null`） | 加進清單，高亮 2 秒；同桌手機重抓購物車（只清掉送單 guest 的列，其他 guest 列保留）；`byGuest` 不是 `null`、`byGuestId` 也不是自己時，跳 C-04c「王大明 送出 6 項」（N＝payload 的 `quantity`，份數加總） |
-| `ITEM_SERVED` | session、kitchen | `{ticketId, itemId, servedAt}` | 該品項狀態改「已出餐」 |
-| `TICKET_SERVED` | session、kitchen | `{ticketId}` | KDS 卡片淡出移除 |
-| `TICKET_CANCELLED` | session、kitchen | `{ticketId, reason}` | 從清單移除 |
-| `ITEM_WASTED` | kitchen | `{itemId, reason}` | 標記退菜 |
+| `ITEM_SERVED` | kitchen、同桌客人（見下方「出餐進度事件」） | `{ticketId, itemId, servedAt}` | 該品項狀態改「已出餐」 |
+| `ITEM_UNSERVED` | kitchen、同桌客人 | `{ticketId, itemId}` | 撤回已出餐（勾錯了），品項回到「待製作」 |
+| `ITEM_CANCELLED` | kitchen、同桌客人 | 廚房：`{ticketId, itemId, reason}`；客人：`{ticketId, itemId}` | 品項改「已取消」 |
+| `ITEM_WASTED` | kitchen、同桌客人 | 廚房：`{ticketId, itemId, reason}`；客人：`{ticketId, itemId}` | 品項改「已退菜」，KDS 從卡片拿掉 |
+| `TICKET_SERVED` | kitchen、同桌客人 | `{ticketId}` | 單的品項全部出完（逐項勾完、整單出完，或取消掉最後一個還沒出的品項）；KDS 卡片淡出移除 |
+| `TICKET_CANCELLED` | kitchen、同桌客人 | 廚房：`{ticketId, reason}`；客人：`{ticketId}` | 從清單移除 |
 | `SESSION_UPDATED` | session、counter | `{subtotal, serviceFee, total, status}` | 更新金額顯示 |
 | `SESSION_CLOSED` | session、counter | `{ sessionId, reason: "PAID" \| "CANCELLED" }` | `PAID`：顧客端 C-04 切到「已結帳」面板並清除權杖；`CANCELLED`：**不顯示任何面板**，清掉權杖直接導回 C-00（`/`）；櫃檯更新桌況 |
 | `MENU_SOLD_OUT` | menu | `{menuItemId, name}` | 菜單標灰 + 購物車標紅 |
@@ -278,6 +280,13 @@
 | `TABLE_OVERTIME` | counter | `{tableId, tableNo, minutes}` | 標紅閃爍 |
 | `WAITLIST_CALLED` | waitlist | `{ticketNo, partySize}` | 候位螢幕顯示叫號 |
 | `WAITLIST_UPDATED` | waitlist、counter | `{waitingCount}` | 更新候位清單 |
+
+**出餐進度事件**（`ITEM_SERVED`、`ITEM_UNSERVED`、`ITEM_CANCELLED`、`ITEM_WASTED`、`TICKET_SERVED`、`TICKET_CANCELLED`）都在交易提交後才推，同時送兩個地方：
+
+- 廚房：`/topic/kitchen`，payload 照上表的「廚房」那份，取消與報廢帶 `reason`。
+- 同桌客人：**不走 `/topic/session/{id}`**（實作沒有開這個頻道），改推給這桌每一位客人的個人 queue `/user/queue/cart-updates`（跟購物車通知同一條，WebSocket 只用 `X-Session-Token` 連線）。
+  格式一樣是 3.3 的 `{ type, payload, serverTime }`，**最外層不放 `sessionId`**（購物車頁靠最外層 `sessionId` 判斷購物車通知，這樣才不會被誤當成購物車變動）；
+  `reason` 是員工寫給店內看的，**推給客人的 payload 一律拿掉**。C-08 收到這幾種事件只會重抓 `GET /api/dining/orders`，不讀 payload 內容。
 
 **同桌兩個事件的 payload 範例**（推到 `/topic/session/1052`）：
 

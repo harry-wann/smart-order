@@ -1,0 +1,104 @@
+{
+  "label": "clara-kds-progress-browser",
+  "commit": "2d5574c",
+  "followUpCommits": [
+    "0e43f01",
+    "0cd7df6"
+  ],
+  "testedAt": "2026-10-23T14:04:26.134Z",
+  "passed": true,
+  "resultCount": 19,
+  "notes": [
+    "Vite on 127.0.0.1:5174 serving the KDS worktree, backend on 8080; KDS board at 1920x1080 (docs/ui/10 KDS size), C-08 at 390px; raw STOMP listeners for two tables."
+  ],
+  "results": [
+    {
+      "name": "KDS browser: C-08 shows the live connection state",
+      "passed": true
+    },
+    {
+      "name": "KDS browser: KDS page uses the dark background #241C18",
+      "passed": true,
+      "detail": "rgb(36, 28, 24)"
+    },
+    {
+      "name": "KDS browser: check box is at least 40×40",
+      "passed": true,
+      "detail": "40×40"
+    },
+    {
+      "name": "KDS browser: KDS page has no horizontal overflow at 1920×1080",
+      "passed": true
+    },
+    {
+      "name": "KDS browser: a newly submitted order appears on the board within 1 second (submit included)",
+      "passed": true,
+      "detail": "245ms"
+    },
+    {
+      "name": "KDS browser: ticking an item updates C-08 without reloading",
+      "passed": true,
+      "detail": "88ms"
+    },
+    {
+      "name": "KDS browser: table guest receives ITEM_SERVED {ticketId, itemId, servedAt} with serverTime",
+      "passed": true,
+      "detail": "{\"type\":\"ITEM_SERVED\",\"payload\":{\"servedAt\":\"2026-10-23T14:04:21.049832Z\",\"ticketId\":104,\"itemId\":474},\"serverTime\":\"2026-10-23T14:04:21.052351Z\"}"
+    },
+    {
+      "name": "KDS browser: event has no top-level sessionId (not mistaken for a cart change)",
+      "passed": true
+    },
+    {
+      "name": "KDS browser: a ticket waiting over 15 minutes shows 久候 and a red border",
+      "passed": true,
+      "detail": "rgb(179, 38, 30)"
+    },
+    {
+      "name": "KDS browser: waste dialog calls the waste API",
+      "passed": true
+    },
+    {
+      "name": "KDS browser: C-08 shows the wasted item as 已退菜 without reloading",
+      "passed": true
+    },
+    {
+      "name": "KDS browser: database marks the item wasted with the reason",
+      "passed": true,
+      "detail": "CANCELLED\t掉到地上\t1"
+    },
+    {
+      "name": "KDS browser: ticket with everything served or wasted leaves the board",
+      "passed": true
+    },
+    {
+      "name": "KDS browser: 整單出完 fades the card out and removes it",
+      "passed": true,
+      "detail": "869ms"
+    },
+    {
+      "name": "KDS browser: 整單出完 marks every item served",
+      "passed": true
+    },
+    {
+      "name": "KDS browser: guest ITEM_WASTED carries no staff-written reason",
+      "passed": true,
+      "detail": "{\"type\":\"ITEM_WASTED\",\"payload\":{\"ticketId\":104,\"itemId\":475},\"serverTime\":\"2026-10-23T14:04:22.115669Z\"}"
+    },
+    {
+      "name": "KDS browser: table A guest got ITEM_WASTED and TICKET_SERVED",
+      "passed": true,
+      "detail": "ITEM_ADDED,ORDER_SUBMITTED,ITEM_SERVED,ITEM_WASTED,TICKET_SERVED,TICKET_SERVED"
+    },
+    {
+      "name": "KDS browser: table B guest got none of table A kitchen events",
+      "passed": true,
+      "detail": "none"
+    },
+    {
+      "name": "KDS browser: no page errors or API 5xx",
+      "passed": true,
+      "detail": ""
+    }
+  ]
+}

@@ -29,12 +29,14 @@ public class OrderCancellationService {
     private final BillingCalculator billing;
     private final MenuStatusNotifier menuNotifier;
     private final KitchenNotificationService kitchenNotifier;
+    private final OrderTicketStatusUpdater ticketStatusUpdater;
 
     public OrderCancellationService(@Qualifier("smartOrderDataSource") DataSource dataSource,
                                     DiningSessionRepository sessions, InventoryRepository inventory,
                                     MenuItemRepository menuItems, BillingCalculator billing,
                                     MenuStatusNotifier menuNotifier,
-                                    KitchenNotificationService kitchenNotifier) {
+                                    KitchenNotificationService kitchenNotifier,
+                                    OrderTicketStatusUpdater ticketStatusUpdater) {
         this.jdbc = new JdbcTemplate(dataSource);
         this.sessions = sessions;
         this.inventory = inventory;
@@ -42,6 +44,7 @@ public class OrderCancellationService {
         this.billing = billing;
         this.menuNotifier = menuNotifier;
         this.kitchenNotifier = kitchenNotifier;
+        this.ticketStatusUpdater = ticketStatusUpdater;
     }
 
     private record Item(Long id, Long menuItemId, int quantity, String status) {}
@@ -77,19 +80,10 @@ public class OrderCancellationService {
         if (updated != 1) throw ApiException.conflict("ITEM_NOT_CANCELLABLE", "此餐點目前不能取消");
         restoreInventory(List.of(item), menus);
 
-        Integer remaining = jdbc.queryForObject("""
-                SELECT COUNT(*) FROM order_item WHERE order_ticket_id = ? AND status <> 'CANCELLED'
-                """, Integer.class, ticketId);
-        if (remaining != null && remaining == 0) {
-            int ticketUpdated = jdbc.update("""
-                    UPDATE order_ticket SET status = 'CANCELLED', cancel_reason = ?
-                    WHERE id = ? AND status IN ('PENDING', 'PREPARING')
-                    """, reason, ticketId);
-            if (ticketUpdated != 1) {
-                throw ApiException.conflict("TICKET_NOT_CANCELLABLE", "訂單狀態已變動，請重試");
-            }
-            kitchenNotifier.notifyTicketCancelledAfterCommit(ticketId, reason);
-        }
+        // 跟出菜看板用同一份推導（OrderTicketStatusUpdater）：品項全部取消 → CANCELLED 並推 TICKET_CANCELLED；
+        // 取消的是最後一個還沒出的品項、其他未取消的都已出餐 → SERVED 並推 TICKET_SERVED，KDS 卡片自動淡出。
+        // 已經持有 session 鎖，這裡最後才更新 order_ticket，鎖順序維持 session → menu_item → order_item → order_ticket
+        ticketStatusUpdater.refreshFromItems(ticketId, reason);
         billing.recalculateAndStore(session);
         kitchenNotifier.notifyItemCancelledAfterCommit(ticketId, itemId, reason);
     }

@@ -123,6 +123,15 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* KDS 品項名稱（S-04，M4 4.11 品項 ≥ 20px）。type-h3 只有 18px 不夠大；
+   type-price 雖然 20px，但那是價格用的等寬數字、行高 1.4，中文品項名要 1.6 */
+@utility type-kds-item {
+  font-family: var(--font-sans);
+  font-size: 20px;
+  line-height: 1.6;
+  font-weight: 700;
+}
+
 @utility notification-icon {
   font-family: var(--font-sans);
   font-size: 13px;
