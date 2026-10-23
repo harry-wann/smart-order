@@ -27,7 +27,9 @@ public class KitchenTicketsController {
         this.kitchenTicketService = kitchenTicketService;
     }
 
-    // 拿到訂單資料，只取 PENDING 或 PREPARING 的廚房訂單，並排除已取消品項；同一張單內依鍋底、菜盤、肉品排序
+    // 拿到訂單資料，只取 PENDING 或 PREPARING 的廚房訂單，並排除已取消品項；
+    // 同一張單內依分類的出餐順序排（04 §4.12）：鍋底 1、菜盤 2、火鍋料 3、肉品 4、主食 5、飲料甜點 6，
+    // 鍋底品項固定 1（簡化說法：鍋底 → 菜盤 → 肉品）
     @GetMapping("/kitchen/tickets")
     public List<KitchenTicketResponse> getKitchenTickets() {
         return kitchenTicketService.getKitchenTickets();
