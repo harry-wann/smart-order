@@ -23,6 +23,7 @@ import tw.ispan.smartorder.repository.DiningSessionRepository;
 import tw.ispan.smartorder.repository.DiningSessionGuestRepository;
 import tw.ispan.smartorder.staff.security.StaffJwtFilter;
 import tw.ispan.smartorder.staff.security.StaffJwtProvider;
+import tw.ispan.smartorder.util.JwtToken;
 
 /**
  * 教學階段先讓本機 API 可直接測試；正式環境要改成登入與權限規則。
@@ -39,6 +40,7 @@ public class SecurityConfig {
             DiningSessionRepository sessionRepo,
             DiningSessionGuestRepository guestRepo,
             StaffJwtProvider staffJwtProvider,
+            JwtToken jwtToken,
             @Value("${app.r2.allow-anonymous-uploads:false}") boolean allowAnonymousUploads) throws Exception {
         http
                 .cors(Customizer.withDefaults())
@@ -114,7 +116,7 @@ public class SecurityConfig {
                                 PathPatternRequestMatcher.withDefaults().matcher("/api/admin/**"))
                         .accessDeniedHandler((request, response, exception) ->
                                 writeError(request, response, 403, "FORBIDDEN", "權限不足")))
-                .addFilterBefore(new SessionTokenFilter(sessionRepo, guestRepo),
+                .addFilterBefore(new SessionTokenFilter(sessionRepo, guestRepo, jwtToken),
                         UsernamePasswordAuthenticationFilter.class)
                 // StaffJwtFilter 自己只處理 /api/admin/，跟上面 SessionTokenFilter 的顧客端權杖各管各的
                 .addFilterBefore(new StaffJwtFilter(staffJwtProvider),

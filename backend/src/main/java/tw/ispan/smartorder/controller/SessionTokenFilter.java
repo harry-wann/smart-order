@@ -15,10 +15,13 @@ import java.io.IOException;
 public class SessionTokenFilter extends OncePerRequestFilter {
 	private final DiningSessionRepository sessionRepo;
 	private final DiningSessionGuestRepository guestRepo;
+	private final JwtToken jwtToken;
 
-	public SessionTokenFilter(DiningSessionRepository sessionRepo, DiningSessionGuestRepository guestRepo){
+	public SessionTokenFilter(DiningSessionRepository sessionRepo, DiningSessionGuestRepository guestRepo,
+							  JwtToken jwtToken){
 		this.sessionRepo=sessionRepo;
 		this.guestRepo=guestRepo;
+		this.jwtToken=jwtToken;
 	}
 
 	@Override
@@ -43,7 +46,7 @@ public class SessionTokenFilter extends OncePerRequestFilter {
 		Long sessionId;
 		Long guestId;
 		try {
-			var identity = JwtToken.parseGuestToken(token);
+			var identity = jwtToken.parseGuestToken(token);
             sessionId = identity.sessionId();
             guestId = identity.guestId();
 

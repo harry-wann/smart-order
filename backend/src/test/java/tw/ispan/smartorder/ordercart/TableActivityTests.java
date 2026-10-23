@@ -18,6 +18,7 @@ import tw.ispan.smartorder.repository.*;
 import tw.ispan.smartorder.util.JwtToken;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,14 +35,20 @@ class TableActivityTests {
         TransactionSynchronizationManager.setActualTransactionActive(false);
     }
 
-    @Test void eachPhoneHasItsOwnIdentityAndToken() {
-        String first = JwtToken.createGuestToken(50L, 97L);
-        String second = JwtToken.createGuestToken(50L, 98L);
+    // JwtToken 改成啟動時注入金鑰，測試直接用本機開發金鑰建一個
+    private static JwtToken jwt() throws Exception {
+        return new JwtToken(JwtToken.DEV_SECRET, "127.0.0.1");
+    }
+
+    @Test void eachPhoneHasItsOwnIdentityAndToken() throws Exception {
+        var jwt = jwt();
+        String first = jwt.createGuestToken(50L, 97L);
+        String second = jwt.createGuestToken(50L, 98L);
         assertNotEquals(first, second);
-        assertEquals(97L, JwtToken.parseGuestToken(first).guestId());
-        assertEquals(98L, JwtToken.parseGuestToken(second).guestId());
+        assertEquals(97L, jwt.parseGuestToken(first).guestId());
+        assertEquals(98L, jwt.parseGuestToken(second).guestId());
         assertThrows(IllegalArgumentException.class,
-                () -> JwtToken.parseGuestToken(JwtToken.createToken("50")));
+                () -> jwt.parseGuestToken(jwt.createMemberToken(50L, Duration.ofHours(1))));
     }
 
     @Test void currentGuestMustMatchSessionAndVerifiedGuest() {
@@ -152,11 +159,12 @@ class TableActivityTests {
         guest.setDeviceId(device); guest.setDisplayName(name); return guest;
     }
 
-    @Test void socketAuthenticatesGuestAndRejectsDirectQueueSubscriptions() {
+    @Test void socketAuthenticatesGuestAndRejectsDirectQueueSubscriptions() throws Exception {
         var guests = mock(DiningSessionGuestRepository.class);
         var sessions = mock(DiningSessionRepository.class);
         var registration = mock(org.springframework.messaging.simp.config.ChannelRegistration.class);
-        new tw.ispan.smartorder.config.WebSocketConfig(guests, sessions).configureClientInboundChannel(registration);
+        var jwt = jwt();
+        new tw.ispan.smartorder.config.WebSocketConfig(guests, sessions, jwt).configureClientInboundChannel(registration);
         var captured = org.mockito.ArgumentCaptor.forClass(org.springframework.messaging.support.ChannelInterceptor.class);
         verify(registration).interceptors(captured.capture());
         var interceptor = captured.getValue();
@@ -166,7 +174,7 @@ class TableActivityTests {
         when(sessions.findById(50L)).thenReturn(Optional.of(session));
         var connect = org.springframework.messaging.simp.stomp.StompHeaderAccessor.create(
                 org.springframework.messaging.simp.stomp.StompCommand.CONNECT);
-        connect.setNativeHeader("X-Session-Token", JwtToken.createGuestToken(50L, 98L));
+        connect.setNativeHeader("X-Session-Token", jwt.createGuestToken(50L, 98L));
         connect.setLeaveMutable(true);
         var channel = mock(org.springframework.messaging.MessageChannel.class);
         interceptor.preSend(org.springframework.messaging.support.MessageBuilder.createMessage(

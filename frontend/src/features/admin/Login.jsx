@@ -24,9 +24,10 @@ export const Login=()=>{
     setError("");
     setSubmitting(true);
     try {
-      const { token } = await loginStaff(account.trim(), password);
+      const { token, staff } = await loginStaff(account.trim(), password);
       signInEmployee(token);
-      navigate("/admin", { replace: true });
+      // 廚房帳號不能看櫃檯的桌況與推播，直接進出菜看板；其他角色進後台首頁（桌況總覽）
+      navigate(staff?.role === "KITCHEN" ? "/admin/kitchen" : "/admin", { replace: true });
     } catch (e) {
       setError(e.message);
     } finally {

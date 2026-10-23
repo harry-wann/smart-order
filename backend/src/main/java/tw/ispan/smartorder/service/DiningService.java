@@ -33,6 +33,8 @@ public class DiningService {
 	private DiningTableRepository dinnerTableRepo;
 	@Autowired
 	private DiningSessionGuestRepository diningSessionGuestRepo;
+	@Autowired
+	private JwtToken jwtToken;
 
 	private DiningTableEntity findTable(String tableNo) {
 		return dinnerTableRepo.findByTableNo(tableNo)
@@ -100,7 +102,7 @@ public class DiningService {
 		}
 		JwtToken.GuestIdentity identity;
 		try {
-			identity = JwtToken.parseGuestToken(sessionToken);
+			identity = jwtToken.parseGuestToken(sessionToken);
 		} catch (JwtException | IllegalArgumentException e) {
 			return Optional.empty();
 		}
@@ -111,13 +113,13 @@ public class DiningService {
 	}
 
 	private JoinTableResponse joinResponse(DiningTableEntity table, DiningSessionGuestEntity guest, String guestToken) {
-		String token = JwtToken.createGuestToken(guest.getDiningSessionId(), guest.getId());
+		String token = jwtToken.createGuestToken(guest.getDiningSessionId(), guest.getId());
 		return new JoinTableResponse(table.getTableNo(), token, guestToken,
 				new JoinTableResponse.Guest(guest.getId(), guest.getDisplayName()));
 	}
 
 	public DiningInfoResponse currentByToken(String token) {
-		Long sessionId = Long.valueOf(JwtToken.parseToken(token));
+		Long sessionId = jwtToken.parseGuestToken(token).sessionId();
 		return current(sessionId);
 	}
 
