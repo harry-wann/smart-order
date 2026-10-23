@@ -267,7 +267,7 @@ export default function Menu() {
           />
         </div>
 
-        <div className="no-scrollbar overflow-x-auto border-b border-line bg-surface">
+        <div className="overflow-x-auto border-b border-line bg-surface">
           <div className="w-max px-4">
             <MenuCategoryTabs
                 category={category}

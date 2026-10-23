@@ -339,7 +339,7 @@ export default function AdminMenu() {
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <div
-            className="no-scrollbar min-h-0 overflow-auto rounded-xl border border-line bg-surface"
+            className="min-h-0 overflow-auto rounded-xl border border-line bg-surface"
             onWheel={event => {
               if (event.shiftKey) {
                 event.currentTarget.scrollTop += event.deltaY || event.deltaX;
