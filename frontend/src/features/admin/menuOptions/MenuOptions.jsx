@@ -135,7 +135,7 @@ export default function MenuOptions() {
       <div className="relative flex min-h-0 min-w-0 flex-1 items-start gap-4 overflow-hidden bg-paper px-6 py-5 font-sans text-ink-900">
       <div
         ref={sidebarRef}
-        className="no-scrollbar max-h-full w-72 shrink-0 self-start touch-pan-y overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]"
+        className="max-h-full w-72 shrink-0 self-start touch-pan-y overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]"
       >
         <OptionGroupSidebar
           groups={groups}
@@ -154,7 +154,7 @@ export default function MenuOptions() {
       ) : currentGroup ? (
         <>
           <div
-            className="no-scrollbar flex min-h-0 min-w-0 flex-1 touch-pan-y flex-col gap-3 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]"
+            className="flex min-h-0 min-w-0 flex-1 touch-pan-y flex-col gap-3 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]"
             style={{ height: sidebarHeight || undefined }}
           >
             <OptionGroupDetail

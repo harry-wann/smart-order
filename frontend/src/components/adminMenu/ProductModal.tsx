@@ -61,7 +61,7 @@ export default function ProductModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/50 backdrop-blur-sm p-4">
-      <div className="no-scrollbar max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-x-hidden overflow-y-auto rounded-xl border border-line bg-surface shadow-(--shadow-pop) flex flex-col transform transition-all">
+      <div className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-x-hidden overflow-y-auto rounded-xl border border-line bg-surface shadow-(--shadow-pop) flex flex-col transform transition-all">
         
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-surface px-6 py-4">
           <h3 className="text-lg font-bold text-ink-900">
