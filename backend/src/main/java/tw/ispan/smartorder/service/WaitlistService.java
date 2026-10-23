@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import tw.ispan.smartorder.dto.RegisterWaitlistRequest;
@@ -70,7 +71,7 @@ public class WaitlistService {
     }
 
     // S-10b 報到開桌：用候位登記的人數開桌，候位改成已入座
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public WaitlistResponse seat(Long id, Long tableId) {
         WaitlistEntity waitlist = findOrThrow(id);
         if (!"WAITING".equals(waitlist.getStatus()) && !"CALLED".equals(waitlist.getStatus())) {

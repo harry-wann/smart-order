@@ -1,52 +1,88 @@
 package tw.ispan.smartorder.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import java.time.LocalDateTime;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import tw.ispan.smartorder.entity.DiningTableEntity;
+import tw.ispan.smartorder.repository.DiningTableRepository;
+import tw.ispan.smartorder.reservation.dto.response.HeldForResponse;
+import tw.ispan.smartorder.reservation.service.TableHoldService;
 
-// 桌況即時推播 TABLE_STATUS：桌子狀態變了，通知所有開著桌況頁的櫃檯
-// 規格：04-API規格.md「TABLE_STATUS → /topic/counter」
+// TABLE_STATUS → /topic/counter。提交後重新讀桌況與保留，訊息才反映真正存下來的狀態。
 @Service
 public class TableStatusNotifier {
 
     public static final String COUNTER_TOPIC = "/topic/counter";
 
-    // 推出去的內容；heldFor（預約保留）是 Harry的部分，這裡先給 null
     public record TableStatusMessage(
             String type,
             Long tableId,
             String tableNo,
             String status,
             String displayStatus,
-            Object heldFor
+            HeldForResponse heldFor
     ) {}
 
-    // Spring 內建的「廣播器」，跟購物車通知用的是同一個
-    @Autowired
-    private SimpMessagingTemplate messagingTemplate;
+    private final SimpMessagingTemplate messagingTemplate;
+    private final DiningTableRepository diningTables;
+    private final TableHoldService tableHoldService;
+    private final TransactionTemplate committedRead;
 
-    // 桌子狀態改完之後呼叫；等交易真的存進資料庫（commit）才推
+    public TableStatusNotifier(
+            SimpMessagingTemplate messagingTemplate,
+            DiningTableRepository diningTables,
+            TableHoldService tableHoldService,
+            PlatformTransactionManager transactionManager) {
+        this.messagingTemplate = messagingTemplate;
+        this.diningTables = diningTables;
+        this.tableHoldService = tableHoldService;
+        this.committedRead = new TransactionTemplate(transactionManager);
+        this.committedRead.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        this.committedRead.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
+        this.committedRead.setReadOnly(true);
+    }
+
     public void notifyAfterCommit(DiningTableEntity table) {
-        TableStatusMessage message = new TableStatusMessage(
-                "TABLE_STATUS",
-                table.getId(),
-                table.getTableNo(),
-                table.getStatus(),
-                table.getStatus(),
-                null);
+        notifyAfterCommit(table.getId());
+    }
 
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+    public void notifyAfterCommit(Long tableId) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()
+                && TransactionSynchronizationManager.isSynchronizationActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
-                    messagingTemplate.convertAndSend(COUNTER_TOPIC, message);
+                    publish(tableId);
                 }
             });
         } else {
-            // 不在交易裡（理論上不會發生），就直接推
+            publish(tableId);
+        }
+    }
+
+    private void publish(Long tableId) {
+        TableStatusMessage message = committedRead.execute(ignored -> diningTables.findById(tableId)
+                .map(table -> {
+                    HeldForResponse heldFor = null;
+                    if ("AVAILABLE".equals(table.getStatus())) {
+                        heldFor = tableHoldService.toHeldFor(
+                                tableHoldService.snapshot(LocalDateTime.now()).heldBy(tableId));
+                    }
+                    return new TableStatusMessage(
+                            "TABLE_STATUS",
+                            table.getId(),
+                            table.getTableNo(),
+                            table.getStatus(),
+                            heldFor == null ? table.getStatus() : "RESERVED",
+                            heldFor);
+                })
+                .orElse(null));
+        if (message != null) {
             messagingTemplate.convertAndSend(COUNTER_TOPIC, message);
         }
     }

@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router'
 import { useEffect, useState } from 'react'
+import { useAdminReservations } from '@/hooks/reservation/useAdminReservations'
 import SOButton from '@/components/SOButton'
 import TopBar from '@/components/dashboard/TopBar'
 import { SvgIconMap } from '@/assets/SvgIconMap'
@@ -50,25 +51,26 @@ function StatItem({ count, label, swatchClass, countClass = 'text-ink-900' }) {
 function TableCard({ table, onCleanClick }) {
   const style = statusStyles[table.status]
   const isOvertime = table.status === 'occupied' && table.minutes > 100
-  // 只有空桌、待清理點了有反應，才顯示手指游標
-  const isClickable = table.status === 'available' || table.status === 'cleaning'
-
   const navigate = useNavigate()
 
   function handleClick() {
-    if (table.status === 'available') {
-            navigate(`/admin/table_overview/${table.id}/open`)
+    if (table.status === 'available' || table.status === 'reserved') {
+      navigate(`/admin/table_overview/${table.id}/open`)
+    } else if (table.status === 'occupied') {
+      navigate(`/admin/table/${table.id}`)
     } else if (table.status === 'cleaning') {
       onCleanClick(table)
     }
   }
 
   return (
-    <div
+    <button
+      type="button"
+      aria-label={`${table.id} 桌，${style.name}${table.status === 'occupied' ? `，用餐 ${table.minutes} 分鐘${isOvertime ? '，超過 100 分鐘' : ''}` : ''}`}
       onClick={handleClick}
-      className={`flex min-h-26.5 flex-col gap-1 rounded-card px-4 py-3 ${style.cardClass} ${
-        isClickable ? 'cursor-pointer' : ''
-      } ${isOvertime ? 'shadow-[inset_0_0_0_3px_var(--color-danger)]' : ''}`}
+      className={`flex min-h-26.5 w-full flex-col gap-1 rounded-card px-4 py-3 text-left ${style.cardClass} cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 ${
+        isOvertime ? 'shadow-[inset_0_0_0_3px_var(--color-danger)]' : ''
+      }`}
     >
       <span
         className={`mb-1 self-start rounded-pill px-2.5 py-0.5 type-caption text-ink-900 ${style.labelClass}`}
@@ -76,25 +78,29 @@ function TableCard({ table, onCleanClick }) {
         {style.name}
       </span>
 
-      <h3 className="type-h2 tabular-nums">{table.id}</h3>
+      <span className="type-h2 tabular-nums">{table.id}</span>
 
       {table.status === 'occupied' && (
         <>
-          <p className="type-caption tabular-nums">
+          <span className="type-caption tabular-nums">
             {table.adults} 大 {table.kids} 小・{table.minutes} 分
-          </p>
+          </span>
           {table.amount != null && (
-            <p className="type-caption font-bold tabular-nums">NT$ {table.amount.toLocaleString()}</p>
+            <span className="type-caption font-bold tabular-nums">NT$ {table.amount.toLocaleString()}</span>
           )}
         </>
       )}
 
-            {table.status === 'cleaning' && table.paidAt && (
-        <p className="type-caption tabular-nums">{table.paidAt} 結清</p>
+      {table.status === 'cleaning' && table.paidAt && (
+        <span className="type-caption tabular-nums">{table.paidAt} 結清</span>
       )}
 
-            {table.status === 'reserved' && table.reservation && <p className="type-caption">{table.reservation}</p>}
-    </div>
+      {table.status === 'reserved' && table.heldFor && (
+        <span className="type-caption">
+          {formatTaipeiTime(table.heldFor.startTime)}・{table.heldFor.name} {table.heldFor.partySize} 位
+        </span>
+      )}
+    </button>
   )
 }
 
@@ -253,8 +259,10 @@ function SyncIndicator({ isLive }) {
 //------------------------------主元件TableOverview()-------------------------------//
 function TableOverview() {
   const navigate = useNavigate()
-  const [tableList, setTableList] = useState([])
+  const [tableData, setTableData] = useState([])
   const [cleaningTable, setCleaningTable] = useState(null)
+  const [now, setNow] = useState(() => new Date())
+  const tableList = tableData.map((table) => toTableCard(table, now))
   const availableCount = tableList.filter((table) => table.status === 'available').length
   const occupiedCount = tableList.filter((table) => table.status === 'occupied').length
   const cleaningCount = tableList.filter((table) => table.status === 'cleaning').length
@@ -262,8 +270,21 @@ function TableOverview() {
 
   const [viewState, setViewState] = useState('loading')
   const [reloadKey, setReloadKey] = useState(0)
-    // 別台櫃檯開桌、清潔完成時，後端推 TABLE_STATUS → 重抓桌況和候位
+  // 別台櫃檯開桌、清潔完成時，後端推 TABLE_STATUS → 重抓桌況和候位
   const isLive = useTableStatusSocket(() => setReloadKey((k) => k + 1))
+
+  // 保留窗只會隨時間開始或結束，沒有桌況事件；每分鐘重抓並讓用餐時間即時前進。
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setNow(new Date())
+      setReloadKey((key) => key + 1)
+    }, 60_000)
+    return () => window.clearInterval(timer)
+  }, [])
+
+  const todayReservationsQuery = useAdminReservations(toLocalDate(now))
+  const pendingCheckInCount = todayReservationsQuery.data
+    ?.filter((reservation) => reservation.status === 'CONFIRMED').length
 
   // 畫面出現時（以及按「重試」時）去後端拿桌況
   useEffect(() => {
@@ -271,7 +292,7 @@ function TableOverview() {
 
     fetchTables(controller.signal)
       .then((data) => {
-        setTableList(data.map(toTableCard))
+        setTableData(data)
         setViewState('ready')
       })
       .catch(() => {
@@ -324,7 +345,7 @@ function TableOverview() {
   return (
       <>
       <TopBar
-        tag="今天 9/13（日）"
+        tag={formatDashboardDate(now)}
         childrenRight={
           <>
             <SyncIndicator isLive={isLive} />
@@ -350,9 +371,9 @@ function TableOverview() {
 
       {/* 正常畫面（cached 也是正常畫面，只是上面多了黃條） */}
       {(viewState === 'ready' || viewState === 'cached') && !showEmpty && (
-        <div className="flex items-start gap-6 p-6">
+        <div className="flex flex-col gap-6 p-4 md:flex-row md:p-6">
           <main className="flex min-w-0 flex-1 flex-col gap-4">
-            <div className="flex items-center gap-6 rounded-card border border-line bg-surface px-5 py-4">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-card border border-line bg-surface px-5 py-4">
               <StatItem count={availableCount} label="空桌" swatchClass="bg-table-available" />
               <StatItem
                 count={occupiedCount}
@@ -368,16 +389,16 @@ function TableOverview() {
                 countClass="text-accent-600"
               />
 
-              <div className="w-px self-stretch bg-line" />
+              <div className="hidden h-8 w-px self-stretch bg-line md:block" />
 
-              <StatItem count={4} label="待報到預約" countClass="text-accent-600" />
+              <StatItem count={pendingCheckInCount ?? '—'} label="待報到預約" countClass="text-accent-600" />
 
-              <div className="w-px self-stretch bg-line" />
+              <div className="hidden h-8 w-px self-stretch bg-line md:block" />
 
               <StatItem count={waitinglist.length} label="組候位中" />
             </div>
 
-            <div className="grid grid-cols-4 gap-card-gap">
+            <div className="grid grid-cols-2 gap-card-gap md:grid-cols-3 xl:grid-cols-4">
               {tableList.map((table) => (
                 <TableCard key={table.id} table={table} onCleanClick={setCleaningTable} />
               ))}
@@ -410,7 +431,7 @@ function TableOverview() {
               </div>
             </section>
           </main>
-          <aside className="w-75 shrink-0" />
+          <aside className="hidden w-75 shrink-0 lg:block" />
 
         </div>
       )}
@@ -427,15 +448,48 @@ function TableOverview() {
 }
 
 // 後端的桌子 → 這個畫面用的格式
-function toTableCard(t) {
+function toTableCard(t, now) {
+  const openedAt = t.openedAt ? new Date(t.openedAt).getTime() : Number.NaN
   return {
     id: t.tableNo,
     tableId: t.tableId,
-    status: t.displayStatus.toLowerCase(),
+    status: (t.displayStatus ?? t.status).toLowerCase(),
     adults: t.adultCount,
     kids: t.childCount,
-    minutes: t.openedAt ? Math.floor((Date.now() - new Date(t.openedAt)) / 60000) : null,
+    minutes: Number.isFinite(openedAt) ? Math.max(0, Math.floor((now.getTime() - openedAt) / 60000)) : null,
+    heldFor: t.heldFor,
   }
+}
+
+function toLocalDate(date) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Taipei',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date)
+  const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]))
+  return `${values.year}-${values.month}-${values.day}`
+}
+
+function formatDashboardDate(date) {
+  const parts = new Intl.DateTimeFormat('zh-TW', {
+    timeZone: 'Asia/Taipei',
+    month: 'numeric',
+    day: 'numeric',
+    weekday: 'short',
+  }).formatToParts(date)
+  const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]))
+  return `今天 ${values.month}/${values.day}（${values.weekday.replace(/^週/, '')}）`
+}
+
+function formatTaipeiTime(value) {
+  return new Intl.DateTimeFormat('zh-TW', {
+    timeZone: 'Asia/Taipei',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(new Date(value))
 }
 
 // 後端 WaitlistEntry → 底部候位小卡用的欄位

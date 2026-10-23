@@ -170,6 +170,14 @@ export async function submitStaffOrder(sessionId: number | string, items: StaffO
   )
   return data
 }
+export type TableHold = {
+  reservationId: number
+  reservationNo: string
+  name: string
+  partySize: number
+  startTime: string
+}
+
 // 後端 TableOverviewResponse 回來的一張桌子
 export type TableOverview = {
   tableId: number
@@ -181,6 +189,7 @@ export type TableOverview = {
   adultCount: number | null
   childCount: number | null
   openedAt: string | null
+  heldFor: TableHold | null
 }
 
 // GET /api/admin/tables：S-02 桌況總覽
@@ -199,6 +208,14 @@ export async function openTable(tableId: number, adultCount: number, childCount:
   const { data } = await employeeClient.post<TableOverview>(`/admin/tables/${tableId}/open`, {
     adultCount,
     childCount,
+  })
+  return data
+}
+
+// GET /api/admin/tables/{id}/qrcode：員工授權讀取，用於列印桌邊 QR。
+export async function fetchTableQrCode(tableId: number) {
+  const { data } = await employeeClient.get<Blob>(`/admin/tables/${tableId}/qrcode`, {
+    responseType: 'blob',
   })
   return data
 }
