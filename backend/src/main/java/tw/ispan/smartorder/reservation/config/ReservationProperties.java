@@ -34,7 +34,7 @@ public class ReservationProperties {
     private long slotMinutes = 30;
     private ZoneId zone = ZoneId.of("Asia/Taipei");
     // 訂位提醒（模擬簡訊）內容裡的店名
-    private String storeName = "火鍋點餐系統";
+    private String storeName = "鼎沸鍋物";
 
     // 一筆訂位佔桌的總長 = 用餐 + 清桌（預設 115 分）。
     // end_time、重疊判斷的查詢範圍、開桌時 115 分鐘內有別筆訂位的提醒窗都用它

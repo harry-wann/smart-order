@@ -74,11 +74,6 @@ public interface ReservationRepository extends JpaRepository<ReservationEntity, 
             """)
     List<CalledWaitlistProjection> findCalledWaitlist(@Param("seats") int seats);
 
-    List<ReservationEntity> findByStatusAndStartTimeGreaterThanEqualAndStartTimeLessThan(
-            ReservationStatus status,
-            LocalDateTime from,
-            LocalDateTime to);
-
     // 報到後客人實際坐哪張桌記在 dining_session，不在 reservation.table_id
     @Query(nativeQuery = true, value = """
             select s.reservation_id as reservationId, t.table_no as tableNo
