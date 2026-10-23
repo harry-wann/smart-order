@@ -17,13 +17,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 // 出菜看板（S-04）的查詢與出餐操作。
 //
@@ -43,9 +41,8 @@ public class KitchenTicketService {
     //   1 鍋底、2 菜盤、3 火鍋料、4 肉品、5 主食、6 飲料甜點
     //   鍋底品項（menu_item.is_soup_base = 1）固定 1，不管放在哪個分類
     //   其他品項用所屬分類的 menu_category.cook_order（店長在菜單管理設定），不看分類名稱，改名也不會亂掉；
-    //   品項或分類查不到時當 2（菜盤），跟資料表的預設值一樣
+    //   品項或分類查不到時當 2（菜盤），跟資料表的預設值、MenuCategoryService 的預設值一樣，直接寫在 findTickets 的 SQL 裡
     // 同一級裡照點餐順序（order_item.id）
-    private static final int DEFAULT_COOK_ORDER = 2;
     private static final int MAX_REASON_LENGTH = 100;
 
     // 「最近完成」分頁（S-04）看最近 60 分鐘內完成的單，最新的在前、最多 50 張。
@@ -84,7 +81,7 @@ public class KitchenTicketService {
 
     // 最近完成分頁：完成時間在最近 60 分鐘內的 SERVED 單，最新的在前、最多 50 張，每張多帶完成時間。
     //   ・只列用餐中（dining_session.status = OPEN）的桌：這個分頁是給還在用餐的桌修正誤勾用的，
-    //     已結帳或取消的桌本來就不能撤回出餐（unserveOrderItem 會回 409 SESSION_CLOSED）
+    //     已結帳或取消的桌不能把已完成的單撤回（unserveOrderItem 會回 409 SESSION_CLOSED）
     //   ・完成時間 = 這張單已出餐品項的 served_at 最大值，也就是最後一道菜出餐的時間。
     //     不用 order_ticket.updated_at：那是任何一欄被改都會跟著變的紀錄欄位，以後單上多改一個欄位就不準了；
     //     served_at 只在出餐時寫入、撤回時清空，意思最明確。
@@ -129,9 +126,9 @@ public class KitchenTicketService {
 
     // 看板（進行中）與最近完成分頁共用這一段查詢：品項格式、單內出餐順序（item_cook_order）都一樣，只差挑哪些單。
     // ticketFilter 只傳這個類別裡寫死的條件，不能放外面來的字串；要帶的值一律寫成 ?，依序放在 filterArgs
+    // （SQL 裡只有 ticketFilter 有 ?）。條件用 replace 放進 {ticketFilter}，不用 formatted：
+    // 以後 SQL 裡加了 LIKE '%…' 或 DATE_FORMAT(…, '%H:%i')，formatted 會把 % 當格式符號，執行時才出錯
     private List<KitchenTicketResponse> findTickets(String ticketFilter, Object... filterArgs) {
-        // 出餐順序的 ?（分類沒設定時的預設值）在 WHERE 前面，所以排第一個，後面才是 ticketFilter 的值
-        Object[] args = Stream.concat(Stream.of(DEFAULT_COOK_ORDER), Arrays.stream(filterArgs)).toArray();
         List<TicketRow> rows = jdbc.query("""
                 SELECT ot.id AS order_id,
                        ot.sequence_no,
@@ -145,7 +142,7 @@ public class KitchenTicketService {
                        oio.value_name_snapshot,
                        CASE
                            WHEN mi.is_soup_base = 1 THEN 1
-                           ELSE COALESCE(mc.cook_order, ?)
+                           ELSE COALESCE(mc.cook_order, 2)
                        END AS item_cook_order
                 FROM order_ticket ot
                 JOIN dining_session ds ON ds.id = ot.dining_session_id
@@ -154,10 +151,10 @@ public class KitchenTicketService {
                 LEFT JOIN menu_item mi ON mi.id = oi.menu_item_id
                 LEFT JOIN menu_category mc ON mc.id = mi.category_id
                 LEFT JOIN order_item_option oio ON oio.order_item_id = oi.id
-                WHERE (%s)
+                WHERE ({ticketFilter})
                   AND oi.status <> 'CANCELLED'
                 ORDER BY ot.placed_at ASC, ot.id ASC, item_cook_order ASC, oi.id ASC, oio.id ASC
-                """.formatted(ticketFilter), (rs, rowNum) -> mapRow(rs), args);
+                """.replace("{ticketFilter}", ticketFilter), (rs, rowNum) -> mapRow(rs), filterArgs);
 
         Map<Long, TicketBuilder> tickets = new LinkedHashMap<>();
         for (TicketRow row : rows) {
@@ -206,7 +203,9 @@ public class KitchenTicketService {
     }
 
     // 撤回已出餐（勾錯了）；單如果因此不再是全部出完，會回到 PREPARING／PENDING，卡片重新出現。
-    // 這桌已結帳或取消就不能撤回：撤回會把單重新打開，已經離開的那桌又出現在看板上，廚房會以為還要出菜
+    // 這桌已結帳或取消時，只擋「已完成（SERVED）的單」：撤回會把單重新打開，已經離開的那桌又出現在看板上，
+    // 廚房會以為還要出菜。結帳不檢查有沒有出完，所以已結帳的桌可能還有 PENDING／PREPARING 的單留在看板上，
+    // 在這種單上誤勾一道要能照常撤回，不然畫面會一直顯示已出餐
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void unserveOrderItem(Long itemId) {
         LockedItem item = lockItem(itemId);
@@ -215,8 +214,8 @@ public class KitchenTicketService {
             // 重送時這桌剛好結帳，不能因此回 409 讓廚房以為沒撤回
             return;
         }
-        if (!"OPEN".equals(item.sessionStatus())) {
-            throw ApiException.conflict("SESSION_CLOSED", "此桌已結帳或取消，不能撤回出餐");
+        if (!"OPEN".equals(item.sessionStatus()) && "SERVED".equals(item.ticketStatus())) {
+            throw ApiException.conflict("SESSION_CLOSED", "此桌已結帳或取消，不能撤回已完成的單");
         }
         if (!"SERVED".equals(item.status()) || "CANCELLED".equals(item.ticketStatus())) {
             throw ApiException.conflict("ITEM_NOT_UNSERVABLE", "已取消或報廢的餐點不能撤回出餐");
@@ -352,7 +351,7 @@ public class KitchenTicketService {
     }
 
     // 拿 session 鎖排隊，回傳鎖住後讀到的這桌狀態（OPEN／PAID／CANCELLED）。
-    // 出餐、整單出完不影響金額，不檢查這桌是否還在用餐；撤回出餐要擋已結帳的桌（見 unserveOrderItem）
+    // 出餐、整單出完不影響金額，不檢查這桌是否還在用餐；撤回出餐要擋已結帳的桌重開已完成的單（見 unserveOrderItem）
     private String lockSession(Long sessionId) {
         return jdbc.query("SELECT status FROM dining_session WHERE id = ? FOR UPDATE",
                 rs -> rs.next() ? rs.getString(1) : null, sessionId);

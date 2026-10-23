@@ -22,6 +22,9 @@ const NO_TICKETS = []
 // 這裡只用在說明文字；要改的話兩邊一起改
 const RECENT_WINDOW_MINUTES = 60
 const RECENT_LIMIT = 50
+// 停在最近完成分頁時每 60 秒重抓一次：結帳不推廚房事件、單超過 60 分鐘也沒有事件，
+// 已結帳的桌和太舊的單要靠定時重抓才會從清單消失
+const RECENT_REFETCH_MS = 60 * 1000
 const ticketGridClass =
   'grid grid-cols-[repeat(auto-fill,minmax(min(100%,17.5rem),1fr))] content-start items-start gap-6 p-8'
 
@@ -157,7 +160,7 @@ function KitchenOverview() {
   // 'active'＝進行中、'recent'＝最近完成
   const [view, setView] = useState('active')
   // 最近完成分頁（S-04）：誤勾最後一道菜、卡片已經淡出的單，在這裡取消勾選就能撤回。
-  // 只在看這個分頁時才抓；停在進行中時推播只會把它標成過期，切過來時再重抓
+  // 只在看這個分頁時才抓（停在進行中時推播只會把它標成過期），看的期間另外定時重抓
   const {
     data: serverRecentTickets = NO_TICKETS,
     isPending: isRecentPending,
@@ -166,7 +169,17 @@ function KitchenOverview() {
     queryKey: recentKey,
     queryFn: () => fetchKitchenTickets('/admin/kitchen/tickets/recent'),
     enabled: view === 'recent',
+    refetchInterval: RECENT_REFETCH_MS,
   })
+
+  // 切到最近完成時清掉上一次的清單再抓，抓到之前顯示載入中：停在進行中的期間這份清單沒有更新，
+  // 可能還有已經結帳的桌或超過 60 分鐘的單，先顯示出來廚師會以為還能撤回。
+  // 先 reset（這時查詢還是停用的，只清資料不會抓），切過去查詢一啟用、沒有資料就會重抓
+  const showRecentView = () => {
+    if (view === 'recent') return
+    void queryClient.resetQueries({ queryKey: recentKey, exact: true })
+    setView('recent')
+  }
 
   const refreshTickets = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: ['kitchen'] })
@@ -332,16 +345,18 @@ function KitchenOverview() {
           >
             進行中 {orderTickets.length} 單
           </button>
-          {/* 按鈕上的數字是 24 小時內完成的單數（completed-count）；分頁裡只列最近 60 分鐘內完成的單 */}
           <button
             type="button"
             aria-pressed={view === 'recent'}
-            onClick={() => setView('recent')}
+            onClick={showRecentView}
             className={viewTabClass(view === 'recent')}
           >
-            最近完成 {completedCount}
+            最近完成
           </button>
         </div>
+        {/* 24 小時內完成的單數（completed-count）。不放在「最近完成」按鈕上：分頁只列最近 60 分鐘、還在用餐的桌，
+            數字放按鈕上會變成「最近完成 37」點進去卻是空的 */}
+        <span className="type-body-sm text-[var(--kds-ink-3)]">24 小時完成 {completedCount} 單</span>
         <span className="flex-1" />
         {isSocketConnected === false && (
           <span role="status" className="type-body font-bold text-[var(--kds-late)]">

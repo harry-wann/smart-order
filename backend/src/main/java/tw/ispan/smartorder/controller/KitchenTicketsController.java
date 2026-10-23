@@ -66,7 +66,7 @@ public class KitchenTicketsController {
         kitchenTicketService.serveOrderItem(itemId);
     }
 
-    // 勾勾取消 - webSocket 事件類型 ITEM_UNSERVED；這桌已結帳或取消回 409 SESSION_CLOSED
+    // 勾勾取消 - webSocket 事件類型 ITEM_UNSERVED；這桌已結帳或取消、而且這張單已完成（SERVED）時回 409 SESSION_CLOSED
     @PatchMapping("/order-items/{itemId}/unserve")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void unserveOrderItem(@PathVariable Long itemId) {
