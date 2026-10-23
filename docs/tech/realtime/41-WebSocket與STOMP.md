@@ -1,5 +1,7 @@
 # WebSocket 與 STOMP
 
+> **本專案的實作**：同桌事件沒有開 `/topic/session/{id}`，而是後端查出這桌的每位客人，用 `convertAndSendToUser` 推到各自的 `/user/queue/cart-updates`（見 [04 API 規格 §3.2](../../spec/04-API規格.md)）。下面的範例用 topic 說明訂閱與重抓的觀念，換成個人 queue 道理相同。
+
 **難度** ★★★☆☆　**用在哪些模組** M2、M3、M4、M5、M6　**哪幾週** 第 3～4 週
 
 ## 一句話

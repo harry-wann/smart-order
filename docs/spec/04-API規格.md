@@ -244,104 +244,102 @@
 
 | 頻道 | 訂閱者 | 權限 |
 |---|---|---|
-| `/topic/session/{sessionId}` | 該桌所有裝置 | 持有該桌用餐權杖 |
+| `/user/queue/cart-updates` | 每位客人自己的信箱（同桌通知、出餐進度、結帳） | 用 `X-Session-Token` CONNECT；伺服器依權杖認出是哪位 guest，只把這桌的事件送給這桌的每位客人 |
 | `/topic/kitchen` | KDS | `KITCHEN` / `MANAGER` |
 | `/topic/counter` | 櫃檯 | `COUNTER` / `MANAGER` |
+| `/topic/billing` | 櫃檯帳單畫面 | `COUNTER` / `MANAGER` |
 | `/topic/menu` | 所有點餐中的裝置 | 任何有效權杖 |
 | `/topic/waitlist` | 櫃檯與候位螢幕 | `COUNTER` / `MANAGER` |
 
-### 3.3 統一事件格式
+> **實作沒有 `/topic/session/{sessionId}`**：早期設計是「整桌訂閱同一個頻道」，實作改成後端查出這桌的每位客人，
+> 用 `convertAndSendToUser("guest-{id}", "/queue/cart-updates", …)` 一位一位送。別桌的人就算知道 sessionId 也收不到，
+> 頻道權限不用再另外比對 sessionId。
 
-```json
-{
-  "type": "NEW_TICKET",
-  "payload": { },
-  "serverTime": "2026-09-13T18:42:11+08:00"
-}
-```
+### 3.3 事件格式
+
+每則事件都有 `type`。實作中有三種外形，前端依 `type` 判斷就好：
+
+| 外形 | 用在哪裡 | 例子 |
+|---|---|---|
+| `{ type, payload, serverTime }` | 出菜事件（`/topic/kitchen` 與推給客人的出餐進度） | `{ "type": "ITEM_SERVED", "payload": { "ticketId": 3301, "itemId": 8790, "servedAt": "…" }, "serverTime": "…" }` |
+| `{ type, payload }` | 候位事件（`/topic/waitlist`、`/topic/counter`） | `{ "type": "WAITLIST_UPDATED", "payload": { "waitingCount": 3 } }` |
+| 扁平：`type` 和欄位放在同一層 | 其他事件（購物車、同桌動態、結帳、菜單、桌況、提醒、帳單） | `{ "type": "MENU_SOLD_OUT", "menuItemId": 7, "soldOut": true }` |
+
+推到 `/user/queue/cart-updates` 的事件裡，**只有購物車、同桌動態與結帳這些扁平事件的最外層帶 `sessionId`**。購物車頁靠它判斷「這是這一桌的購物車變動」，
+所以出餐進度事件刻意不放 `sessionId`，避免被誤當成購物車變動。
 
 ### 3.4 事件類型
 
 | type | 推到哪些頻道 | payload | 前端該做什麼 |
 |---|---|---|---|
-| `CART_UPDATED` | session | `{ version, cart: { items, totalQuantity }, change: { action: ADDED\|UPDATED\|REMOVED, byGuest: "陳小美", byGuestId: 2, itemName, quantity, optionSummary } }`；事件中的 `cart` 是不含目前 guest 權限欄位與個人小計的全桌快照 | **`version` 比本地大才套用 `cart`**（小於等於就整包丟掉，見 3.4.1）；前端依自己的 `guest.id` 對 `addedBy.guestId` 計算 `isOwnItem`、`canEdit` 與本人小計，或重抓個人化的 `GET /me/cart`；`change.action` 是 `ADDED` 且 `change.byGuestId` 不是自己時，跳 C-04b 通知條 |
-| `NEW_TICKET` | session、kitchen | `OrderTicketDto`（含 `quantity`＝這張單的份數加總；推給同桌的那份多帶 `byGuest`、`byGuestId`，櫃檯代客加點是 `"櫃檯"`／`null`，預點轉單兩個都是 `null`） | 加進清單，高亮 2 秒；同桌手機重抓購物車（只清掉送單 guest 的列，其他 guest 列保留）；`byGuest` 不是 `null`、`byGuestId` 也不是自己時，跳 C-04c「王大明 送出 6 項」（N＝payload 的 `quantity`，份數加總） |
+| `CART_UPDATED` | 同桌每位客人（`/user/queue/cart-updates`） | 扁平：`{ sessionId, type }`，**只是「請重抓」的訊號，不帶購物車內容** | 重抓 `GET /me/cart`，回傳的 `cartVersion` 不比本機舊才套用（見 3.4.1）。修改數量、刪除會推 |
+| `ITEM_ADDED` | 同桌每位客人 | 扁平的同桌動態：`{ eventId, sessionId, type, actorDeviceId, actorName, byGuest, byGuestId, itemName, quantity, options: [...], itemCount, amount, occurredAt }` | 重抓購物車；不是自己的動作時跳 C-04b「陳小美 加入 安格斯霜降牛五花 ×1」 |
+| `ORDER_SUBMITTED` | 同桌每位客人 | 同桌動態（欄位同上），`sequenceNo` 是單號，`quantity` 是這張單的**份數加總**；櫃檯代客加點時 `actorName`／`byGuest` 是「櫃檯」、`byGuestId` 與 `actorDeviceId` 是 `null` | 重抓購物車（只清掉送單那位的列，其他人的列保留）；不是自己送的就跳 C-04c「王大明 送出 6 項」；C-08 出餐進度也會重抓 |
+| `NEW_TICKET` | kitchen | `{ ticketId }`（`{ type, payload, serverTime }` 外形） | KDS 重抓看板；同桌手機不收這則，改收 `ORDER_SUBMITTED` |
 | `ITEM_SERVED` | kitchen、同桌客人（見下方「出餐進度事件」） | `{ticketId, itemId, servedAt}` | 該品項狀態改「已出餐」 |
 | `ITEM_UNSERVED` | kitchen、同桌客人 | `{ticketId, itemId}` | 撤回已出餐（勾錯了），品項回到「待製作」 |
 | `ITEM_CANCELLED` | kitchen、同桌客人 | 廚房：`{ticketId, itemId, reason}`；客人：`{ticketId, itemId}` | 品項改「已取消」 |
 | `ITEM_WASTED` | kitchen、同桌客人 | 廚房：`{ticketId, itemId, reason}`；客人：`{ticketId, itemId}` | 品項改「已退菜」，KDS 從卡片拿掉 |
 | `TICKET_SERVED` | kitchen、同桌客人 | `{ticketId}` | 單的品項全部出完（逐項勾完、整單出完，或取消掉最後一個還沒出的品項）；KDS 卡片淡出移除 |
 | `TICKET_CANCELLED` | kitchen、同桌客人 | 廚房：`{ticketId, reason}`；客人：`{ticketId}` | 從清單移除 |
-| `SESSION_UPDATED` | session、counter | `{subtotal, serviceFee, total, status}` | 更新金額顯示 |
-| `SESSION_CLOSED` | session、counter | `{ sessionId, reason: "PAID" \| "CANCELLED" }` | `PAID`：顧客端 C-04 切到「已結帳」面板並清除權杖；`CANCELLED`：**不顯示任何面板**，清掉權杖直接導回 C-00（`/`）；櫃檯更新桌況 |
-| `MENU_SOLD_OUT` | menu | `{menuItemId, name}` | 菜單標灰 + 購物車標紅 |
-| `MENU_RESTOCKED` | menu | `{menuItemId, quantity}` | 恢復可點 |
-| `TABLE_STATUS` | counter | `{tableId, tableNo, status, displayStatus, heldFor}` | 依 `displayStatus` 更新桌況色塊（四種）；開桌、結清、清潔、取消用餐、櫃檯代客取消訂位都會推 |
-| `TABLE_OVERTIME` | counter | `{tableId, tableNo, minutes}` | 標紅閃爍 |
-| `WAITLIST_CALLED` | waitlist | `{ticketNo, partySize}` | 候位螢幕顯示叫號 |
-| `WAITLIST_UPDATED` | waitlist、counter | `{waitingCount}` | 更新候位清單 |
+| `BILL_UPDATED` | billing | 扁平：`{ type, sessionId }` | 櫃檯帳單畫面重抓這桌的明細與金額 |
+| `SESSION_CLOSED` | 同桌每位客人、counter | 扁平：`{ type, sessionId, reason: "PAID" \| "CANCELLED" }` | `PAID`：顧客端 C-04 切到「已結帳」面板並清除權杖；`CANCELLED`：**不顯示任何面板**，清掉權杖直接導回 C-00（`/`）；櫃檯更新桌況 |
+| `MENU_SOLD_OUT`／`MENU_AVAILABLE` | menu | 扁平：`{ type, menuItemId, soldOut }` | 售完：菜單標灰＋購物車標紅；恢復：可以再點 |
+| `MENU_LISTED`／`MENU_UNLISTED` | menu | 扁平：`{ type, menuItemId }` | 品項上架／下架：重抓菜單 |
+| `MENU_CATEGORY_CHANGED` | menu | 扁平：`{ type, categoryId, active }` | 分類啟用／停用：重抓分類與菜單（停用的分類連同品項一起從顧客菜單消失） |
+| `TABLE_STATUS` | counter | 扁平：`{ type, tableId, tableNo, status, displayStatus, heldFor }` | 依 `displayStatus` 更新桌況色塊（四種）；開桌、結清、清潔、取消用餐、櫃檯代客取消訂位都會推 |
+| `TABLE_OVERTIME`／`TABLE_CLEANING_OVERDUE` | counter | 扁平：`{ type, tableId, tableNo, minutes }` | 用餐超時、待清理過久的提醒列 |
+| `WAITLIST_CALLED` | waitlist | `{ type, payload: { ticketNo, partySize } }` | 候位螢幕顯示叫號 |
+| `WAITLIST_UPDATED` | waitlist、counter | `{ type, payload: { waitingCount } }` | 更新候位清單 |
 
 **出餐進度事件**（`ITEM_SERVED`、`ITEM_UNSERVED`、`ITEM_CANCELLED`、`ITEM_WASTED`、`TICKET_SERVED`、`TICKET_CANCELLED`）都在交易提交後才推，同時送兩個地方：
 
 - 廚房：`/topic/kitchen`，payload 照上表的「廚房」那份，取消與報廢帶 `reason`。
-- 同桌客人：**不走 `/topic/session/{id}`**（實作沒有開這個頻道），改推給這桌每一位客人的個人 queue `/user/queue/cart-updates`（跟購物車通知同一條，WebSocket 只用 `X-Session-Token` 連線）。
+- 同桌客人：推給這桌每一位客人的個人 queue `/user/queue/cart-updates`（跟購物車通知同一條，WebSocket 只用 `X-Session-Token` 連線，見 3.2）。
   格式一樣是 3.3 的 `{ type, payload, serverTime }`，**最外層不放 `sessionId`**（購物車頁靠最外層 `sessionId` 判斷購物車通知，這樣才不會被誤當成購物車變動）；
   `reason` 是員工寫給店內看的，**推給客人的 payload 一律拿掉**。C-08 收到這幾種事件只會重抓 `GET /api/dining/orders`，不讀 payload 內容。
 
-**同桌兩個事件的 payload 範例**（推到 `/topic/session/1052`）：
+**同桌事件的範例**（推給這桌每位客人的 `/user/queue/cart-updates`）：
 
 ```json
-{ "type": "CART_UPDATED",
-  "payload": {
-    "version": 7,
-    "cart": { "items": [ ... ], "totalQuantity": 3 },
-    "change": { "action": "ADDED", "byGuest": "陳小美", "byGuestId": 2,
-                "itemName": "安格斯霜降牛五花", "quantity": 1, "optionSummary": "全份" }
-  } }
+{ "type": "CART_UPDATED", "sessionId": 1052 }
 ```
-
-事件推給同桌所有裝置，故 `cart` 是全桌共用快照；`GET /me/cart` 則依呼叫者回傳 `isOwnItem`、`canEdit` 與本人小計，兩者欄位不同。前端套用事件時，用本機 `guest.id` 和每列 `addedBy.guestId` 補上個人顯示狀態；需要權限欄位最新值時重抓個人化 GET。後端仍是修改、刪除與送單權限的最終判斷者。
-`change` 只描述「這次變的是什麼」，給 C-04b 通知條用——整份購物車裡看不出剛剛動的是哪一項。
 
 ```json
-{ "type": "NEW_TICKET",
-  "payload": { "ticketId": 3301, "sequenceNo": 1, "status": "PENDING", "quantity": 6,
-               "byGuest": "王大明", "byGuestId": 1, "items": [ ... ] } }
+{ "eventId": "5c0f…", "sessionId": 1052, "type": "ORDER_SUBMITTED",
+  "actorDeviceId": "d-7f3a…", "actorName": "王大明", "byGuest": "王大明", "byGuestId": 1,
+  "itemName": null, "quantity": 6, "options": [], "sequenceNo": 1, "itemCount": 6,
+  "amount": 1180.00, "occurredAt": "2026-09-13T10:42:11Z" }
 ```
 
-- `optionSummary`：這一列選到的選項值名稱，依選項群組的順序用「・」串起來（例：「全份・加蔥花」）；沒有選項就是 `null`。
-  C-04b 說明那行＝`itemName ×quantity`，`optionSummary` 不是 `null` 就用「・」接在後面（「安格斯霜降牛五花 ×1・全份」），太長由前端截斷加「…」
-- `quantity`（`NEW_TICKET`）：這張單所有品項的**份數加總**，不是列數——白飯 ×2 算 2 項。上面這張單 6 份，C-04c 就是「王大明 送出 6 項」。
+- `quantity`（`ORDER_SUBMITTED`）：這張單所有品項的**份數加總**，不是列數——白飯 ×2 算 2 項。上面這張單 6 份，C-04c 就是「王大明 送出 6 項」。
   全站的「N 項」都是這樣算（見 [01 名詞定義](01-專案總覽.md)）
+- `options`（`ITEM_ADDED`）：這一列選到的選項值名稱，依選項群組的順序排；C-04b 說明那行用「・」串在品名後面（「安格斯霜降牛五花 ×1・全份」），太長由前端截斷加「…」
+- 事件不帶任何 raw guest token，也不帶個人化的 `isOwnItem`、`canEdit` 或小計
 
-#### 3.4.1 `CART_UPDATED` 帶全桌列快照，前端用 `version` 擋舊的
+#### 3.4.1 `CART_UPDATED` 只是訊號，重抓時用 `cartVersion` 擋舊的
 
-購物車小（一桌幾十列），而且同桌每支手機都能讀到全桌列，所以推播直接把**全桌列快照**帶過去。
-各裝置再依自己的 guest 身分標記本人列與唯讀列；本人小計只加總本人列。權限欄位與個人小計屬於個人化 GET，不能放在同一份廣播 payload 中。
+推播只說「這桌的購物車變了」，不帶內容；每支手機收到後重抓個人化的 `GET /me/cart`。
+這樣權限欄位（`isOwnItem`、`canEdit`）與本人小計永遠由後端依呼叫者算好，推播不用顧慮「這份資料是給誰看的」。
 
-`version` 就是 `dining_session.cart_version`（見 [03](03-資料庫設計.md)）。加入／修改／刪除各 +1；成功送出本人列，以及結清或取消時刪除尚未送出的列，也在同一交易內 +1。送出與結清後用 `NEW_TICKET`／`SESSION_CLOSED` 通知手機重抓購物車；GET 回傳的新版本必須高於本機版本，才能套用更新後的全桌購物車。
-前端記住最後套用過的版本，**只有比它大才套用**：
+`cartVersion` 就是 `dining_session.cart_version`（見 [03](03-資料庫設計.md)）。加入／修改／刪除各 +1；成功送出本人列，以及結清或取消時刪除尚未送出的列，也在同一交易內 +1。
+前端記住最後套用過的版本，**重抓回來的版本不比它舊才套用**：
 
 ```js
-let localVersion = 0;
+let latestVersion = 0;
 
-function applyCart(version, cart) {
-  if (version <= localVersion) return;   // 亂序或過期，整包丟掉
-  localVersion = version;
-  setCart(cart);
+function applyCart(data) {
+  if (data.cartVersion < latestVersion) return;   // 比較早發出、卻比較晚回來的舊回應，整包丟掉
+  latestVersion = data.cartVersion;
+  setCart(data.items);
 }
 ```
 
-這一個關卡同時解掉三件事：
-
 | 問題 | 怎麼被解掉 |
 |---|---|
-| 推播亂序（兩支手機同時操作） | 舊的 `version` 比較小，直接丟掉 |
-| 漏收一則（網路閃一下） | 下一則推播帶的是**整份**，自己就補回來了 |
-| 重抓的回應比推播晚到，把新的蓋成舊的 | 重抓回來的資料走同一個 `applyCart`，version 小就不套用 |
-
-最後一點是關鍵：`GET /me/cart` 的回傳也帶 `version`，所以**重抓與推播共用同一個關卡**，
-不會互相覆蓋，不用另外處理。
+| 兩支手機同時操作，推播一前一後到 | 每則推播都觸發重抓，最後一次重抓拿到的就是最新的 |
+| 漏收一則（網路閃一下） | 下一則推播觸發的重抓是**整份**，自己就補回來了 |
+| 先發出的重抓比後發出的晚回來，把新的蓋成舊的 | 舊回應的 `cartVersion` 比較小，直接丟掉 |
 
 **什麼時候還是要重抓？** 推播只能補「之後」發生的事，補不了「沒連上的那段」：
 
@@ -356,11 +354,11 @@ function applyCart(version, cart) {
 1. **推播要在資料庫交易「提交之後」才發**，否則前端收到通知去查卻查不到資料。
 2. **前端每次（重新）連上都要重抓一次完整資料**。WebSocket 保證「快」，不保證「不漏」。
 
-> **自己的動作不通知自己**：`CART_UPDATED` 與 `NEW_TICKET` 都帶 `byGuestId`（`dining_session_guest.id`），前端跟 join 時拿到的 `guest.id` 比對，
-> 相同就只更新畫面、不跳 C-04b／C-04c。**不要比 `byGuest` 名稱**——會員暱稱可能重複。
-> 櫃檯代客加點不經過購物車，`byGuest` 是「櫃檯」、`byGuestId` 是 `null`，同桌照樣跳「櫃檯 送出 2 項」；
-> 預點轉單發生在開桌當下，同桌還沒有手機加入，兩個都是 `null`，不跳通知。
-> 送出點餐**不另推** `CART_UPDATED`：同桌收到 `NEW_TICKET` 就知道提交者的列已送出，其他 guest 的列仍保留，重抓即可。
+> **自己的動作不通知自己**：同桌動態（`ITEM_ADDED`、`ORDER_SUBMITTED`）帶 `actorDeviceId` 與 `byGuestId`。
+> 目前前端用 `actorDeviceId` 跟本機裝置識別碼比對，相同就只更新畫面、不跳 C-04b／C-04c。**不要比 `byGuest` 名稱**——會員暱稱可能重複。
+> （`byGuestId` 是 `dining_session_guest.id`，比裝置識別碼更準；之後改成比對 join 時拿到的 `guest.id` 也可以。）
+> 櫃檯代客加點不經過購物車，`byGuest` 是「櫃檯」、`byGuestId` 與 `actorDeviceId` 是 `null`，同桌照樣跳「櫃檯 送出 2 項」。
+> 送出點餐**不另推** `CART_UPDATED`：同桌收到 `ORDER_SUBMITTED` 就重抓，提交者的列已送出，其他 guest 的列仍保留。
 >
 > **預約保留開始或結束的那一刻沒有事件**（它是算出來的，沒有排程去推）。所以櫃檯桌況頁除了收 `TABLE_STATUS`，
 > 還要每 60 秒重抓一次 `GET /api/admin/tables`，最多晚一分鐘換色；按開桌時後端會重算，不會因為畫面舊而開錯。
@@ -679,7 +677,7 @@ X-Device-Id: 7f1c2a9e-4b6d-4e2a-9c1f-2d8e5a0b3c71
 8. 建立 ticket（`submitted_by_guest_id` = 通過驗證、按送出的 guest）+ items + item options；只包含該 guest 的列。**以菜單現價重算**並寫入名稱與價格快照（`cart_item.unit_price` 只給畫面看，不拿來算錢）
 9. **只刪掉這位 guest 已送出的 `cart_item`，保留同桌其他 guest 的列，並將 `dining_session.cart_version` +1**（同一個交易；讓各裝置能辨識購物車變更）
 10. 在同一把 session 鎖內更新 `dining_session.subtotal`；`sequence_no` 也在這把鎖保護下遞增
-11. **交易提交後**才推 `NEW_TICKET`（帶 `byGuest`、`byGuestId`；`quantity` 是這張單的份數加總，C-04c「送出 N 項」用它）到 `/topic/session/{id}` 和 `/topic/kitchen`；前端收到後重抓 `/me/cart` 並套用較新的 `version`
+11. **交易提交後**才推：`NEW_TICKET`（`{ ticketId }`）到 `/topic/kitchen`；`ORDER_SUBMITTED`（帶 `byGuest`、`byGuestId`；`quantity` 是這張單的份數加總，C-04c「送出 N 項」用它）到這桌每位客人的 `/user/queue/cart-updates`；手機收到後重抓 `/me/cart`，`cartVersion` 不比本機舊才套用
 
 **不同 guest 同時送出**：兩筆請求搶同一列 session 鎖，但各自讀取自己的購物車列；兩人都有待送列時各建立一張單，鎖依序保護 `sequence_no` 與帳單重算，刪除時只清各自已送列。**同一 guest 雙送**：先取得鎖的請求建立一張單並清掉本人列；後到請求重讀後得到空集合，回 `409 CART_EMPTY`。所以不會重複建立同一 guest 的單。**第 3 步一定要在第 2 步之後**，否則同一 guest 的兩個請求可能都讀到同一批列。
 
@@ -741,7 +739,7 @@ GET /api/dining-sessions/me/cart
 - 加入時就先驗必選群組（`400 OPTION_REQUIRED`）與售完標記（`409 ITEM_SOLD_OUT`）；真正的庫存檢查仍在送出時
 - session 不是 `OPEN` → `409 SESSION_CLOSED`；目標列不屬於這個 session／已不存在 → `404 NOT_FOUND`；列存在但不是目前 guest 的 → `403 CART_ITEM_FORBIDDEN`，前端重抓購物車
 - `totalQuantity` 範例是 3：鴛鴦鍋底 ×1 ＋ 美國牛五花 ×2，**算份數不算列數**（2 列、3 項）
-- 每次寫入，`cart_version` +1，**交易提交後**推 `CART_UPDATED` 到 `/topic/session/{id}`，payload 帶 `version`＋全桌列快照＋`change`（見 3.4.1）；事件不帶個人化的 `isOwnItem`、`canEdit` 或小計。各手機比對 `version` 後依本機 guest 身分標記本人列並計算本人小計；需要時重抓個人化 `GET /me/cart`。`change.action` 是 `ADDED` 時跳通知條（`change.byGuestId` 是自己就不跳）。事件不包含任何 raw guest token
+- 每次寫入，`cart_version` +1，**交易提交後**推給這桌每位客人的 `/user/queue/cart-updates`：加入是同桌動態 `ITEM_ADDED`（跳 C-04b 通知條，自己的動作不跳），修改、刪除是 `CART_UPDATED` 訊號（見 3.4、3.4.1）。各手機收到後重抓個人化的 `GET /me/cart`，`cartVersion` 不比本機舊才套用。事件不包含任何 raw guest token
 
 ### 4.6 本桌訂單
 
@@ -813,7 +811,7 @@ Authorization: Bearer <員工 JWT>
    錯誤回應多帶一個 `bill`（格式同下面的帳單明細），前端用它重畫
 4. 有帶 `memberId` → 寫進 `dining_session.member_id`（已經綁了別的會員 → `409 ALREADY_ATTACHED`）
 5. `dining_session` → `PAID`、桌位 → `CLEANING`、寫一筆 `payment`（`status = SUCCESS`，`method` 照 body）、該桌用餐權杖全部失效、整桌購物車刪掉
-6. **交易提交後**推 `SESSION_CLOSED`（`{ sessionId, reason: "PAID" }`）到 `/topic/session/{id}` 與 `/topic/counter`
+6. **交易提交後**推 `SESSION_CLOSED`（`{ type, sessionId, reason: "PAID" }`）給這桌每位客人的 `/user/queue/cart-updates` 與 `/topic/counter`
 
 **前端（S-03 → S-03b）**：付款按鈕三顆「現金／信用卡／條碼」，**三顆都走同一個倒數對話框**，只有標題跟著方式變：
 現金「收款中，請把現金放進收銀機」、信用卡「信用卡付款中」、條碼「條碼付款中」。
@@ -860,7 +858,7 @@ S-03 的「取消該次用餐」，**僅 MANAGER**，給客人沒點餐就離開
 1. `SELECT ... FOR UPDATE` 鎖住這筆 `dining_session`；不是 `OPEN` → `409 SESSION_CLOSED`
 2. 這桌已經有任何一張 `order_ticket` → `409 SESSION_HAS_ORDERS`「已經有點餐紀錄，請改用結帳」
 3. session → `CANCELLED`、桌位**直接回 `AVAILABLE`**（沒用過，不用清潔）、權杖全部失效、刪掉整桌購物車
-4. **交易提交後**推 `SESSION_CLOSED`（`{ sessionId, reason: "CANCELLED" }`）到 `/topic/session/{id}` 與 `/topic/counter`，另推 `TABLE_STATUS`
+4. **交易提交後**推 `SESSION_CLOSED`（`{ type, sessionId, reason: "CANCELLED" }`）給這桌每位客人的 `/user/queue/cart-updates` 與 `/topic/counter`，另推 `TABLE_STATUS`
 
 顧客端收到 `reason: "CANCELLED"`：**不顯示任何面板**，清掉權杖直接導回 C-00（`/`）。`PAID` 才顯示 C-04「已結帳」面板。
 

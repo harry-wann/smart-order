@@ -204,19 +204,19 @@ A7 沒有獨立畫面，C-04 照樣標基礎，人氣區塊是進階這件事只
 > 共鍋是多人同時點餐，別人加了什麼、送出了沒有，不能只靠自己去翻購物車。
 
 - 通知條從上方滑下、蓋在 appbar 上，停 4 秒自己收回，**不用客人關掉**
-- 兩種內容，資料都來自 WebSocket `/topic/session/{id}`：
-  - **C-04b 有人加入購物車**：收到 `CART_UPDATED` 且 `action = ADDED` 才跳，標題「陳小美 加了一樣東西」、說明「安格斯霜降牛五花 ×1・全份」（`byGuest`、`itemName`、`quantity`、`optionSummary`）；
-    `UPDATED`／`REMOVED` 不跳通知條，只更新購物車角標
-  - **C-04b 說明行的組法**：「品名 ×數量」，`optionSummary` 有值就用「・」接在後面。
-    `optionSummary` 是這一列已選選項用「・」串起來的字（例「全份・加蔥花」），沒有選項是 `null`，就只寫「高麗菜 ×1」。
+- 兩種內容，資料都來自每位客人自己的 WebSocket 信箱 `/user/queue/cart-updates`（見 04 §3.2、§3.4）：
+  - **C-04b 有人加入購物車**：收到同桌動態 `ITEM_ADDED` 才跳，標題「陳小美 加了一樣東西」、說明「安格斯霜降牛五花 ×1・全份」（`byGuest`、`itemName`、`quantity`、`options`）；
+    修改數量、刪除推的是 `CART_UPDATED` 訊號，不跳通知條，只重抓購物車、更新角標
+  - **C-04b 說明行的組法**：「品名 ×數量」，`options` 有值就用「・」串起來接在後面。
+    `options` 是這一列已選選項的名稱陣列（例 `["全份", "加蔥花"]` → 「全份・加蔥花」），沒有選項是空陣列，就只寫「高麗菜 ×1」。
     說明行**只佔一行**，放不下就在尾端截斷加「…」（前端 CSS `text-overflow: ellipsis`；後端照樣送完整字串，不在後端截）
-  - **C-04c 有人送出訂單**：收到送單事件 `NEW_TICKET`（推給同桌的那份多帶 `byGuest`、`byGuestId`），標題「第 2 單已送出廚房」、說明「王大明 送出 3 項・NT$ 460」；
-    **「N 項」是這張單的份數加總**（事件 payload 的 `quantity`）：第 2 單是安格斯霜降牛五花 ×1＋白飯 ×2，算 3 項，不是 2 列
-- **自己的動作不通知自己**：`CART_UPDATED` 與 `NEW_TICKET` 都帶 `byGuestId`（`dining_session_guest.id`），
-  前端跟這支手機掃碼加入時拿到的 guest id（`POST /api/dining-sessions/join` 回的 `guest.id`）比對，**相同就只更新畫面**（角標、購物車），不跳通知條。
-  比 id 不比名字：會員暱稱可能重複
-- **櫃檯代客加點**（S-03）不經過整桌購物車，送單事件的 `byGuest` 是「**櫃檯**」、`byGuestId` 是 `null`，
-  所以同桌每支手機都會跳「櫃檯 送出 3 項」；預點轉單（報到開桌當下，還沒有手機加入）兩個都是 `null`，不跳通知
+  - **C-04c 有人送出訂單**：收到同桌動態 `ORDER_SUBMITTED`（帶 `byGuest`、`byGuestId`、`sequenceNo`、`amount`），標題「第 2 單已送出廚房」、說明「王大明 送出 3 項・NT$ 460」；
+    **「N 項」是這張單的份數加總**（事件的 `quantity`）：第 2 單是安格斯霜降牛五花 ×1＋白飯 ×2，算 3 項，不是 2 列
+- **自己的動作不通知自己**：`ITEM_ADDED` 與 `ORDER_SUBMITTED` 都帶 `actorDeviceId` 與 `byGuestId`（`dining_session_guest.id`）。
+  目前前端用 `actorDeviceId` 跟這支手機的裝置識別碼比對，**相同就只更新畫面**（角標、購物車），不跳通知條；
+  比 id 不比名字：會員暱稱可能重複（之後可改成比對掃碼加入時拿到的 `guest.id`，更準）
+- **櫃檯代客加點**（S-03）不經過整桌購物車，`ORDER_SUBMITTED` 的 `byGuest` 是「**櫃檯**」、`byGuestId` 與 `actorDeviceId` 是 `null`，
+  所以同桌每支手機都會跳「櫃檯 送出 3 項」
 - 「誰」（`byGuest`）是 `dining_session_guest.display_name`：有登入會員用會員暱稱，沒登入就依加入這桌的順序叫「客人 1」「客人 2」…
   （掃碼加入取得伺服器核發的 `guestToken`，後續以 `X-Guest-Token` 辨識本人；`X-Device-Id` 只作裝置資訊，不可用來恢復或冒用他人 guest）
 - 後來的蓋掉前一則，不堆疊
