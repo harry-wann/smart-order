@@ -767,6 +767,16 @@ seated = {r[0]: r[10] for r in waitlist.rows}   # id → dining_session_id
 for row in waitlist.rows:
     row[10] = None
 parts.append(f'\n-- waitlist（{len(waitlist.rows)} 筆）\n' + waitlist.sql())
+parts.append("""
+-- The seeded expired ticket was marked by the simulated scheduler at its deadline.
+UPDATE waitlist SET expired_at = called_at + INTERVAL 10 MINUTE WHERE status = 'EXPIRED';
+
+-- Seed may be rerun without rebuilding schema; keep the ticket counter after the highest A number.
+UPDATE waitlist_ticket_counter SET next_no = (
+  SELECT GREATEST(1, COALESCE(MAX(CAST(SUBSTRING(ticket_no, 2) AS UNSIGNED)), 0) + 1)
+  FROM waitlist WHERE ticket_no REGEXP '^[Aa][0-9]+$'
+) WHERE id = 1;
+""")
 for tbl in (session, guest, cart_item, cart_item_option, ticket, order_item, order_item_option, payment):
     parts.append(f'\n-- {tbl.name}（{len(tbl.rows)} 筆）\n' + tbl.sql())
 for wid, sid in seated.items():

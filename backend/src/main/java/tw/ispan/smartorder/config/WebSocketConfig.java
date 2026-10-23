@@ -61,11 +61,14 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                     String destination = headers.getDestination();
                     boolean kitchenStaff = "/topic/kitchen".equals(destination)
                             && isKitchenStaff(headers.getUser());
+                    boolean waitlistStaff = "/topic/waitlist".equals(destination)
+                            && isWaitlistStaff(headers.getUser());
                     // 桌況公開推播；菜單狀態限已登入者，購物車通知使用個人 queue。
                     if (!"/topic/counter".equals(destination)
                             && !("/topic/menu".equals(destination) && headers.getUser() != null)
                             && !("/user/queue/cart-updates".equals(destination) && headers.getUser() != null)
-                            && !kitchenStaff) {
+                            && !kitchenStaff
+                            && !waitlistStaff) {
                         throw new IllegalArgumentException("無法訂閱此通知");
                     }
                 }
@@ -79,6 +82,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
             return false;
         }
         return "KITCHEN".equals(staff.role()) || "MANAGER".equals(staff.role());
+    }
+
+    private boolean isWaitlistStaff(java.security.Principal principal) {
+        if (!(principal instanceof StaffWebSocketPrincipal staff)) {
+            return false;
+        }
+        return "COUNTER".equals(staff.role()) || "MANAGER".equals(staff.role());
     }
 
     private record StaffWebSocketPrincipal(Long id, String role) implements java.security.Principal {

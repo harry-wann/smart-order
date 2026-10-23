@@ -1,0 +1,207 @@
+{
+  "label": "iris-waitlist-flow",
+  "commit": "e4c9693",
+  "testedAt": "2026-10-23T11:04:25.363Z",
+  "passed": true,
+  "resultCount": 41,
+  "waitlistCheckCount": 26,
+  "routeCheckCount": 15,
+  "sanitized": true,
+  "notes": [
+    "Waitlist checks ran at 1024x768, the admin minimum width in docs/ui/10-UI-UX規格.md section 3.",
+    "Three windows: counter desk A (COUNTER), desk B (MANAGER) and the call display opened from desk A.",
+    "The seat request was held with page.route only to test the busy guard; the real backend response was then delivered.",
+    "One overdue ticket had called_at moved back 11 minutes with SQL; the display was refreshed once because SQL changes send no push.",
+    "Route checks visit 15 existing customer and admin pages at 1440px/390px and fail on page errors or API 5xx."
+  ],
+  "results": [
+    {
+      "path": "/admin/table_overview",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/seats",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/waitlist",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/reservations",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/kitchen",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/menu",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/options",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/table/A03",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/order/menu",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/order/cart/50",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/order/history",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/member/login",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/reserve/guest",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/reserve/datetime",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "name": "Iris waitlist browser: display opens in its own window and S-10 stays open",
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist browser: display is a full-page screen without the admin side bar",
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist browser: deskA shows the live WebSocket connection",
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist browser: deskB shows the live WebSocket connection",
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist browser: display shows the live WebSocket connection",
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist browser: stats match the list and today summary",
+      "passed": true,
+      "detail": "7 組候位中 3 已叫號待報到 14 分・平均等待 1 今日過號 重新整理"
+    },
+    {
+      "name": "Iris waitlist browser: take-number stays disabled with only three phone digits",
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist browser: UI registration adds the real ticket row",
+      "passed": true,
+      "detail": "A19"
+    },
+    {
+      "name": "Iris waitlist browser: second desk shows the new ticket through WAITLIST_UPDATED without reload",
+      "passed": true,
+      "detail": "99ms"
+    },
+    {
+      "name": "Iris waitlist browser: display announces the called number in real time",
+      "passed": true,
+      "detail": "137ms"
+    },
+    {
+      "name": "Iris waitlist browser: display lists the called ticket",
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist browser: second desk sees the called status without reload",
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist browser: S-10 shows the remaining check-in minutes",
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist browser: recall sends the backend request and re-announces on the display",
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist browser: recall keeps the original called_at deadline",
+      "passed": true,
+      "detail": "2026-10-23 19:04:22.617"
+    },
+    {
+      "name": "Iris waitlist browser: Esc and backdrop do not close the dialog while the seat request is in flight",
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist browser: seat onto the table another desk just opened is rejected by the backend",
+      "passed": true,
+      "detail": "409"
+    },
+    {
+      "name": "Iris waitlist browser: table taken by another desk: error stays in dialog, list is refetched, nothing is auto-selected",
+      "passed": true,
+      "detail": "A04 gone"
+    },
+    {
+      "name": "Iris waitlist browser: second choice seats the party on the real table",
+      "passed": true,
+      "detail": "B06"
+    },
+    {
+      "name": "Iris waitlist browser: second desk and display drop the seated ticket without reload",
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist browser: ticket already seated elsewhere: dialog closes and S-10 shows why",
+      "passed": true,
+      "detail": "這組候位已經入座了\n重試"
+    },
+    {
+      "name": "Iris waitlist browser: abandon removes the ticket on both desks",
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist browser: overdue CALLED row shows no seat or recall buttons (called_at aged 11 min in SQL)",
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist browser: display hides a call whose 10 minutes have passed even before it is marked EXPIRED",
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist browser: manual expiry removes the overdue ticket on both desks through WebSocket",
+      "passed": true
+    },
+    {
+      "name": "Iris waitlist browser: no page errors or API 5xx on the three pages",
+      "passed": true
+    }
+  ]
+}

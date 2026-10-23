@@ -36,6 +36,7 @@ DROP TABLE IF EXISTS cart_item;
 DROP TABLE IF EXISTS dining_session_guest;
 DROP TABLE IF EXISTS dining_session;
 DROP TABLE IF EXISTS waitlist;
+DROP TABLE IF EXISTS waitlist_ticket_counter;
 DROP TABLE IF EXISTS reservation;
 DROP TABLE IF EXISTS dining_table;
 DROP TABLE IF EXISTS menu_item_option_group;
@@ -225,13 +226,23 @@ CREATE TABLE waitlist (
   status            VARCHAR(20)     NOT NULL DEFAULT 'WAITING' COMMENT 'WAITING / CALLED / SEATED / ABANDONED / EXPIRED',
   called_at         DATETIME(3)     NULL     COMMENT '排程從這裡算 10 分鐘過號',
   seated_at         DATETIME(3)     NULL,
+  expired_at        DATETIME(3)     NULL,
   dining_session_id BIGINT UNSIGNED NULL     COMMENT '報到後綁定（外鍵在 dining_session 建好後補上）',
   created_at        DATETIME(3)     NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at        DATETIME(3)     NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (id),
+  UNIQUE KEY uk_waitlist_ticket_no (ticket_no),
   KEY idx_waitlist_status (status, created_at),
   KEY idx_waitlist_called (called_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='候位';
+
+-- 取號需序列列鎖；seed.sql 重置時會依假資料重新設定 next_no。
+CREATE TABLE waitlist_ticket_counter (
+  id       TINYINT UNSIGNED NOT NULL,
+  next_no  BIGINT UNSIGNED  NOT NULL,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='候位 A 號下一序號';
+INSERT INTO waitlist_ticket_counter (id, next_no) VALUES (1, 1);
 
 -- ----------------------------------------------------------------------------
 -- 4. 用餐與點餐
@@ -257,6 +268,7 @@ CREATE TABLE dining_session (
   updated_at     DATETIME(3)     NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (id),
   UNIQUE KEY uk_dining_session_token (session_token),
+  UNIQUE KEY uk_dining_session_waitlist (waitlist_id),
   KEY idx_dining_session_table (table_id, status),
   KEY idx_dining_session_member (member_id, opened_at),
   KEY idx_dining_session_reservation (reservation_id),

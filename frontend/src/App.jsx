@@ -31,6 +31,7 @@ import TableOpen from './features/admin/table/TableOpen'
 import SeatManagement from './features/admin/table/SeatManagement'
 import KitchenOverview from './features/admin/kitchen/KitchenOverview'
 import WaitlistManagement from './features/admin/waitlist/WaitlistManagement'
+import WaitlistDisplay from './features/admin/waitlist/WaitlistDisplay'
 import ReservationManagement from './features/admin/reservation/ReservationManagement'
 import TableDetail from './features/admin/table/TableDetail'
 import MenuOptions from './features/admin/menuOptions/MenuOptions'
@@ -98,6 +99,8 @@ function App() {
 
       {/* 店家端 - 員工登入是整頁版面，不套 DashboardLayout */}
       <Route path="/admin/login" element={<Login />} />
+      {/* 店家端 - 候位叫號螢幕給客人看，整頁版面不帶側欄 */}
+      <Route path="/admin/waitlist/display" element={<WaitlistDisplay />} />
 
       {/* 店家端頁面路徑 */}
       <Route path="/admin" element={<DashboardLayout />}>

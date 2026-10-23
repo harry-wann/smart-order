@@ -447,6 +447,15 @@ INSERT INTO waitlist (id, ticket_no, contact_name, contact_phone, adult_count, c
   (4, 'A13', '李小姐', '5210', 3, 1, 4, 'CALLED', (@now - INTERVAL 2 MINUTE), NULL, NULL, (@now - INTERVAL 3 MINUTE)),
   (5, 'A14', '張先生', '7724', 6, 0, 6, 'WAITING', NULL, NULL, NULL, (@now - INTERVAL 2 MINUTE));
 
+-- The seeded expired ticket was marked by the simulated scheduler at its deadline.
+UPDATE waitlist SET expired_at = called_at + INTERVAL 10 MINUTE WHERE status = 'EXPIRED';
+
+-- Seed may be rerun without rebuilding schema; keep the ticket counter after the highest A number.
+UPDATE waitlist_ticket_counter SET next_no = (
+  SELECT GREATEST(1, COALESCE(MAX(CAST(SUBSTRING(ticket_no, 2) AS UNSIGNED)), 0) + 1)
+  FROM waitlist WHERE ticket_no REGEXP '^[Aa][0-9]+$'
+) WHERE id = 1;
+
 -- dining_session（57 筆）
 INSERT INTO dining_session (id, table_id, member_id, reservation_id, waitlist_id, session_token, adult_count, child_count, status, subtotal, service_fee, total, cart_version, opened_at, closed_at, created_at) VALUES
   (1, 3, NULL, 1, NULL, '4c6ee6aabe659a754449708c4f6ac194f22c20c3ec2e17a2948e14b3515fcaa1', 4, 0, 'PAID', 2875, 287.50, 3162.50, 0, (TIMESTAMP(@today - INTERVAL 2 DAY, '19:00:00') - INTERVAL 1 MINUTE), ((TIMESTAMP(@today - INTERVAL 2 DAY, '19:00:00') - INTERVAL 1 MINUTE) + INTERVAL 102 MINUTE), (TIMESTAMP(@today - INTERVAL 2 DAY, '19:00:00') - INTERVAL 1 MINUTE)),
