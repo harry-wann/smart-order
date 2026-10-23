@@ -15,7 +15,7 @@
     </nav>
     <p class="breadcrumb"><a href="../index.html">成員索引</a> ／ Vincent</p>
     <header class="person-header">
-      <div class="meta-row"><span class="scope-tag">工作包 A</span><span class="status">整理中</span></div>
+      <div class="meta-row"><span class="scope-tag">工作包 A · 結帳模組 M6</span><span class="status">付款已驗證；原 A 會員登入整理中</span></div>
       <h1>Vincent｜顧客入口、會員流程與員工登入畫面</h1>
     </header>
     <main class="content-stack">
@@ -23,19 +23,20 @@
         <span class="section-kicker">功能範圍</span>
         <h2>工作包 A</h2>
         <ul class="scope-list"><li>顧客入口與掃碼進入</li><li>手機驗證、會員資料補填與會員中心</li><li>線上訂位入口與匿名訂位資料收集；送出訂位由工作包 E 接續</li><li>員工登入畫面；登入底層由共用技術地基提供</li></ul>
+        <p class="intro-note">以上保留工作包 A 原範圍。Vincent 另外實際新增結帳模組 M6（第六個功能模組）的手機付款跨包整合；付款文章記錄已合併修正與驗證，不代表工作包 A 的會員登入整理已完成。</p>
       </section>
       <section class="section-card" id="articles">
         <span class="section-kicker">文章索引</span>
         <h2>工作包紀錄</h2>
-        <div class="article-links"><span class="muted">整理中</span></div>
+        <div class="article-links"><a href="payment-integration.html">結帳模組 M6：手機付款與全桌結清的一致性</a><span class="status">已驗證 · 97391a4</span></div>
       </section>
       <section class="section-card">
         <span class="section-kicker">整理進度</span>
         <h2>技術亮點、報告與履歷</h2>
         <div class="evidence-grid">
-          <div class="note-card"><h3>工作包技術亮點</h3><p>整理中</p></div>
-          <div class="note-card report"><h3>報告建議</h3><p>報告整理中</p></div>
-          <div class="note-card feedback"><h3>履歷建議</h3><p>整理中</p></div>
+          <div class="note-card"><h3>手機付款技術亮點</h3><p>結帳模組 M6 的手機付款跨包新增已完成指定案例驗證：帳單採共用金額規則，送出時比對客人確認的總額；待確認付款會重用同一筆交易，結果查詢驗證原用餐憑證與裝置，成功回呼後再同步清除全桌未送購物車並通知同桌。</p></div>
+          <div class="note-card report"><h3>報告建議</h3><p>示範帳單顯示 528 元後，另一位同桌客人加點使帳單成為 1,056 元；用舊金額付款收到 409 後重新載入，確認新總額再繼續。接著展示本機簽章回呼，以及第二位客人收到全桌結帳通知。說明這是本機測試環境，沒有對綠界送出表單或實際扣款。</p></div>
+          <div class="note-card feedback"><h3>履歷建議</h3><p>可寫：「參與跨包手機付款整合，補上預期金額核對、待確認付款保護與付款結果身分驗證，並以本機回呼及瀏覽器案例驗證同桌結帳同步。」工作包 A 的會員登入整理仍在進行中，請分開呈現。</p></div>
         </div>
       </section>
       <footer class="page-footer"><div class="link-row"><a class="subtle-link" href="../index.html">← 回成員索引</a></div></footer>
