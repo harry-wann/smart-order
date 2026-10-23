@@ -1,0 +1,131 @@
+{
+  "label": "vincent-remote-develop-sync",
+  "commit": "e46a4fd",
+  "mergeCommit": "d733f0a",
+  "testedAt": "2026-10-23T11:11:32.738Z",
+  "passed": true,
+  "sanitized": true,
+  "notes": [
+    "beforeFix ran with Entrance.jsx from the merge commit (d733f0a) and is expected to fail: it reproduces the move to A03.",
+    "Entrance checks ran at 390x844 with a guest already joined to another occupied table; route checks are the existing 15-page smoke."
+  ],
+  "beforeFix": [
+    {
+      "name": "Entrance browser: guest seated at A02 taps the QR hint and stays on the entrance page",
+      "passed": false,
+      "detail": "/order/checkin/A03"
+    },
+    {
+      "name": "Entrance browser: guest keeps the A02 ordering session after tapping the hint",
+      "passed": false,
+      "detail": "token cleared"
+    },
+    {
+      "name": "Entrance browser: \"我的預約\" opens the reservation list",
+      "passed": true,
+      "detail": "/member/reservations"
+    },
+    {
+      "name": "Entrance browser: no page errors",
+      "passed": true
+    }
+  ],
+  "afterFix": [
+    {
+      "name": "Entrance browser: guest seated at A02 taps the QR hint and stays on the entrance page",
+      "passed": true,
+      "detail": "/"
+    },
+    {
+      "name": "Entrance browser: guest keeps the A02 ordering session after tapping the hint",
+      "passed": true,
+      "detail": "token kept"
+    },
+    {
+      "name": "Entrance browser: \"我的預約\" opens the reservation list",
+      "passed": true,
+      "detail": "/member/reservations"
+    },
+    {
+      "name": "Entrance browser: no page errors",
+      "passed": true
+    }
+  ],
+  "routes": [
+    {
+      "path": "/admin/table_overview",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/seats",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/waitlist",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/reservations",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/kitchen",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/menu",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/options",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/table/A03",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/order/menu",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/order/cart/50",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/order/history",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/member/login",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/reserve/guest",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/reserve/datetime",
+      "passed": true,
+      "errors": []
+    }
+  ]
+}
