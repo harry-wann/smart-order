@@ -29,10 +29,23 @@ public class PaymentEntity {
     @Column(name = "amount")
     private BigDecimal amount;
 
-    // PENDING / SUCCESS / FAILED / REFUNDED
+    // PENDING / SUCCESS / FAILED / REQUIRES_REVIEW / REFUNDED
     @Column(name = "status")
     private String status;
 
     @Column(name = "paid_at")
     private LocalDateTime paidAt;
+
+    @Column(name = "transaction_no")
+    private String transactionNo;
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
 }

@@ -20,6 +20,8 @@ import java.util.TreeMap;
 /** Cancellation of unserved food. Waste/returns of served food use a different policy. */
 @Service
 public class OrderCancellationService {
+    @org.springframework.beans.factory.annotation.Autowired
+    private PendingPaymentGuard pendingPaymentGuard;
     private final JdbcTemplate jdbc;
     private final DiningSessionRepository sessions;
     private final InventoryRepository inventory;
@@ -141,6 +143,7 @@ public class OrderCancellationService {
         if (!"OPEN".equals(session.getStatus())) {
             throw ApiException.conflict("SESSION_CLOSED", "此桌已結帳或取消，不能修改餐點");
         }
+        pendingPaymentGuard.requireNoOutstanding(sessionId);
         return session;
     }
 

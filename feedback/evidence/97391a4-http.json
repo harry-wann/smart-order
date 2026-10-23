@@ -1,0 +1,1263 @@
+{
+  "label": "payment-integration",
+  "commit": "97391a4",
+  "testedAt": "2026-10-23T10:28:12.871612+08:00",
+  "passed": true,
+  "resultCount": 154,
+  "sanitized": true,
+  "results": [
+    {
+      "case": 1,
+      "passed": true,
+      "name": "Backend health",
+      "path": "/actuator/health",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 2,
+      "passed": true,
+      "name": "Menu categories",
+      "path": "/api/order/category",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 3,
+      "passed": true,
+      "name": "Menu items",
+      "path": "/api/order/items",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 4,
+      "passed": true,
+      "name": "Invalid staff login",
+      "path": "/redacted-route",
+      "method": "POST",
+      "expected": 401,
+      "actual": 401
+    },
+    {
+      "case": 5,
+      "passed": true,
+      "name": "Manager login",
+      "path": "/redacted-route",
+      "method": "POST",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 6,
+      "passed": true,
+      "name": "Counter login",
+      "path": "/redacted-route",
+      "method": "POST",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 7,
+      "passed": true,
+      "name": "Table overview",
+      "path": "/api/admin/tables",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 8,
+      "passed": true,
+      "name": "Case 08",
+      "path": "/redacted-route",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 9,
+      "passed": true,
+      "name": "Waitlist listing",
+      "path": "/api/admin/waitlist",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 10,
+      "passed": true,
+      "name": "Kitchen tickets",
+      "path": "/api/admin/kitchen/tickets",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 11,
+      "passed": true,
+      "name": "Menu administration",
+      "path": "/api/order/admin/menu",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 12,
+      "passed": true,
+      "name": "Option groups",
+      "path": "/api/order/admin/optionGroups",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 13,
+      "passed": true,
+      "name": "Reservation list requires staff",
+      "path": "/api/admin/reservations",
+      "method": "GET",
+      "expected": 401,
+      "actual": 401
+    },
+    {
+      "case": 14,
+      "passed": true,
+      "name": "Reservation listing/projections",
+      "path": "/api/admin/reservations",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 15,
+      "passed": true,
+      "name": "Available tables/JSON record names",
+      "path": "/api/admin/tables/available",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 16,
+      "passed": true,
+      "name": "Open options/projections",
+      "path": "/api/admin/tables/{id}/open-options",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 17,
+      "passed": true,
+      "name": "Scheduler rejects counter",
+      "path": "/api/admin/scheduler/mark-no-show",
+      "method": "POST",
+      "expected": 403,
+      "actual": 403
+    },
+    {
+      "case": 18,
+      "passed": true,
+      "name": "No-show scheduler",
+      "path": "/api/admin/scheduler/mark-no-show",
+      "method": "POST",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 19,
+      "passed": true,
+      "name": "Reminder scheduler",
+      "path": "/api/admin/scheduler/send-reminders",
+      "method": "POST",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 20,
+      "passed": true,
+      "name": "Availability/settings defaults",
+      "path": "/api/reservations/availability",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 21,
+      "passed": true,
+      "name": "Missing reservation fields",
+      "path": "/api/reservations",
+      "method": "POST",
+      "expected": 400,
+      "actual": 400
+    },
+    {
+      "case": 22,
+      "passed": true,
+      "name": "Guest reservation/default child count",
+      "path": "/api/reservations",
+      "method": "POST",
+      "expected": 201,
+      "actual": 201
+    },
+    {
+      "case": 23,
+      "passed": true,
+      "name": "Reservation access required",
+      "path": "/api/reservations/{id}",
+      "method": "GET",
+      "expected": 401,
+      "actual": 401
+    },
+    {
+      "case": 24,
+      "passed": true,
+      "name": "Case 24",
+      "path": "/api/reservations/{id}",
+      "method": "GET",
+      "expected": 404,
+      "actual": 404
+    },
+    {
+      "case": 25,
+      "passed": true,
+      "name": "Reservation detail/default values",
+      "path": "/api/reservations/{id}",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 26,
+      "passed": true,
+      "name": "Cancel reservation",
+      "path": "/api/reservations/{id}",
+      "method": "DELETE",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 27,
+      "passed": true,
+      "name": "Repeated cancellation rejected",
+      "path": "/api/reservations/{id}",
+      "method": "DELETE",
+      "expected": 409,
+      "actual": 409
+    },
+    {
+      "case": 28,
+      "passed": true,
+      "name": "Explicit null child count",
+      "path": "/api/reservations",
+      "method": "POST",
+      "expected": 201,
+      "actual": 201
+    },
+    {
+      "case": 29,
+      "passed": true,
+      "name": "Explicit null defaults to zero",
+      "path": "/api/reservations/{id}",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 30,
+      "passed": true,
+      "name": "Staff cancellation without optional body",
+      "path": "/api/admin/reservations/{id}/cancel",
+      "method": "POST",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 31,
+      "passed": true,
+      "name": "Explicit null required count validation",
+      "path": "/api/reservations",
+      "method": "POST",
+      "expected": 400,
+      "actual": 400
+    },
+    {
+      "case": 32,
+      "passed": true,
+      "name": "Join occupied table",
+      "path": "/api/tables/A03/join",
+      "method": "POST",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 33,
+      "passed": true,
+      "name": "Current guest session",
+      "path": "/api/dining/current",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 34,
+      "passed": true,
+      "name": "Shared cart visibility",
+      "path": "/api/dining-sessions/{id}/cart",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 35,
+      "passed": true,
+      "name": "Table orders",
+      "path": "/api/dining/orders",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 36,
+      "passed": true,
+      "name": "Case 36",
+      "path": "/api/dining/current",
+      "method": "GET",
+      "expected": 401,
+      "actual": 401
+    },
+    {
+      "case": 37,
+      "passed": true,
+      "name": "Payment: isolated AVAILABLE payment table exists",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 38,
+      "passed": true,
+      "name": "Payment: opens payment fixture table",
+      "path": "/api/admin/tables/{id}/open",
+      "method": "POST",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 39,
+      "passed": true,
+      "name": "Payment: guest joins isolated payment table",
+      "path": "/api/tables/C03/join",
+      "method": "POST",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 40,
+      "passed": true,
+      "name": "Payment: guest reads its exact session",
+      "path": "/api/dining/current",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 41,
+      "passed": true,
+      "name": "Payment: guest joins isolated payment table",
+      "path": "/api/tables/C03/join",
+      "method": "POST",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 42,
+      "passed": true,
+      "name": "Payment: guest reads its exact session",
+      "path": "/api/dining/current",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 43,
+      "passed": true,
+      "name": "Payment: two fixture guests share an exact OPEN session",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 44,
+      "passed": true,
+      "name": "Payment: staff submits soup at current price",
+      "path": "/api/admin/dining-sessions/{id}/orders",
+      "method": "POST",
+      "expected": 201,
+      "actual": 201
+    },
+    {
+      "case": 45,
+      "passed": true,
+      "name": "Payment: reads canonical online bill",
+      "path": "/api/dining/bill",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 46,
+      "passed": true,
+      "name": "Payment: online, stored and SQL snapshot bills all match to cents",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 47,
+      "passed": true,
+      "name": "Case 47",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 48,
+      "passed": true,
+      "name": "Payment: decimal fixture preserves exact 16.56 payable amount",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 49,
+      "passed": true,
+      "name": "Payment: integer-only gateway cannot silently round cents",
+      "path": "/api/dining/payments/ecpay",
+      "method": "POST",
+      "expected": 400,
+      "actual": 400
+    },
+    {
+      "case": 50,
+      "passed": true,
+      "name": "Payment: unsupported cents create no payment and change no bill",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 51,
+      "passed": true,
+      "name": "Payment: counter can settle exact decimal amount",
+      "path": "/api/admin/dining-sessions/{id}/settle",
+      "method": "POST",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 52,
+      "passed": true,
+      "name": "Payment: cleans only the payment fixture table",
+      "path": "/api/admin/tables/{id}/clean",
+      "method": "POST",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 53,
+      "passed": true,
+      "name": "Payment: opens payment fixture table",
+      "path": "/api/admin/tables/{id}/open",
+      "method": "POST",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 54,
+      "passed": true,
+      "name": "Payment: guest joins isolated payment table",
+      "path": "/api/tables/C03/join",
+      "method": "POST",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 55,
+      "passed": true,
+      "name": "Payment: guest reads its exact session",
+      "path": "/api/dining/current",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 56,
+      "passed": true,
+      "name": "Payment: guest joins isolated payment table",
+      "path": "/api/tables/C03/join",
+      "method": "POST",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 57,
+      "passed": true,
+      "name": "Payment: guest reads its exact session",
+      "path": "/api/dining/current",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 58,
+      "passed": true,
+      "name": "Payment: two fixture guests share an exact OPEN session",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 59,
+      "passed": true,
+      "name": "Payment: staff submits soup at current price",
+      "path": "/api/admin/dining-sessions/{id}/orders",
+      "method": "POST",
+      "expected": 201,
+      "actual": 201
+    },
+    {
+      "case": 60,
+      "passed": true,
+      "name": "Payment: guest keeps unsent draft during checkout",
+      "path": "/api/dining-sessions/{id}/cart/items",
+      "method": "POST",
+      "expected": 201,
+      "actual": 201
+    },
+    {
+      "case": 61,
+      "passed": true,
+      "name": "Payment: guest keeps unsent draft during checkout",
+      "path": "/api/dining-sessions/{id}/cart/items",
+      "method": "POST",
+      "expected": 201,
+      "actual": 201
+    },
+    {
+      "case": 62,
+      "passed": true,
+      "name": "Payment: reads canonical online bill",
+      "path": "/api/dining/bill",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 63,
+      "passed": true,
+      "name": "Payment: online, stored and SQL snapshot bills all match to cents",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 64,
+      "passed": true,
+      "name": "Case 64",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 65,
+      "passed": true,
+      "name": "Payment: integer fixture bill is exactly 528",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 66,
+      "passed": true,
+      "name": "Payment: missing expected amount is rejected",
+      "path": "/api/dining/payments/ecpay",
+      "method": "POST",
+      "expected": 400,
+      "actual": 400
+    },
+    {
+      "case": 67,
+      "passed": true,
+      "name": "Payment: stale confirmed amount is rejected",
+      "path": "/api/dining/payments/ecpay",
+      "method": "POST",
+      "expected": 409,
+      "actual": 409
+    },
+    {
+      "case": 68,
+      "passed": true,
+      "name": "Payment: invalid or stale quotes create no payment or order changes",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 69,
+      "passed": true,
+      "name": "Payment: same-table concurrent checkout resumes one attempt",
+      "expected": null,
+      "actual": {
+        "type": "list",
+        "count": 2
+      }
+    },
+    {
+      "case": 70,
+      "passed": true,
+      "name": "Payment: two checkout responses refer to the same trade",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 71,
+      "passed": true,
+      "name": "Payment: trade identifier is valid unique gateway length",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 72,
+      "passed": true,
+      "name": "Payment: gateway amount equals exact canonical bill",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 73,
+      "passed": true,
+      "name": "Payment: checkout form signature matches independent Python implementation",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 74,
+      "passed": true,
+      "name": "Payment: exactly one pending payment exists",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 75,
+      "passed": true,
+      "name": "Payment: creates or resumes one online payment",
+      "path": "/api/dining/payments/ecpay",
+      "method": "POST",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 76,
+      "passed": true,
+      "name": "Payment: ten-minute pending attempt is reused rather than replaced",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 77,
+      "passed": true,
+      "name": "Payment: guest submit cannot change a pending payment bill",
+      "path": "/api/dining-sessions/{id}/orders",
+      "method": "POST",
+      "expected": 409,
+      "actual": 409
+    },
+    {
+      "case": 78,
+      "passed": true,
+      "name": "Payment: staff submit cannot change a pending payment bill",
+      "path": "/api/admin/dining-sessions/{id}/orders",
+      "method": "POST",
+      "expected": 409,
+      "actual": 409
+    },
+    {
+      "case": 79,
+      "passed": true,
+      "name": "Payment: item cancellation cannot change a pending payment bill",
+      "path": "/api/admin/order-items/{id}/cancel",
+      "method": "PATCH",
+      "expected": 409,
+      "actual": 409
+    },
+    {
+      "case": 80,
+      "passed": true,
+      "name": "Payment: ticket cancellation cannot change a pending payment bill",
+      "path": "/api/admin/kitchen/tickets/{id}/cancel",
+      "method": "PATCH",
+      "expected": 409,
+      "actual": 409
+    },
+    {
+      "case": 81,
+      "passed": true,
+      "name": "Payment: counter settle cannot change a pending payment bill",
+      "path": "/api/admin/dining-sessions/{id}/settle",
+      "method": "POST",
+      "expected": 409,
+      "actual": 409
+    },
+    {
+      "case": 82,
+      "passed": true,
+      "name": "Payment: session cancellation cannot change a pending payment bill",
+      "path": "/api/admin/dining-sessions/{id}/cancel",
+      "method": "POST",
+      "expected": 409,
+      "actual": 409
+    },
+    {
+      "case": 83,
+      "passed": true,
+      "name": "Payment: all pending bill mutations preserve snapshots/version/carts",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 84,
+      "passed": true,
+      "name": "Payment: draft quantity remains editable while payment is pending",
+      "path": "/api/dining-sessions/{id}/cart/items/{id}",
+      "method": "PATCH",
+      "expected": 204,
+      "actual": 204
+    },
+    {
+      "case": 85,
+      "passed": true,
+      "name": "Payment: bad signature does not acknowledge settlement",
+      "expected": null,
+      "actual": 200
+    },
+    {
+      "case": 86,
+      "passed": true,
+      "name": "Payment: bad signature preserves pending payment and bill",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 87,
+      "passed": true,
+      "name": "Payment: wrong merchant does not acknowledge settlement",
+      "expected": null,
+      "actual": 200
+    },
+    {
+      "case": 88,
+      "passed": true,
+      "name": "Payment: wrong merchant preserves pending payment and bill",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 89,
+      "passed": true,
+      "name": "Payment: wrong amount does not acknowledge settlement",
+      "expected": null,
+      "actual": 200
+    },
+    {
+      "case": 90,
+      "passed": true,
+      "name": "Payment: wrong amount preserves pending payment and bill",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 91,
+      "passed": true,
+      "name": "Payment: provider simulated-paid message cannot close table",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 92,
+      "passed": true,
+      "name": "Payment: uncertain provider result remains pending",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 93,
+      "passed": true,
+      "name": "Payment: signed terminal failure releases the outstanding attempt",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 94,
+      "passed": true,
+      "name": "Payment: confirmed failure allows item cancellation again",
+      "path": "/api/admin/order-items/{id}/cancel",
+      "method": "PATCH",
+      "expected": 204,
+      "actual": 204
+    },
+    {
+      "case": 95,
+      "passed": true,
+      "name": "Payment: staff submits soup at current price",
+      "path": "/api/admin/dining-sessions/{id}/orders",
+      "method": "POST",
+      "expected": 201,
+      "actual": 201
+    },
+    {
+      "case": 96,
+      "passed": true,
+      "name": "Payment: reads canonical online bill",
+      "path": "/api/dining/bill",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 97,
+      "passed": true,
+      "name": "Payment: online, stored and SQL snapshot bills all match to cents",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 98,
+      "passed": true,
+      "name": "Case 98",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 99,
+      "passed": true,
+      "name": "Payment: creates or resumes one online payment",
+      "path": "/api/dining/payments/ecpay",
+      "method": "POST",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 100,
+      "passed": true,
+      "name": "Payment: only a confirmed failure permits a different payment attempt",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 101,
+      "passed": true,
+      "name": "Payment: parallel duplicate callbacks all acknowledge one outcome",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 102,
+      "passed": true,
+      "name": "Payment: competing counter cannot create a second successful payment",
+      "expected": null,
+      "actual": 409
+    },
+    {
+      "case": 103,
+      "passed": true,
+      "name": "Payment: only one SUCCESS payment is stored for this session",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 104,
+      "passed": true,
+      "name": "Payment: gateway success closes the exact session and physical table",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 105,
+      "passed": true,
+      "name": "Payment: online closure clears all guests cart rows and options",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 106,
+      "passed": true,
+      "name": "Payment: closure increments cart version exactly once",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 107,
+      "passed": true,
+      "name": "Payment: late failure cannot overwrite successful payment",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 108,
+      "passed": true,
+      "name": "Payment: anonymous receipt request is denied",
+      "path": "/api/payments/{id}",
+      "method": "GET",
+      "expected": 401,
+      "actual": 401
+    },
+    {
+      "case": 109,
+      "passed": true,
+      "name": "Payment: another table cannot read this receipt",
+      "path": "/api/payments/{id}",
+      "method": "GET",
+      "expected": 404,
+      "actual": 404
+    },
+    {
+      "case": 110,
+      "passed": true,
+      "name": "Payment: paid guest can still read its own receipt",
+      "path": "/api/payments/{id}",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 111,
+      "passed": true,
+      "name": "Payment: same-table second guest may read the table receipt",
+      "path": "/api/payments/{id}",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 112,
+      "passed": true,
+      "name": "Payment: paid guest still cannot order or read open bill",
+      "path": "/api/dining/bill",
+      "method": "GET",
+      "expected": 401,
+      "actual": 401
+    },
+    {
+      "case": 113,
+      "passed": true,
+      "name": "Payment: cleans only the payment fixture table",
+      "path": "/api/admin/tables/{id}/clean",
+      "method": "POST",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 114,
+      "passed": true,
+      "name": "Payment: opens payment fixture table",
+      "path": "/api/admin/tables/{id}/open",
+      "method": "POST",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 115,
+      "passed": true,
+      "name": "Payment: guest joins isolated payment table",
+      "path": "/api/tables/C03/join",
+      "method": "POST",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 116,
+      "passed": true,
+      "name": "Payment: guest reads its exact session",
+      "path": "/api/dining/current",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 117,
+      "passed": true,
+      "name": "Payment: guest joins isolated payment table",
+      "path": "/api/tables/C03/join",
+      "method": "POST",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 118,
+      "passed": true,
+      "name": "Payment: guest reads its exact session",
+      "path": "/api/dining/current",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 119,
+      "passed": true,
+      "name": "Payment: two fixture guests share an exact OPEN session",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 120,
+      "passed": true,
+      "name": "Payment: old paid notification cannot close a reused physical table",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 121,
+      "passed": true,
+      "name": "Payment: staff submits soup at current price",
+      "path": "/api/admin/dining-sessions/{id}/orders",
+      "method": "POST",
+      "expected": 201,
+      "actual": 201
+    },
+    {
+      "case": 122,
+      "passed": true,
+      "name": "Payment: guest keeps unsent draft during checkout",
+      "path": "/api/dining-sessions/{id}/cart/items",
+      "method": "POST",
+      "expected": 201,
+      "actual": 201
+    },
+    {
+      "case": 123,
+      "passed": true,
+      "name": "Payment: guest keeps unsent draft during checkout",
+      "path": "/api/dining-sessions/{id}/cart/items",
+      "method": "POST",
+      "expected": 201,
+      "actual": 201
+    },
+    {
+      "case": 124,
+      "passed": true,
+      "name": "Payment: reads canonical online bill",
+      "path": "/api/dining/bill",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 125,
+      "passed": true,
+      "name": "Payment: online, stored and SQL snapshot bills all match to cents",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 126,
+      "passed": true,
+      "name": "Case 126",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 127,
+      "passed": true,
+      "name": "Case 127",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 128,
+      "passed": true,
+      "name": "Payment policy: uses its prepared OPEN fixture only",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 129,
+      "passed": true,
+      "name": "Payment policy: creates the local anomaly attempt",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 130,
+      "passed": true,
+      "name": "Payment policy: unrecognized signed provider status cannot release payment",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 131,
+      "passed": true,
+      "name": "Payment policy: receipt rejects mismatched device",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 132,
+      "passed": true,
+      "name": "Case 132",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 133,
+      "passed": true,
+      "name": "Payment policy: valid success with incompatible table requires review",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 134,
+      "passed": true,
+      "name": "Payment policy: review outcome preserves OPEN session and all guest drafts",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 135,
+      "passed": true,
+      "name": "Payment policy: review outcome does not create a normal success",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 136,
+      "passed": true,
+      "name": "Payment policy: review receipt is readable by original guest",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 137,
+      "passed": true,
+      "name": "Payment policy: review blocks another online checkout",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 138,
+      "passed": true,
+      "name": "Payment policy: review blocks guest submit",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 139,
+      "passed": true,
+      "name": "Payment policy: review blocks counter settlement",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 140,
+      "passed": true,
+      "name": "Payment policy: replayed success cannot bypass review",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 141,
+      "passed": true,
+      "name": "Payment policy: settles only the synthetic anomaly fixture for cleanup",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 142,
+      "passed": true,
+      "name": "Payment policy: cleans only its known test table",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 143,
+      "passed": true,
+      "name": "Payment policy: opens fresh browser-only fixture",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 144,
+      "passed": true,
+      "name": "Payment policy: joins fresh browser fixture",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 145,
+      "passed": true,
+      "name": "Payment policy: reads browser session identity",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 146,
+      "passed": true,
+      "name": "Payment policy: joins fresh browser fixture",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 147,
+      "passed": true,
+      "name": "Payment policy: reads browser session identity",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 148,
+      "passed": true,
+      "name": "Payment policy: primes browser soup order",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 149,
+      "passed": true,
+      "name": "Payment policy: preserves a draft per browser guest",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 150,
+      "passed": true,
+      "name": "Payment policy: preserves a draft per browser guest",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 151,
+      "passed": true,
+      "name": "Payment policy: reads fresh browser payable total",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 152,
+      "passed": true,
+      "name": "Payment policy: fresh browser fixture has two guests and no outstanding payment",
+      "expected": null,
+      "actual": null
+    },
+    {
+      "case": 153,
+      "passed": true,
+      "name": "Case 153",
+      "path": "/api/dining/bill",
+      "method": "GET",
+      "expected": 200,
+      "actual": 200
+    },
+    {
+      "case": 154,
+      "passed": true,
+      "name": "Case 154",
+      "path": "/api/dining/payments/ecpay",
+      "method": "POST",
+      "expected": 503,
+      "actual": 503
+    }
+  ]
+}

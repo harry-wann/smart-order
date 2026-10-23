@@ -2,6 +2,7 @@ package tw.ispan.smartorder.ordersubmitted.service;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import tw.ispan.smartorder.common.exception.ApiException;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 import tw.ispan.smartorder.service.BillingCalculator;
 import tw.ispan.smartorder.service.MenuStatusNotifier;
 import tw.ispan.smartorder.service.OrderValidationService;
+import tw.ispan.smartorder.service.PendingPaymentGuard;
 
 @Service
 public class OrderSubmitService {
@@ -24,6 +26,8 @@ public class OrderSubmitService {
     private tw.ispan.smartorder.ordercart.service.CartNotificationService notifications;
     @org.springframework.beans.factory.annotation.Autowired
     private KitchenNotificationService kitchenNotificationService;
+    @org.springframework.beans.factory.annotation.Autowired
+    private PendingPaymentGuard pendingPaymentGuard;
     private final DiningSessionRepository sessionRepository;
     private final CartItemRepository cartItemRepository;
     private final CartItemOptionRepository cartItemOptionRepository;
@@ -60,7 +64,7 @@ public class OrderSubmitService {
         this.menuStatusNotifier = menuStatusNotifier;
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public OrderSubmittedResponse submitOrder(Long sessionId, Long guestId) {
         if (sessionId == null || guestId == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少用餐場次或客人身分");
@@ -100,7 +104,7 @@ public class OrderSubmitService {
         return getOrder(created.ticketId(), sessionId);
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public OrderSubmittedResponse submitStaffOrder(Long sessionId, List<OrderValidationService.Selection> selections) {
         if (sessionId == null || sessionId <= 0) throw ApiException.badRequest("用餐場次編號不正確");
         DiningSessionEntity session = lockOpenSession(sessionId);
@@ -116,6 +120,7 @@ public class OrderSubmitService {
         if (!"OPEN".equals(session.getStatus())) {
             throw ApiException.conflict("SESSION_CLOSED", "此桌已停止點餐");
         }
+        pendingPaymentGuard.requireNoOutstanding(sessionId);
         return session;
     }
 

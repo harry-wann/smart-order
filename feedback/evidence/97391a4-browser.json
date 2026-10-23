@@ -1,0 +1,180 @@
+{
+  "label": "payment",
+  "commit": "97391a4",
+  "testedAt": "2026-10-23T06:33:35.118Z",
+  "passed": true,
+  "resultCount": 31,
+  "sanitized": true,
+  "results": [
+    {
+      "case": 1,
+      "passed": true,
+      "name": "Case 01",
+      "path": "/admin/table_overview"
+    },
+    {
+      "case": 2,
+      "passed": true,
+      "name": "Case 02",
+      "path": "/admin/seats"
+    },
+    {
+      "case": 3,
+      "passed": true,
+      "name": "Case 03",
+      "path": "/admin/waitlist"
+    },
+    {
+      "case": 4,
+      "passed": true,
+      "name": "Case 04",
+      "path": "/admin/reservations"
+    },
+    {
+      "case": 5,
+      "passed": true,
+      "name": "Case 05",
+      "path": "/admin/kitchen"
+    },
+    {
+      "case": 6,
+      "passed": true,
+      "name": "Case 06",
+      "path": "/admin/menu"
+    },
+    {
+      "case": 7,
+      "passed": true,
+      "name": "Case 07",
+      "path": "/admin/options"
+    },
+    {
+      "case": 8,
+      "passed": true,
+      "name": "Case 08",
+      "path": "/admin/table/A03"
+    },
+    {
+      "case": 9,
+      "passed": true,
+      "name": "Case 09",
+      "path": "/"
+    },
+    {
+      "case": 10,
+      "passed": true,
+      "name": "Case 10",
+      "path": "/order/menu"
+    },
+    {
+      "case": 11,
+      "passed": true,
+      "name": "Case 11",
+      "path": "/order/cart/{id}"
+    },
+    {
+      "case": 12,
+      "passed": true,
+      "name": "Case 12",
+      "path": "/order/history"
+    },
+    {
+      "case": 13,
+      "passed": true,
+      "name": "Case 13",
+      "path": "/member/login"
+    },
+    {
+      "case": 14,
+      "passed": true,
+      "name": "Case 14",
+      "path": "/reserve/guest"
+    },
+    {
+      "case": 15,
+      "passed": true,
+      "name": "Case 15",
+      "path": "/reserve/datetime"
+    },
+    {
+      "case": 16,
+      "passed": true,
+      "name": "Case 16"
+    },
+    {
+      "case": 17,
+      "passed": true,
+      "name": "Payment browser: bill query switches table identity without reusing the previous table amount"
+    },
+    {
+      "case": 18,
+      "passed": true,
+      "name": "Payment browser: 390px checkout layout has no horizontal overflow"
+    },
+    {
+      "case": 19,
+      "passed": true,
+      "name": "Payment browser: real BILL_CHANGED refreshes the bill and requires a second confirmation"
+    },
+    {
+      "case": 20,
+      "passed": true,
+      "name": "Payment browser: sessionStorage preflight failure creates no payment request or provider form"
+    },
+    {
+      "case": 21,
+      "passed": true,
+      "name": "Payment browser: double click creates one current attempt and provider form is intercepted locally"
+    },
+    {
+      "case": 22,
+      "passed": true,
+      "name": "Payment browser: guest B menu and WebSocket are connected before the payment callback"
+    },
+    {
+      "case": 23,
+      "passed": true,
+      "name": "Payment browser: guest B receives the real SESSION_CLOSED notification over its active WebSocket"
+    },
+    {
+      "case": 24,
+      "passed": true,
+      "name": "Payment browser: real signed local callback is visible as a successful receipt"
+    },
+    {
+      "case": 25,
+      "passed": true,
+      "name": "Case 25"
+    },
+    {
+      "case": 26,
+      "passed": true,
+      "name": "Payment browser: the second guest cannot continue checkout after the shared table closes"
+    },
+    {
+      "case": 27,
+      "passed": true,
+      "name": "Payment browser: finish route without no shows a missing-transaction state"
+    },
+    {
+      "case": 28,
+      "passed": true,
+      "name": "Payment browser: synthetic UI: changing transaction aborts and ignores the old result poll"
+    },
+    {
+      "case": 29,
+      "passed": true,
+      "name": "Payment browser: synthetic UI: pending timeout stays pending and offers query only"
+    },
+    {
+      "case": 30,
+      "passed": true,
+      "name": "Payment browser: synthetic UI: REQUIRES_REVIEW directs the guest to the counter without a retry action"
+    },
+    {
+      "case": 31,
+      "passed": true,
+      "name": "Payment browser: no uncaught browser page errors"
+    }
+  ]
+}

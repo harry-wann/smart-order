@@ -16,6 +16,7 @@ import tw.ispan.smartorder.common.dto.ErrorDetail;
 import tw.ispan.smartorder.common.dto.ErrorResponse;
 import tw.ispan.smartorder.controller.KitchenTicketsController;
 import tw.ispan.smartorder.ordersubmitted.controller.StaffOrderController;
+import tw.ispan.smartorder.controller.PaymentController;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -33,7 +34,7 @@ import java.util.List;
         "tw.ispan.smartorder.reservation",
         "tw.ispan.smartorder.staff",
         "tw.ispan.smartorder.ordercart.controller"
-}, assignableTypes = {KitchenTicketsController.class, StaffOrderController.class})
+}, assignableTypes = {KitchenTicketsController.class, StaffOrderController.class, PaymentController.class})
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class ApiExceptionAdvice {
 
