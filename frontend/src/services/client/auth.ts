@@ -21,13 +21,16 @@ export function signOutMember() {
   queryClient.removeQueries({ queryKey: queryScope.customerMember })
 }
 
-export function joinTable(sessionToken: string) {
+// 用餐權杖與同桌 guest 權杖一定成對：後端要兩個都對得上才認得是哪位 guest
+export function joinTable(sessionToken: string, guestToken: string) {
   clearCustomerSessionQueries()
   customerTokens.session.set(sessionToken)
+  customerTokens.guest.set(guestToken)
 }
 
 export function leaveTable() {
   customerTokens.session.clear()
+  customerTokens.guest.clear()
   clearCustomerSessionQueries()
 }
 

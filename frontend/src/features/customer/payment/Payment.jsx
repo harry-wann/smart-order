@@ -4,7 +4,7 @@ import InfoBox from '@/components/InfoBox.tsx'
 import SOButton from '@/components/SOButton.tsx'
 import { isApiError } from '@/services/client/ApiError.ts'
 import { customerClient } from '@/services/client/customerClient.ts'
-import { customerTokens, getDeviceId } from '@/services/client/tokenStore.ts'
+import { customerTokens } from '@/services/client/tokenStore.ts'
 import { useBill } from '@/services/api/checkout/checkoutApi.js'
 import { canSavePaymentCredentials, savePaymentCredentials } from './paymentCredentials.js'
 
@@ -60,7 +60,8 @@ export default function Payment() {
     if (sessionToken !== billSessionToken || billQuery.isFetching) return
 
     const attemptId = ++attemptIdRef.current
-    const deviceId = getDeviceId()
+    // 跟 sessionToken 同一刻抓住：建立付款與之後查收據都用這一組
+    const guestToken = customerTokens.guest.get()
     attemptLockedRef.current = true
     setPaying(true)
     setError('')
@@ -68,7 +69,11 @@ export default function Payment() {
 
     let submitted = false
     try {
-      if (!canSavePaymentCredentials(sessionToken, deviceId)) {
+      if (!guestToken) {
+        setError('同桌身分已失效，請重新掃碼加入後再付款')
+        return
+      }
+      if (!canSavePaymentCredentials(sessionToken, guestToken)) {
         setError('此分頁無法保存付款查詢資訊，付款尚未發起。請允許此分頁使用工作階段儲存空間後重試，或改至櫃檯付款。')
         return
       }
@@ -80,13 +85,11 @@ export default function Payment() {
           customerAuth: [],
           headers: {
             'X-Session-Token': sessionToken,
-            'X-Device-Id': deviceId,
+            'X-Guest-Token': guestToken,
           },
         },
       )
       const { data } = response
-      const sentDeviceId = response.config.headers?.get?.('X-Device-Id')
-      const receiptDeviceId = typeof sentDeviceId === 'string' ? sentDeviceId : deviceId
 
       if (attemptIdRef.current !== attemptId || customerTokens.session.get() !== sessionToken) {
         if (attemptIdRef.current === attemptId) {
@@ -101,7 +104,7 @@ export default function Payment() {
       }
 
       const form = createPaymentForm(data.action, data.params)
-      const credentialsSaved = savePaymentCredentials(transactionNo, sessionToken, receiptDeviceId)
+      const credentialsSaved = savePaymentCredentials(transactionNo, sessionToken, guestToken)
       if (!credentialsSaved) {
         setError(
           `無法保存這筆交易的查詢資訊，付款表單尚未送出，交易仍待確認。請修復此分頁儲存空間後重試同一筆交易；若無法確認狀態，請持交易編號 ${transactionNo} 至櫃檯查詢。`,

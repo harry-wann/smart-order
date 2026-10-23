@@ -137,7 +137,7 @@ public class SecurityConfig {
 
     /**
      * 前端 dev server（http://localhost:5173）和後端（:8080）不同來源，瀏覽器要後端明確放行才會送出請求。
-     * 允許的標頭要包含前端共用層會帶的 X-Session-Token、X-Reservation-Token、X-Device-Id。
+     * 允許的標頭要包含前端共用層會帶的 X-Session-Token、X-Guest-Token、X-Reservation-Token、X-Device-Id。
      */
     @Bean
     CorsConfigurationSource corsConfigurationSource(
@@ -149,6 +149,7 @@ public class SecurityConfig {
                 "Authorization",
                 "Content-Type",
                 "X-Session-Token",
+                "X-Guest-Token",
                 "X-Reservation-Token",
                 "X-Device-Id"
         ));

@@ -1,11 +1,14 @@
 export const customerTokens = {
   member: createTokenSlot('customer.memberToken'),
   session: createTokenSlot('customer.sessionToken'),
+  // join 時後端簽發的同桌身分權杖（X-Guest-Token），跟 session 一起存、一起清
+  guest: createTokenSlot('customer.guestToken'),
   reservation: createTokenSlot('customer.reservationToken'),
 }
 
 export const employeeToken = createTokenSlot('employee.token')
 
+// 裝置識別碼只當提示送給後端（顯示／診斷），不能用來證明身分；身分看 guest token
 export function getDeviceId() {
   const saved = read(DEVICE_ID_KEY)
   if (saved) return saved

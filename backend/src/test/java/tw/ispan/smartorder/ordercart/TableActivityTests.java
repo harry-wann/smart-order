@@ -10,6 +10,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.server.ResponseStatusException;
+import tw.ispan.smartorder.common.exception.ApiException;
 import tw.ispan.smartorder.entity.*;
 import tw.ispan.smartorder.ordercart.service.*;
 import tw.ispan.smartorder.ordersubmitted.service.OrderSubmitService;
@@ -34,22 +35,20 @@ class TableActivityTests {
     }
 
     @Test void eachPhoneHasItsOwnIdentityAndToken() {
-        String first = JwtToken.createGuestToken(50L, 97L, "phone-a");
-        String second = JwtToken.createGuestToken(50L, 98L, "phone-b");
+        String first = JwtToken.createGuestToken(50L, 97L);
+        String second = JwtToken.createGuestToken(50L, 98L);
         assertNotEquals(first, second);
-        assertEquals(97L, JwtToken.parseGuestToken(first, "phone-a").guestId());
-        assertEquals(98L, JwtToken.parseGuestToken(second, "phone-b").guestId());
-        assertThrows(IllegalArgumentException.class, () -> JwtToken.parseGuestToken(first, "phone-b"));
+        assertEquals(97L, JwtToken.parseGuestToken(first).guestId());
+        assertEquals(98L, JwtToken.parseGuestToken(second).guestId());
         assertThrows(IllegalArgumentException.class,
-                () -> JwtToken.parseGuestToken(JwtToken.createToken("50"), "phone-a"));
+                () -> JwtToken.parseGuestToken(JwtToken.createToken("50")));
     }
 
-    @Test void currentGuestMustMatchSessionDeviceAndSignedGuest() {
+    @Test void currentGuestMustMatchSessionAndVerifiedGuest() {
         var guests = mock(DiningSessionGuestRepository.class);
         var guest = guest(98L, "phone-b", "小王");
-        when(guests.findByDiningSessionIdAndDeviceId(50L, "phone-b")).thenReturn(Optional.of(guest));
+        when(guests.findById(98L)).thenReturn(Optional.of(guest));
         var request = new MockHttpServletRequest();
-        request.addHeader("X-Device-Id", "phone-b");
         request.setAttribute("diningSessionId", 50L);
         request.setAttribute("diningGuestId", 98L);
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
@@ -57,7 +56,7 @@ class TableActivityTests {
         assertEquals(98L, service.requireGuestId(50L));
         assertThrows(ResponseStatusException.class, () -> service.requireGuestId(51L));
         request.setAttribute("diningGuestId", 97L);
-        assertThrows(ResponseStatusException.class, () -> service.requireGuestId(50L));
+        assertThrows(ApiException.class, () -> service.requireGuestId(50L));
     }
 
     @Test void notificationWaitsForCommitAndOnlyTargetsGuestsAtThisTable() {
@@ -163,12 +162,11 @@ class TableActivityTests {
         var interceptor = captured.getValue();
         var guest = guest(98L, "phone-b", "小王");
         var session = new DiningSessionEntity();
-        when(guests.findByDiningSessionIdAndDeviceId(50L, "phone-b")).thenReturn(Optional.of(guest));
+        when(guests.findById(98L)).thenReturn(Optional.of(guest));
         when(sessions.findById(50L)).thenReturn(Optional.of(session));
         var connect = org.springframework.messaging.simp.stomp.StompHeaderAccessor.create(
                 org.springframework.messaging.simp.stomp.StompCommand.CONNECT);
-        connect.setNativeHeader("X-Session-Token", JwtToken.createGuestToken(50L, 98L, "phone-b"));
-        connect.setNativeHeader("X-Device-Id", "phone-b");
+        connect.setNativeHeader("X-Session-Token", JwtToken.createGuestToken(50L, 98L));
         connect.setLeaveMutable(true);
         var channel = mock(org.springframework.messaging.MessageChannel.class);
         interceptor.preSend(org.springframework.messaging.support.MessageBuilder.createMessage(

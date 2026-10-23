@@ -46,12 +46,15 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         headers.setUser(new StaffWebSocketPrincipal(staff.id(), staff.role()));
                     }
                 }
+                // 顧客 CONNECT 只驗 X-Session-Token（04 §3.1）：X-Guest-Token 只給 REST 用，不放進 WebSocket；
+                // X-Device-Id 可偽造，也不看。guest 列要存在、屬於權杖裡的 session，個人 queue 才用這位 guest 當收件人。
                 if (headers.getCommand() == org.springframework.messaging.simp.stomp.StompCommand.CONNECT
                         && headers.getFirstNativeHeader("X-Session-Token") != null) {
                     var identity = tw.ispan.smartorder.util.JwtToken.parseGuestToken(
-                            headers.getFirstNativeHeader("X-Session-Token"), headers.getFirstNativeHeader("X-Device-Id"));
-                    var guest = guests.findByDiningSessionIdAndDeviceId(identity.sessionId(), identity.deviceId())
-                            .filter(g -> g.getId().equals(identity.guestId())).orElseThrow();
+                            headers.getFirstNativeHeader("X-Session-Token"));
+                    var guest = guests.findById(identity.guestId())
+                            .filter(g -> identity.sessionId().equals(g.getDiningSessionId()))
+                            .orElseThrow(() -> new IllegalArgumentException("請重新掃碼加入桌位"));
                     if (!sessions.findById(identity.sessionId()).map(s -> "OPEN".equals(s.getStatus())).orElse(false)) {
                         throw new IllegalArgumentException("此桌已停止點餐");
                     }

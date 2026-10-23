@@ -284,14 +284,16 @@ ALTER TABLE waitlist
 CREATE TABLE dining_session_guest (
   id                BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   dining_session_id BIGINT UNSIGNED NOT NULL,
-  device_id         VARCHAR(36)     NOT NULL COMMENT '前端產生的 UUID，只用來標示誰加的',
+  device_id         VARCHAR(36)     NULL     COMMENT '前端帶的 X-Device-Id，可偽造；只供顯示／診斷，不參與 guest 查找或身分判斷',
+  guest_token_hash  CHAR(64)        NULL     COMMENT 'X-Guest-Token 的 SHA-256 十六進位雜湊（原始值不存）；舊資料為 NULL',
   display_name      VARCHAR(50)     NOT NULL COMMENT '會員暱稱，或依加入順序叫「客人 N」',
   member_id         BIGINT UNSIGNED NULL,
   joined_at         DATETIME(3)     NOT NULL,
   created_at        DATETIME(3)     NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at        DATETIME(3)     NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (id),
-  UNIQUE KEY uk_guest_session_device (dining_session_id, device_id),
+  UNIQUE KEY uk_guest_token_hash (guest_token_hash),
+  KEY idx_guest_session_device (dining_session_id, device_id),
   CONSTRAINT fk_guest_session FOREIGN KEY (dining_session_id) REFERENCES dining_session (id),
   CONSTRAINT fk_guest_member  FOREIGN KEY (member_id)         REFERENCES member (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='同桌客人';

@@ -1,5 +1,6 @@
 package tw.ispan.smartorder.controller;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -49,21 +50,24 @@ public class PaymentController {
                 .body(ecpayService.handleNotify(params));
     }
 
+    // 收據查詢不經過 SessionTokenFilter：付完款 session 已經是 PAID，仍要查得到。
+    // 前端用付款當下存起來的兩個權杖來查，換桌或重新掃碼後也查得到原本那筆。
+    // 身分只認 X-Guest-Token（雜湊對到權杖裡的 session 與 guest），不看 X-Device-Id。
     @GetMapping("/payments/{transactionNo}")
     public PaymentResultResponse result(@PathVariable String transactionNo,
             @RequestHeader(value = "X-Session-Token", required = false) String token,
-            @RequestHeader(value = "X-Device-Id", required = false) String deviceId) {
+            @RequestHeader(value = "X-Guest-Token", required = false) String guestToken) {
         JwtToken.GuestIdentity identity;
         try {
-            identity = JwtToken.parseGuestToken(token, deviceId);
+            identity = JwtToken.parseGuestToken(token);
         } catch (JwtException | IllegalArgumentException exception) {
             throw ApiException.unauthorized("點餐憑證已失效，請重新掃碼");
         }
-        boolean validGuest = guests.findById(identity.guestId())
-                .filter(guest -> identity.sessionId().equals(guest.getDiningSessionId())
-                        && identity.deviceId().equals(guest.getDeviceId()))
+        boolean validGuest = guests.findVerifiedGuest(guestToken, identity.sessionId(), identity.guestId())
                 .isPresent();
-        if (!validGuest) throw ApiException.unauthorized("點餐憑證已失效，請重新掃碼");
+        if (!validGuest) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "INVALID_GUEST_TOKEN", "同桌身分已失效，請用原付款頁面查詢或至櫃檯確認");
+        }
         return ecpayService.getResult(transactionNo, identity.sessionId());
     }
 }
