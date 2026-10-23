@@ -1,0 +1,64 @@
+{
+  "label": "iris-operation-reminders",
+  "commit": "352162a",
+  "testedAt": "2026-10-23T11:33:01.072Z",
+  "passed": true,
+  "resultCount": 12,
+  "sanitized": true,
+  "notes": [
+    "S-02 at 1024x768 as COUNTER; WebSocket frames captured with Playwright.",
+    "The scheduler check waited for an unsolicited TABLE_OVERTIME frame without calling the manual API."
+  ],
+  "results": [
+    {
+      "name": "Iris reminders browser: manual overtime scan pushes TABLE_OVERTIME and S-02 shows the reminder",
+      "passed": true,
+      "detail": "A01 101 min"
+    },
+    {
+      "name": "Iris reminders browser: table at exactly 100 minutes gets no reminder (rule is more than 100)",
+      "passed": true
+    },
+    {
+      "name": "Iris reminders browser: overtime tile minutes pulse (motion-safe) on the red-framed tile",
+      "passed": true
+    },
+    {
+      "name": "Iris reminders browser: a repeated push keeps one reminder per table",
+      "passed": true
+    },
+    {
+      "name": "Iris reminders browser: manual cleaning scan shows the 15+ minute cleaning reminder",
+      "passed": true
+    },
+    {
+      "name": "Iris reminders browser: 10-minute cleaning table gets no reminder",
+      "passed": true
+    },
+    {
+      "name": "Iris reminders browser: reminder bar fits 1024px without horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "Iris reminders browser: cleaning reminder opens the clean dialog; confirming frees the table and removes the reminder",
+      "passed": true
+    },
+    {
+      "name": "Iris reminders browser: dismissed overtime reminder stays closed on the next push",
+      "passed": true
+    },
+    {
+      "name": "Iris reminders browser: the every-minute scheduler pushes TABLE_OVERTIME on its own",
+      "passed": true,
+      "detail": "6s after waiting"
+    },
+    {
+      "name": "Iris reminders browser: overtime reminder opens the table detail page",
+      "passed": true
+    },
+    {
+      "name": "Iris reminders browser: no page errors or API 5xx",
+      "passed": true
+    }
+  ]
+}
