@@ -4,14 +4,16 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import tw.ispan.smartorder.dto.BillResponse;
 import tw.ispan.smartorder.dto.BillResponse.BillItem;
 import tw.ispan.smartorder.dto.BillResponse.BillTicket;
+import tw.ispan.smartorder.config.EcpayProperties;
 
 import javax.sql.DataSource;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -23,16 +25,21 @@ import java.util.Map;
 
 @Service
 public class BillService {
-    private static final BigDecimal SERVICE_RATE = new BigDecimal("0.10");
     private static final DateTimeFormatter HH_MM = DateTimeFormatter.ofPattern("HH:mm");
 
     private final JdbcTemplate jdbc;
+    private final EcpayProperties ecpayProperties;
 
-    public BillService(@Qualifier("smartOrderDataSource") DataSource dataSource) {
+    public BillService(@Qualifier("smartOrderDataSource") DataSource dataSource,
+                       EcpayProperties ecpayProperties) {
         this.jdbc = new JdbcTemplate(dataSource);
+        this.ecpayProperties = ecpayProperties;
     }
 
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public BillResponse calculateBill(long sessionId) {
+        // All bill writers use this session lock. Take it before any ordinary read.
+        jdbc.queryForList("SELECT id FROM dining_session WHERE id = ? FOR UPDATE", Long.class, sessionId);
         SessionRow session = jdbc.query("""
                 SELECT t.table_no, s.adult_count, s.child_count, s.opened_at
                 FROM dining_session s
@@ -100,8 +107,7 @@ public class BillService {
             tickets.add(new BillTicket(first.ticketId(), first.sequenceNo(), format(first.placedAt()), ticketTotal, items));
         }
 
-        BigDecimal serviceFee = subtotal.multiply(SERVICE_RATE).setScale(0, RoundingMode.HALF_UP);
-        BigDecimal total = subtotal.add(serviceFee);
+        BillingCalculator.Amount amount = BillingCalculator.fromSubtotal(subtotal);
 
         return new BillResponse(
                 session.tableNo(),
@@ -109,10 +115,11 @@ public class BillService {
                 format(LocalDateTime.now()),
                 session.guestCount(),
                 itemCount,
-                subtotal,
-                serviceFee,
-                total,
-                tickets);
+                amount.subtotal(),
+                amount.serviceFee(),
+                amount.total(),
+                tickets,
+                ecpayProperties.available());
     }
 
     private Map<Long, List<String>> loadOptions(long sessionId) {

@@ -21,6 +21,7 @@ import tw.ispan.smartorder.repository.PaymentRepository;
 import tw.ispan.smartorder.service.BillingCalculator;
 import tw.ispan.smartorder.service.MenuCheckoutNotifier;
 import tw.ispan.smartorder.service.TableStatusNotifier;
+import tw.ispan.smartorder.service.PendingPaymentGuard;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -38,6 +39,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class TableService {
+    @org.springframework.beans.factory.annotation.Autowired
+    private PendingPaymentGuard pendingPaymentGuard;
     private final DiningTableRepository tableRepository;
     private final DiningSessionRepository sessionRepository;
     private final OrderTicketRepository ticketRepository;
@@ -264,6 +267,9 @@ public class TableService {
         DiningSessionEntity session = sessionRepository.findWithLockById(sessionId)
                 .orElseThrow(SettlementException::notFound);
         if (!"OPEN".equals(session.getStatus())) throw SettlementException.closed(session.getStatus());
+        if (pendingPaymentGuard.hasOutstanding(sessionId)) {
+            throw SettlementException.conflict("PAYMENT_PENDING", "此桌有尚待確認的線上付款");
+        }
         return session;
     }
 

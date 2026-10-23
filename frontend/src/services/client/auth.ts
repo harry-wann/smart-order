@@ -22,13 +22,19 @@ export function signOutMember() {
 }
 
 export function joinTable(sessionToken: string) {
-  queryClient.removeQueries({ queryKey: queryScope.customerSession })
+  clearCustomerSessionQueries()
   customerTokens.session.set(sessionToken)
 }
 
 export function leaveTable() {
   customerTokens.session.clear()
+  clearCustomerSessionQueries()
+}
+
+function clearCustomerSessionQueries() {
   queryClient.removeQueries({ queryKey: queryScope.customerSession })
+  // Clear bills cached by the previous, unscoped query key during a live session update.
+  queryClient.removeQueries({ queryKey: ['customer', 'bill'] })
 }
 
 export function saveReservationToken(accessToken: string) {

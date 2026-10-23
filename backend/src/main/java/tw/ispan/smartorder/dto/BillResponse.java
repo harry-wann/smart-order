@@ -12,7 +12,8 @@ public record BillResponse(
         BigDecimal subtotal,
         BigDecimal serviceFee,
         BigDecimal total,
-        List<BillTicket> orders
+        List<BillTicket> orders,
+        boolean onlinePaymentAvailable
 ) {
     public record BillTicket(
             long id,

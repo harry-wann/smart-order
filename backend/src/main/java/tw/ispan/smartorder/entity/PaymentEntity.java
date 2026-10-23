@@ -29,7 +29,7 @@ public class PaymentEntity {
     @Column(name = "amount")
     private BigDecimal amount;
 
-    // PENDING / SUCCESS / FAILED / REFUNDED
+    // PENDING / SUCCESS / FAILED / REQUIRES_REVIEW / REFUNDED
     @Column(name = "status")
     private String status;
 

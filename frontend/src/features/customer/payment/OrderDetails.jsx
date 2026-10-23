@@ -4,7 +4,6 @@ import InfoBox from '@/components/InfoBox.tsx'
 import SOButton from '@/components/SOButton.tsx'
 import OrderMap from '@/components/OrderMap.jsx'
 import { SvgIconMap } from '@/assets/SvgIconMap.tsx'
-import { customerTokens } from '@/services/client/tokenStore.ts'
 import { useBill } from '@/services/api/checkout/checkoutApi.js'
 
 const money = (n) => `NT$ ${Number(n ?? 0).toLocaleString()}`
@@ -21,7 +20,6 @@ function SumRow({ label, value }) {
 export default function OrderDetails() {
   const navigate = useNavigate()
   const query = useBill()
-  const isMember = Boolean(customerTokens.member.get())
 
   if (!query.data) {
     return (
@@ -79,21 +77,6 @@ export default function OrderDetails() {
             </div>
           </section>
 
-          {!isMember && (
-            <section className="flex flex-col gap-3 rounded-card border border-line bg-surface p-card shadow-card">
-              <div>
-                <h2 className="type-h3 text-ink-900">登入會員，這次消費會記到你的帳戶</h2>
-                <p className="mt-1 type-body-sm text-ink-600">付款完成後就不能再補登入了。</p>
-              </div>
-              <SOButton
-                variant="secondary"
-                height="h-11"
-                text="登入／註冊會員"
-                onClick={() => navigate('/member/login', { state: { returnTo: '/order/checkout' } })}
-              />
-              <p className="text-center type-caption text-ink-600">不登入也可以直接付款</p>
-            </section>
-          )}
         </div>
       </div>
 
