@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router'
 import {
@@ -6,45 +6,48 @@ import {
   useOpenOptions,
   useSeatReservation,
 } from '@/hooks/reservation/useAdminReservations'
-import { fetchSeats } from '@/services/api/table/seatApi'
+import { fetchTables, openTable } from '@/services/api/table/tableApi'
 import { queryScope } from '@/services/client/queryClient'
 import SOButton from '@/components/SOButton'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import BellButtonPlaceholder from './BellButtonPlaceholder'
 import ReservationTab from './ReservationTab'
-import { openTable } from '@/services/api/table/tableApi'
-import { fetchWaitlist, seatWaitlist } from '@/services/api/waitlist/waitlistApi'
-
-const TABLE_INFO_BY_NUMBER = {
-  A01: { capacity: 2, area: '窗邊區' },
-  A02: { capacity: 2, area: '窗邊區' },
-  A03: { capacity: 4, area: '窗邊區' },
-  A04: { capacity: 4, area: '窗邊區' },
-  A05: { capacity: 4, area: '窗邊區' },
-  A06: { capacity: 6, area: '窗邊區' },
-  A07: { capacity: 6, area: '窗邊區' },
-  A08: { capacity: 4, area: '窗邊區' },
-  B01: { capacity: 4, area: '座位區' },
-  B02: { capacity: 2, area: '座位區' },
-  B03: { capacity: 4, area: '座位區' },
-  C01: { capacity: 8, area: '包廂區' },
-  C02: { capacity: 8, area: '包廂區' },
-}
+import { seatWaitlist } from '@/services/api/waitlist/waitlistApi'
 
 // 開桌頁自己的頂列。
 // 不改共用的 TopBar.tsx；但這頁網址有桌號，TopBar 用網址查不到標題，
 // 所以這頁自己做，class 照抄 TopBar，外觀才會跟其他頁一致。
+function formatOpenHeaderTime(date) {
+  return new Intl.DateTimeFormat('zh-TW', {
+    timeZone: 'Asia/Taipei',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(date)
+}
+
 function OpenPageHeader({ tableNo, tableInfo, isHeld }) {
+  const [clockTime, setClockTime] = useState(() => formatOpenHeaderTime(new Date()))
+
+  useEffect(() => {
+    const updateClock = () => setClockTime(formatOpenHeaderTime(new Date()))
+    updateClock()
+    const timer = window.setInterval(updateClock, 60_000)
+    return () => window.clearInterval(timer)
+  }, [])
+
   return (
-    <header className="flex h-15 w-full shrink-0 flex-row items-center justify-between border-b border-line bg-surface px-6 py-3">
-      <div className="flex flex-row items-center gap-4">
+    <header className="flex min-h-15 w-full shrink-0 flex-wrap items-center justify-between gap-3 border-b border-line bg-surface px-4 py-3 md:flex-nowrap md:px-6">
+      <div className="flex min-w-0 flex-wrap items-center gap-2 md:gap-4">
         <Link to="/admin/table_overview" aria-label="回桌況總覽">
           <SvgIconMap.DashboardBack />
         </Link>
         <span className="type-h2 text-ink-900">{tableNo} 桌 開桌</span>
         <div className="flex items-center rounded-pill border border-line bg-surface-2 px-2 py-1">
           <span className="type-dashboard-top-bar-tag text-ink-600">
-            {tableInfo.capacity} 人桌・{tableInfo.area}
+            {tableInfo
+              ? `${tableInfo.capacity} 人桌・${tableInfo.area}`
+              : '正在讀取桌位資料'}
           </span>
         </div>
         {isHeld && (
@@ -55,8 +58,8 @@ function OpenPageHeader({ tableNo, tableInfo, isHeld }) {
         )}
       </div>
 
-      <div className="flex flex-row items-center gap-2">
-        <span className="type-caption text-ink-600">今天 18:32</span>
+      <div className="ml-auto flex flex-row items-center gap-2">
+        <span className="type-caption text-ink-600">今天 {clockTime}</span>
         <BellButtonPlaceholder />
       </div>
     </header>
@@ -64,7 +67,7 @@ function OpenPageHeader({ tableNo, tableInfo, isHeld }) {
 }
 
 // 開桌人數的步進器：數字存在外層，這裡只負責顯示和通知
-function PeopleStepper({ label, value, min, max, onChange, hint }) {
+function PeopleStepper({ label, value, min, max, onChange, hint, disabled = false }) {
   const circleClass =
     'flex size-14 items-center justify-center rounded-full text-2xl text-brand-600 shadow-[inset_0_0_0_1.5px_var(--color-brand-600)] enabled:hover:bg-brand-100 disabled:cursor-not-allowed disabled:opacity-40'
 
@@ -77,7 +80,7 @@ function PeopleStepper({ label, value, min, max, onChange, hint }) {
           type="button"
           aria-label={`${label}減一`}
           onClick={() => onChange(value - 1)}
-          disabled={value <= min}
+          disabled={disabled || value <= min}
           className={circleClass}
         >
           −
@@ -87,7 +90,7 @@ function PeopleStepper({ label, value, min, max, onChange, hint }) {
           type="button"
           aria-label={`${label}加一`}
           onClick={() => onChange(value + 1)}
-          disabled={value >= max}
+          disabled={disabled || value >= max}
           className={circleClass}
         >
           ＋
@@ -105,11 +108,11 @@ function WalkinTab({ tableNo, capacity, openLabel, disabled, onOpen }) {
   const [adults, setAdults] = useState(1)
   const [kids, setKids] = useState(0)
 
-  const MAX_PEOPLE = 10
   const total = adults + kids
-  const seatsEnough = total <= capacity
+  const seatsEnough = total >= 1 && total <= capacity
 
   function handleOpen() {
+    if (!seatsEnough || disabled) return
     onOpen({ type: 'walkin', adults, kids })
   }
 
@@ -122,23 +125,25 @@ function WalkinTab({ tableNo, capacity, openLabel, disabled, onOpen }) {
         </p>
       </div>
 
-      <div className="flex gap-8">
+      <div className="flex flex-col gap-6 sm:flex-row sm:gap-8">
         <PeopleStepper
           label="大人"
           value={adults}
-          min={1}
-          max={MAX_PEOPLE - kids}
+          min={0}
+          max={capacity - kids}
           onChange={setAdults}
-          hint={`上限 ${MAX_PEOPLE} 位`}
+          hint={`最多 ${capacity} 位`}
+          disabled={disabled}
         />
-        <div className="w-px self-stretch bg-line" />
+        <div className="hidden w-px self-stretch bg-line sm:block" />
         <PeopleStepper
           label="小孩"
           value={kids}
           min={0}
-          max={MAX_PEOPLE - adults}
+          max={capacity - adults}
           onChange={setKids}
           hint="會帶出兒童友善推薦"
+          disabled={disabled}
         />
       </div>
 
@@ -147,13 +152,20 @@ function WalkinTab({ tableNo, capacity, openLabel, disabled, onOpen }) {
         <span className="type-body-sm text-ink-600">
           {seatsEnough
             ? `${tableNo} 是 ${capacity} 人桌，座位夠`
-            : `超過 ${capacity} 人桌的座位，可能要加椅子`}
+            : total === 0
+              ? '至少要有 1 位客人'
+              : `超過 ${capacity} 人桌的座位`}
         </span>
       </div>
 
       <div className="flex items-center gap-4">
         <div className="flex-1">
-          <SOButton text={openLabel} height="h-11" onClick={handleOpen} disabled={disabled} />
+          <SOButton
+            text={openLabel}
+            height="h-11"
+            onClick={handleOpen}
+            disabled={disabled || !seatsEnough}
+          />
         </div>
         <div className="w-28">
           <SOButton
@@ -187,11 +199,11 @@ function WaitlistTab({ list, openLabel, disabled, onOpen }) {
         list.map((group) => (
           <div
             key={group.id}
-            className="flex items-center gap-6 rounded-card border border-line px-5 py-4"
+            className="flex flex-wrap items-center gap-3 rounded-card border border-line px-4 py-4 sm:gap-6 sm:px-5"
           >
             <span className="w-14 type-h2 text-ink-900 tabular-nums">{group.queueNo}</span>
 
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <b className="type-body text-ink-900">{group.name}</b>
                 <span className="rounded-pill bg-warning-bg px-2.5 py-0.5 type-caption text-hold-ink shadow-[inset_0_0_0_1px_var(--color-warning-line)]">
@@ -203,7 +215,7 @@ function WaitlistTab({ list, openLabel, disabled, onOpen }) {
               </p>
             </div>
 
-            <div className="w-32">
+            <div className="ml-auto w-32">
               <SOButton
                 text={openLabel}
                 height="h-9"
@@ -271,33 +283,48 @@ function TableOpen() {
   const { tableNo } = useParams()
   const navigate = useNavigate()
 
-  // 網址帶的是桌號，開桌頁的 API 要桌位 id，從座位設定查
-  const seatsQuery = useQuery({
-    queryKey: [...queryScope.employee, 'seats'],
-    queryFn: ({ signal }) => fetchSeats(signal),
+  // Counter 可讀桌況總覽；桌位設定端點限 Manager，不能用它解桌號。
+  const tablesQuery = useQuery({
+    queryKey: [...queryScope.employee, 'tables'],
+    queryFn: ({ signal }) => fetchTables(signal),
   })
-  const tableId = seatsQuery.data?.find((seat) => seat.tableNo === tableNo)?.id
-  // S-02c 候位頁籤：只列「已叫號」的組別（叫了號、人已經在門口等）
-  const waitlistQuery = useQuery({
-    queryKey: [...queryScope.employee, 'waitlist'],
-    queryFn: ({ signal }) => fetchWaitlist(signal),
-  })
-  const calledWaitlist = (waitlistQuery.data ?? [])
-    .filter((w) => w.status === 'CALLED')
-    .map(toWaitlistGroup)
-
-
-  // 預約清單、保留、稍後的訂位都來自後端（工作包 E）；現場與候位開桌仍是假資料（工作包 D）
+  const table = tablesQuery.data?.find((item) => item.tableNo === tableNo)
+  const tableId = table?.tableId
   const optionsQuery = useOpenOptions(tableId)
   const options = optionsQuery.data
   const seatReservation = useSeatReservation()
   const cancelByStaff = useCancelReservationByStaff()
-  const [notice, setNotice] = useState(null)
+  const [noticeState, setNoticeState] = useState(null)
+  const notice = noticeState?.tableNo === tableNo ? noticeState.message : null
+  const setNotice = (message) => setNoticeState(message == null ? null : { tableNo, message })
+  const [openingAttempt, setOpeningAttempt] = useState(null)
+  const [cancelAttempt, setCancelAttempt] = useState(null)
+  const [pickedTabState, setPickedTabState] = useState(null)
+  const [pendingOpenState, setPendingOpenState] = useState(null)
+  const mountedRef = useRef(false)
+  const activeTableNoRef = useRef(tableNo)
+  const requestGenerationRef = useRef(0)
 
-  // 開桌選項回來前先用內建的對照表頂著，頂列的人數和區域不用等資料才出現
+  const isOpening =
+    openingAttempt?.tableNo === tableNo && openingAttempt.generation === requestGenerationRef.current
+  const isCancelling =
+    cancelAttempt?.tableNo === tableNo && cancelAttempt.generation === requestGenerationRef.current
+
+  // overview 只提供真實桌位資訊；walk-in / 候位操作還要等 open-options 成功。
   const tableInfo = options
     ? { capacity: options.seats, area: options.area }
-    : (TABLE_INFO_BY_NUMBER[tableNo] ?? { capacity: 4, area: '座位區' })
+    : table
+      ? { capacity: table.seats, area: table.area }
+      : null
+  const optionsReady = Boolean(
+    table &&
+      tablesQuery.isSuccess &&
+      !tablesQuery.isError &&
+      options &&
+      optionsQuery.isSuccess &&
+      !optionsQuery.isError,
+  )
+  const canOpenTable = optionsReady && options.status === 'AVAILABLE'
   // 115 分鐘內的訂位（沒有就是 null）
   const upcoming = options?.upcomingOnThisTable
   const conflict = upcoming
@@ -307,10 +334,13 @@ function TableOpen() {
 
   // 坐不坐得下、用餐時間在現在 −10 ～ +30 分的篩選都在後端做了，這裡不再 filter
   const visibleReservations = (options?.reservations ?? []).map(toReservationRow)
-  const reservedHold = visibleReservations.find((item) => item.id === reservedHoldId) ?? null
   const reservationCount = visibleReservations.length
   const openLabel = conflict ? '仍要開桌' : '開桌'
-  const isHeld = reservedHold !== null
+  const isHeld = Boolean(options?.heldFor)
+  // 候位資料由 open-options 按這桌 seats 篩過；不再讀全店候位清單。
+  const calledWaitlist = (options?.waitlist ?? [])
+    .filter((group) => group.status === 'CALLED')
+    .map(toWaitlistGroup)
   const defaultTab =
     isHeld || reservationCount > 0
       ? 'reservation'
@@ -319,10 +349,32 @@ function TableOpen() {
         : 'walkin'
   // 資料回來前不知道預設頁籤，沒手動切過就一直跟著資料決定。
   // 不用 effect 等資料回來再 setState，pickedTab 有值（手動切過）就以它為準，沒有就用算出來的
-  const [pickedTab, setPickedTab] = useState(null)
+  const pickedTab = pickedTabState?.tableNo === tableNo ? pickedTabState.tab : null
+  const setPickedTab = (tab) =>
+    setPickedTabState(tab == null ? null : { tableNo, tab })
   const activeTab = pickedTab ?? defaultTab
   const setActiveTab = setPickedTab
-  const [pendingOpen, setPendingOpen] = useState(null)
+  const pendingOpen = pendingOpenState?.tableNo === tableNo ? pendingOpenState.payload : null
+  const setPendingOpen = (payload) =>
+    setPendingOpenState(payload == null ? null : { tableNo, payload })
+
+  useLayoutEffect(() => {
+    mountedRef.current = true
+    activeTableNoRef.current = tableNo
+    requestGenerationRef.current += 1
+    return () => {
+      mountedRef.current = false
+      requestGenerationRef.current += 1
+    }
+  }, [tableNo])
+
+  useEffect(() => {
+    setPickedTab(null)
+    setPendingOpen(null)
+    setNotice(null)
+    setOpeningAttempt(null)
+    setCancelAttempt(null)
+  }, [tableNo])
 
   const tabs = [
     { key: 'walkin', label: '現場' },
@@ -330,53 +382,142 @@ function TableOpen() {
     { key: 'reservation', label: '預約', count: reservationCount },
   ]
 
+  function beginAttempt() {
+    const attempt = {
+      tableNo,
+      generation: ++requestGenerationRef.current,
+    }
+    return {
+      ...attempt,
+      isCurrent: () =>
+        mountedRef.current &&
+        activeTableNoRef.current === attempt.tableNo &&
+        requestGenerationRef.current === attempt.generation,
+    }
+  }
+
+  function clearAttempt(setAttempt, attempt) {
+    if (!mountedRef.current) return
+    setAttempt((current) =>
+      current?.tableNo === attempt.tableNo && current?.generation === attempt.generation
+        ? null
+        : current,
+    )
+  }
+
+  function retryLoad() {
+    setNotice(null)
+    if (tablesQuery.isError || !table) {
+      void tablesQuery.refetch()
+    } else {
+      void optionsQuery.refetch()
+    }
+  }
+
   // 有訂位衝突就先跳確認框，沒有就直接開桌
   function requestOpen(payload) {
+    if (isOpening || isCancelling) return
+    if (!optionsReady || !canOpenTable) {
+      setNotice('桌況或開桌資料已更新，請重試後再操作。')
+      return
+    }
+
     const isReservedGuest = payload.type === 'reservation' && payload.reservationId === reservedHoldId
+    if (isHeld && !isReservedGuest) {
+      setNotice('這張桌目前保留給訂位客人，只能為該筆訂位報到。')
+      return
+    }
+    if (payload.type === 'walkin' && (payload.adults < 0 || payload.kids < 0 || payload.adults + payload.kids < 1 || payload.adults + payload.kids > options.seats)) {
+      setNotice(`開桌人數需為 1 至 ${options.seats} 位。`)
+      return
+    }
+    if (payload.type === 'waitlist' && (payload.people < 1 || payload.people > options.seats)) {
+      setNotice(`這組候位人數超過 ${options.seats} 人桌容量，請重新整理候位資料。`)
+      return
+    }
+
+    setNotice(null)
     if (conflict && !isReservedGuest) {
       setPendingOpen(payload)
     } else {
-      confirmOpen(payload)
+      void confirmOpen(payload)
     }
   }
 
-  function confirmOpen(payload) {
-    if (payload.type === 'reservation') {
-      if (seatReservation.isPending) return
+  async function confirmOpen(payload) {
+    if (!optionsReady || !canOpenTable || tableId === undefined) {
       setPendingOpen(null)
-      setNotice(null)
-      seatReservation.mutate(
-        { id: payload.reservationId, tableId },
-        {
-          onSuccess: () => navigate('/admin/table_overview'),
-          // 搶桌、撞到保留、訂位剛被取消或已逾時：留在本頁，清單會重抓
-          onError: (error) => setNotice(error.message),
-        },
-      )
-      return
-    }
-    
-        // S-02c 候位開桌：跟 S-10b 同一支 API，人數用登記時填的
-    if (payload.type === 'waitlist') {
-      setPendingOpen(null)
-      seatWaitlist(payload.waitlistId, tableId)
-        .then(() => navigate('/admin/table_overview'))
-        .catch((error) => setNotice(`候位開桌失敗：${error.message}`))
+      setNotice('桌況或開桌資料已更新，請重試後再操作。')
       return
     }
 
-    // 現場開桌：POST /api/admin/tables/{id}/open，成功後回桌況總覽
+    const isReservedGuest = payload.type === 'reservation' && payload.reservationId === reservedHoldId
+    if (isHeld && !isReservedGuest) {
+      setPendingOpen(null)
+      setNotice('這張桌目前保留給訂位客人，只能為該筆訂位報到。')
+      return
+    }
+    if (payload.type === 'walkin' && (payload.adults < 0 || payload.kids < 0 || payload.adults + payload.kids < 1 || payload.adults + payload.kids > options.seats)) {
+      setPendingOpen(null)
+      setNotice(`開桌人數需為 1 至 ${options.seats} 位。`)
+      return
+    }
+    if (payload.type === 'waitlist' && (payload.people < 1 || payload.people > options.seats)) {
+      setPendingOpen(null)
+      setNotice(`這組候位人數超過 ${options.seats} 人桌容量，請重新整理候位資料。`)
+      return
+    }
+
+    if (isOpening || isCancelling) return
+
     setPendingOpen(null)
-    openTable(tableId, payload.adults, payload.kids)
-      .then(() => navigate('/admin/table_overview'))
-      .catch((error) => setNotice(`開桌失敗：${error.message}`))
+    setNotice(null)
+    const attempt = beginAttempt()
+    setOpeningAttempt(attempt)
+    if (payload.type === 'reservation') {
+      try {
+        await seatReservation.mutateAsync({ id: payload.reservationId, tableId })
+        if (attempt.isCurrent()) navigate('/admin/table_overview')
+      } catch (error) {
+        // 搶桌、撞到保留、訂位剛被取消或已逾時：留在本頁，清單會重抓
+        if (attempt.isCurrent()) setNotice(error?.message ?? '訂位報到失敗，請重試。')
+      } finally {
+        clearAttempt(setOpeningAttempt, attempt)
+      }
+      return
+    }
+
+    try {
+      if (payload.type === 'waitlist') {
+        await seatWaitlist(payload.waitlistId, tableId)
+      } else {
+        await openTable(tableId, payload.adults, payload.kids)
+      }
+      if (attempt.isCurrent()) navigate('/admin/table_overview')
+    } catch (error) {
+      if (attempt.isCurrent()) {
+        setNotice(`${payload.type === 'waitlist' ? '候位開桌' : '開桌'}失敗：${error?.message ?? '請重試。'}`)
+      }
+    } finally {
+      clearAttempt(setOpeningAttempt, attempt)
+    }
   }
 
   function cancelReservation(id) {
-    if (cancelByStaff.isPending) return
+    if (isOpening || isCancelling) return
     // 不用自己從清單移掉：成功後 hook 會重抓開桌選項，那筆就消失，這張桌的保留也跟著解開
     setNotice(null)
-    cancelByStaff.mutate({ id }, { onError: (error) => setNotice(error.message) })
+    const attempt = beginAttempt()
+    setCancelAttempt(attempt)
+    cancelByStaff.mutate(
+      { id },
+      {
+        onError: (error) => {
+          if (attempt.isCurrent()) setNotice(error?.message ?? '取消訂位失敗，請重試。')
+        },
+        onSettled: () => clearAttempt(setCancelAttempt, attempt),
+      },
+    )
   }
 
   return (
@@ -384,87 +525,121 @@ function TableOpen() {
       <OpenPageHeader tableNo={tableNo} tableInfo={tableInfo} isHeld={isHeld} />
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <main className="mx-auto w-full max-w-205 p-6">
+        <main className="mx-auto w-full max-w-205 p-4 sm:p-6">
           {notice && <p className="mb-4 type-body-sm text-danger">{notice}</p>}
-          {optionsQuery.isError && (
-            <p className="mb-4 type-body-sm text-danger">{optionsQuery.error.message}</p>
+          {tablesQuery.isPending && !table && (
+            <p role="status" className="py-10 text-center type-body-sm text-ink-600">正在讀取桌位資料…</p>
           )}
-          {isHeld ? (
-            <AlertBar
-              tone="hold"
-              title={`${tableNo} 預約保留中（${reservedHold.time} ${reservedHold.name} ${reservedHold.people} 位）`}
-            >
-              這張桌保留給 {reservedHold.name} {reservedHold.time}（{reservedHold.people} 位）。客人來電取消的話，直接按下面的「取消訂位」。
-              <br />
-              {reservedHold.name} 到了，直接在下面按「報到開桌」。
-            </AlertBar>
-          ) : (
-            conflict && (
-              <AlertBar
-                tone="danger"
-                title={`${tableNo} 在 ${conflict.time} 有訂位（${conflict.name} ${conflict.people} 位），現在開桌，客人可能還沒吃完訂位就到了。`}
-              >
-                只提醒、不擋。按「仍要開桌」會再確認一次；想把桌留給那組，就換一張桌。
-              </AlertBar>
-            )
+          {tablesQuery.isError && (
+            <LoadError message={tablesQuery.error.message} onRetry={retryLoad} />
           )}
+          {tablesQuery.isSuccess && !table && (
+            <div className="flex flex-col items-center gap-3 py-10 text-center">
+              <p className="type-body-sm text-danger">找不到 {tableNo} 桌的資料，請返回桌況總覽重新選擇。</p>
+              <SOButton text="回桌況總覽" variant="secondary" height="h-10" onClick={() => navigate('/admin/table_overview')} />
+            </div>
+          )}
+          {table && optionsQuery.isPending && !options && (
+            <p role="status" className="py-10 text-center type-body-sm text-ink-600">正在確認桌況與開桌選項…</p>
+          )}
+          {table && optionsQuery.isError && (
+            <LoadError message={optionsQuery.error.message} onRetry={retryLoad} />
+          )}
+          {optionsReady && (
+            <>
+              {isHeld ? (
+                <AlertBar
+                  tone="hold"
+                  title={`${tableNo} 預約保留中（${toTime(options.heldFor.startTime)} ${options.heldFor.name} ${options.heldFor.partySize} 位）`}
+                >
+                  這張桌保留給 {options.heldFor.name} {toTime(options.heldFor.startTime)}（{options.heldFor.partySize} 位）。客人來電取消的話，直接按下面的「取消訂位」。
+                  <br />
+                  {options.heldFor.name} 到了，直接在下面按「報到開桌」。
+                </AlertBar>
+              ) : (
+                conflict && (
+                  <AlertBar
+                    tone="danger"
+                    title={`${tableNo} 在 ${conflict.time} 有訂位（${conflict.name} ${conflict.people} 位），現在開桌，客人可能還沒吃完訂位就到了。`}
+                  >
+                    只提醒、不擋。按「仍要開桌」會再確認一次；想把桌留給那組，就換一張桌。
+                  </AlertBar>
+                )
+              )}
 
-          <div className="flex gap-6 rounded-t-card border-b border-line bg-surface px-4">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => setActiveTab(tab.key)}
-                className={`-mb-px border-b-2 py-3 type-body ${
-                  activeTab === tab.key
-                    ? 'border-brand-600 font-bold text-brand-600'
-                    : 'border-transparent text-ink-600 hover:text-ink-900'
-                }`}
+              {!canOpenTable && (
+                <AlertBar tone="danger" title={`${tableNo} 桌目前不是空桌`}>
+                  目前狀態：{options.status}。請返回桌況總覽確認最新狀態。
+                </AlertBar>
+              )}
+
+              <div role="tablist" aria-label={`${tableNo} 桌開桌方式`} className="flex gap-6 overflow-x-auto rounded-t-card border-b border-line bg-surface px-4">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    role="tab"
+                    id={`table-open-tab-${tab.key}`}
+                    aria-controls="table-open-panel"
+                    aria-selected={activeTab === tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    className={`-mb-px border-b-2 py-3 type-body ${
+                      activeTab === tab.key
+                        ? 'border-brand-600 font-bold text-brand-600'
+                        : 'border-transparent text-ink-600 hover:text-ink-900'
+                    }`}
+                  >
+                    {tab.label}
+                    {tab.count !== undefined && ` ${tab.count}`}
+                  </button>
+                ))}
+              </div>
+
+              <section
+                id="table-open-panel"
+                role="tabpanel"
+                aria-labelledby={`table-open-tab-${activeTab}`}
+                className="min-w-0 overflow-x-auto rounded-b-card border border-t-0 border-line bg-surface p-4 sm:p-6"
               >
-                {tab.label}
-                {tab.count !== undefined && ` ${tab.count}`}
-              </button>
-            ))}
-          </div>
-
-          <section className="rounded-b-card border border-t-0 border-line bg-surface p-6">
-            {activeTab === 'walkin' && (
-              <WalkinTab
-                tableNo={tableNo}
-                capacity={tableInfo.capacity}
-                openLabel={openLabel}
-                disabled={isHeld}
-                onOpen={requestOpen}
-              />
-            )}
-            {activeTab === 'waitlist' && (
-              <WaitlistTab
-                list={calledWaitlist}
-                openLabel={openLabel}
-                disabled={isHeld}
-                onOpen={requestOpen}
-              />
-            )}
-            {activeTab === 'reservation' && (
-              <ReservationTab
-                list={visibleReservations}
-                tableNo={tableNo}
-                seats={tableInfo.capacity}
-                holdId={isHeld ? reservedHold.id : null}
-                openLabel={openLabel}
-                busy={seatReservation.isPending || cancelByStaff.isPending}
-                onOpen={requestOpen}
-                onCancel={cancelReservation}
-              />
-            )}
-          </section>
+                {activeTab === 'walkin' && (
+                  <WalkinTab
+                    tableNo={tableNo}
+                    capacity={options.seats}
+                    openLabel={openLabel}
+                    disabled={!canOpenTable || isHeld || isOpening}
+                    onOpen={requestOpen}
+                  />
+                )}
+                {activeTab === 'waitlist' && (
+                  <WaitlistTab
+                    list={calledWaitlist}
+                    openLabel={openLabel}
+                    disabled={!canOpenTable || isHeld || isOpening}
+                    onOpen={requestOpen}
+                  />
+                )}
+                {activeTab === 'reservation' && (
+                  <ReservationTab
+                    list={visibleReservations}
+                    tableNo={tableNo}
+                    seats={options.seats}
+                    holdId={reservedHoldId}
+                    openLabel={openLabel}
+                    busy={!canOpenTable || isOpening || isCancelling}
+                    onOpen={requestOpen}
+                    onCancel={cancelReservation}
+                  />
+                )}
+              </section>
+            </>
+          )}
         </main>
       </div>
 
       {pendingOpen && (
         <ConfirmDialog
           tableNo={tableNo}
-          onConfirm={() => confirmOpen(pendingOpen)}
+          onConfirm={() => void confirmOpen(pendingOpen)}
           onChangeTable={() => navigate('/admin/table_overview')}
         />
       )}
@@ -474,14 +649,23 @@ function TableOpen() {
 
 export default TableOpen
 
-// 後端 WaitlistEntry → 候位頁籤原本用的欄位名稱
+function LoadError({ message, onRetry }) {
+  return (
+    <div className="flex flex-col items-center gap-3 py-10 text-center">
+      <p role="alert" className="type-body-sm text-danger">資料讀取失敗：{message}</p>
+      <SOButton text="重試" height="h-10" onClick={onRetry} />
+    </div>
+  )
+}
+
+// open-options 回傳的候位資料已按本桌 capacity 過濾。
 function toWaitlistGroup(w) {
   return {
     id: w.id,
-    queueNo: w.ticketNo,
-    name: w.contactName,
+    queueNo: w.no,
+    name: w.name,
     people: w.partySize,
-    waitMinutes: Math.max(0, Math.floor((Date.now() - new Date(w.createdAt)) / 60000)),
+    waitMinutes: w.waitedMinutes,
   }
 }
 

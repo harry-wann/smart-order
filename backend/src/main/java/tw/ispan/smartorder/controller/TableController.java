@@ -4,6 +4,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import tw.ispan.smartorder.common.exception.ApiException;
 import tw.ispan.smartorder.dto.OpenTableRequest;
 import tw.ispan.smartorder.dto.TableOverviewResponse;
 import tw.ispan.smartorder.service.QrCodeService;
@@ -31,6 +32,9 @@ public class TableController {
 
     @PostMapping("/{id}/open")
     public TableOverviewResponse open(@PathVariable Long id, @RequestBody OpenTableRequest request) {
+        if (request == null) {
+            throw ApiException.badRequest("請提供開桌人數");
+        }
         return tableService.open(id, request.adultCount(), request.childCount());
     }
 

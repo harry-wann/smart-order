@@ -1,4 +1,5 @@
 import { employeeClient } from '@/services/client/employeeClient'
+import type { TableHold } from '../table/tableApi'
 import type { CancelledReservation, CancelSource, ReservationStatus } from './types'
 
 export type AdminReservation = {
@@ -94,7 +95,7 @@ export type OpenOptions = {
     preorderItemCount: number
     assignedTableNo: string | null
   }[]
-  heldFor: { reservationId: number; reservationNo: string; name: string; partySize: number; startTime: string } | null
+  heldFor: TableHold | null
   upcomingOnThisTable: { reservationNo: string; name: string; startTime: string; endTime: string; partySize: number } | null
 }
 

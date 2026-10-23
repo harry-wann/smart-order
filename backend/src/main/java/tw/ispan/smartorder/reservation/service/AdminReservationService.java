@@ -39,6 +39,7 @@ import tw.ispan.smartorder.reservation.enums.ReservationStatus;
 import tw.ispan.smartorder.reservation.repository.ReservationRepository;
 import tw.ispan.smartorder.staff.repository.StaffRepository;
 import tw.ispan.smartorder.staff.security.StaffPrincipal;
+import tw.ispan.smartorder.service.TableStatusNotifier;
 
 // S-07 預約管理：櫃檯看一天的訂位、代客取消、報到開桌（S-07b）。
 // 預約保留不存欄位也沒有排程，都是 TableHoldService 從訂位時間算出來的，
@@ -57,6 +58,7 @@ public class AdminReservationService {
     private final DiningSessionRepository sessionRepo;
     private final StaffRepository staffRepo;
     private final TableHoldService holdService;
+    private final TableStatusNotifier tableStatusNotifier;
     private final ReservationProperties properties;
     private final Clock clock;
 
@@ -66,6 +68,7 @@ public class AdminReservationService {
             DiningSessionRepository sessionRepo,
             StaffRepository staffRepo,
             TableHoldService holdService,
+            TableStatusNotifier tableStatusNotifier,
             ReservationProperties properties,
             Clock clock) {
         this.reservationRepo = reservationRepo;
@@ -73,6 +76,7 @@ public class AdminReservationService {
         this.sessionRepo = sessionRepo;
         this.staffRepo = staffRepo;
         this.holdService = holdService;
+        this.tableStatusNotifier = tableStatusNotifier;
         this.properties = properties;
         this.clock = clock;
     }
@@ -132,7 +136,11 @@ public class AdminReservationService {
         if (reservation.getStatus() != ReservationStatus.CONFIRMED) {
             throw ApiException.conflict("RESERVATION_NOT_CANCELLABLE", "這筆訂位已經不能取消了");
         }
+        Long originalTableId = reservation.getTableId();
         reservation.cancel(CancelSource.STAFF, staff.id(), LocalDateTime.now(clock));
+        if (originalTableId != null) {
+            tableStatusNotifier.notifyAfterCommit(originalTableId);
+        }
         // reason 不存欄位，只寫 log（03 §5）
         log.info("櫃檯代客取消訂位 {}，員工 {}（{}），原因：{}",
                 reservation.getReservationNo(), staff.displayName(), staff.id(), reason == null ? "未填" : reason);
@@ -233,12 +241,7 @@ public class AdminReservationService {
                     assignedTableNos.get(reservation.getTableId())));
         }
 
-        HeldForResponse heldFor = holder == null ? null : new HeldForResponse(
-                holder.getId(),
-                holder.getReservationNo() == null ? "" : holder.getReservationNo(),
-                holder.getContactName(),
-                holder.getPartySize(),
-                properties.toOffset(holder.getStartTime()));
+        HeldForResponse heldFor = holdService.toHeldFor(holder);
         UpcomingReservationResponse upcomingResponse = upcoming == null ? null : new UpcomingReservationResponse(
                 upcoming.getReservationNo() == null ? "" : upcoming.getReservationNo(),
                 upcoming.getContactName(),
@@ -329,6 +332,10 @@ public class AdminReservationService {
         // 不改 table_id：那是訂位當下配的桌，實際坐哪張記在用餐紀錄。
         // 名額會佔到客人結帳為止：SEATED 加上這筆 OPEN 的 dining_session 才算佔位（見 ReservationRepository.findOccupying）
         reservation.setStatus(ReservationStatus.SEATED);
+        tableStatusNotifier.notifyAfterCommit(tableId);
+        if (reservation.getTableId() != null && !reservation.getTableId().equals(tableId)) {
+            tableStatusNotifier.notifyAfterCommit(reservation.getTableId());
+        }
 
         return new SeatReservationResponse(
                 session.getId(),

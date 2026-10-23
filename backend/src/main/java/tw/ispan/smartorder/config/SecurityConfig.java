@@ -81,8 +81,13 @@ public class SecurityConfig {
                     authorize.requestMatchers("/api/admin/reservations/**").hasAnyRole("COUNTER", "MANAGER");
                     // 排程手動觸發會一次改一批訂位的狀態（例如 NO_SHOW），只給店長
                     authorize.requestMatchers("/api/admin/scheduler/**").hasRole("MANAGER");
-                    // 只列這兩條，不寫 /api/admin/tables/**：同路徑下還有隊友的桌況總覽、現場開桌、整理完成
-                    authorize.requestMatchers("/api/admin/tables/available", "/api/admin/tables/*/open-options")
+                    authorize.requestMatchers(HttpMethod.GET, "/api/admin/tables-config", "/api/admin/tables-config/**")
+                            .hasAnyRole("COUNTER", "MANAGER");
+                    authorize.requestMatchers("/api/admin/tables-config", "/api/admin/tables-config/**")
+                            .hasRole("MANAGER");
+                    authorize.requestMatchers("/api/admin/waitlist", "/api/admin/waitlist/**")
+                            .hasAnyRole("COUNTER", "MANAGER");
+                    authorize.requestMatchers("/api/admin/tables", "/api/admin/tables/**")
                             .hasAnyRole("COUNTER", "MANAGER");
 
                     authorize
