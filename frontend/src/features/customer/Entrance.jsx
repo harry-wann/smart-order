@@ -21,7 +21,7 @@ export default function Entrance() {
     icon: SvgIconMap.OrderCheck,
     textH2: "我的預約",
     textP: "查看或取消訂位",
-    onclick:()=>navigate("/member")
+    onclick:()=>navigate("/member/reservations")
   }
   const member = {
     icon: SvgIconMap.OrderMember,
@@ -46,7 +46,9 @@ export default function Entrance() {
         <CardLink data={ent} />
         <CardLink data={member} />
       </div>
-      <div onClick={()=>navigate("/reserve/guest")} className="px-4">
+      {/* 這裡只是提示，真正的入口是桌上 QR（/order/checkin/桌號）；
+          點了固定帶到某一桌，會把正在別桌點餐的人登出並帶到錯的桌 */}
+      <div className="px-4">
         <InfoBox outicon={SvgIconMap.OrderQrcode} col="quiet" text="F" custimtext={
             <>
               <p>
