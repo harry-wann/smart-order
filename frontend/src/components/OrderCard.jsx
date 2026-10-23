@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import SOButton from './SOButton'
 
-// 出菜看板（S-04）的一張點餐單卡片，只用在深色的 KitchenOverview（顏色來自 kds.colors.css 的 --kds-*）
+// 出菜看板（S-04）的一張點餐單卡片，只用在深色的 KitchenOverview（顏色來自 kds.colors.css 的 --kds-*）。
+// 有 completedAt 就是「最近完成」分頁的已完成卡片：顯示完成時間、可以取消勾選（撤回出餐），
+// 選單只有報廢細項；不算等待時間，也沒有整單出完
 
 // 等待超過 15 分鐘就是久候（M4 4.6）：邊框變紅、時間閃爍
 const LATE_AFTER_MS = 15 * 60 * 1000
@@ -38,6 +40,11 @@ const menuItemClass =
 
 function itemDetail(item) {
   return [item.optionsSummary, item.note?.trim()].filter(Boolean).join('・')
+}
+
+// 'HH:MM'，跟看板頂列的時鐘同一種寫法
+function clockTime(value) {
+  return new Date(value).toTimeString().slice(0, 5)
 }
 
 // 深色的對話框外框。放在元件外面：看板每秒更新時鐘，寫在 OrderCard 裡面會每秒重建、輸入框失去焦點
@@ -91,6 +98,7 @@ export default function OrderCard({
   onWasteItem,
   isItemActionPending = false,
   isLeaving = false,
+  completedAt = null,
 }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false)
@@ -123,8 +131,9 @@ export default function OrderCard({
     }
   }, [isMenuOpen])
 
-  // now 由看板每秒更新，等待分鐘與久候警示跟著時鐘走，不用等新資料
-  const waitingMs = placedAt ? Math.max(0, now - new Date(placedAt).getTime()) : 0
+  const isCompleted = Boolean(completedAt)
+  // now 由看板每秒更新，等待分鐘與久候警示跟著時鐘走，不用等新資料；已完成的單不算等待
+  const waitingMs = placedAt && !isCompleted ? Math.max(0, now - new Date(placedAt).getTime()) : 0
   const waitingMinutes = Math.floor(waitingMs / 60000)
   const isLate = waitingMs > LATE_AFTER_MS
 
@@ -179,7 +188,7 @@ export default function OrderCard({
 
   return (
     <article
-      aria-label={`${tableNo} 第 ${sequenceNo} 單`}
+      aria-label={`${tableNo} 第 ${sequenceNo} 單${isCompleted ? '，已完成' : ''}`}
       aria-hidden={isLeaving || undefined}
       className={`flex flex-col gap-4 rounded-card border-2 bg-[var(--kds-card)] p-5 text-[var(--kds-ink)] motion-safe:transition-all motion-safe:duration-500 ${
         isLate ? 'border-danger' : 'border-transparent'
@@ -209,19 +218,29 @@ export default function OrderCard({
                 role="menu"
                 className="absolute top-full right-0 z-20 mt-1 w-36 rounded-xl border border-[var(--kds-line)] bg-[var(--kds-topbar)] p-1.5 shadow-pop"
               >
-                <button
-                  type="button"
-                  role="menuitem"
-                  disabled={isCancelling}
-                  onClick={openCancelTicket}
-                  className={menuItemClass}
-                >
-                  {isCancelling ? '取消中…' : '取消訂單'}
-                </button>
-                <div role="separator" className="mx-2 my-1 border-t border-[var(--kds-line)]" />
-                <button type="button" role="menuitem" onClick={() => openItemAction('cancel')} className={menuItemClass}>
-                  取消細項
-                </button>
+                {/* 已完成的單都出完了，沒有能取消的東西，只留報廢（客人常在全部上菜後才退菜） */}
+                {!isCompleted && (
+                  <>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      disabled={isCancelling}
+                      onClick={openCancelTicket}
+                      className={menuItemClass}
+                    >
+                      {isCancelling ? '取消中…' : '取消訂單'}
+                    </button>
+                    <div role="separator" className="mx-2 my-1 border-t border-[var(--kds-line)]" />
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => openItemAction('cancel')}
+                      className={menuItemClass}
+                    >
+                      取消細項
+                    </button>
+                  </>
+                )}
                 <button type="button" role="menuitem" onClick={() => openItemAction('waste')} className={menuItemClass}>
                   報廢細項
                 </button>
@@ -232,14 +251,18 @@ export default function OrderCard({
 
         <div className="flex items-center justify-between type-body text-[var(--kds-ink-2)]">
           <span>第 {sequenceNo} 單</span>
-          <span
-            className={`flex items-center gap-1 ${isLate ? 'font-bold text-[var(--kds-late)] motion-safe:animate-pulse' : ''}`}
-          >
-            <SvgIconMap.CartTime aria-hidden="true" className="svg-icon size-5" />
-            <span>
-              {waitingMinutes} 分{isLate && <span className="sr-only">，已超過 15 分鐘</span>}
+          {isCompleted ? (
+            <span className="font-bold text-[var(--kds-done)]">完成 {clockTime(completedAt)}</span>
+          ) : (
+            <span
+              className={`flex items-center gap-1 ${isLate ? 'font-bold text-[var(--kds-late)] motion-safe:animate-pulse' : ''}`}
+            >
+              <SvgIconMap.CartTime aria-hidden="true" className="svg-icon size-5" />
+              <span>
+                {waitingMinutes} 分{isLate && <span className="sr-only">，已超過 15 分鐘</span>}
+              </span>
             </span>
-          </span>
+          )}
         </div>
       </div>
 
@@ -286,16 +309,18 @@ export default function OrderCard({
       </ul>
 
       {/* 整單出完：把還沒出的品項一次標成已出餐，後端再推導出整張單完成。
-          品項都勾了但卡片還在（例如最後一項是被取消掉的）時也可以按，用來收掉這張卡 */}
-      <button
-        type="button"
-        disabled={isCompleting || isLeaving}
-        onClick={() => onComplete?.(ticketId)}
-        className="mt-1 flex h-13 w-full items-center justify-center gap-2 rounded-(--radius-btn) bg-[var(--kds-line)] type-button text-[var(--kds-ink)] transition-colors hover:bg-[var(--kds-box)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--kds-ink)] disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        <SvgIconMap.CardCheck aria-hidden="true" />
-        <span>{isCompleting ? '處理中…' : '整單出完'}</span>
-      </button>
+          品項都勾了但卡片還在（例如最後一項是被取消掉的）時也可以按，用來收掉這張卡；已完成的卡片不需要 */}
+      {!isCompleted && (
+        <button
+          type="button"
+          disabled={isCompleting || isLeaving}
+          onClick={() => onComplete?.(ticketId)}
+          className="mt-1 flex h-13 w-full items-center justify-center gap-2 rounded-(--radius-btn) bg-[var(--kds-line)] type-button text-[var(--kds-ink)] transition-colors hover:bg-[var(--kds-box)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--kds-ink)] disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <SvgIconMap.CardCheck aria-hidden="true" />
+          <span>{isCompleting ? '處理中…' : '整單出完'}</span>
+        </button>
+      )}
 
       {isCancelDialogOpen && (
         <KdsDialog

@@ -30,6 +30,7 @@
           <li><a href="#changes">實際改法</a></li>
           <li><a href="#added">補上的基本功能</a></li>
           <li><a href="#review">審查後再修的地方</a></li>
+          <li><a href="#followup">收尾後補完：最近完成與報廢紀錄</a></li>
           <li><a href="#walkthrough">手把手驗收</a></li>
           <li><a href="#evidence">提交與驗證紀錄</a></li>
           <li><a href="#feedback">前輩回饋、報告與履歷</a></li>
@@ -180,10 +181,45 @@
           <h3>已知限制（這次沒處理）</h3>
           <ul class="prompt-list">
             <li><span><del><strong>出餐順序靠分類名稱「肉品」判斷。</strong>菜單管理已經可以改分類名稱，店長如果把「肉品」改名或另外新增「牛肉」分類，肉類會被排到菜盤那一級。</del> <strong>已在後續修正：</strong>分類多了「出餐順序」欄位（API 規格 §4.12 的六級：鍋底 1、菜盤 2、火鍋料 3、肉品 4、主食 5、飲料甜點 6），看板依它排序，改名不再影響。見<a href="menu-admin.html#followup">菜單管理文章的收尾補完</a>。</span></li>
-            <li><span><strong>誤勾最後一道菜，畫面上沒辦法復原。</strong>卡片會在 0.5 秒內淡出。後端支援「取消勾選」並重新打開這張單，但 UI 規格裡的「最近完成」分頁還沒做（不在 M4 驗收表），所以只能從 API 復原。</span></li>
+            <li><span><del><strong>誤勾最後一道菜，畫面上沒辦法復原。</strong>卡片會在 0.5 秒內淡出，UI 規格裡的「最近完成」分頁還沒做。</del> <strong>已在後續修正</strong>，見<a href="#followup">收尾後補完</a>。</span></li>
             <li><span><strong>4.8 預約優先</strong>要有 M7 的預先點餐才會有這種單，這次不做。</span></li>
-            <li><span>報廢會讓帳單變少，但沒有記錄是哪位員工操作的。以後如果要追查退菜金額，可以加上操作者。</span></li>
+            <li><span><del>報廢會讓帳單變少，但沒有記錄是哪位員工操作的。</del> <strong>已在後續修正</strong>，見<a href="#followup">收尾後補完</a>。</span></li>
           </ul>
+        </section>
+
+        <section class="section-card" id="followup">
+          <span class="section-kicker">收尾後補完 · 整合成果</span>
+          <h2>誤勾可以救回來，退菜也知道是誰做的</h2>
+          <p>上一節列的兩個已知限制，收尾時補完了（commit <code>34b00e8</code>，審查後的修正在 <code>1756028</code>）。</p>
+
+          <h3>1. 「最近完成」分頁（S-04 規格）</h3>
+          <div class="compare-grid">
+            <div class="compare-side"><div class="compare-label">修正前</div><p>最後一道菜一勾，卡片 0.5 秒內淡出，畫面上找不到這張單。後端雖然能撤回出餐，但沒有入口；查「最近完成」的 API 也不存在（回 404）。</p></div>
+            <div class="compare-side after"><div class="compare-label">修正後</div><p>看板頂列多了「進行中／最近完成」兩個分頁。最近完成列出<strong>還在用餐的桌</strong>最近 60 分鐘內完成的單（最多 50 張，最新的在前），每張顯示「完成 HH:MM」。取消勾選某道菜，單就回到進行中、重新出現在看板上。</p></div>
+          </div>
+          <ul class="prompt-list">
+            <li><span><strong>「完成時間」怎麼定：</strong>用這張單最後一道菜的出餐時間（<code>served_at</code> 的最大值），而不是單的 <code>updated_at</code>。<code>updated_at</code> 是「任何一欄被改都會變」的紀錄欄位，意思不夠精確。</span></li>
+            <li><span><strong>不重寫一份排序：</strong>最近完成和進行中共用同一段查詢拿品項，所以卡片上的出餐順序（鍋底、菜盤、火鍋料、肉品…）兩邊一樣。</span></li>
+            <li><span><strong>已完成的卡片還能報廢：</strong>客人常在全部上菜之後才退菜，所以已完成卡片的「⋯」選單保留「報廢細項」，但拿掉「取消訂單」「取消細項」。</span></li>
+            <li><span><strong>只在需要時抓資料：</strong>最近完成的清單只有切到這個分頁才抓；停在這個分頁時也會定時重抓，已結帳的桌和超過 60 分鐘的單會自己消失。</span></li>
+          </ul>
+
+          <h3>2. 已結帳的桌，不能把完成的單「救活」</h3>
+          <div class="compare-grid">
+            <div class="compare-side"><div class="compare-label">修正前實測</div><p>一桌已經結帳離開，廚房在那桌已完成的單上取消勾選：回 204，單被重新打開成「待製作」，已經走掉的客人又出現在看板上。</p></div>
+            <div class="compare-side after"><div class="compare-label">修正後</div><p>已結帳或取消的桌，<strong>撤回會讓已完成的單重新打開</strong>時回 409 <code>SESSION_CLOSED</code>。單還沒做完（結帳不會檢查有沒有出完）時照樣可以撤回，因為那只是改正誤勾，不會重開任何東西。</p></div>
+          </div>
+
+          <h3>3. 報廢記錄是哪位員工</h3>
+          <p>報廢會讓帳單變少，所以要留下「誰做的」：<code>order_item</code> 多一個 <code>wasted_by_staff_id</code>（外鍵指向員工），報廢時從登入的員工 JWT 取得。重送報廢保留第一次的原因、時間和員工，不會被後來的人覆蓋。升級腳本 <code>migrate_order_item_waste_staff.sql</code> 加欄位和外鍵，可重複執行，舊的報廢紀錄維持空白（查不到當時是誰）。</p>
+
+          <div class="screen-gallery">
+            <figure class="screen-shot">
+              <a href="../assets/clara-kds-recent-1920.png"><img src="../assets/clara-kds-recent-1920.png" alt="出菜看板的最近完成分頁，每張卡片顯示完成時間，品項都已勾選"></a>
+              <figcaption>最近完成分頁：每張卡片顯示「完成 HH:MM」，取消勾選就回到進行中。</figcaption>
+            </figure>
+          </div>
+          <p class="intro-note">驗證：新功能檢查加基線、瀏覽器檢查全過；出菜看板、菜單管理、出餐順序、庫存快照、點餐交易、櫃檯代客點餐、結帳、購物車的回歸也都通過。獨立審查沒有 P1／P2。<a class="subtle-link" href="../evidence/34b00e8-http.json">查看 HTTP 紀錄</a>、<a class="subtle-link" href="../evidence/34b00e8-browser.json">瀏覽器紀錄</a>。</p>
         </section>
 
         <section class="section-card" id="walkthrough">

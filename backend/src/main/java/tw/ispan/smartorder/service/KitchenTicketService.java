@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import tw.ispan.smartorder.common.exception.ApiException;
+import tw.ispan.smartorder.dto.KitchenCompletedTicketResponse;
 import tw.ispan.smartorder.dto.KitchenTicketResponse;
 import tw.ispan.smartorder.dto.KitchenTicketResponse.KitchenItemResponse;
 import tw.ispan.smartorder.entity.DiningSessionEntity;
@@ -16,6 +17,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,10 +41,15 @@ public class KitchenTicketService {
     //   1 鍋底、2 菜盤、3 火鍋料、4 肉品、5 主食、6 飲料甜點
     //   鍋底品項（menu_item.is_soup_base = 1）固定 1，不管放在哪個分類
     //   其他品項用所屬分類的 menu_category.cook_order（店長在菜單管理設定），不看分類名稱，改名也不會亂掉；
-    //   品項或分類查不到時當 2（菜盤），跟資料表的預設值一樣
+    //   品項或分類查不到時當 2（菜盤），跟資料表的預設值、MenuCategoryService 的預設值一樣，直接寫在 findTickets 的 SQL 裡
     // 同一級裡照點餐順序（order_item.id）
-    private static final int DEFAULT_COOK_ORDER = 2;
     private static final int MAX_REASON_LENGTH = 100;
+
+    // 「最近完成」分頁（S-04）看最近 60 分鐘內完成的單，最新的在前、最多 50 張。
+    // 這個分頁是讓廚師把誤勾最後一道菜、卡片已經淡出的單找回來撤回，通常幾分鐘內就會發現，一小時很寬鬆；
+    // 50 張大約是全店尖峰一小時完成的單數，也讓每次推播後的重抓維持是小查詢
+    private static final int RECENT_WINDOW_MINUTES = 60;
+    private static final int RECENT_LIMIT = 50;
 
     private final JdbcTemplate jdbc;
     private final KitchenNotificationService kitchenNotificationService;
@@ -68,6 +76,59 @@ public class KitchenTicketService {
     }
 
     public List<KitchenTicketResponse> getKitchenTickets() {
+        return findTickets("ot.status IN ('PENDING', 'PREPARING')");
+    }
+
+    // 最近完成分頁：完成時間在最近 60 分鐘內的 SERVED 單，最新的在前、最多 50 張，每張多帶完成時間。
+    //   ・只列用餐中（dining_session.status = OPEN）的桌：這個分頁是給還在用餐的桌修正誤勾用的，
+    //     已結帳或取消的桌不能把已完成的單撤回（unserveOrderItem 會回 409 SESSION_CLOSED）
+    //   ・完成時間 = 這張單已出餐品項的 served_at 最大值，也就是最後一道菜出餐的時間。
+    //     不用 order_ticket.updated_at：那是任何一欄被改都會跟著變的紀錄欄位，以後單上多改一個欄位就不準了；
+    //     served_at 只在出餐時寫入、撤回時清空，意思最明確。
+    //     例外：單是因為最後一道還沒出的品項被取消或報廢才變成 SERVED 時，完成時間是在那之前最後一道菜出餐的時間
+    //   ・分兩步查：先挑出要顯示的單與完成時間（範圍、排序、張數上限都在這一步），
+    //     再用看板同一段查詢（findTickets）拿品項，品項格式與出餐順序跟進行中的卡片一樣，不另寫一份排序
+    //   ・第一步先用 placed_at 只看一天內送出的單（走 idx_order_ticket_status），不然每次重抓都要掃過所有歷史的已完成單；
+    //     一桌用餐 100 分鐘，送出超過一天才出完的單不會有
+    public List<KitchenCompletedTicketResponse> getRecentCompletedTickets() {
+        List<CompletedTicket> completed = jdbc.query("""
+                SELECT ot.id, MAX(oi.served_at) AS completed_at
+                FROM order_ticket ot
+                JOIN dining_session ds ON ds.id = ot.dining_session_id
+                JOIN order_item oi ON oi.order_ticket_id = ot.id
+                WHERE ot.status = 'SERVED'
+                  AND ot.placed_at >= CURRENT_TIMESTAMP(3) - INTERVAL 1 DAY
+                  AND ds.status = 'OPEN'
+                  AND oi.status = 'SERVED'
+                GROUP BY ot.id
+                HAVING completed_at >= CURRENT_TIMESTAMP(3) - INTERVAL ? MINUTE
+                ORDER BY completed_at DESC, ot.id DESC
+                LIMIT ?
+                """, (rs, rowNum) -> new CompletedTicket(rs.getLong("id"),
+                rs.getTimestamp("completed_at").toLocalDateTime()), RECENT_WINDOW_MINUTES, RECENT_LIMIT);
+        if (completed.isEmpty()) {
+            return List.of();
+        }
+
+        String placeholders = String.join(", ", Collections.nCopies(completed.size(), "?"));
+        Map<Long, KitchenTicketResponse> ticketsById = new HashMap<>();
+        for (KitchenTicketResponse ticket : findTickets(
+                "ot.status = 'SERVED' AND ds.status = 'OPEN' AND ot.id IN (" + placeholders + ")",
+                completed.stream().map(CompletedTicket::id).toArray())) {
+            ticketsById.put(ticket.orderId(), ticket);
+        }
+        // 照第一步的完成時間排序；兩步之間剛好被撤回（不再是 SERVED）或結帳的單，第二步查不到就略過
+        return completed.stream()
+                .filter(done -> ticketsById.containsKey(done.id()))
+                .map(done -> KitchenCompletedTicketResponse.of(ticketsById.get(done.id()), done.completedAt()))
+                .toList();
+    }
+
+    // 看板（進行中）與最近完成分頁共用這一段查詢：品項格式、單內出餐順序（item_cook_order）都一樣，只差挑哪些單。
+    // ticketFilter 只傳這個類別裡寫死的條件，不能放外面來的字串；要帶的值一律寫成 ?，依序放在 filterArgs
+    // （SQL 裡只有 ticketFilter 有 ?）。條件用 replace 放進 {ticketFilter}，不用 formatted：
+    // 以後 SQL 裡加了 LIKE '%…' 或 DATE_FORMAT(…, '%H:%i')，formatted 會把 % 當格式符號，執行時才出錯
+    private List<KitchenTicketResponse> findTickets(String ticketFilter, Object... filterArgs) {
         List<TicketRow> rows = jdbc.query("""
                 SELECT ot.id AS order_id,
                        ot.sequence_no,
@@ -81,7 +142,7 @@ public class KitchenTicketService {
                        oio.value_name_snapshot,
                        CASE
                            WHEN mi.is_soup_base = 1 THEN 1
-                           ELSE COALESCE(mc.cook_order, ?)
+                           ELSE COALESCE(mc.cook_order, 2)
                        END AS item_cook_order
                 FROM order_ticket ot
                 JOIN dining_session ds ON ds.id = ot.dining_session_id
@@ -90,10 +151,10 @@ public class KitchenTicketService {
                 LEFT JOIN menu_item mi ON mi.id = oi.menu_item_id
                 LEFT JOIN menu_category mc ON mc.id = mi.category_id
                 LEFT JOIN order_item_option oio ON oio.order_item_id = oi.id
-                WHERE ot.status IN ('PENDING', 'PREPARING')
+                WHERE ({ticketFilter})
                   AND oi.status <> 'CANCELLED'
                 ORDER BY ot.placed_at ASC, ot.id ASC, item_cook_order ASC, oi.id ASC, oio.id ASC
-                """, (rs, rowNum) -> mapRow(rs), DEFAULT_COOK_ORDER);
+                """.replace("{ticketFilter}", ticketFilter), (rs, rowNum) -> mapRow(rs), filterArgs);
 
         Map<Long, TicketBuilder> tickets = new LinkedHashMap<>();
         for (TicketRow row : rows) {
@@ -141,12 +202,20 @@ public class KitchenTicketService {
         ticketStatus.refreshFromItems(item.ticketId(), null);
     }
 
-    // 撤回已出餐（勾錯了）；單如果因此不再是全部出完，會回到 PREPARING／PENDING，卡片重新出現
+    // 撤回已出餐（勾錯了）；單如果因此不再是全部出完，會回到 PREPARING／PENDING，卡片重新出現。
+    // 這桌已結帳或取消時，只擋「已完成（SERVED）的單」：撤回會把單重新打開，已經離開的那桌又出現在看板上，
+    // 廚房會以為還要出菜。結帳不檢查有沒有出完，所以已結帳的桌可能還有 PENDING／PREPARING 的單留在看板上，
+    // 在這種單上誤勾一道要能照常撤回，不然畫面會一直顯示已出餐
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public void unserveOrderItem(Long itemId) {
         LockedItem item = lockItem(itemId);
         if (isUnserved(item.status())) {
-            return; // 本來就還沒出，重複撤回當成功
+            // 本來就還沒出，重複撤回當成功。排在桌況檢查前面（跟報廢一樣）：第一次其實成功了、回應在網路上逾時，
+            // 重送時這桌剛好結帳，不能因此回 409 讓廚房以為沒撤回
+            return;
+        }
+        if (!"OPEN".equals(item.sessionStatus()) && "SERVED".equals(item.ticketStatus())) {
+            throw ApiException.conflict("SESSION_CLOSED", "此桌已結帳或取消，不能撤回已完成的單");
         }
         if (!"SERVED".equals(item.status()) || "CANCELLED".equals(item.ticketStatus())) {
             throw ApiException.conflict("ITEM_NOT_UNSERVABLE", "已取消或報廢的餐點不能撤回出餐");
@@ -195,11 +264,12 @@ public class KitchenTicketService {
     // 報廢／退菜（M4 4.9）：做壞或客人退回的餐點，已出餐、未出餐都可以報。
     //   ・記原因：order_item.status = CANCELLED、cancel_reason = 原因、wasted_at = 報廢時間
     //     （wasted_at 有值就是報廢，NULL 是一般取消；一般取消走 OrderCancellationService）
+    //   ・記是誰報的：wasted_by_staff_id = 登入的員工（controller 從 StaffPrincipal 拿），以後追查退菜金額用
     //   ・庫存不回補：食材已經用掉了，所以不碰 inventory_item，也不改 sold_out
     //   ・不計入帳單：CANCELLED 的品項本來就不算錢（BillingCalculator），報廢後重算這桌金額。
     //     M6 不做「退菜折讓」的財務流程，所以只在結帳前從帳單拿掉，已結帳的桌不能再報廢
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public void wasteOrderItem(Long itemId, String requestedReason) {
+    public void wasteOrderItem(Long itemId, String requestedReason, Long staffId) {
         String reason = validReason(requestedReason);
         Long sessionId = jdbc.query("""
                 SELECT ot.dining_session_id FROM order_item oi
@@ -212,9 +282,10 @@ public class KitchenTicketService {
 
         DiningSessionEntity session = sessions.findWithLockById(sessionId)
                 .orElseThrow(() -> ApiException.notFound("找不到用餐場次"));
-        LockedItem item = lockItemAfterSession(itemId);
+        LockedItem item = lockItemAfterSession(itemId, session.getStatus());
         // 已經報廢過就直接當成功，要排在桌況檢查前面：第一次其實成功了、回應在網路上逾時，
-        // 前端重送時這桌剛好結帳，不能因此回 409 讓廚房以為沒報到
+        // 前端重送時這桌剛好結帳，不能因此回 409 讓廚房以為沒報到。
+        // 原因、報廢時間、報廢的員工都保留第一次的，重送（就算換了一台平板、另一位員工）不覆寫
         if ("CANCELLED".equals(item.status()) && item.wasted()) {
             return;
         }
@@ -234,9 +305,9 @@ public class KitchenTicketService {
 
         jdbc.update("""
                 UPDATE order_item
-                SET status = 'CANCELLED', cancel_reason = ?, wasted_at = CURRENT_TIMESTAMP(3)
+                SET status = 'CANCELLED', cancel_reason = ?, wasted_at = CURRENT_TIMESTAMP(3), wasted_by_staff_id = ?
                 WHERE id = ?
-                """, reason, itemId);
+                """, reason, staffId, itemId);
         billing.recalculateAndStore(session);
         kitchenNotificationService.notifyItemWastedAfterCommit(item.ticketId(), itemId, reason);
         ticketStatus.refreshFromItems(item.ticketId(), reason);
@@ -252,18 +323,18 @@ public class KitchenTicketService {
         if (sessionId == null) {
             throw ApiException.notFound("找不到這筆餐點");
         }
-        lockSession(sessionId);
-        return lockItemAfterSession(itemId);
+        String sessionStatus = lockSession(sessionId);
+        return lockItemAfterSession(itemId, sessionStatus);
     }
 
-    // 呼叫前已經鎖住 session；品項所屬的單與 session 不會變，先查再鎖不會鎖錯列
-    private LockedItem lockItemAfterSession(Long itemId) {
+    // 呼叫前已經鎖住 session（sessionStatus 是鎖住後讀到的這桌狀態）；品項所屬的單與 session 不會變，先查再鎖不會鎖錯列
+    private LockedItem lockItemAfterSession(Long itemId, String sessionStatus) {
         Long ticketId = jdbc.queryForObject("SELECT order_ticket_id FROM order_item WHERE id = ?", Long.class, itemId);
         String ticketStatus = jdbc.queryForObject(
                 "SELECT status FROM order_ticket WHERE id = ? FOR UPDATE", String.class, ticketId);
         return jdbc.queryForObject("""
                 SELECT status, wasted_at IS NOT NULL AS wasted FROM order_item WHERE id = ? FOR UPDATE
-                """, (rs, rowNum) -> new LockedItem(ticketId, ticketStatus, rs.getString("status"),
+                """, (rs, rowNum) -> new LockedItem(ticketId, sessionStatus, ticketStatus, rs.getString("status"),
                 rs.getBoolean("wasted")), itemId);
     }
 
@@ -279,9 +350,11 @@ public class KitchenTicketService {
         return new LockedTicket(ticketId, status);
     }
 
-    // 出餐狀態不影響金額，所以不檢查這桌是否還在用餐；只拿 session 鎖排隊
-    private void lockSession(Long sessionId) {
-        jdbc.queryForList("SELECT id FROM dining_session WHERE id = ? FOR UPDATE", Long.class, sessionId);
+    // 拿 session 鎖排隊，回傳鎖住後讀到的這桌狀態（OPEN／PAID／CANCELLED）。
+    // 出餐、整單出完不影響金額，不檢查這桌是否還在用餐；撤回出餐要擋已結帳的桌重開已完成的單（見 unserveOrderItem）
+    private String lockSession(Long sessionId) {
+        return jdbc.query("SELECT status FROM dining_session WHERE id = ? FOR UPDATE",
+                rs -> rs.next() ? rs.getString(1) : null, sessionId);
     }
 
     private String validReason(String reason) {
@@ -310,9 +383,11 @@ public class KitchenTicketService {
                 rs.getInt("item_cook_order"));
     }
 
-    private record LockedItem(Long ticketId, String ticketStatus, String status, boolean wasted) {}
+    private record LockedItem(Long ticketId, String sessionStatus, String ticketStatus, String status, boolean wasted) {}
 
     private record LockedTicket(Long id, String status) {}
+
+    private record CompletedTicket(Long id, LocalDateTime completedAt) {}
 
     private record TicketRow(
             Long orderId,

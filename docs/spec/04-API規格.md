@@ -182,9 +182,11 @@
 | POST | `/api/admin/dining-sessions/{id}/cancel` | 取消該次用餐（沒點過餐才可以，見 4.8b） | MANAGER |
 | GET | `/api/admin/members/lookup` | 櫃檯用手機查會員（`?phone=`，回暱稱與生日讓客人確認，**進階 8.10**，見 4.8a） | COUNTER, MANAGER |
 | GET | `/api/admin/kitchen/tickets` | KDS 看板 | KITCHEN, MANAGER |
+| GET | `/api/admin/kitchen/tickets/recent` | KDS「最近完成」分頁：最近 60 分鐘內完成（`SERVED`）的單，最新的在前、最多 50 張，**只含用餐中（`OPEN`）的桌**。單與品項格式、單內出餐順序跟 `GET /api/admin/kitchen/tickets` 一樣，每張多回 `completedAt`：這張單已出餐品項 `served_at` 的最大值，也就是最後一道菜出餐的時間。在這裡取消勾選（`unserve`）就能把誤勾完成的單退回看板 | KITCHEN, MANAGER |
 | PATCH | `/api/admin/order-items/{id}/serve` | 勾選已出餐 | KITCHEN, MANAGER |
+| PATCH | `/api/admin/order-items/{id}/unserve` | 撤回已出餐（勾錯了）：品項回到待製作，單由品項重新推導（已完成的單會重新打開、回到看板）；本來就還沒出的重送回 `204`（先於桌況檢查）；**桌已結帳或取消、而且這張單已完成（`SERVED`）時回 `409 SESSION_CLOSED`**（撤回會重開這張單，已經離開的那桌會重新出現在看板上）；單還是 `PENDING`／`PREPARING` 時照常撤回（結帳不檢查有沒有出完，看板上可能還有已結帳桌的單）；已取消或報廢的品項回 `409 ITEM_NOT_UNSERVABLE` | KITCHEN, MANAGER |
 | PATCH | `/api/admin/kitchen/tickets/{id}/complete` | 整單出完：同一個交易把這張單還沒出的品項全部標成已出餐，單由品項推導成 `SERVED`（單的狀態一律由品項推導，見 [M4 問題 1](modules/M4-出菜看板.md)）；重複按回 `204`，已取消的單回 `409 TICKET_NOT_COMPLETABLE` | KITCHEN, MANAGER |
-| PATCH | `/api/admin/order-items/{id}/waste` | 退菜／報廢（M4 4.9）：body `{ "reason": "煮過頭" }`，原因必填、1～100 字；已出餐、未出餐都可以報。品項改成 `CANCELLED` 並記 `cancel_reason`、`wasted_at`，**庫存不回補**、從帳單拿掉（M6 不做退菜折讓，所以只在結帳前）。已報廢過的重送直接回 `204`（先於桌況檢查）；桌已結帳或取消回 `409 SESSION_CLOSED`、有線上付款進行中回 `409 PAYMENT_PENDING`、已被一般取消或整單已取消回 `409 ITEM_NOT_WASTABLE` | KITCHEN, MANAGER |
+| PATCH | `/api/admin/order-items/{id}/waste` | 退菜／報廢（M4 4.9）：body `{ "reason": "煮過頭" }`，原因必填、1～100 字；已出餐、未出餐都可以報。品項改成 `CANCELLED` 並記 `cancel_reason`、`wasted_at`，以及操作的員工 `wasted_by_staff_id`（登入的員工），**庫存不回補**、從帳單拿掉（M6 不做退菜折讓，所以只在結帳前）。已報廢過的重送直接回 `204`（先於桌況檢查，原因、時間、操作的員工都保留第一次的）；桌已結帳或取消回 `409 SESSION_CLOSED`、有線上付款進行中回 `409 PAYMENT_PENDING`、已被一般取消或整單已取消回 `409 ITEM_NOT_WASTABLE` | KITCHEN, MANAGER |
 | GET/POST | `/api/admin/waitlist` | 候位清單／登記 | COUNTER, MANAGER |
 | POST | `/api/admin/waitlist/{id}/call` | 叫號 | COUNTER, MANAGER |
 | POST | `/api/admin/waitlist/{id}/seat` | 報到入座並開桌（**帶 `tableId`**；保留中回 `409 TABLE_RESERVED`） | COUNTER, MANAGER |

@@ -10,15 +10,28 @@ import './kds.colors.css'
 
 const kitchenKey = ['kitchen', 'tickets']
 const completedCountKey = ['kitchen', 'completed-count']
+// 三個 key 都在 ['kitchen'] 底下：推播或操作完成後 invalidate ['kitchen']，進行中、最近完成、完成數一起重抓
+const recentKey = ['kitchen', 'recent']
 // 等待超過 15 分鐘就是久候（M4 4.6），跟 OrderCard 同一個門檻
 const LATE_AFTER_MS = 15 * 60 * 1000
 // 單全部出完或被取消時，卡片淡出的時間（M4 4.5）
 const FADE_OUT_MS = 500
 // 還沒抓到資料時用同一個空陣列，不然每次 render 都是新陣列，會被當成「清單變了」
 const NO_TICKETS = []
+// 最近完成分頁列的範圍，跟後端 KitchenTicketService 的 RECENT_WINDOW_MINUTES／RECENT_LIMIT 一樣，
+// 這裡只用在說明文字；要改的話兩邊一起改
+const RECENT_WINDOW_MINUTES = 60
+const RECENT_LIMIT = 50
+// 停在最近完成分頁時每 60 秒重抓一次：結帳不推廚房事件、單超過 60 分鐘也沒有事件，
+// 已結帳的桌和太舊的單要靠定時重抓才會從清單消失
+const RECENT_REFETCH_MS = 60 * 1000
+const ticketGridClass =
+  'grid grid-cols-[repeat(auto-fill,minmax(min(100%,17.5rem),1fr))] content-start items-start gap-6 p-8'
 
-async function fetchKitchenTickets() {
-  const { data } = await employeeClient.get('/admin/kitchen/tickets')
+// 進行中（/kitchen/tickets）與最近完成（/kitchen/tickets/recent）共用：兩支 API 的單與品項格式一樣，
+// 最近完成的單另外多帶 completedAt（完成時間，最後一道菜出餐的時間），順序也已經由後端排好（完成時間新到舊）
+async function fetchKitchenTickets(url) {
+  const { data } = await employeeClient.get(url)
 
   return data.map((ticket) => ({
     id: ticket.orderId,
@@ -26,6 +39,7 @@ async function fetchKitchenTickets() {
     sequenceNo: ticket.sequenceNo,
     status: ticket.status,
     placedAt: ticket.placedAt,
+    completedAt: ticket.completedAt ?? null,
     orderItems: ticket.items.map((item) => ({
       id: item.id,
       itemNameSnapshot: item.name,
@@ -40,6 +54,13 @@ async function fetchKitchenTickets() {
 async function fetchCompletedTicketCount() {
   const { data } = await employeeClient.get('/admin/kitchen/tickets/completed-count')
   return data
+}
+
+// 頂列的兩個分頁按鈕（設計稿：選中的是實心膠囊，沒選中的只有淡色字）
+function viewTabClass(isSelected) {
+  return `min-h-11 rounded-pill px-4 type-body font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--kds-ink)] ${
+    isSelected ? 'bg-[var(--kds-line)] text-[var(--kds-ink)]' : 'text-[var(--kds-ink-3)] hover:text-[var(--kds-ink)]'
+  }`
 }
 
 // 後端有給原因（例如「已出餐或已完成的餐點不能取消」）就照著顯示，沒有才用預設句
@@ -67,6 +88,61 @@ function applyPendingStatus(tickets, savingItems, completingTicketId) {
   }))
 }
 
+// 最近完成分頁的內容：用餐中的桌已完成的單，品項都是已勾；取消勾選就撤回出餐（unserve），單回到進行中。
+// 已完成的卡片沒有整單出完，選單只有報廢細項（客人在全部上菜後才退菜）；也不淡出：
+// 撤回後重抓到的清單裡沒有這張單，就直接拿掉
+function RecentTickets({
+  tickets,
+  isPending,
+  isError,
+  hasData,
+  savingItemIds,
+  onToggle,
+  onWasteItem,
+  itemActionPendingId,
+}) {
+  return (
+    <>
+      <p className="px-8 pt-4 type-body text-[var(--kds-ink-2)]">
+        用餐中的桌最近 {RECENT_WINDOW_MINUTES} 分鐘內完成的單，最新的在前（最多 {RECENT_LIMIT} 張）。勾錯了就取消勾選，這張單會回到「進行中」。
+      </p>
+      {isError && hasData && (
+        <p className="px-8 pt-4 type-body font-bold text-[var(--kds-late)]" role="alert">
+          最近完成的單更新失敗，畫面是上一次的資料，請稍後重試。
+        </p>
+      )}
+
+      {isPending ? (
+        <p className="p-8 type-body text-[var(--kds-ink-2)]">載入最近完成的單中…</p>
+      ) : isError && !hasData ? (
+        <p className="p-8 type-body font-bold text-[var(--kds-late)]" role="alert">
+          最近完成的單載入失敗，請稍後重試。
+        </p>
+      ) : tickets.length === 0 ? (
+        <p className="p-8 type-body text-[var(--kds-ink-2)]">最近 {RECENT_WINDOW_MINUTES} 分鐘內沒有完成的單。</p>
+      ) : (
+        <div className={ticketGridClass}>
+          {tickets.map((ticket) => (
+            <OrderCard
+              key={ticket.id}
+              ticketId={ticket.id}
+              tableNo={ticket.tableNo}
+              sequenceNo={ticket.sequenceNo}
+              placedAt={ticket.placedAt}
+              completedAt={ticket.completedAt}
+              orderItems={ticket.orderItems}
+              onToggle={onToggle}
+              savingItemIds={savingItemIds}
+              onWasteItem={onWasteItem}
+              isItemActionPending={ticket.orderItems.some((item) => item.id === itemActionPendingId)}
+            />
+          ))}
+        </div>
+      )}
+    </>
+  )
+}
+
 function KitchenOverview() {
   const queryClient = useQueryClient()
   const {
@@ -75,12 +151,35 @@ function KitchenOverview() {
     isError,
   } = useQuery({
     queryKey: kitchenKey,
-    queryFn: fetchKitchenTickets,
+    queryFn: () => fetchKitchenTickets('/admin/kitchen/tickets'),
   })
   const { data: completedCount = 0 } = useQuery({
     queryKey: completedCountKey,
     queryFn: fetchCompletedTicketCount,
   })
+  // 'active'＝進行中、'recent'＝最近完成
+  const [view, setView] = useState('active')
+  // 最近完成分頁（S-04）：誤勾最後一道菜、卡片已經淡出的單，在這裡取消勾選就能撤回。
+  // 只在看這個分頁時才抓（停在進行中時推播只會把它標成過期），看的期間另外定時重抓
+  const {
+    data: serverRecentTickets = NO_TICKETS,
+    isPending: isRecentPending,
+    isError: isRecentError,
+  } = useQuery({
+    queryKey: recentKey,
+    queryFn: () => fetchKitchenTickets('/admin/kitchen/tickets/recent'),
+    enabled: view === 'recent',
+    refetchInterval: RECENT_REFETCH_MS,
+  })
+
+  // 切到最近完成時清掉上一次的清單再抓，抓到之前顯示載入中：停在進行中的期間這份清單沒有更新，
+  // 可能還有已經結帳的桌或超過 60 分鐘的單，先顯示出來廚師會以為還能撤回。
+  // 先 reset（這時查詢還是停用的，只清資料不會抓），切過去查詢一啟用、沒有資料就會重抓
+  const showRecentView = () => {
+    if (view === 'recent') return
+    void queryClient.resetQueries({ queryKey: recentKey, exact: true })
+    setView('recent')
+  }
 
   const refreshTickets = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: ['kitchen'] })
@@ -98,6 +197,11 @@ function KitchenOverview() {
   const orderTickets = useMemo(
     () => applyPendingStatus(serverTickets, savingItems, completingTicketId),
     [serverTickets, savingItems, completingTicketId],
+  )
+  // 最近完成的卡片也疊上送出中的取消勾選：按下去立刻變成沒勾，重抓到後端結果（單回到進行中）才從這裡消失
+  const recentTickets = useMemo(
+    () => applyPendingStatus(serverRecentTickets, savingItems, null),
+    [serverRecentTickets, savingItems],
   )
 
   // 卡片淡出（M4 4.5）：單從清單消失（全部出完、取消）時，先留在原位淡出 0.5 秒再移除。
@@ -232,10 +336,27 @@ function KitchenOverview() {
     <div className="kds-theme flex h-full flex-col bg-[var(--kds-bg)] text-[var(--kds-ink)]">
       <header className="flex h-19 shrink-0 items-center gap-6 border-b border-[var(--kds-line)] bg-[var(--kds-topbar)] px-8">
         <h1 className="type-h1">出菜看板</h1>
-        <span className="rounded-pill bg-[var(--kds-line)] px-4 py-1 type-body font-medium">
-          進行中 {orderTickets.length} 單
-        </span>
-        <span className="type-body text-[var(--kds-ink-3)]">最近完成 {completedCount}</span>
+        <div role="group" aria-label="看板分頁" className="flex items-center gap-2">
+          <button
+            type="button"
+            aria-pressed={view === 'active'}
+            onClick={() => setView('active')}
+            className={viewTabClass(view === 'active')}
+          >
+            進行中 {orderTickets.length} 單
+          </button>
+          <button
+            type="button"
+            aria-pressed={view === 'recent'}
+            onClick={showRecentView}
+            className={viewTabClass(view === 'recent')}
+          >
+            最近完成
+          </button>
+        </div>
+        {/* 24 小時內完成的單數（completed-count）。不放在「最近完成」按鈕上：分頁只列最近 60 分鐘、還在用餐的桌，
+            數字放按鈕上會變成「最近完成 37」點進去卻是空的 */}
+        <span className="type-body-sm text-[var(--kds-ink-3)]">24 小時完成 {completedCount} 單</span>
         <span className="flex-1" />
         {isSocketConnected === false && (
           <span role="status" className="type-body font-bold text-[var(--kds-late)]">
@@ -261,13 +382,24 @@ function KitchenOverview() {
             {actionError}
           </p>
         )}
-        {isError && serverTickets !== NO_TICKETS && (
+        {view === 'active' && isError && serverTickets !== NO_TICKETS && (
           <p className="px-8 pt-4 type-body font-bold text-[var(--kds-late)]" role="alert">
             廚房訂單更新失敗，畫面是上一次的資料，請稍後重試。
           </p>
         )}
 
-        {isPending ? (
+        {view === 'recent' ? (
+          <RecentTickets
+            tickets={recentTickets}
+            isPending={isRecentPending}
+            isError={isRecentError}
+            hasData={serverRecentTickets !== NO_TICKETS}
+            savingItemIds={savingItems.map((entry) => entry.id)}
+            onToggle={handleToggle}
+            onWasteItem={handleWasteOrderItem}
+            itemActionPendingId={itemActionPendingId}
+          />
+        ) : isPending ? (
           <p className="p-8 type-body text-[var(--kds-ink-2)]">載入廚房訂單中…</p>
         ) : isError && serverTickets === NO_TICKETS ? (
           <p className="p-8 type-body font-bold text-[var(--kds-late)]" role="alert">
@@ -276,7 +408,7 @@ function KitchenOverview() {
         ) : displayedTickets.length === 0 ? (
           <p className="p-8 type-body text-[var(--kds-ink-2)]">目前沒有待出的餐點。</p>
         ) : (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,17.5rem),1fr))] content-start items-start gap-6 p-8">
+          <div className={ticketGridClass}>
             {displayedTickets.map(({ ticket, isLeaving }) => (
               <OrderCard
                 key={ticket.id}

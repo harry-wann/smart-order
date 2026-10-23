@@ -371,13 +371,15 @@ CREATE TABLE order_item (
   cancel_reason       VARCHAR(100)    NULL     COMMENT '取消或報廢（退菜）的原因',
   served_at           DATETIME(3)     NULL,
   wasted_at           DATETIME(3)     NULL     COMMENT '報廢（退菜）時間；有值代表這筆 CANCELLED 是報廢、庫存不回補，NULL 是一般取消',
+  wasted_by_staff_id  BIGINT UNSIGNED NULL     COMMENT '報廢（退菜）的員工；只有報廢才有值，一般取消與升級前的舊報廢為 NULL',
   created_at          DATETIME(3)     NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at          DATETIME(3)     NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (id),
   KEY idx_order_item_ticket (order_ticket_id),
   KEY idx_order_item_menu (menu_item_id),
-  CONSTRAINT fk_order_item_ticket FOREIGN KEY (order_ticket_id) REFERENCES order_ticket (id),
-  CONSTRAINT fk_order_item_menu   FOREIGN KEY (menu_item_id)    REFERENCES menu_item (id)
+  CONSTRAINT fk_order_item_ticket       FOREIGN KEY (order_ticket_id)    REFERENCES order_ticket (id),
+  CONSTRAINT fk_order_item_menu         FOREIGN KEY (menu_item_id)       REFERENCES menu_item (id),
+  CONSTRAINT fk_order_item_wasted_staff FOREIGN KEY (wasted_by_staff_id) REFERENCES staff (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='點餐單品項（名稱與價格存快照）';
 
 CREATE TABLE order_item_option (
