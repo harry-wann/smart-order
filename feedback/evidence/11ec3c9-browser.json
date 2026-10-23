@@ -1,0 +1,193 @@
+{
+  "label": "iris-table",
+  "testedAt": "2026-10-23T09:36:02.107Z",
+  "results": [
+    {
+      "path": "/admin/table_overview",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/seats",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/waitlist",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/reservations",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/kitchen",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/menu",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/options",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/table/A03",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/order/menu",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/order/cart/50",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/order/history",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/member/login",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/reserve/guest",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/reserve/datetime",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "name": "Iris table browser: Counter reads heldFor/displayStatus from the employee overview API",
+      "passed": true
+    },
+    {
+      "name": "Iris table browser: Overview shows the real today CONFIRMED reservation count",
+      "passed": true,
+      "detail": "API=8; UI=8"
+    },
+    {
+      "name": "Iris table browser: Available card opens with real capacity, capacity-filtered waitlist, and upcoming warning",
+      "passed": true,
+      "detail": "capacity=4; upcoming=R-IRIS-B-U-245000"
+    },
+    {
+      "name": "Iris table browser: People steppers stop at real capacity and upcoming reservation remains actionable",
+      "passed": true,
+      "detail": "capacity=4; total=4"
+    },
+    {
+      "name": "Iris table browser: 390px open page content is readable without component overflow",
+      "passed": true,
+      "detail": "{\"viewportWidth\":390,\"documentWidth\":474,\"contentWidth\":266,\"contentScrollWidth\":266}"
+    },
+    {
+      "name": "Iris table browser: Walk-in POST reached the real backend; browser response is held after commit",
+      "passed": true,
+      "detail": "server status=200"
+    },
+    {
+      "name": "Iris table browser: RESERVED navigation, default reservation tab, and current-hold walk-in/waitlist guard",
+      "passed": true
+    },
+    {
+      "name": "Iris table browser: Late real POST success cannot navigate away from or leave the next table busy",
+      "passed": true
+    },
+    {
+      "name": "Iris table browser: Manager cancel publishes after-commit TABLE_STATUS and refreshes the open counter page without manual reload or timer",
+      "passed": true,
+      "detail": "table=A01; status=AVAILABLE; elapsed since overview mount=250ms; no clock fast-forward"
+    },
+    {
+      "name": "Iris table browser: Counter card changes from RESERVED to AVAILABLE from the live event",
+      "passed": true
+    },
+    {
+      "name": "Iris table browser: Occupied table button navigates to /admin/table/{tableNo}",
+      "passed": true,
+      "detail": "A06"
+    },
+    {
+      "name": "Iris table browser: Controlled client clock +61s and real overview refetch update dining minutes and cross the 100-minute red-frame threshold",
+      "passed": true,
+      "detail": "102 → 103 minutes; controlled client clock only, backend clock unchanged"
+    },
+    {
+      "name": "Iris table browser: Counter employee header can fetch the protected QR PNG blob",
+      "passed": true,
+      "detail": "status=200; content-type=image/png"
+    },
+    {
+      "name": "Iris table browser: Manager UI prints authorized employee QR blob through an ObjectURL",
+      "passed": true,
+      "detail": "source=blob:; loaded=true"
+    },
+    {
+      "name": "Iris table browser: No shared pageerror",
+      "passed": true
+    },
+    {
+      "name": "Iris table browser: No API 5xx responses",
+      "passed": true,
+      "detail": "[]"
+    },
+    {
+      "name": "Iris table browser: 1024px specified admin viewport has no horizontal document overflow",
+      "passed": true,
+      "detail": "{\"viewportWidth\":1024,\"documentWidth\":1024}"
+    },
+    {
+      "name": "Iris table browser: Counter reservation page retains real table ratio and count",
+      "passed": true,
+      "detail": "72%; 13/18 tables"
+    },
+    {
+      "name": "Iris table browser: targeted 1024px and Counter summary checks have no pageerror",
+      "passed": true
+    },
+    {
+      "name": "Iris table browser: header renders controlled time in Asia/Taipei",
+      "passed": true,
+      "detail": "09:00 UTC renders 17:00 Taiwan time"
+    },
+    {
+      "name": "Iris table browser: header clock updates after a controlled minute tick",
+      "passed": true,
+      "detail": "17:00 → 17:01; controlled client clock"
+    }
+  ],
+  "passed": true,
+  "notes": [
+    "Core API/browser operations and targeted viewport checks were run against the same unchanged product build.",
+    "Admin UI specification: docs/ui/10-UI-UX規格.md section 3 requires desktop/tablet widths from 1024px.",
+    "390px observation: shared admin document width was 474px; the 266px open-page content fit its own container. Full admin mobile layout is not claimed."
+  ],
+  "observations": [
+    {
+      "name": "Iris table browser: 390px shared admin page has no horizontal document overflow",
+      "detail": "{\"viewportWidth\":390,\"documentWidth\":474,\"contentWidth\":266,\"contentScrollWidth\":266}",
+      "classification": "outside specified admin viewport range; retained as limitation"
+    }
+  ]
+}

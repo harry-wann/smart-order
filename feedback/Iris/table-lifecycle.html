@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7fb">
+  <title>Iris｜桌位保留、開桌與清潔整合</title>
+  <link rel="stylesheet" href="../assets/feedback.css">
+</head>
+<body>
+  <div class="site-shell">
+    <nav class="topbar" aria-label="主要導覽">
+      <a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">鍋</span><span>實作回饋整理</span></a>
+      <a class="toplink" href="index.html">回 Iris 工作包</a>
+    </nav>
+
+    <p class="breadcrumb"><a href="../index.html">成員索引</a> ／ <a href="index.html">Iris</a> ／ 桌位生命週期整合</p>
+    <header class="person-header">
+      <div class="meta-row"><span class="scope-tag">工作包 D（桌位與候位）× E（預約）整合</span><span class="status">桌位生命週期已驗證</span></div>
+      <h1>Iris｜一張桌何時能開？從預約保留到清潔完成</h1>
+      <p class="lede">用櫃檯常見的「客人到了，但桌子也被預約保留」情境，說明桌位鎖、人數驗證、員工權限和畫面更新如何一起保護同一張桌的狀態。</p>
+    </header>
+
+    <main class="person-layout">
+      <nav class="toc" aria-label="文章目錄">
+        <h2>這篇會走過</h2>
+        <ol>
+          <li><a href="#situation">先看現場情境</a></li>
+          <li><a href="#problems">原本為何會錯</a></li>
+          <li><a href="#changes">實際改法</a></li>
+          <li><a href="#walkthrough">手把手驗收</a></li>
+          <li><a href="#evidence">提交與驗證紀錄</a></li>
+          <li><a href="#feedback">前輩回饋與履歷</a></li>
+          <li><a href="#terms">新手名詞表</a></li>
+        </ol>
+      </nav>
+
+      <div class="content-stack">
+        <section class="scope-card" id="scope">
+          <span class="section-kicker">本篇範圍</span>
+          <h2>讓現場開桌、預約保留和清潔流程看見同一份桌況</h2>
+          <ul class="scope-list">
+            <li>原本開桌已有桌位資料列鎖；這次讓清潔完成也使用同一把鎖，並在鎖內重驗狀態。</li>
+            <li>後端檢查桌位是否啟用、是否已有用餐紀錄、目前是否被預約保留，以及人數是否符合容量。</li>
+            <li>桌況總覽顯示實體狀態與預約保留；開桌頁等真實桌位和開桌選項載入後才允許操作。</li>
+            <li>店員 API 權限、預約取消／報到後的桌況通知，以及需登入載入的桌位 QR（Quick Response，快速反應碼）列印一併接好。</li>
+          </ul>
+          <p class="intro-note">這是 D、E 功能的整合成果。原審查列出的開桌保留競態、清潔覆寫、人數驗證和 D API 權限，是本篇追溯的原始問題；桌位設定讀取權限及開桌頁晚到回應，則是整合審查後補上的回歸修正。</p>
+        </section>
+
+        <section class="section-card" id="situation">
+          <span class="section-kicker">情境一 · 同一張桌有兩種用途</span>
+          <h2>客人到了，畫面上的「空桌」就能直接開嗎？</h2>
+          <p>假設 A08 是四人桌，晚上 18:00 有一組四人預約。系統設定的保留時段若是預約前 30 分鐘到後 10 分鐘，17:45 時這張桌已經要留給預約客人。可是資料庫裡的實體桌況仍可能是 <code>AVAILABLE</code>，因為它還沒有任何人坐下。</p>
+          <p>如果櫃檯只看「實體狀態是空桌」，就可能讓現場客人或候位組先入座。預約客人到店時，桌子已被占用；櫃檯畫面和預約規則看起來各自合理，實際上卻爭用了同一張桌。</p>
+          <div class="compare-grid">
+            <div class="compare-side"><div class="compare-label">只看桌子狀態</div><p>資料庫記錄 <code>status=AVAILABLE</code>，開桌程式就建立用餐紀錄。它不知道這張桌目前由訂位保留。</p></div>
+            <div class="compare-side after"><div class="compare-label">同時看桌況與保留</div><p>保留資料指出 A08 屬於某筆訂位。畫面顯示「預約保留」；現場與候位開桌收到 <code>409 TABLE_RESERVED</code>，該筆訂位的客人仍可走報到流程。</p></div>
+          </div>
+        </section>
+
+        <section class="section-card" id="problems">
+          <span class="section-kicker">情境二 · 找出錯誤在哪一層</span>
+          <h2>為什麼光在畫面停用按鈕還不夠？</h2>
+          <p>同一個開桌動作有不同入口：櫃檯按鈕、候位報到、預約報到，也可能有人直接呼叫伺服器。瀏覽器只是其中一個入口，資料正確與否仍要由後端在保存前決定。</p>
+          <div class="content-stack">
+            <div class="compare-grid">
+              <div class="compare-side"><div class="compare-label">保留與清潔競態</div><p>開桌只檢查實體狀態，可能占用仍在保留窗內的桌。清潔完成又用一般讀取；若它先讀到舊的 <code>CLEANING</code>，之後可能把另一個請求已經開好的桌改回空桌。</p></div>
+              <div class="compare-side"><div class="compare-label">沒有服務端人數界線</div><p>畫面上硬寫容量，或只顯示「可能要加椅子」，不能阻止直接送來負數、空值、零人或超過桌位容量的請求。若用 32 位整數直接相加，極大數值還可能溢位。</p></div>
+            </div>
+            <div class="compare-grid">
+              <div class="compare-side"><div class="compare-label">員工操作路徑未完整保護</div><p>寬鬆的通用 API 規則若先放行，未登入的人也可能呼叫開桌、清桌或候位操作。光把按鈕藏起來，並不會替伺服器驗證員工身分。</p></div>
+              <div class="compare-side"><div class="compare-label">整合時序帶來的額外回修</div><p>整合審查另發現，若 COUNTER 讀取桌位設定也被限制成店長專用，既有預約畫面的桌數會消失；開桌請求若在切換桌號後才回來，舊回應也可能把新頁面導走或顯示到錯桌。</p></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section-card" id="changes">
+          <span class="section-kicker">實際改法</span>
+          <h2>把「檢查、寫入、通知」放在正確的時間點</h2>
+
+          <h3>1. 清潔也使用開桌原有的桌位鎖</h3>
+          <p>開桌流程原本就會先對桌位資料取得資料列鎖（row lock）；原問題是鎖內還沒檢查預約保留、容量與既有用餐紀錄。這次補上這些檢查條件。清潔完成原先沒有共用這把鎖，現在也先鎖定同一筆桌位，再確認桌子仍在清潔、沒有未結束的用餐紀錄。需要同一把鎖的交易會排隊，拿到鎖後重新讀取最新狀態；舊的清潔請求就不能把另一個請求新開的桌改回空桌。</p>
+          <p>候位報到的外層交易使用 <code>READ_COMMITTED</code>（讀取已提交資料）隔離層級，讓等待桌位鎖之後的狀態判斷看得到已提交的更新。</p>
+
+          <h3>2. 同時保留實體狀態與畫面狀態</h3>
+          <p>後端仍把桌子的真實 <code>status</code> 保留為 <code>AVAILABLE</code>；若保留窗內有訂位，桌況回應另外把 <code>displayStatus</code> 設為 <code>RESERVED</code>，並帶上 <code>heldFor</code>（被哪筆訂位保留）。這樣畫面可以顯示保留人、時間與人數，程式也不必把「預約保留」誤當成桌子已被入座。</p>
+          <p>同一份保留快照用在整張桌況總覽，避免每一桌各自查一次。預約報到可以使用自己的訂位；保留時段外、但 115 分鐘內即將開始的訂位只顯示提醒，櫃檯確認後仍可開桌。此提醒規則不會把「即將有訂位」錯當成「已進保留窗」。</p>
+
+          <h3>3. 以伺服器規則檢查人數</h3>
+          <p>成人與兒童人數都必須有值且不小於零；總人數至少一位，並且不能超過該桌座位數。計算總和時先轉成較大的整數型別，避免兩個輸入相加時先溢位。瀏覽器也使用真實桌位容量限制步進器、按鈕與候位清單，但後端仍會再檢查一次。</p>
+
+          <h3>4. 把權限切在 API 路徑與 HTTP 方法上</h3>
+          <p>桌況、開桌、清潔和候位操作只允許 COUNTER（櫃檯）或 MANAGER（店長）。桌位設定的讀取允許 COUNTER 與 MANAGER，新增或修改則只允許 MANAGER。這讓櫃檯能讀取預約頁與開桌頁所需資料，同時保留設定變更權限。</p>
+          <p>員工登入後，桌位 QR 圖片改由員工 API 取得檔案資料，再放入列印頁；列印完會釋放暫存圖片網址。不能再依賴未帶員工憑證的普通圖片網址。</p>
+
+          <h3>5. 只讓仍屬於目前桌號的請求更新畫面</h3>
+          <p>開桌頁為每次操作記錄桌號與請求世代。若櫃檯切到另一桌，舊請求即使之後成功或失敗，回應也不會導航或覆寫新桌的訊息。頁面還要等桌況與開桌選項 API（<code>open-options</code>）成功回來，才顯示可操作的現場／候位選項；人數容量、被保留的訂位，以及尚未進保留窗的提醒都取自伺服器資料。</p>
+          <p>桌況總覽每 60 秒重抓一次，並每分鐘更新用餐時間；所以保留窗開始或結束、用餐超過 100 分鐘時，不必等櫃檯手動重整。待報到數由今天的訂位資料計算，不再顯示固定假數字。取消訂位與預約報到的桌況通知則等交易提交後才發出，通知帶的是提交後重讀的實體狀態、畫面狀態與保留資訊。</p>
+          <p>本次店家端版面依使用者介面（UI）規格，以 1024 像素寬作為桌機／平板驗收起點。390 像素只檢查開桌頁內容區塊本身是否溢出：內容寬 266 像素且能放入容器；共用後台頁面的文件寬度仍是 474 像素，所以不宣稱整個店家後台支援手機寬度。</p>
+
+          <h3>主要程式檔案</h3>
+          <ul class="prompt-list">
+            <li><code>backend/src/main/java/tw/ispan/smartorder/service/TableService.java</code>：開桌共用步驟與清潔完成；清潔改為使用桌位鎖並在鎖內重驗。</li>
+            <li><code>backend/src/main/java/tw/ispan/smartorder/reservation/service/TableHoldService.java</code>、<code>backend/src/main/java/tw/ispan/smartorder/reservation/service/TableHolds.java</code>：批次建立保留快照，計算目前保留／稍後提醒並轉成畫面資料。</li>
+            <li><code>backend/src/main/java/tw/ispan/smartorder/dto/TableOverviewResponse.java</code>：回傳實體 <code>status</code>、<code>displayStatus</code> 與 <code>heldFor</code>。</li>
+            <li><code>backend/src/main/java/tw/ispan/smartorder/service/TableStatusNotifier.java</code>：在交易提交後重讀桌況，再發送櫃檯通知。</li>
+            <li><code>backend/src/main/java/tw/ispan/smartorder/config/SecurityConfig.java</code>：桌況／候位員工權限，以及桌位設定的讀寫角色規則。</li>
+            <li><code>backend/src/main/java/tw/ispan/smartorder/reservation/service/AdminReservationService.java</code>：取消訂位與預約報到後通知受影響桌位。</li>
+            <li><code>frontend/src/features/admin/table/TableOpen.jsx</code>、<code>frontend/src/features/admin/table/TableOverview.jsx</code>：真實開桌資料、桌況保留顯示、容量篩選、定時更新與舊回應保護。</li>
+            <li><code>frontend/src/features/admin/table/qrPrint.js</code>：以員工身分取得 QR 圖片並處理列印用暫存網址。</li>
+          </ul>
+        </section>
+
+        <section class="section-card" id="walkthrough">
+          <span class="section-kicker">手把手驗收 · 請在本機隔離資料</span>
+          <h2>逐項確認伺服器拒絕錯誤操作、畫面呈現真資料</h2>
+          <p class="section-intro">本次在隔離資料庫與本機瀏覽器完成了下列對應驗收。HTTP 紀錄 101 項全通過；瀏覽器紀錄 36 項全通過。操作前會建立隔離測試資料，不使用正式店家桌位。</p>
+          <ol class="step-list">
+            <li class="step-card"><p><strong>先看權限。</strong>不帶員工憑證呼叫 <code>/api/admin/tables</code> 與 <code>/api/admin/waitlist</code>，確認回 <code>401</code>；用 COUNTER 和 MANAGER 讀桌況、候位與桌位設定，確認可讀。再用 COUNTER 嘗試修改桌位設定，應回 <code>403</code>；同一操作由 MANAGER 執行應依設定成功。401 表示尚未通過身分驗證，403 表示已辨識身分但角色不能做這件事。</p></li>
+            <li class="step-card"><p><strong>建立一筆現在正在保留的預約。</strong>讓測試訂位落在保留時間內、桌子實體狀態仍是空桌。讀取桌況，確認 <code>status</code> 是 <code>AVAILABLE</code>、<code>displayStatus</code> 是 <code>RESERVED</code>，而 <code>heldFor</code> 有訂位資訊。從開桌頁嘗試現場開桌，確認不會送出；直接呼叫開桌 API 則確認回 <code>409</code>，錯誤代碼是 <code>TABLE_RESERVED</code>。用該筆預約執行報到，再確認流程可繼續。</p></li>
+            <li class="step-card"><p><strong>送出不合法人數。</strong>在本機 API 請求中分別送成人或兒童欄位缺值、負數、兩者都是零，以及總人數大於座位數的資料；每筆應回 <code>400</code>，資料庫不能多出用餐紀錄。再送很大的整數，確認總和仍被正確判定超容量，不會變成負數或小於實際值。</p></li>
+            <li class="step-card"><p><strong>交錯清潔與開桌。</strong>用兩個本機請求在同一張待清潔桌上協調執行：讓第二個清潔請求等待第一個完成，再讓桌位開桌。確認等待中的清潔請求讀到最新狀態後遭拒；最後桌況是用餐中，且只有一筆未結束的用餐紀錄。也確認失敗的清潔沒有送出「已清潔」通知。</p></li>
+            <li class="step-card"><p><strong>確認時間與櫃檯統計。</strong>瀏覽器測試把用餐時間控制前進 61 秒，再實際重抓桌況；用餐時間從 102 變成 103 分鐘，超過 100 分鐘後顯示紅框。頁首時鐘也從 17:00 更新到 17:01。另核對待報到數來自今天的真實訂位，櫃檯預約頁的可預約比例為 72%（13／18 桌）。桌況的 60 秒輪詢負責刷新時間會變動的保留資訊；本次紀錄沒有把等到保留邊界跨越當成一項瀏覽器驗收。</p></li>
+            <li class="step-card"><p><strong>確認晚到的真實開桌成功不會帶走新桌頁。</strong>先在隔離資料庫準備桌位與員工資料，瀏覽器送出 A 桌真實開桌 POST，後端成功提交並回應 200；測試流程用 <code>route.fetch</code> 暫緩這個真實 HTTP 回應，先在單頁應用程式（SPA）切到 B 桌，再放回 A 的成功回應。確認頁面仍停留在 B 桌、沒有把 B 桌操作鎖住。這次只對真實成功回應做了執行期驗收；錯誤回應分支由獨立靜態審查確認有桌號與請求世代檢查，沒有宣稱也做過錯誤回應的執行期案例。fixture 在此指預先準備的隔離測試資料，不是假造成功的回應。</p></li>
+            <li class="step-card"><p><strong>核對整合通知與 QR 列印。</strong>測試訂位取消或報到提交後，查看桌況通知中的狀態和保留資訊；以登入員工身分開啟 QR 列印頁，確認圖片載入、列印，關閉或列印完成後暫存網址會清除。</p></li>
+          </ol>
+        </section>
+
+        <section class="section-card" id="evidence">
+          <h2>提交與驗證紀錄</h2>
+          <p>程式版本：Git commit <code>11ec3c9</code>。這組桌位生命週期整合以該版本為準。</p>
+          <div class="evidence-grid">
+            <div class="note-card report"><h3>HTTP 與資料檢查</h3><p>101 項全部通過：92 項主要檢查，加上 9 項換桌預約報到補驗；未重複計入既有基線檢查。涵蓋角色權限、人數界線、保留衝突、並行開桌／清潔與跨桌報到。<a href="../evidence/11ec3c9-http.json">查看完整 HTTP 紀錄</a>。</p></div>
+            <div class="note-card report"><h3>瀏覽器操作檢查</h3><p>36 項全部通過，含真實開桌 POST 的延遲回應、預約保留、取消後即時通知、桌況計時與 QR 列印。<a href="../evidence/11ec3c9-browser.json">查看完整瀏覽器紀錄</a>。</p></div>
+          </div>
+          <p class="muted">櫃檯預約頁的可預約比例也以真實資料核對為 72%（13／18 桌）。開桌頁人數操作提示的後續文案調整見 commit <code>1dc2c0e</code>。</p>
+          <figure class="screen-shot">
+            <a href="../assets/iris-table-1024.png"><img src="../assets/iris-table-1024.png" alt="1024 像素寬的店家端桌位開桌頁，依真實時間顯示桌位與開桌資料"></a>
+            <figcaption>店家端 UI 規格的 1024px 桌機／平板範圍，使用真實時間擷取。可點圖檢視原尺寸；390px 觀察限制見上方說明。</figcaption>
+          </figure>
+          <p>後端 clean package（清除舊產物後打包）編譯 224 個來源檔通過；4 個既有測試類只編譯，沒有執行，也沒有新增單元測試。前端建置的 423 個模組通過。程式審查列出的三項發現均已完成修正後的靜態複查。</p>
+          <p class="intro-note">瀏覽器紀錄依規格驗收 1024 像素桌機／平板版面。另保留 390 像素觀察：整個共用後台文件寬 474 像素，但開桌頁內容區塊 266 像素、未在區塊內溢出；這不是全站手機版 RWD 驗收。</p>
+        </section>
+
+        <section class="section-card" id="feedback">
+          <h2>前輩回饋、報告亮點與履歷</h2>
+          <div class="evidence-grid">
+            <div class="note-card feedback">
+              <h3>技術前輩的建議</h3>
+              <p>把「空桌」拆成實體狀態和能否供現場使用，是很好的狀態建模練習。接著可把每種操作整理成一張小表：誰可以做、必須先滿足什麼、失敗回哪個狀態碼、成功後什麼時候發通知。這張表能同時檢查 API、畫面和驗收案例有沒有說同一件事。</p>
+              <p>併發問題不要只用「按鈕有 loading」解釋。清楚指出誰先鎖哪一筆資料、等待後重新檢查什麼，並以最終資料庫狀態作證，會更能說明修正有效。</p>
+            </div>
+            <div class="note-card report">
+              <h3>技術報告可以展示</h3>
+              <ul>
+                <li>說明原本已有的開桌資料列鎖，以及這次讓清潔完成共用該鎖、取得鎖後重驗狀態的修正。</li>
+                <li>說明預約保留快照如何產生 <code>displayStatus</code> 與 <code>heldFor</code>，並區分「現在保留」和「稍後提醒」。</li>
+                <li>展示成人、兒童、缺值、總人數、容量及整數溢位的服務端界線。</li>
+                <li>說明員工角色如何依 API 路徑及讀寫方法授權，並示範 QR 圖片如何用員工身分載入。</li>
+                <li>交代整合回修：COUNTER 可讀桌位設定、舊桌號請求不能改寫新頁面，以及提交後才發桌況通知。</li>
+                <li>用 101 項 HTTP 回應、並行後的資料狀態與 36 項瀏覽器操作紀錄相互核對。</li>
+              </ul>
+            </div>
+          </div>
+          <div class="note-card">
+            <h3>履歷句建議</h3>
+            <p>「參與餐飲訂位與候位流程整合，修正同桌開桌／清潔競態與預約保留衝突，加入服務端人數容量驗證和櫃檯角色授權；協作接上桌況即時呈現、預約異動通知及員工 QR 列印，並以 101 項 HTTP 與 36 項瀏覽器驗收確認。」</p>
+            <p>面試時可以挑「清潔請求拿著舊資料，晚一步把新開桌改回空桌」來說明：先畫出交錯順序，再解釋這次如何讓清潔也取得原本開桌使用的資料列鎖，最後指出資料庫最終狀態和驗收紀錄。履歷請保留「參與、協作」的範圍，不寫成獨立完成整個 D/E 模組或已上線營運；候位與座位設定仍在各自的整理範圍內。</p>
+          </div>
+        </section>
+
+        <section class="section-card" id="terms">
+          <h2>新手名詞表</h2>
+          <dl class="glossary">
+            <div class="term"><dt>前端／後端</dt><dd>前端是店員在瀏覽器操作的畫面；後端是在伺服器檢查資料、權限並和資料庫互動的程式。</dd></div>
+            <div class="term"><dt>API（Application Programming Interface，應用程式介面）</dt><dd>前端或其他程式用來向後端讀取資料、提出操作的一組網址和規則。</dd></div>
+            <div class="term"><dt>HTTP（Hypertext Transfer Protocol，超文字傳輸協定）</dt><dd>瀏覽器和伺服器常用的通訊規則。GET 通常讀資料，POST 通常送出資料或操作。</dd></div>
+            <div class="term"><dt>HTML（HyperText Markup Language，超文字標記語言）</dt><dd>用標籤描述網頁標題、段落、連結與內容結構的格式；本篇文章就是 HTML 文件。</dd></div>
+            <div class="term"><dt>HTTP 狀態碼 400／401／403／409</dt><dd>400 是請求資料不合規則；401 是沒有通過登入驗證；403 是已辨識使用者但權限不足；409 是目前資料狀態與這項操作衝突。</dd></div>
+            <div class="term"><dt>DTO（Data Transfer Object，資料傳輸物件）</dt><dd>專門把資料欄位整理成 API 回應或請求格式的物件；例如桌況回應可包含實體狀態、畫面狀態與保留資訊。</dd></div>
+            <div class="term"><dt>QR（Quick Response，快速反應碼）</dt><dd>可由手機相機快速讀取的方形圖碼。本案桌位 QR 連到該桌的點餐入口。</dd></div>
+            <div class="term"><dt>SQL（Structured Query Language，結構化查詢語言）</dt><dd>用來查詢和更新資料庫資料的語言。資料列鎖會讓同一筆資料的特定更新依序進行。</dd></div>
+            <div class="term"><dt>JPA（Java Persistence API，Java 持久化 API）</dt><dd>Java 程式以物件讀寫資料庫的標準介面；專案的 repository（資料存取元件）透過它查桌位及取得鎖。</dd></div>
+            <div class="term"><dt>資料列鎖（row lock）</dt><dd>交易要修改某筆資料時取得的鎖。其他需要同一筆鎖的操作會等候，之後再檢查已更新的資料。</dd></div>
+            <div class="term"><dt>交易（transaction）</dt><dd>把一組資料庫讀寫視為一次完整操作；如果其中一步失敗，不應留下只做了一半的狀態。</dd></div>
+            <div class="term"><dt>READ_COMMITTED（讀取已提交資料）</dt><dd>一種資料庫隔離層級。查詢可讀取其他交易已完成提交的結果；候位報到在取得桌位鎖後需要判斷最新桌況。</dd></div>
+            <div class="term"><dt>保留快照（hold snapshot）</dt><dd>在同一個時間點整理當下有效的訂位資料，供桌況總覽與開桌檢查共用，避免不同畫面各算出不同保留結果。</dd></div>
+            <div class="term"><dt>afterCommit（提交後回呼）</dt><dd>資料庫交易成功保存後才執行的程式。本案用它發送桌況通知，避免通知先於資料寫入成功。</dd></div>
+            <div class="term"><dt>Blob（Binary Large Object，二進位大型物件）／URL（Uniform Resource Locator，統一資源定位符）</dt><dd>Blob 是瀏覽器中的二進位檔案資料；Object URL 是頁面暫時讀取這份資料的網址，列印結束後應釋放。</dd></div>
+            <div class="term"><dt>SHA／Git commit（版本提交）</dt><dd>SHA 是 Secure Hash Algorithm（安全雜湊演算法）的縮寫；Git 用它產生版本提交的識別碼。commit 是把一組程式變更保存成版本；本篇列出已完成整合的短識別碼。</dd></div>
+            <div class="term"><dt>競態（race condition）</dt><dd>兩個操作的執行順序互相交錯，造成單獨看每個操作都合理、合在一起卻寫錯資料的情況。</dd></div>
+            <div class="term"><dt>fixture（隔離測試資料）</dt><dd>為一次測試預先準備的桌位、訂位、員工等資料。本次晚到回應案例使用真實資料與真實開桌請求，fixture 不代表假造 HTTP 回應。</dd></div>
+            <div class="term"><dt>route.fetch</dt><dd>瀏覽器自動化工具在攔截請求時，仍將該請求送到真正後端並取回回應的方法；本次先讓資料庫真的完成開桌，再延後瀏覽器收到成功回應的時間。</dd></div>
+            <div class="term"><dt>SPA（Single-Page Application，單頁應用程式）</dt><dd>切換畫面時可只改變目前頁面內容，不必重新載入整份網頁的應用程式形式；本次用它驗證切到 B 桌後，A 桌的晚到回應不會帶走新頁面。</dd></div>
+            <div class="term"><dt>UI（User Interface，使用者介面）</dt><dd>使用者實際看見並操作的畫面、按鈕、文字和狀態提示。</dd></div>
+            <div class="term"><dt>RWD（Responsive Web Design，回應式網頁設計）</dt><dd>讓網頁依不同螢幕寬度調整排版。本次沒有把 390 像素觀察說成整個後台的 RWD 驗收。</dd></div>
+            <div class="term"><dt>loading（載入中）</dt><dd>資料尚未準備好時的等待狀態。按鈕顯示 loading 能避免重複點擊，但資料仍需由後端鎖定與重新檢查。</dd></div>
+            <div class="term"><dt>COUNTER／MANAGER</dt><dd>店員角色名稱：COUNTER 是櫃檯，MANAGER 是店長。API 依角色和讀取／修改操作限制權限。</dd></div>
+          </dl>
+        </section>
+
+        <footer class="page-footer"><a href="index.html">← 回 Iris 工作包</a></footer>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
