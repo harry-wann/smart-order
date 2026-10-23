@@ -9,6 +9,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import tw.ispan.smartorder.entity.embeddable.MenuOptionEntity;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table( name = "menu_item_option_group")
 @Getter
@@ -18,6 +20,6 @@ public class MenuItemOptionGroupEntity {
     @EmbeddedId
     private MenuOptionEntity id;
     private Integer sortOrder;
-    private String createdAt;
-    private String updatedAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

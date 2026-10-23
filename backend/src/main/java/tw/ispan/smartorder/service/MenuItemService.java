@@ -2,27 +2,33 @@ package tw.ispan.smartorder.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
+import tw.ispan.smartorder.common.exception.ApiException;
 import tw.ispan.smartorder.dto.AdminMenuItemDto;
 import tw.ispan.smartorder.dto.MenuItemOptionDetailDto;
 import tw.ispan.smartorder.dto.MenuItemOptionDetailRow;
 import tw.ispan.smartorder.dto.request.SaveMenuItemRequest;
 import tw.ispan.smartorder.entity.MenuItemEntity;
+import tw.ispan.smartorder.entity.MenuItemOptionGroupEntity;
 import tw.ispan.smartorder.entity.InventoryEntity;
+import tw.ispan.smartorder.entity.embeddable.MenuOptionEntity;
 import tw.ispan.smartorder.repository.CartItemRepository;
 import tw.ispan.smartorder.repository.InventoryRepository;
 import tw.ispan.smartorder.repository.MenuCategoryRepository;
 import tw.ispan.smartorder.repository.MenuItemRepository;
 import tw.ispan.smartorder.repository.MenuItemOptionGroupRepository;
+import tw.ispan.smartorder.repository.OptionGroupRepository;
 import tw.ispan.smartorder.repository.OrderItemRepository;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +48,9 @@ public class MenuItemService {
     private MenuItemOptionGroupRepository menuItemOptionGroupRepository;
 
     @Autowired
+    private OptionGroupRepository optionGroupRepository;
+
+    @Autowired
     private CartItemRepository cartItemRepository;
 
     @Autowired
@@ -51,12 +60,7 @@ public class MenuItemService {
     public AdminMenuItemDto createAdminMenuItem(SaveMenuItemRequest request) {
         LocalDateTime now = LocalDateTime.now();
         MenuItemEntity item = new MenuItemEntity();
-        item.setCategory(menuCategoryRepository.findById(request.categoryId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到商品分類")));
-        item.setName(request.name().trim());
-        item.setDescription(request.description());
-        item.setPrice(request.price());
-        item.setImageUrl(request.imageUrl());
+        // 沒指定的標示欄位用預設值：不是鍋底、不是續加、追蹤庫存、無飲食標示
         item.setIsSoupBase(false);
         item.setTrackInventory(true);
         item.setIsRefill(false);
@@ -64,10 +68,9 @@ public class MenuItemService {
         item.setSpicyLevel(0);
         item.setIsVegetarian(false);
         item.setContainsBeef(false);
-        item.setSoldOut(request.stock() == 0);
         item.setSortOrder("0");
-        item.setActive(request.active());
         item.setCreatedAt(now);
+        applyEditableFields(item, request);
         item.setUpdatedAt(now);
         MenuItemEntity saved = menuItemRepository.save(item);
 
@@ -78,51 +81,50 @@ public class MenuItemService {
         inventory.setCreatedAt(now);
         inventory.setUpdatedAt(now);
         inventoryRepository.save(inventory);
-        item.setSoldOut(request.stock() == 0);
-        return toAdminMenuItemDto(saved, request.stock());
+
+        List<Long> optionGroupIds = syncOptionGroups(saved.getId(), request.optionGroupIds());
+        return toAdminMenuItemDto(saved, request.stock(), optionGroupIds);
     }
 
     @Transactional
     public AdminMenuItemDto updateAdminMenuItem(Long id, SaveMenuItemRequest request) {
         MenuItemEntity item = menuItemRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到商品"));
-        item.setCategory(menuCategoryRepository.findById(request.categoryId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到商品分類")));
-        item.setName(request.name().trim());
-        item.setDescription(request.description());
-        item.setPrice(request.price());
-        item.setImageUrl(request.imageUrl());
-        boolean wasActive = Boolean.TRUE.equals(item.getActive());
-        item.setActive(request.active());
-        item.setUpdatedAt(LocalDateTime.now());
-        MenuItemEntity saved = menuItemRepository.save(item);
-
+                .orElseThrow(() -> ApiException.notFound("找不到商品"));
         LocalDateTime now = LocalDateTime.now();
         InventoryEntity inventory = inventoryRepository.findByMenuItem_Id(id).orElseGet(() -> {
             InventoryEntity created = new InventoryEntity();
-            created.setMenuItem(saved);
+            created.setMenuItem(item);
             created.setLowThreshold(10);
             created.setCreatedAt(now);
             return created;
         });
-        boolean wasSoldOut = inventory.getQuantity() == null || inventory.getQuantity() <= 0;
+        // 先記下修改前的狀態，之後才知道上架／售完有沒有變，要不要推播
+        boolean wasActive = Boolean.TRUE.equals(item.getActive());
+        boolean wasSoldOut = isSoldOut(item.getTrackInventory(), inventory.getQuantity());
+
+        applyEditableFields(item, request);
+        item.setUpdatedAt(now);
+        MenuItemEntity saved = menuItemRepository.save(item);
+
         inventory.setQuantity(request.stock());
         inventory.setUpdatedAt(now);
         inventoryRepository.save(inventory);
-        saved.setSoldOut(request.stock() == 0);
-        if (wasSoldOut != (request.stock() == 0)) {
-            menuStatusNotifier.notifyAfterCommit(id, request.stock() == 0);
+
+        boolean nowSoldOut = Boolean.TRUE.equals(saved.getSoldOut());
+        if (wasSoldOut != nowSoldOut) {
+            menuStatusNotifier.notifyAfterCommit(id, nowSoldOut);
         }
         if (wasActive != request.active()) {
             menuStatusNotifier.notifyVisibilityAfterCommit(id, request.active());
         }
-        return toAdminMenuItemDto(saved, request.stock());
+        List<Long> optionGroupIds = syncOptionGroups(id, request.optionGroupIds());
+        return toAdminMenuItemDto(saved, request.stock(), optionGroupIds);
     }
 
     @Transactional
     public AdminMenuItemDto updateAdminMenuItemStatus(Long id, boolean active) {
         MenuItemEntity item = menuItemRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到商品"));
+                .orElseThrow(() -> ApiException.notFound("找不到商品"));
         boolean wasActive = Boolean.TRUE.equals(item.getActive());
         item.setActive(active);
         item.setUpdatedAt(LocalDateTime.now());
@@ -132,58 +134,214 @@ public class MenuItemService {
         }
         Integer stock = inventoryRepository.findByMenuItem_Id(id)
                 .map(InventoryEntity::getQuantity).orElse(0);
-        return toAdminMenuItemDto(item, stock);
+        return toAdminMenuItemDto(item, stock, currentOptionGroupIds(id));
     }
 
     @Transactional
     public void deleteAdminMenuItem(Long id) {
         MenuItemEntity item = menuItemRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到商品"));
+                .orElseThrow(() -> ApiException.notFound("找不到商品"));
         if (cartItemRepository.existsByMenuItem_Id(id) || orderItemRepository.existsByMenuItemId(id)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "商品已出現在購物車或訂單中，無法刪除");
+            throw ApiException.conflict("MENU_ITEM_IN_USE", "商品已出現在購物車或訂單中，無法刪除，請改為下架");
         }
         menuItemOptionGroupRepository.deleteByMenuItemId(id);
         inventoryRepository.deleteByMenuItem_Id(id);
         menuItemRepository.delete(item);
     }
 
-    private AdminMenuItemDto toAdminMenuItemDto(MenuItemEntity item, Integer stock) {
-        return new AdminMenuItemDto(item.getId(), item.getImageUrl(), item.getName(),
-                item.getDescription(), item.getPrice(), item.getCategory().getId(),
-                stock, item.getActive());
+    // 把請求裡的欄位寫進品項（新增、修改共用）並驗證。呼叫前新增的品項要先放好預設值：
+    // 請求裡省略（null）的標示欄位維持品項目前的值。
+    // 規則：
+    // - 免費續加（1.9）：價格一定要 0、不追蹤庫存（仍然會出單，只是不扣庫存）。請求沒指定追蹤與否時自動關掉，
+    //   明確要求追蹤就拒絕；價格不是 0 也拒絕，不偷偷改價
+    // - 鍋底與免費續加不能同時成立
+    // - 售完旗標是算出來的：只有追蹤庫存且庫存 <= 0 才算售完，不追蹤庫存的品項永遠不是售完
+    private void applyEditableFields(MenuItemEntity item, SaveMenuItemRequest request) {
+        String name = request.name() == null ? "" : request.name().trim();
+        if (name.isEmpty()) {
+            throw ApiException.badRequest("請輸入品項名稱");
+        }
+        if (request.price().signum() < 0) {
+            throw ApiException.badRequest("價格必須大於或等於 0");
+        }
+        if (request.stock() < 0) {
+            throw ApiException.badRequest("庫存必須大於或等於 0");
+        }
+
+        boolean refill = request.refill() != null ? request.refill() : Boolean.TRUE.equals(item.getIsRefill());
+        boolean soupBase = request.soupBase() != null ? request.soupBase() : Boolean.TRUE.equals(item.getIsSoupBase());
+        boolean trackInventory = request.trackInventory() != null
+                ? request.trackInventory()
+                : !Boolean.FALSE.equals(item.getTrackInventory());
+        if (refill) {
+            if (request.price().signum() != 0) {
+                throw ApiException.badRequest("免費續加品項的價格必須是 0");
+            }
+            if (Boolean.TRUE.equals(request.trackInventory())) {
+                throw ApiException.badRequest("免費續加品項不追蹤庫存");
+            }
+            trackInventory = false;
+        }
+        if (refill && soupBase) {
+            throw ApiException.badRequest("鍋底不能同時是免費續加品項");
+        }
+        int spicyLevel = request.spicyLevel() != null
+                ? request.spicyLevel()
+                : (item.getSpicyLevel() == null ? 0 : item.getSpicyLevel());
+        if (spicyLevel < 0 || spicyLevel > 3) {
+            throw ApiException.badRequest("辣度必須介於 0 到 3");
+        }
+
+        item.setCategory(menuCategoryRepository.findById(request.categoryId())
+                .orElseThrow(() -> ApiException.notFound("找不到商品分類")));
+        item.setName(name);
+        item.setDescription(request.description());
+        item.setPrice(request.price());
+        item.setImageUrl(normalizeImageUrl(request.imageUrl()));
+        item.setIsRefill(refill);
+        item.setIsSoupBase(soupBase);
+        item.setTrackInventory(trackInventory);
+        item.setSpicyLevel(spicyLevel);
+        if (request.vegetarian() != null) {
+            item.setIsVegetarian(request.vegetarian());
+        }
+        if (request.containsBeef() != null) {
+            item.setContainsBeef(request.containsBeef());
+        }
+        item.setSoldOut(isSoldOut(trackInventory, request.stock()));
+        item.setActive(request.active());
     }
 
+    // 不追蹤庫存的品項（例如免費續加）庫存 0 也不算售完；追蹤庫存的，庫存沒有資料或 <= 0 就是售完
+    private boolean isSoldOut(Boolean trackInventory, Integer stock) {
+        return !Boolean.FALSE.equals(trackInventory) && (stock == null || stock <= 0);
+    }
+
+    // 空白當作沒有圖片；有填的要是 http／https 網址，避免存進奇怪的 scheme
+    private String normalizeImageUrl(String imageUrl) {
+        if (imageUrl == null || imageUrl.isBlank()) {
+            return null;
+        }
+        String trimmed = imageUrl.trim();
+        String lower = trimmed.toLowerCase();
+        if (!lower.startsWith("http://") && !lower.startsWith("https://")) {
+            throw ApiException.badRequest("圖片網址需以 http:// 或 https:// 開頭");
+        }
+        return trimmed;
+    }
+
+    // 品項↔選項群組（1.4）：optionGroupIds 為 null 代表不動；否則整批取代，陣列順序存進 sort_order（從 1 開始）。
+    // 用「差異」的方式更新：沒在清單裡的關聯刪掉、還在的只改順序、新的才新增，
+    // 不先全刪再重建，避免同一交易裡刪除又新增同一組主鍵。回傳套用後的群組 id 順序
+    private List<Long> syncOptionGroups(Long menuItemId, List<Long> optionGroupIds) {
+        if (optionGroupIds == null) {
+            return currentOptionGroupIds(menuItemId);
+        }
+        if (new HashSet<>(optionGroupIds).size() != optionGroupIds.size()) {
+            throw ApiException.badRequest("選項群組不可重複");
+        }
+        if (optionGroupRepository.findAllById(optionGroupIds).size() != optionGroupIds.size()) {
+            throw ApiException.notFound("找不到選項群組");
+        }
+
+        Map<Long, MenuItemOptionGroupEntity> existing = menuItemOptionGroupRepository
+                .findById_MenuItemId(menuItemId).stream()
+                .collect(Collectors.toMap(relation -> relation.getId().getOptionGroupId(), relation -> relation));
+        List<MenuItemOptionGroupEntity> removed = existing.entrySet().stream()
+                .filter(entry -> !optionGroupIds.contains(entry.getKey()))
+                .map(Map.Entry::getValue)
+                .toList();
+        menuItemOptionGroupRepository.deleteAll(removed);
+
+        LocalDateTime now = LocalDateTime.now();
+        List<MenuItemOptionGroupEntity> kept = new ArrayList<>();
+        for (int index = 0; index < optionGroupIds.size(); index++) {
+            Long optionGroupId = optionGroupIds.get(index);
+            MenuItemOptionGroupEntity relation = existing.get(optionGroupId);
+            if (relation == null) {
+                relation = new MenuItemOptionGroupEntity();
+                relation.setId(new MenuOptionEntity(menuItemId, optionGroupId));
+                relation.setCreatedAt(now);
+            }
+            relation.setSortOrder(index + 1);
+            relation.setUpdatedAt(now);
+            kept.add(relation);
+        }
+        menuItemOptionGroupRepository.saveAll(kept);
+        return List.copyOf(optionGroupIds);
+    }
+
+    private List<Long> currentOptionGroupIds(Long menuItemId) {
+        return menuItemOptionGroupRepository.findByMenuItemIds(List.of(menuItemId)).stream()
+                .map(relation -> relation.getId().getOptionGroupId())
+                .toList();
+    }
+
+    private AdminMenuItemDto toAdminMenuItemDto(MenuItemEntity item, Integer stock, List<Long> optionGroupIds) {
+        return new AdminMenuItemDto(item.getId(), item.getImageUrl(), item.getName(),
+                item.getDescription(), item.getPrice(), item.getCategory().getId(),
+                stock, item.getActive(),
+                item.getIsSoupBase(), item.getIsRefill(), item.getTrackInventory(),
+                item.getIsVegetarian(), item.getContainsBeef(), item.getSpicyLevel(),
+                optionGroupIds);
+    }
+
+    // 顧客端：品項上架且所屬分類啟用才看得到；依分類 sort_order、品項 sort_order 排序
     @Transactional
     public List<MenuItemEntity> findMenuItem(Long categoryId){
         List<MenuItemEntity> items;
         if (categoryId == null) {
-            items = menuItemRepository.findByActiveTrue();
+            items = menuItemRepository.findVisibleMenuItems();
         } else {
-            items = menuItemRepository.findByActiveTrueAndCategory_Id(categoryId);
+            items = menuItemRepository.findVisibleMenuItemsByCategoryId(categoryId);
         }
         return withCurrentSoldOutStatus(items);
     }
 
+    @Transactional(readOnly = true)
     public List<AdminMenuItemDto> findAdminMenuItems(Long categoryId) {
         if (categoryId == null) {
-            return menuItemRepository.findAllAdminMenuItems();
+            return toAdminMenuItemDtos(menuItemRepository.findAllAdminMenuItems());
         }
-        return menuItemRepository.findAdminMenuItemsByCategoryId(categoryId);
+        return toAdminMenuItemDtos(menuItemRepository.findAdminMenuItemsByCategoryId(categoryId));
     }
 
+    @Transactional(readOnly = true)
     public List<AdminMenuItemDto> searchAdminMenuItems(String keyword) {
-        return menuItemRepository.searchAdminMenuItemsByKeyword(keyword.trim());
+        return toAdminMenuItemDtos(menuItemRepository.searchAdminMenuItemsByKeyword(keyword.trim()));
+    }
+
+    // 後台清單：選項群組關聯一次查回來再分給各品項
+    private List<AdminMenuItemDto> toAdminMenuItemDtos(List<MenuItemEntity> items) {
+        if (items.isEmpty()) {
+            return List.of();
+        }
+        Map<Long, List<Long>> optionGroupIdsByItem = new HashMap<>();
+        for (MenuItemOptionGroupEntity relation : menuItemOptionGroupRepository.findByMenuItemIds(
+                items.stream().map(MenuItemEntity::getId).toList())) {
+            optionGroupIdsByItem
+                    .computeIfAbsent(relation.getId().getMenuItemId(), key -> new ArrayList<>())
+                    .add(relation.getId().getOptionGroupId());
+        }
+        return items.stream()
+                .map(item -> toAdminMenuItemDto(
+                        item,
+                        item.getInventory() == null || item.getInventory().getQuantity() == null
+                                ? 0 : item.getInventory().getQuantity(),
+                        optionGroupIdsByItem.getOrDefault(item.getId(), List.of())))
+                .toList();
     }
 
     @Transactional
     public List<MenuItemEntity> searchMenuItem(String keyword){
         String searchKeyword = keyword == null ? "" : keyword.trim();
         if (searchKeyword.isEmpty()) {
-            return withCurrentSoldOutStatus(menuItemRepository.findByActiveTrue());
+            return withCurrentSoldOutStatus(menuItemRepository.findVisibleMenuItems());
         }
         return withCurrentSoldOutStatus(menuItemRepository.searchActiveMenuItemsByKeyword(searchKeyword));
     }
 
+    // 售完旗標以現在的庫存為準；不追蹤庫存的品項（免費續加等）庫存 0 也不是售完
     private List<MenuItemEntity> withCurrentSoldOutStatus(List<MenuItemEntity> items) {
         for (MenuItemEntity item : items) {
             boolean soldOut = false;
@@ -211,7 +369,7 @@ public class MenuItemService {
                 menuItemRepository.findOptionValuesByMenuItemId(menuItemId);
         MenuItemOptionDetailRow item = rows.stream()
                 .findFirst()
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到上架中的商品"));
+                .orElseThrow(() -> ApiException.notFound("找不到上架中的商品"));
 
         Map<Long, OptionGroupBuilder> groups = new LinkedHashMap<>();
         for (MenuItemOptionDetailRow row : rows) {

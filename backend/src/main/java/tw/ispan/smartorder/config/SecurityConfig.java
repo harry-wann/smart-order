@@ -9,6 +9,7 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -27,9 +28,9 @@ import tw.ispan.smartorder.util.JwtToken;
 
 /**
  * 教學階段先讓本機 API 可直接測試；正式環境要改成登入與權限規則。
- * R2 上傳 API 預設拒絕所有呼叫；只在本機展示時可用環境變數暫時開啟匿名存取。
+ * R2 上傳 API（簽發、確認）與菜單管理 API（/api/order/admin）只給店長（MANAGER），沒有匿名開關。
  * SessionTokenFilter、StaffJwtFilter 以 new 的方式加入 security chain，類別上不要加 @Component，避免被重複註冊執行兩次。
- * 店家端目前只有訂位相關的 /api/admin 要員工 JWT；其他店家端 API 等各自接上登入後再加進來。
+ * 店家端目前只有訂位、出餐、菜單管理等路徑要員工 JWT；其他店家端 API 等各自接上登入後再加進來。
  */
 @Configuration
 public class SecurityConfig {
@@ -40,21 +41,17 @@ public class SecurityConfig {
             DiningSessionRepository sessionRepo,
             DiningSessionGuestRepository guestRepo,
             StaffJwtProvider staffJwtProvider,
-            JwtToken jwtToken,
-            @Value("${app.r2.allow-anonymous-uploads:false}") boolean allowAnonymousUploads) throws Exception {
+            JwtToken jwtToken) throws Exception {
         http
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
                 .authorizeHttpRequests(authorize -> {
-                    // R2 上傳相關規則要放在 /api/** 之前，否則會先被 permitAll 吃掉
+                    // R2 上傳相關規則要放在 /api/** 之前，否則會先被 permitAll 吃掉。
+                    // 簽發、確認上傳會寫進公開 bucket（菜單圖片用），只給店長，不能匿名；
+                    // 其他沒列出的 /api/uploads 路徑一律拒絕
                     authorize.requestMatchers(HttpMethod.GET, "/api/uploads/config").permitAll();
-                    if (allowAnonymousUploads) {
-                        authorize.requestMatchers(HttpMethod.POST,
-                                "/api/uploads/presign", "/api/uploads/complete").permitAll();
-                    } else {
-                        authorize.requestMatchers(HttpMethod.POST,
-                                "/api/uploads/presign", "/api/uploads/complete").denyAll();
-                    }
+                    authorize.requestMatchers(HttpMethod.POST,
+                            "/api/uploads/presign", "/api/uploads/complete").hasRole("MANAGER");
                     authorize.requestMatchers("/api/uploads/**").denyAll();
 
                     // 員工登入；以下店家端規則都要放在 /api/** 之前（規則由上往下比，第一條符合就用，
@@ -91,6 +88,10 @@ public class SecurityConfig {
                             .hasAnyRole("COUNTER", "MANAGER");
                     authorize.requestMatchers("/api/admin/tables", "/api/admin/tables/**")
                             .hasAnyRole("COUNTER", "MANAGER");
+                    // 菜單管理（分類、品項、選項群組）：實際掛在 /api/order/admin/**（規格寫 /api/admin/menu/**，
+                    // 以實作為準）。所有動詞都要店長，包含 GET——後台清單含停用的分類與品項，不能給匿名者看。
+                    // 同一個 controller 的顧客端查詢（/api/order/category、/items…）不在這個前綴下，維持公開
+                    authorize.requestMatchers("/api/order/admin/**").hasRole("MANAGER");
 
                     authorize
                             .requestMatchers(
@@ -105,20 +106,26 @@ public class SecurityConfig {
                             ).permitAll()
                             .anyRequest().authenticated();
                 })
-                // 沒登入（或 token 過期、被改過）打 /api/admin/** 回 401 JSON，前端看到 401 會清掉員工權杖、導回登入頁；
-                // entry point 只套 /api/admin/**，其他路徑（例如 denyAll 的上傳）不動，維持原本的 403。
+                // 沒登入（或 token 過期、被改過）打 /api/admin/**、/api/order/admin/**、上傳簽發／確認
+                // 回 401 JSON，前端看到 401 會清掉員工權杖、導回登入頁；
+                // entry point 只套這幾組店家端路徑，其他路徑（例如 denyAll 的其他上傳路徑）不動，維持原本的 403。
                 // 登入了但角色不夠（例如 COUNTER 去按排程）走 accessDeniedHandler 回 403，
                 // 前端只顯示「權限不足」，不能跟 401 混在一起導回登入頁
-                .exceptionHandling(handling -> handling
-                        .defaultAuthenticationEntryPointFor(
-                                (request, response, exception) ->
-                                        writeError(request, response, 401, "UNAUTHORIZED", "請先登入"),
-                                PathPatternRequestMatcher.withDefaults().matcher("/api/admin/**"))
-                        .accessDeniedHandler((request, response, exception) ->
-                                writeError(request, response, 403, "FORBIDDEN", "權限不足")))
+                .exceptionHandling(handling -> {
+                    AuthenticationEntryPoint unauthorized = (request, response, exception) ->
+                            writeError(request, response, 401, "UNAUTHORIZED", "請先登入");
+                    for (String pattern : List.of(
+                            "/api/admin/**", "/api/order/admin/**", "/api/uploads/presign", "/api/uploads/complete")) {
+                        handling.defaultAuthenticationEntryPointFor(
+                                unauthorized, PathPatternRequestMatcher.withDefaults().matcher(pattern));
+                    }
+                    handling.accessDeniedHandler((request, response, exception) ->
+                            writeError(request, response, 403, "FORBIDDEN", "權限不足"));
+                })
                 .addFilterBefore(new SessionTokenFilter(sessionRepo, guestRepo, jwtToken),
                         UsernamePasswordAuthenticationFilter.class)
-                // StaffJwtFilter 自己只處理 /api/admin/，跟上面 SessionTokenFilter 的顧客端權杖各管各的
+                // StaffJwtFilter 自己只處理店家端路徑（/api/admin/、/api/order/admin/、/api/uploads/），
+                // 跟上面 SessionTokenFilter 的顧客端權杖各管各的
                 .addFilterBefore(new StaffJwtFilter(staffJwtProvider),
                         UsernamePasswordAuthenticationFilter.class);
         return http.build();

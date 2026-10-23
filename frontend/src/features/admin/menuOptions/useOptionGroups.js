@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
-import { createApiClient } from '@/services/client/createApiClient';
+import { employeeClient } from '@/services/client/employeeClient';
 import { validateOptionGroup } from './validation';
 
-const optionGroupsClient = createApiClient();
-
+// 選項群組 API（/order/admin）只給店長，要帶員工 token，所以用 employeeClient
 export default function useOptionGroups() {
   const [groups, setGroups] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState(null);
@@ -29,7 +28,7 @@ export default function useOptionGroups() {
 
     async function loadOptionGroups() {
       try {
-        const { data } = await optionGroupsClient.get('/order/admin/optionGroups');
+        const { data } = await employeeClient.get('/order/admin/optionGroups');
         if (!isCurrentRequest) return;
 
         const fetchedGroups = data.map(group => ({
@@ -80,7 +79,7 @@ export default function useOptionGroups() {
     setIsSavingGroup(true);
     setAddGroupError('');
     try {
-      const { data } = await optionGroupsClient.post('/order/admin/optionGroups', {
+      const { data } = await employeeClient.post('/order/admin/optionGroups', {
         name,
         minSelect,
         maxSelect,
@@ -137,7 +136,7 @@ export default function useOptionGroups() {
     setIsSavingGroupEdit(true);
     setEditGroupError('');
     try {
-      const { data } = await optionGroupsClient.put(
+      const { data } = await employeeClient.put(
         `/order/admin/optionGroups/${editingGroup.id}`,
         { name, minSelect, maxSelect, sortOrder }
       );
@@ -169,7 +168,7 @@ export default function useOptionGroups() {
     setIsSavingGroupEdit(true);
     setEditGroupError('');
     try {
-      await optionGroupsClient.delete(`/order/admin/optionGroups/${editingGroup.id}`);
+      await employeeClient.delete(`/order/admin/optionGroups/${editingGroup.id}`);
       const remainingGroups = groups.filter(group => group.id !== editingGroup.id);
       setGroups(prevGroups => prevGroups.filter(group => group.id !== editingGroup.id));
       setSelectedGroupId(previousId => (
@@ -207,7 +206,7 @@ export default function useOptionGroups() {
 
     try {
       const saveResults = await Promise.allSettled(groupsWithUpdatedOrder.map(group => (
-        optionGroupsClient.put(`/order/admin/optionGroups/${group.id}`, {
+        employeeClient.put(`/order/admin/optionGroups/${group.id}`, {
           name: group.name,
           minSelect: group.minSelect,
           maxSelect: group.maxSelect,
@@ -218,7 +217,7 @@ export default function useOptionGroups() {
       if (failedSave) throw failedSave.reason;
     } catch (error) {
       const rollbackResults = await Promise.allSettled(previousGroups.map(group => (
-        optionGroupsClient.put(`/order/admin/optionGroups/${group.id}`, {
+        employeeClient.put(`/order/admin/optionGroups/${group.id}`, {
           name: group.name,
           minSelect: group.minSelect,
           maxSelect: group.maxSelect,

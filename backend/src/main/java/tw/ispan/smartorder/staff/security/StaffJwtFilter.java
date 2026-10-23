@@ -23,6 +23,10 @@ import java.util.List;
 public class StaffJwtFilter extends OncePerRequestFilter {
 
     private static final String BEARER = "Bearer ";
+    // 店家端會用員工 token 的路徑前綴：訂位／出餐等 /api/admin/、菜單管理 /api/order/admin/、
+    // 菜單圖片上傳 /api/uploads/（只有簽發、確認要登入，規則在 SecurityConfig）。
+    // 新增要員工 JWT 的路徑群組時，前綴也要加在這裡，否則 SecurityConfig 的角色規則拿不到身分
+    private static final List<String> STAFF_PATH_PREFIXES = List.of("/api/admin/", "/api/order/admin/", "/api/uploads/");
 
     private final StaffJwtProvider jwtProvider;
 
@@ -30,10 +34,11 @@ public class StaffJwtFilter extends OncePerRequestFilter {
         this.jwtProvider = jwtProvider;
     }
 
-    // 只看 /api/admin/：顧客端和會員的 API 也會帶 Authorization 標頭，那些不是員工 token，不碰
+    // 只看店家端的路徑前綴：顧客端和會員的 API 也會帶 Authorization 標頭，那些不是員工 token，不碰
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !request.getRequestURI().startsWith("/api/admin/");
+        String uri = request.getRequestURI();
+        return STAFF_PATH_PREFIXES.stream().noneMatch(uri::startsWith);
     }
 
     @Override

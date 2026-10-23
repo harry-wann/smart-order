@@ -105,7 +105,6 @@ R2_BUCKET_NAME=smart-order-menu-images
 R2_STAGING_BUCKET_NAME=smart-order-menu-staging
 R2_PUBLIC_BASE_URL=https://你的公開圖片網域
 R2_MAX_UPLOAD_BYTES=5242880
-R2_ALLOW_ANONYMOUS_UPLOADS=false
 ```
 
 S3 API endpoint 會由 Account ID 組成：`https://<ACCOUNT_ID>.r2.cloudflarestorage.com`。不要把 Access Key 或 Secret Access Key 放在 `frontend/.env`、React 程式碼、Git commit 或公開訊息裡。正式部署時，將相同欄位設定在後端主機的環境變數／Secrets 設定中，不要依賴開發機的 `backend/.env`。
@@ -130,7 +129,7 @@ smart-order-menu-staging: pending/9f0c...a21.webp
 smart-order-menu-images:  images/9f0c...a21.webp
 ```
 
-API 實作位於 `backend/src/main/java/tw/ispan/smartorder/controller/ImageUploadController.java` 與 `service/ImageUploadService.java`。`GET /api/uploads/config` 只回傳公開的大小限制；簽發與確認上傳的 POST API 預設由 `SecurityConfig` 拒絕呼叫。本機展示時才在 `backend/.env` 暫設 `R2_ALLOW_ANONYMOUS_UPLOADS=true`。正式／共用環境保持 `false`，接入員工驗證後再限制管理者存取。設定範例在 `backend/.env.example`。
+API 實作位於 `backend/src/main/java/tw/ispan/smartorder/controller/ImageUploadController.java` 與 `service/ImageUploadService.java`。`GET /api/uploads/config` 只回傳公開的大小限制；簽發與確認上傳的 POST API（`/api/uploads/presign`、`/api/uploads/complete`）只給登入的店長（`MANAGER`，員工 JWT 由 `StaffJwtFilter` 解析、角色規則在 `SecurityConfig`），沒有匿名開關；沒登入回 401、角色不夠回 403。要試上傳請先用店長帳號登入後台。設定範例在 `backend/.env.example`。
 
 後端只接受 JPEG、PNG、WebP，再由 Content-Type 決定副檔名；不採用前端送來的原始檔名或副檔名。上傳票據與 object key 綁定，前端無法用公開圖片網址要求簽發覆寫網址。
 
@@ -208,7 +207,7 @@ R2 設定完成後，可依下列順序測試共用元件：
 - [ ] 暫存 Bucket 的 CORS 已允許 `http://localhost:5173` 的 `PUT` 與 `Content-Type`。
 - [ ] 暫存 Bucket 的 Lifecycle Rule 會在一天後刪除 `pending/` 前綴的未完成物件。
 - [ ] R2 憑證只設定在後端環境變數。
-- [ ] 本機展示才把 `R2_ALLOW_ANONYMOUS_UPLOADS` 設為 `true`；其他環境保持 `false`，等接入員工驗證後再限制管理者存取。
+- [ ] 簽發、確認上傳只有店長（`MANAGER`）登入後才能呼叫；沒有帶員工 token 應回 401。
 - [ ] `/demo/r2-upload` 可成功上傳並顯示公開圖片網址。
 - [ ] 菜單新增／編輯 API 已將確認過的 `objectKey` 寫入 `menu_item.image_url`（尚未串接）。
 

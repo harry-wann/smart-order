@@ -46,7 +46,7 @@ export default function R2UploadDemo() {
             <p className="mt-3 type-body-sm text-ink-600">完成上傳後，這裡會顯示公開圖片網址與 object key。</p>
           )}
           <p className="mt-5 rounded-lg bg-surface-200 p-3 type-caption text-ink-600">
-            開始測試前，請在後端設定 R2 環境變數、僅在本機將 R2_ALLOW_ANONYMOUS_UPLOADS 設為 true，並在 Bucket CORS 放行前端來源的 PUT 與 Content-Type。
+            開始測試前，請先以店長帳號登入後台（簽發與確認上傳只給 MANAGER），在後端設定 R2 環境變數，並在 Bucket CORS 放行前端來源的 PUT 與 Content-Type。
           </p>
         </section>
       </div>
