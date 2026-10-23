@@ -19,11 +19,15 @@ public class WaitlistScheduler {
 
     // 每分鐘整點跑一次（cron 欄位：秒 分 時 日 月 週）
     // 過號是 10 分鐘，每分鐘檢查，最慢 11 分鐘內會被標到
-    @Scheduled(cron = "0 * * * * *")
+    @Scheduled(cron = "0 * * * * *", zone = "Asia/Taipei")
     public void expireCalled() {
-        int count = waitlistService.expireOverdue();
-        if (count > 0) {
-            log.info("候位過號排程標記 {} 組", count);
+        try {
+            int count = waitlistService.expireOverdue();
+            if (count > 0) {
+                log.info("候位過號排程標記 {} 組", count);
+            }
+        } catch (Exception e) {
+            log.error("候位過號檢查失敗", e);
         }
     }
 }

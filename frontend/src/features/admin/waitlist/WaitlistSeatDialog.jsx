@@ -14,46 +14,53 @@ import { useAvailableTables } from '@/hooks/reservation/useAdminReservations'
  * - onConfirm(tableNo)：確定開桌
  */
 
-function WaitlistSeatDialog({ entry, onClose, onConfirm }) {
+function WaitlistSeatDialog({ entry, onClose, onConfirm, busy = false, error = '' }) {
   // 空桌清單由後端篩好、排好（坐得下、不含預約保留、稍後有訂位的排最後）
   // 不帶 reservationId：harry的 API 註解寫「從 S-10b 替候位選桌就不帶」
   const tablesQuery = useAvailableTables(entry.partySize, undefined, true)
   const options = (tablesQuery.data ?? []).map(toOption)
 
   // 店員點過就用點的那張；沒點過預設第一張（資料回來前 options 是空的，所以不能用 useState 存預設值）
+  // 點過的桌重抓後不在清單（被別台開走）就變成沒選，讓店員自己重選，不自動換成另一張
   const [pickedNo, setPickedNo] = useState(null)
-  const selectedNo = pickedNo ?? options[0]?.tableNo ?? null
-  // 選到有訂位的桌時，要多確認一次
-  const [confirming, setConfirming] = useState(false)
+  const selectedNo = pickedNo === null
+    ? options[0]?.tableNo ?? null
+    : options.some((t) => t.tableNo === pickedNo) ? pickedNo : null
+  // 選到有訂位的桌時，要多確認一次；記住確認的是哪一張，換桌後確認就不算數
+  const [confirmingNo, setConfirmingNo] = useState(null)
+  const confirming = confirmingNo !== null && confirmingNo === selectedNo
 
   const selected = options.find((t) => t.tableNo === selectedNo)
   const hasClash = Boolean(selected?.upcomingReservation)
 
-  // 按 Esc 關閉
+  // 按 Esc 關閉；開桌送出中不關，跟 × 和「取消」一致
   useEffect(() => {
-    const onKeyDown = (e) => e.key === 'Escape' && onClose()
+    const onKeyDown = (e) => e.key === 'Escape' && !busy && onClose()
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [onClose])
+  }, [onClose, busy])
 
   function handleSelect(tableNo) {
     setPickedNo(tableNo)
-    setConfirming(false)
+    setConfirmingNo(null)
   }
 
   function handleMainButton() {
     if (!selected) return
     if (hasClash && !confirming) {
-      setConfirming(true)
+      setPickedNo(selected.tableNo)
+      setConfirmingNo(selected.tableNo)
       return
     }
+    // 送出時把這張桌固定成「店員選的」，失敗重抓後若它不見了，就不會默默改成別張
+    setPickedNo(selected.tableNo)
     onConfirm(selected.tableId)
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* 遮罩：點一下也能關 */}
-      <div className="absolute inset-0 bg-ink-900/50" onClick={onClose} />
+      <div className="absolute inset-0 bg-ink-900/50" onClick={busy ? undefined : onClose} />
 
       <div
         role="dialog"
@@ -70,6 +77,7 @@ function WaitlistSeatDialog({ entry, onClose, onConfirm }) {
             type="button"
             aria-label="關閉"
             onClick={onClose}
+            disabled={busy}
             className="flex size-11 flex-none items-center justify-center rounded-full text-2xl text-ink-900 hover:bg-surface-2"
           >
             ×
@@ -80,10 +88,19 @@ function WaitlistSeatDialog({ entry, onClose, onConfirm }) {
           候位 {entry.no}・{formatTime(entry.createdAt)} 登記・已叫號
         </p>
 
-                {tablesQuery.isPending ? (
+        {tablesQuery.isPending ? (
           <p className="mt-6 type-body-sm text-ink-600">空桌載入中…</p>
         ) : tablesQuery.isError ? (
-          <p className="mt-6 type-body-sm text-danger">{tablesQuery.error.message}</p>
+          <div className="mt-6 rounded-btn bg-danger-bg px-4 py-3 text-sm text-danger-ink" role="alert">
+            <p>空桌載入失敗：{tablesQuery.error.message}</p>
+            <button
+              type="button"
+              onClick={() => void tablesQuery.refetch()}
+              className="mt-2 font-medium underline"
+            >
+              重試
+            </button>
+          </div>
         ) : options.length === 0 ? (
           /* 空狀態：沒有坐得下的空桌 */
           <>
@@ -99,6 +116,7 @@ function WaitlistSeatDialog({ entry, onClose, onConfirm }) {
           </>
         ) : (
           <>
+            {error && <p role="alert" className="mt-4 rounded-btn bg-danger-bg px-4 py-3 text-sm text-danger-ink">{error}</p>}
             {/* 桌位選項（單選） */}
             <div role="radiogroup" aria-label="選擇桌位" className="mt-6 flex flex-col gap-2">
               {options.map((t) => {
@@ -110,6 +128,7 @@ function WaitlistSeatDialog({ entry, onClose, onConfirm }) {
                     role="radio"
                     aria-checked={isOn}
                     onClick={() => handleSelect(t.tableNo)}
+                    disabled={busy}
                     className={`flex min-h-14 items-center gap-3 rounded-card px-4 py-3 text-left transition-colors ${
                       isOn
                         ? 'bg-brand-100 ring-[1.5px] ring-brand-600 ring-inset'
@@ -156,17 +175,18 @@ function WaitlistSeatDialog({ entry, onClose, onConfirm }) {
                     variant="ghost"
                     height="h-13"
                     text="換一張桌"
-                    onClick={() => setConfirming(false)}
+                    disabled={busy}
+                    onClick={() => setConfirmingNo(null)}
                   />
                 ) : (
-                  <SOButton variant="ghost" height="h-13" text="取消" onClick={onClose} />
+                  <SOButton variant="ghost" height="h-13" text="取消" disabled={busy} onClick={onClose} />
                 )}
               </div>
               <div className="flex-1">
                 <SOButton
                   height="h-13"
-                  text={mainButtonText(selected, hasClash, confirming)}
-                  disabled={!selected}
+                  text={busy ? '開桌中…' : mainButtonText(selected, hasClash, confirming)}
+                  disabled={!selected || busy}
                   onClick={handleMainButton}
                 />
               </div>
@@ -187,7 +207,12 @@ function mainButtonText(selected, hasClash, confirming) {
 
 // Date → "18:55"
 function formatTime(date) {
-  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+  return new Intl.DateTimeFormat('zh-TW', {
+    timeZone: 'Asia/Taipei',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(date)
 }
 
 // 後端 AvailableTable → 對話框原本用的欄位名稱，這樣下面的畫面不用改

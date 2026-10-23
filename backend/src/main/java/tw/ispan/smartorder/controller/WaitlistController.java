@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import tw.ispan.smartorder.dto.RegisterWaitlistRequest;
 import tw.ispan.smartorder.dto.SeatWaitlistRequest;
 import tw.ispan.smartorder.dto.WaitlistResponse;
+import tw.ispan.smartorder.dto.WaitlistTodaySummary;
 import tw.ispan.smartorder.service.WaitlistService;
 
 @RestController
@@ -18,6 +19,11 @@ public class WaitlistController {
     @GetMapping
     public List<WaitlistResponse> findActive() {
         return waitlistService.findActive();
+    }
+
+    @GetMapping("/today-summary")
+    public WaitlistTodaySummary todaySummary() {
+        return waitlistService.todaySummary();
     }
 
     @PostMapping

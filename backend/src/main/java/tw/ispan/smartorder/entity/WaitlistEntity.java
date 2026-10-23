@@ -1,6 +1,7 @@
 package tw.ispan.smartorder.entity;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -31,10 +32,13 @@ public class WaitlistEntity {
     private LocalDateTime createdAt;
     private LocalDateTime calledAt;
     private LocalDateTime seatedAt;
+    @Column(name = "expired_at")
+    private LocalDateTime expiredAt;
     private Long diningSessionId;
 
     // 現場取號：建立一筆等待中的候位
-    public static WaitlistEntity register(String ticketNo, String contactName, String contactPhone, Integer partySize) {
+    public static WaitlistEntity register(String ticketNo, String contactName, String contactPhone,
+                                          Integer partySize, LocalDateTime now) {
         WaitlistEntity w = new WaitlistEntity();
         w.ticketNo = ticketNo;
         w.contactName = contactName;
@@ -43,14 +47,14 @@ public class WaitlistEntity {
         w.adultCount = partySize;
         w.childCount = 0;
         w.status = "WAITING";
-        w.createdAt = LocalDateTime.now();
+        w.createdAt = now;
         return w;
     }
 
     // 叫號：WAITING → CALLED  記下叫號時間（排程用它算 10 分鐘過號）」
-    public void call() {
+    public void call(LocalDateTime now) {
         this.status = "CALLED";
-        this.calledAt = LocalDateTime.now();
+        this.calledAt = now;
     }
 
     // 放棄：客人不等了
@@ -59,15 +63,16 @@ public class WaitlistEntity {
     }
 
     // 報到入座：記下入座時間，以及開出來的那筆用餐紀錄
-    public void seat(Long diningSessionId) {
+    public void seat(Long diningSessionId, LocalDateTime now) {
         this.status = "SEATED";
-        this.seatedAt = LocalDateTime.now();
+        this.seatedAt = now;
         this.diningSessionId = diningSessionId;
     }
 
     // 過號：叫號後太久沒報到，排程自動標記
-    public void expire() {
+    public void expire(LocalDateTime now) {
         this.status = "EXPIRED";
+        this.expiredAt = now;
     }
 
 }

@@ -13,7 +13,9 @@ public record WaitlistResponse(
         Integer partySize,
         String status,
         LocalDateTime createdAt,
-        LocalDateTime calledAt) {
+        LocalDateTime calledAt,
+        LocalDateTime seatedAt,
+        LocalDateTime expiredAt) {
 
     public static WaitlistResponse from(WaitlistEntity w) {
         return new WaitlistResponse(
@@ -26,6 +28,8 @@ public record WaitlistResponse(
                 w.getPartySize(),
                 w.getStatus(),
                 w.getCreatedAt(),
-                w.getCalledAt());
+                w.getCalledAt(),
+                w.getSeatedAt(),
+                w.getExpiredAt());
     }
 }
