@@ -77,10 +77,17 @@ interface MenuCategoryResponse {
   count: number;
   sortOrder: number;
   active: boolean;
+  cookOrder: number;
 }
 
 function toCategory(category: MenuCategoryResponse): Category {
-  return { id: String(category.id), name: category.name, count: category.count, active: category.active };
+  return {
+    id: String(category.id),
+    name: category.name,
+    count: category.count,
+    active: category.active,
+    cookOrder: category.cookOrder,
+  };
 }
 
 const SPICY_LABELS = ['不辣', '小辣', '中辣', '大辣'];
@@ -279,17 +286,35 @@ export default function AdminMenu() {
     }
   };
 
-  // 分類上移／下移一格：把全部分類（含停用的）依新順序送給後端
+  // 出餐順序：只送 cookOrder，名稱和停用狀態維持不變（出菜看板依這個值排同一張單的品項）
+  const handleChangeCategoryCookOrder = async (categoryId: string, cookOrder: number): Promise<boolean> => {
+    try {
+      const response = await employeeClient.put<MenuCategoryResponse>(
+        `/order/admin/categories/${categoryId}`,
+        { cookOrder },
+      );
+      setCategories(prev => prev.map(item => item.id === categoryId ? toCategory(response.data) : item));
+      return true;
+    } catch (error) {
+      alert(describeApiError(error, '更新出餐順序失敗，請稍後再試。'));
+      return false;
+    }
+  };
+
+  // 分類上移／下移一格：把全部分類（含停用的）依新順序送給後端。
+  // 一起送移動前畫面上的順序（expectedCategoryIds），後端發現資料庫的順序已經不一樣（別人剛排過）就回 409，
+  // 不會照畫面上的舊順序把別人排好的蓋掉
   const handleMoveCategory = async (categoryId: string, direction: -1 | 1): Promise<boolean> => {
     const ids = categories.filter(item => item.id !== 'all').map(item => item.id);
     const index = ids.indexOf(categoryId);
     const target = index + direction;
     if (index === -1 || target < 0 || target >= ids.length) return false;
+    const expectedCategoryIds = ids.map(Number);
     [ids[index], ids[target]] = [ids[target], ids[index]];
     try {
       const response = await employeeClient.patch<MenuCategoryResponse[]>(
         '/order/admin/categories/sort-order',
-        { categoryIds: ids.map(Number) },
+        { categoryIds: ids.map(Number), expectedCategoryIds },
       );
       setCategories(prev => [
         ...prev.filter(item => item.id === 'all'),
@@ -298,7 +323,7 @@ export default function AdminMenu() {
       return true;
     } catch (error) {
       alert(describeApiError(error, '調整分類排序失敗，請重新整理後再試。'));
-      // 清單過期（別人新增、刪除過分類）：重抓分類，不然之後每次移動都會再撞 409
+      // 清單過期（別人新增、刪除過分類，或剛調整過順序）：重抓分類，不然之後每次移動都會再撞 409
       if (error instanceof ApiError && error.code === 'CATEGORY_LIST_CHANGED') {
         setReloadCategoriesKey(key => key + 1);
       }
@@ -501,6 +526,7 @@ export default function AdminMenu() {
           onRenameCategory={handleRenameCategory}
           onToggleCategoryActive={handleToggleCategoryActive}
           onMoveCategory={handleMoveCategory}
+          onChangeCategoryCookOrder={handleChangeCategoryCookOrder}
         />
 
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">

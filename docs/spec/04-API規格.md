@@ -189,7 +189,7 @@
 | POST | `/api/admin/waitlist/{id}/call` | 叫號 | COUNTER, MANAGER |
 | POST | `/api/admin/waitlist/{id}/seat` | 報到入座並開桌（**帶 `tableId`**；保留中回 `409 TABLE_RESERVED`） | COUNTER, MANAGER |
 | DELETE | `/api/admin/waitlist/{id}` | 放棄 | COUNTER, MANAGER |
-| CRUD | `/api/admin/menu/categories` | 分類管理 | MANAGER |
+| CRUD | `/api/admin/menu/categories` | 分類管理。新增、改名、停用／啟用、改出餐順序共用 body `{ name?, active?, cookOrder? }`，修改時省略的欄位維持原值；新增時 `name` 必填、`cookOrder` 省略為 2。`cookOrder` 只能 1～6（意義見 4.12），超出回 `400 VALIDATION_FAILED`；名稱重複（不分大小寫，兩人同時新增同名也會擋下一個）回 `409 CATEGORY_NAME_DUPLICATED`；底下還有品項不能刪，回 `409 CATEGORY_NOT_EMPTY`。排序（`PATCH …/sort-order`）body `{ categoryIds, expectedCategoryIds? }`：`categoryIds` 是新順序的全部分類（含停用），`expectedCategoryIds` 是移動前畫面上的順序；成員跟目前的分類不同，或有帶 `expectedCategoryIds` 而資料庫目前的順序（`sort_order, id`）跟它不同，回 `409 CATEGORY_LIST_CHANGED`，前端重抓分類 | MANAGER |
 | CRUD | `/api/admin/menu/items` | 品項管理（含上下架） | MANAGER |
 | CRUD | `/api/admin/menu/option-groups` | 選項群組管理 | MANAGER |
 | CRUD | `/api/admin/tables-config` | 座位管理 | MANAGER |
@@ -1144,7 +1144,8 @@ GET /api/admin/kitchen/tickets
 ```
 
 排序：`is_preorder DESC, placed_at ASC`（預約優先，其次先到先做）。
-`cookOrder` 是出餐順序建議：鍋底 1、菜盤 2、火鍋料 3、肉品 4、主食 5、飲料甜點 6。
+`cookOrder` 是出餐順序：依品項所屬分類的 `cook_order`（店長在菜單管理設定：鍋底 1、菜盤 2、火鍋料 3、肉品 4、主食 5、飲料甜點 6），鍋底品項（`is_soup_base = 1`）固定 1。
+同一張單的 `items` 依 `cookOrder` 由小到大排，同一級照點餐順序。
 
 ---
 

@@ -91,15 +91,15 @@ INSERT INTO member (id, phone, nickname, gender, birth_date, profile_completed, 
   (30, '0969678432', '小芸', 'FEMALE', '2003-07-07', 1, 'ACTIVE', TIMESTAMP(@today - INTERVAL 2 DAY, '15:20:00'));
 
 -- menu_category（8 筆）
-INSERT INTO menu_category (id, name, sort_order, active) VALUES
-  (1, '鍋底', 1, 1),
-  (2, '肉品', 2, 1),
-  (3, '海鮮', 3, 1),
-  (4, '蔬菜', 4, 1),
-  (5, '火鍋料', 5, 1),
-  (6, '主食', 6, 1),
-  (7, '飲料', 7, 1),
-  (8, '酒類', 8, 1);
+INSERT INTO menu_category (id, name, sort_order, cook_order, active) VALUES
+  (1, '鍋底', 1, 1, 1),
+  (2, '肉品', 2, 4, 1),
+  (3, '海鮮', 3, 2, 1),
+  (4, '蔬菜', 4, 2, 1),
+  (5, '火鍋料', 5, 3, 1),
+  (6, '主食', 6, 5, 1),
+  (7, '飲料', 7, 6, 1),
+  (8, '酒類', 8, 6, 1);
 
 -- menu_item（64 筆）
 INSERT INTO menu_item (id, category_id, name, description, price, image_url, is_soup_base, track_inventory, is_refill, suitable_for, spicy_level, is_vegetarian, contains_beef, sold_out, sort_order, active) VALUES

@@ -6,7 +6,19 @@ export interface Category {
   count: number;
   // 'all'（全部）這個假分類沒有啟用狀態；真的分類 active=false 代表停用，顧客端看不到
   active?: boolean;
+  // 出菜看板的出餐順序（1～6，見 COOK_ORDER_OPTIONS）；'all' 沒有
+  cookOrder?: number;
 }
+
+// 出餐順序（04 §4.12）：出菜看板同一張單裡數字小的先出。鍋底品項不管放在哪個分類都排第 1
+const COOK_ORDER_OPTIONS = [
+  { value: 1, label: '鍋底' },
+  { value: 2, label: '菜盤' },
+  { value: 3, label: '火鍋料' },
+  { value: 4, label: '肉品' },
+  { value: 5, label: '主食' },
+  { value: 6, label: '飲料甜點' },
+];
 
 interface Props {
   categories: Category[];
@@ -15,10 +27,11 @@ interface Props {
   onAddCategory: (name: string) => Promise<Category | null>;
   onDeleteCategory?: (categoryId: string, categoryName: string) => void;
   onDeleteClassification?: (id: string) => Promise<void>;
-  // 以下三個回傳 true 代表成功；失敗的錯誤訊息由呼叫端用 alert 顯示
+  // 以下四個回傳 true 代表成功；失敗的錯誤訊息由呼叫端用 alert 顯示
   onRenameCategory?: (id: string, name: string) => Promise<boolean>;
   onToggleCategoryActive?: (id: string, active: boolean) => Promise<boolean>;
   onMoveCategory?: (id: string, direction: -1 | 1) => Promise<boolean>;
+  onChangeCategoryCookOrder?: (id: string, cookOrder: number) => Promise<boolean>;
 }
 
 export default function CategorySidebar({
@@ -30,7 +43,8 @@ export default function CategorySidebar({
   onDeleteClassification,
   onRenameCategory,
   onToggleCategoryActive,
-  onMoveCategory
+  onMoveCategory,
+  onChangeCategoryCookOrder
 }: Props) {
   const [isAdding, setIsAdding] = useState(false);
   const [newCategory, setNewCategory] = useState('');
@@ -154,7 +168,7 @@ export default function CategorySidebar({
                 )}
               </div>
 
-              {/* 選取中的分類才顯示操作列：改名、排序、停用／啟用、刪除。
+              {/* 選取中的分類才顯示操作列：改名、排序、停用／啟用、刪除、出餐順序。
                   放在選取後出現而不是滑鼠移上去才出現，平板沒有 hover 也點得到 */}
               {isActive && isReal && (
                 <div className="flex flex-wrap items-center gap-1 px-3 pb-2 pt-1">
@@ -223,6 +237,25 @@ export default function CategorySidebar({
                           刪除
                         </button>
                       )}
+                      {/* 出餐順序：選了就直接送出，失敗時畫面維持原本的值（選單的值跟著分類資料走） */}
+                      <label className="mt-1 flex w-full items-center gap-1 text-xs text-ink-600">
+                        <span className="shrink-0">出餐順序</span>
+                        <select
+                          value={cat.cookOrder ?? 2}
+                          disabled={isBusy || !onChangeCategoryCookOrder}
+                          onChange={e => {
+                            const cookOrder = Number(e.target.value);
+                            void runAction(() => onChangeCategoryCookOrder?.(cat.id, cookOrder));
+                          }}
+                          className="min-w-0 flex-1 cursor-pointer rounded-md border border-line bg-surface px-1 py-1 text-xs text-ink-900 focus:border-brand-600 focus:outline-none disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          {COOK_ORDER_OPTIONS.map(option => (
+                            <option key={option.value} value={option.value}>
+                              {option.value}　{option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
                     </>
                   )}
                 </div>

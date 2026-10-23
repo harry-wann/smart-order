@@ -34,14 +34,13 @@ import java.util.Map;
 @Service
 public class KitchenTicketService {
 
-    // 4.7 出餐順序：同一張單內鍋底最前、其次菜盤、最後肉品。
-    //   鍋底 = menu_item.is_soup_base = 1
-    //   肉品 = 品項所屬分類的名稱是「肉品」
-    //   菜盤 = 其他全部（蔬菜、火鍋料、海鮮、主食、飲料…）
+    // 4.7 出餐順序（鍋底 → 菜盤 → 肉品），用 04 §4.12 更細的六級 cookOrder：
+    //   1 鍋底、2 菜盤、3 火鍋料、4 肉品、5 主食、6 飲料甜點
+    //   鍋底品項（menu_item.is_soup_base = 1）固定 1，不管放在哪個分類
+    //   其他品項用所屬分類的 menu_category.cook_order（店長在菜單管理設定），不看分類名稱，改名也不會亂掉；
+    //   品項或分類查不到時當 2（菜盤），跟資料表的預設值一樣
     // 同一級裡照點餐順序（order_item.id）
-    // 已知限制：肉品是依分類名稱「肉品」判斷，資料表沒有「這是肉品」的欄位。
-    // 店長在菜單管理把分類改名（例如改成「肉類」）後，肉品會被排到菜盤那一級，要跟著改這裡的名稱
-    private static final String MEAT_CATEGORY_NAME = "肉品";
+    private static final int DEFAULT_COOK_ORDER = 2;
     private static final int MAX_REASON_LENGTH = 100;
 
     private final JdbcTemplate jdbc;
@@ -81,10 +80,9 @@ public class KitchenTicketService {
                        oi.note,
                        oio.value_name_snapshot,
                        CASE
-                           WHEN mi.is_soup_base = 1 THEN 0
-                           WHEN mc.name = ? THEN 2
-                           ELSE 1
-                       END AS serve_rank
+                           WHEN mi.is_soup_base = 1 THEN 1
+                           ELSE COALESCE(mc.cook_order, ?)
+                       END AS item_cook_order
                 FROM order_ticket ot
                 JOIN dining_session ds ON ds.id = ot.dining_session_id
                 JOIN dining_table dt ON dt.id = ds.table_id
@@ -94,15 +92,15 @@ public class KitchenTicketService {
                 LEFT JOIN order_item_option oio ON oio.order_item_id = oi.id
                 WHERE ot.status IN ('PENDING', 'PREPARING')
                   AND oi.status <> 'CANCELLED'
-                ORDER BY ot.placed_at ASC, ot.id ASC, serve_rank ASC, oi.id ASC, oio.id ASC
-                """, (rs, rowNum) -> mapRow(rs), MEAT_CATEGORY_NAME);
+                ORDER BY ot.placed_at ASC, ot.id ASC, item_cook_order ASC, oi.id ASC, oio.id ASC
+                """, (rs, rowNum) -> mapRow(rs), DEFAULT_COOK_ORDER);
 
         Map<Long, TicketBuilder> tickets = new LinkedHashMap<>();
         for (TicketRow row : rows) {
             TicketBuilder ticket = tickets.computeIfAbsent(row.orderId(), id -> new TicketBuilder(
                     row.orderId(), row.sequenceNo(), row.placedAt(), row.tableNo()));
             ItemBuilder item = ticket.items.computeIfAbsent(row.itemId(), id -> new ItemBuilder(
-                    row.itemId(), row.itemName(), row.quantity(), row.itemStatus(), row.note()));
+                    row.itemId(), row.itemName(), row.quantity(), row.itemStatus(), row.note(), row.cookOrder()));
             if (row.optionName() != null) {
                 item.options.add(row.optionName());
             }
@@ -308,7 +306,8 @@ public class KitchenTicketService {
                 rs.getInt("quantity"),
                 rs.getString("item_status"),
                 rs.getString("note"),
-                rs.getString("value_name_snapshot"));
+                rs.getString("value_name_snapshot"),
+                rs.getInt("item_cook_order"));
     }
 
     private record LockedItem(Long ticketId, String ticketStatus, String status, boolean wasted) {}
@@ -325,7 +324,8 @@ public class KitchenTicketService {
             Integer quantity,
             String itemStatus,
             String note,
-            String optionName
+            String optionName,
+            Integer cookOrder
     ) {}
 
     private static class TicketBuilder {
@@ -354,18 +354,20 @@ public class KitchenTicketService {
         private final Integer quantity;
         private final String status;
         private final String note;
+        private final Integer cookOrder;
         private final List<String> options = new ArrayList<>();
 
-        private ItemBuilder(Long id, String name, Integer quantity, String status, String note) {
+        private ItemBuilder(Long id, String name, Integer quantity, String status, String note, Integer cookOrder) {
             this.id = id;
             this.name = name;
             this.quantity = quantity;
             this.status = status;
             this.note = note;
+            this.cookOrder = cookOrder;
         }
 
         private KitchenItemResponse toResponse() {
-            return new KitchenItemResponse(id, name, quantity, status, List.copyOf(options), note);
+            return new KitchenItemResponse(id, name, quantity, status, List.copyOf(options), note, cookOrder);
         }
     }
 }

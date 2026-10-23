@@ -153,10 +153,13 @@ def member_phone(mid):
 
 # ── 菜單 ─────────────────────────────────────────────────────────────────────
 
-category = Table('menu_category', ['id', 'name', 'sort_order', 'active'])
+category = Table('menu_category', ['id', 'name', 'sort_order', 'cook_order', 'active'])
 CATEGORIES = ['鍋底', '肉品', '海鮮', '蔬菜', '火鍋料', '主食', '飲料', '酒類']
+# 出餐順序（04 §4.12）：1 鍋底、2 菜盤、3 火鍋料、4 肉品、5 主食、6 飲料甜點；
+# 跟 migrate_menu_category_guards.sql 依名稱回填的值一樣
+COOK_ORDER = {'鍋底': 1, '肉品': 4, '海鮮': 2, '蔬菜': 2, '火鍋料': 3, '主食': 5, '飲料': 6, '酒類': 6}
 for i, name in enumerate(CATEGORIES, start=1):
-    category.add(id=i, name=name, sort_order=i, active=1)
+    category.add(id=i, name=name, sort_order=i, cook_order=COOK_ORDER[name], active=1)
 CAT = {n: i for i, n in enumerate(CATEGORIES, start=1)}
 
 # (分類, 名稱, 價格, 說明, 旗標)

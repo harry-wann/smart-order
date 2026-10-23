@@ -107,13 +107,15 @@ CREATE TABLE staff (
 -- ----------------------------------------------------------------------------
 
 CREATE TABLE menu_category (
-  id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  name       VARCHAR(50)     NOT NULL,
-  sort_order INT             NOT NULL DEFAULT 0,
-  active     TINYINT(1)      NOT NULL DEFAULT 1,
-  created_at DATETIME(3)     NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-  updated_at DATETIME(3)     NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
-  PRIMARY KEY (id)
+  id         BIGINT UNSIGNED  NOT NULL AUTO_INCREMENT,
+  name       VARCHAR(50)      NOT NULL,
+  sort_order INT              NOT NULL DEFAULT 0,
+  cook_order TINYINT UNSIGNED NOT NULL DEFAULT 2 COMMENT '出餐順序：1 鍋底、2 菜盤、3 火鍋料、4 肉品、5 主食、6 飲料甜點；出菜看板依這個排，鍋底品項固定 1',
+  active     TINYINT(1)       NOT NULL DEFAULT 1,
+  created_at DATETIME(3)      NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3)      NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_menu_category_name (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='菜單分類';
 
 CREATE TABLE menu_item (

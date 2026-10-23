@@ -156,7 +156,7 @@ public class MenuController {
                 .body(menuCategoryService.createMenuCategory(request));
     }
 
-    // AdminMenu 畫面 依 categoryId 改名、停用／啟用分類（name、active 省略都代表不變）
+    // AdminMenu 畫面 依 categoryId 改名、停用／啟用分類、改出餐順序（name、active、cookOrder 省略都代表不變）
     @PutMapping("/admin/categories/{categoryId}")
     public ResponseEntity<AdminMenuCategoryDto> updateAdminCategory(
             @PathVariable Long categoryId,
@@ -166,11 +166,13 @@ public class MenuController {
     }
 
     // AdminMenu 畫面 調整分類排序：依顯示順序傳入全部分類 id，回傳排好的分類清單
+    // （帶 expectedCategoryIds 時，資料庫目前的順序跟它不同回 409 CATEGORY_LIST_CHANGED）
     @PatchMapping("/admin/categories/sort-order")
     public ResponseEntity<List<AdminMenuCategoryDto>> reorderAdminCategories(
             @Valid @RequestBody ReorderMenuCategoriesRequest request
     ) {
-        return ResponseEntity.ok(menuCategoryService.reorderMenuCategories(request.categoryIds()));
+        return ResponseEntity.ok(menuCategoryService.reorderMenuCategories(
+                request.categoryIds(), request.expectedCategoryIds()));
     }
 
     // AdminMenu 畫面 依 categoryId 刪除商品分類（底下還有品項回 409 CATEGORY_NOT_EMPTY）
