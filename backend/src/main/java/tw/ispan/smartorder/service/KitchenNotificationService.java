@@ -39,47 +39,53 @@ public class KitchenNotificationService {
     // 通知服務透過 WebSocket 發送 NEW_TICKET，前端訂閱 /topic/kitchen 後收到通知並更新訂單。
     // 同桌客人另外會收到 CartNotificationService 的 ORDER_SUBMITTED，這裡只推廚房
     public void notifyNewTicketAfterCommit(Long ticketId) {
-        notifyAfterCommit("NEW_TICKET", Map.of("ticketId", ticketId), List.of());
+        Map<String, Object> payload = Map.of("ticketId", ticketId);
+        notifyAfterCommit("NEW_TICKET", payload, payload, List.of());
     }
 
-    // 以下出餐、撤回、取消、報廢的事件，廚房和這張單所屬用餐場次的每位客人（C-08 出餐進度）都會收到
+    // 以下出餐、撤回、取消、報廢的事件，廚房和這張單所屬用餐場次的每位客人（C-08 出餐進度）都會收到。
+    // 取消、報廢的原因是員工寫給店內看的，只推廚房；推給客人的那份拿掉 reason，C-08 收到只會重抓
 
-    // 這張單的品項全部出完（逐項勾完或整單出完），KDS 卡片淡出
+    // 這張單的品項全部出完（逐項勾完、整單出完，或取消掉最後一個還沒出的品項），KDS 卡片淡出
     public void notifyTicketServedAfterCommit(Long ticketId) {
-        notifyAfterCommit("TICKET_SERVED", Map.of("ticketId", ticketId), guestsOfTicket(ticketId));
+        Map<String, Object> payload = Map.of("ticketId", ticketId);
+        notifyAfterCommit("TICKET_SERVED", payload, payload, guestsOfTicket(ticketId));
     }
 
     public void notifyItemServedAfterCommit(Long ticketId, Long itemId) {
-        notifyAfterCommit("ITEM_SERVED", Map.of(
+        Map<String, Object> payload = Map.of(
                 "ticketId", ticketId,
                 "itemId", itemId,
-                "servedAt", Instant.now()), guestsOfTicket(ticketId));
+                "servedAt", Instant.now());
+        notifyAfterCommit("ITEM_SERVED", payload, payload, guestsOfTicket(ticketId));
     }
 
     public void notifyItemUnservedAfterCommit(Long ticketId, Long itemId) {
-        notifyAfterCommit("ITEM_UNSERVED", Map.of(
+        Map<String, Object> payload = Map.of(
                 "ticketId", ticketId,
-                "itemId", itemId), guestsOfTicket(ticketId));
+                "itemId", itemId);
+        notifyAfterCommit("ITEM_UNSERVED", payload, payload, guestsOfTicket(ticketId));
     }
 
     public void notifyItemCancelledAfterCommit(Long ticketId, Long itemId, String reason) {
-        notifyAfterCommit("ITEM_CANCELLED", Map.of(
-                "ticketId", ticketId,
-                "itemId", itemId,
-                "reason", reason), guestsOfTicket(ticketId));
+        notifyAfterCommit("ITEM_CANCELLED",
+                Map.of("ticketId", ticketId, "itemId", itemId, "reason", reason),
+                Map.of("ticketId", ticketId, "itemId", itemId),
+                guestsOfTicket(ticketId));
     }
 
     public void notifyTicketCancelledAfterCommit(Long ticketId, String reason) {
-        notifyAfterCommit("TICKET_CANCELLED", Map.of(
-                "ticketId", ticketId,
-                "reason", reason), guestsOfTicket(ticketId));
+        notifyAfterCommit("TICKET_CANCELLED",
+                Map.of("ticketId", ticketId, "reason", reason),
+                Map.of("ticketId", ticketId),
+                guestsOfTicket(ticketId));
     }
 
     public void notifyItemWastedAfterCommit(Long ticketId, Long itemId, String reason) {
-        notifyAfterCommit("ITEM_WASTED", Map.of(
-                "ticketId", ticketId,
-                "itemId", itemId,
-                "reason", reason), guestsOfTicket(ticketId));
+        notifyAfterCommit("ITEM_WASTED",
+                Map.of("ticketId", ticketId, "itemId", itemId, "reason", reason),
+                Map.of("ticketId", ticketId, "itemId", itemId),
+                guestsOfTicket(ticketId));
     }
 
     // 收件人在交易裡先查好（跟 CartNotificationService 一樣），提交後才推；交易 rollback 就什麼都不推
@@ -92,7 +98,9 @@ public class KitchenNotificationService {
         return guests.findByDiningSessionId(sessionId).stream().map(DiningSessionGuestEntity::getId).toList();
     }
 
-    private void notifyAfterCommit(String type, Object payload, List<Long> guestIds) {
+    // kitchenPayload 推 /topic/kitchen；guestPayload 推給每位客人的個人 queue
+    private void notifyAfterCommit(String type, Map<String, Object> kitchenPayload,
+                                   Map<String, Object> guestPayload, List<Long> guestIds) {
         if (!TransactionSynchronizationManager.isActualTransactionActive()
                 || !TransactionSynchronizationManager.isSynchronizationActive()) {
             throw new IllegalStateException("Kitchen notifications require an active transaction.");
@@ -101,10 +109,12 @@ public class KitchenNotificationService {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                KitchenTicketMessage message = new KitchenTicketMessage(type, payload, Instant.now());
-                messagingTemplate.convertAndSend(KITCHEN_TOPIC, message);
+                Instant serverTime = Instant.now();
+                messagingTemplate.convertAndSend(KITCHEN_TOPIC,
+                        new KitchenTicketMessage(type, kitchenPayload, serverTime));
+                KitchenTicketMessage guestMessage = new KitchenTicketMessage(type, guestPayload, serverTime);
                 for (Long guestId : guestIds) {
-                    messagingTemplate.convertAndSendToUser("guest-" + guestId, GUEST_QUEUE, message);
+                    messagingTemplate.convertAndSendToUser("guest-" + guestId, GUEST_QUEUE, guestMessage);
                 }
             }
         });

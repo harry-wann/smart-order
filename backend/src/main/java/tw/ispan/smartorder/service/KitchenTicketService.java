@@ -39,6 +39,8 @@ public class KitchenTicketService {
     //   肉品 = 品項所屬分類的名稱是「肉品」
     //   菜盤 = 其他全部（蔬菜、火鍋料、海鮮、主食、飲料…）
     // 同一級裡照點餐順序（order_item.id）
+    // 已知限制：肉品是依分類名稱「肉品」判斷，資料表沒有「這是肉品」的欄位。
+    // 店長在菜單管理把分類改名（例如改成「肉類」）後，肉品會被排到菜盤那一級，要跟著改這裡的名稱
     private static final String MEAT_CATEGORY_NAME = "肉品";
     private static final int MAX_REASON_LENGTH = 100;
 
@@ -210,19 +212,22 @@ public class KitchenTicketService {
             throw ApiException.notFound("找不到這筆餐點");
         }
 
-        // 會改帳單，跟取消一樣要求這桌還在用餐、也沒有付款進行中
         DiningSessionEntity session = sessions.findWithLockById(sessionId)
                 .orElseThrow(() -> ApiException.notFound("找不到用餐場次"));
+        LockedItem item = lockItemAfterSession(itemId);
+        // 已經報廢過就直接當成功，要排在桌況檢查前面：第一次其實成功了、回應在網路上逾時，
+        // 前端重送時這桌剛好結帳，不能因此回 409 讓廚房以為沒報到
+        if ("CANCELLED".equals(item.status()) && item.wasted()) {
+            return;
+        }
+
+        // 會改帳單，跟取消一樣要求這桌還在用餐、也沒有付款進行中
         if (!"OPEN".equals(session.getStatus())) {
             throw ApiException.conflict("SESSION_CLOSED", "此桌已結帳或取消，不能報廢餐點");
         }
         pendingPaymentGuard.requireNoOutstanding(sessionId);
 
-        LockedItem item = lockItemAfterSession(itemId);
         if ("CANCELLED".equals(item.status())) {
-            if (item.wasted()) {
-                return; // 重複送出當成功
-            }
             throw ApiException.conflict("ITEM_NOT_WASTABLE", "已取消的餐點不能報廢");
         }
         if ("CANCELLED".equals(item.ticketStatus())) {

@@ -11,7 +11,7 @@
 | `migrate_guest_token.sql` | 已有資料庫的一次性同桌 guest token 升級（新增 `guest_token_hash`、拿掉裝置唯一索引），不改舊資料 |
 | `migrate_member_otp.sql` | 已有資料庫的一次性會員驗證碼升級：加上每支手機一列的鎖（`verification_phone_lock`） |
 | `migrate_reservation_reminder.sql` | 已有資料庫的一次性訂位提醒升級：`reservation` 新增 `reminder_sent_at`（記錄模擬簡訊提醒送出的時間，同一筆只提醒一次） |
-| `migrate_order_item_waste.sql` | 已有資料庫的一次性出菜看板報廢升級：`order_item` 加上 `wasted_at`（報廢／退菜時間），不改舊資料 |
+| `migrate_order_item_waste.sql` | 已有資料庫的出菜看板升級：`order_item` 加上 `wasted_at`（報廢／退菜時間），並修補用餐中桌次的單與品項狀態；可重複執行 |
 
 進階功能（服務鈴、庫存異動紀錄、預先點餐、點數與優惠券）的表與欄位不在這裡，做到時再加。
 
@@ -24,8 +24,12 @@
 
 已有資料庫要升級訂位提醒（M7 7.12，模擬簡訊），**先執行 `migrate_reservation_reminder.sql` 一次，再啟動新版後端**（新版會讀 `reservation.reminder_sent_at`，欄位不在會直接出錯）。腳本只對 `reservation` 新增一個可為 `NULL` 的欄位，不刪也不改任何舊資料，也不替舊訂位補填：`NULL` 代表還沒提醒，升級後第一次跑提醒時，開始時間在「現在～現在 + 2 小時」內、狀態還是 `CONFIRMED` 的訂位會被提醒一次。這份是一句 `ALTER TABLE`，**不能重複執行**（欄位已存在會報錯），先照檔案開頭的檢查查詢確認欄位還不存在。
 
-已有資料庫要升級出菜看板的報廢（退菜）功能，**先執行 `migrate_order_item_waste.sql`，再啟動新版後端**（新版的出菜看板報廢與顧客端出餐進度會讀 `order_item.wasted_at`，欄位不在會直接出錯）。
-它只替 `order_item` 新增可為 `NULL` 的 `wasted_at`，不刪也不改既有資料：舊的 `CANCELLED` 品項維持 `NULL`，照舊算一般取消；欄位已經存在就略過，重跑也沒關係。`seed.sql` 不用重跑。
+已有資料庫要升級出菜看板，**先停止舊版後端，執行 `migrate_order_item_waste.sql`，再啟動新版後端**（新版的出菜看板報廢與顧客端出餐進度會讀 `order_item.wasted_at`，欄位不在會直接出錯）。這份做兩件事：
+
+1. 替 `order_item` 新增可為 `NULL` 的 `wasted_at`；舊的 `CANCELLED` 品項維持 `NULL`，照舊算一般取消。欄位已經存在就略過。
+2. 修補舊版留下的狀態不一致，**只修用餐中（`OPEN`）的桌，已結帳、已取消的歷史資料不動**：單已 `SERVED` 但還有待製作品項的，品項補成 `SERVED`（`served_at` 取單的 `updated_at` 與 `placed_at` 較晚的那個）；接著依品項重算這些桌還沒取消的單（全部出完 → `SERVED`、出了一部分 → `PREPARING`、都還沒出 → `PENDING`、全部取消 → `CANCELLED`），跟新版後端的推導規則一樣。已經 `CANCELLED` 的單不重算，金額不受影響。
+
+檔案開頭有三句檢查查詢，可以先看會修到哪些單。整份可以重複執行，第二次執行不會再改到任何資料；`seed.sql` 不用重跑。
 
 ## 匯入
 

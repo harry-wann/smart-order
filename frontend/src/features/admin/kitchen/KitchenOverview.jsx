@@ -1,5 +1,5 @@
 import OrderCard from '@/components/OrderCard'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useKitchenSocket } from '@/services/realtime/useKitchenSocket'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { employeeClient } from '@/services/client/employeeClient'
@@ -52,10 +52,25 @@ function byPlacedAt(a, b) {
   return new Date(a.placedAt).getTime() - new Date(b.placedAt).getTime() || a.id - b.id
 }
 
+// 樂觀更新：還在送出中的勾選（savingItems）與整單出完（completingTicketId）蓋在伺服器資料上面。
+// 不直接改 React Query 的快取，是因為 PATCH 還沒完成時，WebSocket 觸發的重抓可能先回來、帶著舊狀態，
+// 改快取的話會被蓋回去（勾了又跳回沒勾）；疊在外面就不管重抓幾次，送出中的品項都維持剛勾的樣子
+function applyPendingStatus(tickets, savingItems, completingTicketId) {
+  if (savingItems.length === 0 && completingTicketId === null) return tickets
+  return tickets.map((ticket) => ({
+    ...ticket,
+    orderItems: ticket.orderItems.map((item) => {
+      if (ticket.id === completingTicketId) return { ...item, status: 'SERVED' }
+      const saving = savingItems.find((entry) => entry.id === item.id)
+      return saving ? { ...item, status: saving.status } : item
+    }),
+  }))
+}
+
 function KitchenOverview() {
   const queryClient = useQueryClient()
   const {
-    data: orderTickets = NO_TICKETS,
+    data: serverTickets = NO_TICKETS,
     isPending,
     isError,
   } = useQuery({
@@ -75,10 +90,15 @@ function KitchenOverview() {
   const isSocketConnected = useKitchenSocket(refreshTickets)
   const [now, setNow] = useState(() => Date.now())
   const [actionError, setActionError] = useState('')
-  const [savingItemIds, setSavingItemIds] = useState([])
+  // 送出中的勾選：[{ id: 品項 id, status: 'SERVED' | 'PENDING' }]
+  const [savingItems, setSavingItems] = useState([])
   const [completingTicketId, setCompletingTicketId] = useState(null)
   const [cancellingTicketId, setCancellingTicketId] = useState(null)
   const [itemActionPendingId, setItemActionPendingId] = useState(null)
+  const orderTickets = useMemo(
+    () => applyPendingStatus(serverTickets, savingItems, completingTicketId),
+    [serverTickets, savingItems, completingTicketId],
+  )
 
   // 卡片淡出（M4 4.5）：單從清單消失（全部出完、取消）時，先留在原位淡出 0.5 秒再移除。
   // 在 render 當下跟上一份清單比對，消失的卡片同一次 render 就換成淡出樣式，DOM 不會先被拿掉再加回來
@@ -110,23 +130,11 @@ function KitchenOverview() {
     return () => clearInterval(timer)
   }, [])
 
-  // 勾選先改畫面上的狀態（觸控要立刻有反應，最後一項勾完淡出時也是全勾的樣子），失敗再重抓還原
-  const markServedLocally = (shouldChange, isServed) => {
-    void queryClient.cancelQueries({ queryKey: kitchenKey })
-    queryClient.setQueryData(kitchenKey, (tickets) =>
-      tickets?.map((ticket) => ({
-        ...ticket,
-        orderItems: ticket.orderItems.map((item) =>
-          shouldChange(ticket, item) ? { ...item, status: isServed ? 'SERVED' : 'PENDING' } : item,
-        ),
-      })),
-    )
-  }
-
+  // 勾選與整單出完都先改畫面（觸控要立刻有反應，最後一項勾完淡出時也是全勾的樣子）：
+  // 送出期間由 applyPendingStatus 疊上樂觀狀態，完成後重抓到伺服器結果才拿掉，失敗時拿掉就回到伺服器狀態
   const handleCompleteTicket = async (ticketId) => {
     setActionError('')
     setCompletingTicketId(ticketId)
-    markServedLocally((ticket) => ticket.id === ticketId, true)
     try {
       await employeeClient.patch(`/admin/kitchen/tickets/${ticketId}/complete`)
       await queryClient.invalidateQueries({ queryKey: ['kitchen'] })
@@ -189,8 +197,7 @@ function KitchenOverview() {
 
   const handleToggle = (itemId, isServed) => {
     setActionError('')
-    setSavingItemIds((current) => [...current, itemId])
-    markServedLocally((ticket, item) => item.id === itemId, isServed)
+    setSavingItems((current) => [...current, { id: itemId, status: isServed ? 'SERVED' : 'PENDING' }])
 
     void employeeClient
       .patch(`/admin/order-items/${itemId}/${isServed ? 'serve' : 'unserve'}`)
@@ -200,10 +207,10 @@ function KitchenOverview() {
           errorMessage(error, isServed ? '標記品項已出餐失敗，請稍後重試。' : '撤回已出餐失敗，請稍後重試。'),
         )
       })
-      // 成功或失敗都重抓：成功時拿到後端推導後的單狀態（全部出完就淡出），失敗時還原畫面
+      // 成功或失敗都等重抓完再拿掉樂觀狀態：成功時拿到後端推導後的單狀態（全部出完就淡出），失敗時還原畫面
       .then(() => queryClient.invalidateQueries({ queryKey: ['kitchen'] }))
       .finally(() => {
-        setSavingItemIds((current) => current.filter((id) => id !== itemId))
+        setSavingItems((current) => current.filter((entry) => entry.id !== itemId))
       })
   }
 
@@ -254,7 +261,7 @@ function KitchenOverview() {
             {actionError}
           </p>
         )}
-        {isError && orderTickets !== NO_TICKETS && (
+        {isError && serverTickets !== NO_TICKETS && (
           <p className="px-8 pt-4 type-body font-bold text-[var(--kds-late)]" role="alert">
             廚房訂單更新失敗，畫面是上一次的資料，請稍後重試。
           </p>
@@ -262,7 +269,7 @@ function KitchenOverview() {
 
         {isPending ? (
           <p className="p-8 type-body text-[var(--kds-ink-2)]">載入廚房訂單中…</p>
-        ) : isError && orderTickets === NO_TICKETS ? (
+        ) : isError && serverTickets === NO_TICKETS ? (
           <p className="p-8 type-body font-bold text-[var(--kds-late)]" role="alert">
             廚房訂單載入失敗，請稍後重試。
           </p>
@@ -281,7 +288,7 @@ function KitchenOverview() {
                 now={now}
                 isLeaving={isLeaving}
                 onToggle={handleToggle}
-                savingItemIds={savingItemIds}
+                savingItemIds={savingItems.map((entry) => entry.id)}
                 onComplete={handleCompleteTicket}
                 isCompleting={completingTicketId === ticket.id}
                 onCancel={handleCancelTicket}
