@@ -62,6 +62,9 @@ public class SecurityConfig {
                             .hasAnyRole("KITCHEN", "MANAGER");
                     authorize.requestMatchers(HttpMethod.PATCH, "/api/admin/order-items/*/unserve")
                             .hasAnyRole("KITCHEN", "MANAGER");
+                    // 出菜看板報廢／退菜：會改帳單、庫存不回補，只給廚房與店長（04 §2.4）
+                    authorize.requestMatchers(HttpMethod.PATCH, "/api/admin/order-items/*/waste")
+                            .hasAnyRole("KITCHEN", "MANAGER");
                     authorize.requestMatchers(HttpMethod.PATCH, "/api/admin/order-items/*/cancel")
                             .hasAnyRole("COUNTER", "MANAGER", "KITCHEN");
                     authorize.requestMatchers(HttpMethod.GET, "/api/admin/tables/*/detail")

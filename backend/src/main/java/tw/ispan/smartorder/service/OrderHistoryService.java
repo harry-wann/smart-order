@@ -54,8 +54,10 @@ public class OrderHistoryService {
         int sequence = rs.getInt("sequence_no");
         String status = rs.getString("status");
         LocalDateTime placedAt = rs.getTimestamp("placed_at").toLocalDateTime();
+        // 報廢（退菜）在資料庫是 CANCELLED + wasted_at，給顧客看時另外標成 WASTED，C-08 才分得出「已取消」與「已退菜」
         List<ItemResponse> items = jdbc.query("""
-                SELECT id, item_name_snapshot, quantity, status, note
+                SELECT id, item_name_snapshot, quantity, note,
+                       CASE WHEN status = 'CANCELLED' AND wasted_at IS NOT NULL THEN 'WASTED' ELSE status END AS status
                 FROM order_item WHERE order_ticket_id = ? ORDER BY id
                 """, (itemRs, rowNum) -> mapItem(itemRs), ticketId);
         return new TicketResponse(ticketId, sequence, format(placedAt), status, items);
@@ -84,6 +86,7 @@ public class OrderHistoryService {
                                    String seatedTime, long elapsedMinutes, String lastSyncTime) {}
     public record TicketResponse(long orderId, int sequenceNo, String submitTime, String status,
                                  List<ItemResponse> items) {}
+    // status：PENDING／SERVED／CANCELLED／WASTED（報廢、退菜）
     public record ItemResponse(long id, String name, int quantity, String status,
                                List<String> options, String note) {}
 }

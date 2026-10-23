@@ -1,10 +1,13 @@
-import React, { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import React, { useCallback, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
 import { customerClient } from '@/services/client/customerClient'
+import { useOrderProgressSocket } from '@/services/realtime/useOrderProgressSocket'
 import CustomerTopBar from '@/components/CustomerTopBar'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import SOButton from '../../../components/SOButton'
+
+const orderHistoryKey = ['customer', 'order-history']
 
 async function getOrderHistory(signal) {
   const { data } = await customerClient.get('/dining/orders', { signal })
@@ -12,36 +15,69 @@ async function getOrderHistory(signal) {
   return data
 }
 
-function SyncStatus({ isLive = true, lastUpdated }) {
+// 頂部連線指示只看真實的 WebSocket 狀態；HTTP 抓資料失敗另外在 FetchError 顯示
+const syncStatusView = {
+  live: { text: '即時同步中', box: 'bg-success-bg text-success-ink', dot: 'bg-success' },
+  connecting: { text: '連線中…', box: 'bg-surface-2 text-ink-600', dot: 'bg-ink-400' },
+  offline: { text: '連線中斷，正在重新連線…', box: 'bg-warning-bg text-hold-ink', dot: 'bg-hold-ink' },
+}
+
+function SyncStatus({ status, lastUpdated }) {
+  const view = syncStatusView[status] ?? syncStatusView.offline
   return (
-    <div
-      className={`flex items-center gap-2 px-4 py-2.5 type-caption font-medium ${
-        isLive ? 'bg-success-bg text-success-ink' : 'bg-warning-bg text-hold-ink'
-      }`}
-    >
-      <span className={`size-2 shrink-0 rounded-full ${isLive ? 'bg-success' : 'bg-hold-ink'}`} />
-      {isLive ? '即時同步中' : '連線中斷，正在重新連線…'}
-      {isLive && lastUpdated && <span>最後更新 {lastUpdated}</span>}
+    <div role="status" className={`flex items-center gap-2 px-4 py-2.5 type-caption font-medium ${view.box}`}>
+      <span className={`size-2 shrink-0 rounded-full ${view.dot}`} />
+      {view.text}
+      {status === 'live' && lastUpdated && <span>最後更新 {lastUpdated}</span>}
     </div>
   )
+}
+
+// 已經有畫面資料、只是這次重抓失敗：保留舊資料，另外提示並給重試
+function FetchError({ message, onRetry }) {
+  return (
+    <div role="alert" className="flex items-center gap-3 bg-danger-bg px-4 py-1 type-caption text-danger-ink">
+      <span className="min-w-0 flex-1">訂單更新失敗：{message}</span>
+      <button type="button" onClick={onRetry} className="min-h-11 shrink-0 px-2 font-medium underline">
+        重試
+      </button>
+    </div>
+  )
+}
+
+// 本機最後一次成功抓到資料的時間（時:分:秒）
+function formatSyncTime(timestamp) {
+  return timestamp ? new Date(timestamp).toTimeString().slice(0, 8) : ''
 }
 
 export default function OrderHistory() {
   const navigate = useNavigate()
   const [isCheckoutNoticeOpen, setCheckoutNoticeOpen] = useState(false)
+  const queryClient = useQueryClient()
+  const refreshOrders = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: orderHistoryKey })
+  }, [queryClient])
+  // 廚房出餐、撤回、取消、報廢後由 WebSocket 通知重抓（M4 4.12）
+  const socketStatus = useOrderProgressSocket(refreshOrders)
   const query = useQuery({
-    queryKey: ['customer', 'order-history'],
+    queryKey: orderHistoryKey,
     queryFn: ({ signal }) => getOrderHistory(signal),
-    refetchInterval: 15000,
+    // 輪詢只當備援：連上 WebSocket 時拉長間隔，斷線時縮短
+    refetchInterval: socketStatus === 'live' ? 60000 : 15000,
   })
+  const isSessionInvalid = query.error?.status === 401
 
-  if (!query.data) {
+  if (!query.data || isSessionInvalid) {
     return (
       <div className="mx-auto min-h-screen w-full max-w-full bg-paper">
         <CustomerTopBar title="本桌訂單" showBackButton />
         <div className="mx-auto flex w-full max-w-3xl flex-col items-center px-6 pt-8 text-center" role="status">
           <p className="type-body text-ink-900">
-            {query.isPending ? '訂單載入中…' : '點餐憑證已失效，請重新掃碼'}
+            {query.isPending
+              ? '訂單載入中…'
+              : isSessionInvalid
+                ? '點餐憑證已失效，請重新掃碼'
+                : `訂單載入失敗：${query.error?.message ?? '請稍後再試'}`}
           </p>
           {query.isError && (
             <div className="mt-3 w-full max-w-md">
@@ -75,13 +111,15 @@ export default function OrderHistory() {
     )
   }
 
+  // WASTED：廚房報廢（做壞或退回），不計入帳單
   const getItemStatus = (status) => ({
     text: {
       SERVED: '已出餐',
       CANCELLED: '已取消',
+      WASTED: '已退菜',
       PENDING: '待製作',
     }[status] || status,
-    color: status === 'SERVED' ? 'done' : status === 'CANCELLED' ? 'plain' : 'wait',
+    color: status === 'SERVED' ? 'done' : status === 'CANCELLED' || status === 'WASTED' ? 'plain' : 'wait',
     icon: status === 'SERVED' ? 'check' : 'clock',
   })
 
@@ -95,7 +133,8 @@ export default function OrderHistory() {
         </CustomerTopBar>
       </div>
 
-      <SyncStatus isLive={!query.isError} lastUpdated={tableInfo.lastSyncTime} />
+      <SyncStatus status={socketStatus} lastUpdated={formatSyncTime(query.dataUpdatedAt)} />
+      {query.isRefetchError && <FetchError message={query.error.message} onRetry={() => query.refetch()} />}
 
       <div className="no-scrollbar flex-1 overflow-y-auto pb-36">
         <div className="px-page pt-4">
