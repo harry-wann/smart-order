@@ -121,7 +121,7 @@ function WalkinTab({ tableNo, capacity, openLabel, disabled, onOpen }) {
       <div>
         <h2 className="type-h1 text-ink-900">這桌坐幾位？</h2>
         <p className="mt-2 type-body-sm text-ink-600">
-          人數由櫃檯輸入比客人自填準。不參與金額計算，用途是座位安排、分帳參考、兒童友善推薦與客單價統計。
+          請依實際入座人數填寫，以便安排座位；餐點總額依點餐內容計算。
         </p>
       </div>
 
@@ -142,7 +142,7 @@ function WalkinTab({ tableNo, capacity, openLabel, disabled, onOpen }) {
           min={0}
           max={capacity - adults}
           onChange={setKids}
-          hint="會帶出兒童友善推薦"
+          hint="請依實際入座兒童人數填寫"
           disabled={disabled}
         />
       </div>
