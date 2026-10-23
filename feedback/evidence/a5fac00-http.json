@@ -1,0 +1,1020 @@
+{
+  "label": "iris-seat-config",
+  "commit": "a5fac00",
+  "testedAt": "2026-10-23T19:43:01.839181+08:00",
+  "passed": true,
+  "resultCount": 119,
+  "seatCheckCount": 83,
+  "baselineCheckCount": 36,
+  "sanitized": true,
+  "notes": [
+    "Final run on the rebased tree that also contains the operation reminders (352162a); isolated MySQL 5.7 reseeded first.",
+    "Races were sent concurrently with alternating submission order per round; outcomes are in \"actual\".",
+    "beforeLockFix is the earlier run on the build where the reservable toggle did not lock the row: the concurrent deactivate was undone."
+  ],
+  "beforeLockFix": [
+    {
+      "name": "Iris seat config: round 0: reservable toggle never undoes a concurrent deactivate",
+      "passed": false,
+      "actual": {
+        "codes": [
+          200,
+          200
+        ],
+        "activeReservable": "1\t0"
+      }
+    }
+  ],
+  "results": [
+    {
+      "name": "Backend health",
+      "method": "GET",
+      "path": "/actuator/health",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu categories",
+      "method": "GET",
+      "path": "/api/order/category",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu items",
+      "method": "GET",
+      "path": "/api/order/items?categoryId=1",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Invalid staff login",
+      "method": "POST",
+      "path": "/api/admin/auth/login",
+      "expected": 401,
+      "actual": 401,
+      "passed": true
+    },
+    {
+      "name": "Manager login",
+      "method": "POST",
+      "path": "/api/admin/auth/login",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Counter login",
+      "method": "POST",
+      "path": "/api/admin/auth/login",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Table overview",
+      "method": "GET",
+      "path": "/api/admin/tables",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Seat configuration",
+      "method": "GET",
+      "path": "/api/admin/tables-config",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Waitlist listing",
+      "method": "GET",
+      "path": "/api/admin/waitlist",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Kitchen tickets",
+      "method": "GET",
+      "path": "/api/admin/kitchen/tickets",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Menu administration",
+      "method": "GET",
+      "path": "/api/order/admin/menu",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Option groups",
+      "method": "GET",
+      "path": "/api/order/admin/optionGroups",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Reservation list requires staff",
+      "method": "GET",
+      "path": "/api/admin/reservations?date=2026-10-23",
+      "expected": 401,
+      "actual": 401,
+      "passed": true
+    },
+    {
+      "name": "Reservation listing/projections",
+      "method": "GET",
+      "path": "/api/admin/reservations?date=2026-10-23",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Available tables/JSON record names",
+      "method": "GET",
+      "path": "/api/admin/tables/available?partySize=2",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Open options/projections",
+      "method": "GET",
+      "path": "/api/admin/tables/14/open-options",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Scheduler rejects counter",
+      "method": "POST",
+      "path": "/api/admin/scheduler/mark-no-show",
+      "expected": 403,
+      "actual": 403,
+      "passed": true
+    },
+    {
+      "name": "No-show scheduler",
+      "method": "POST",
+      "path": "/api/admin/scheduler/mark-no-show",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Reminder scheduler",
+      "method": "POST",
+      "path": "/api/admin/scheduler/send-reminders",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Availability/settings defaults",
+      "method": "GET",
+      "path": "/api/reservations/availability?date=2026-10-25&partySize=2",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Missing reservation fields",
+      "method": "POST",
+      "path": "/api/reservations",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Guest reservation/default child count",
+      "method": "POST",
+      "path": "/api/reservations",
+      "expected": 201,
+      "actual": 201,
+      "passed": true
+    },
+    {
+      "name": "Reservation access required",
+      "method": "GET",
+      "path": "/api/reservations/75",
+      "expected": 401,
+      "actual": 401,
+      "passed": true
+    },
+    {
+      "name": "Wrong reservation token hidden",
+      "method": "GET",
+      "path": "/api/reservations/75",
+      "expected": 404,
+      "actual": 404,
+      "passed": true
+    },
+    {
+      "name": "Reservation detail/default values",
+      "method": "GET",
+      "path": "/api/reservations/75",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Cancel reservation",
+      "method": "DELETE",
+      "path": "/api/reservations/75",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Repeated cancellation rejected",
+      "method": "DELETE",
+      "path": "/api/reservations/75",
+      "expected": 409,
+      "actual": 409,
+      "passed": true
+    },
+    {
+      "name": "Explicit null child count",
+      "method": "POST",
+      "path": "/api/reservations",
+      "expected": 201,
+      "actual": 201,
+      "passed": true
+    },
+    {
+      "name": "Explicit null defaults to zero",
+      "method": "GET",
+      "path": "/api/reservations/76",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Staff cancellation without optional body",
+      "method": "POST",
+      "path": "/api/admin/reservations/76/cancel",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Explicit null required count validation",
+      "method": "POST",
+      "path": "/api/reservations",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Join occupied table",
+      "method": "POST",
+      "path": "/api/tables/A03/join",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Current guest session",
+      "method": "GET",
+      "path": "/api/dining/current",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Shared cart visibility",
+      "method": "GET",
+      "path": "/api/dining-sessions/50/cart",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Table orders",
+      "method": "GET",
+      "path": "/api/dining/orders",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Dining session auth required",
+      "method": "GET",
+      "path": "/api/dining/current",
+      "expected": 401,
+      "actual": 401,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: anonymous list rejected",
+      "method": "GET",
+      "path": "/api/admin/tables-config",
+      "expected": 401,
+      "actual": 401,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: counter can read the list",
+      "method": "GET",
+      "path": "/api/admin/tables-config",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: counter cannot edit",
+      "method": "PUT",
+      "path": "/api/admin/tables-config/1",
+      "expected": 403,
+      "actual": 403,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: counter cannot deactivate",
+      "method": "PATCH",
+      "path": "/api/admin/tables-config/1/active",
+      "expected": 403,
+      "actual": 403,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: counter cannot create",
+      "method": "POST",
+      "path": "/api/admin/tables-config",
+      "expected": 403,
+      "actual": 403,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: create six-seat table (lower-case input is normalized)",
+      "method": "POST",
+      "path": "/api/admin/tables-config",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: create rejects blank table number",
+      "method": "POST",
+      "path": "/api/admin/tables-config",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: create rejects zero seats",
+      "method": "POST",
+      "path": "/api/admin/tables-config",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: create rejects 21 seats",
+      "method": "POST",
+      "path": "/api/admin/tables-config",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: create rejects missing seats",
+      "method": "POST",
+      "path": "/api/admin/tables-config",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: create rejects blank area",
+      "method": "POST",
+      "path": "/api/admin/tables-config",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: duplicate table number rejected",
+      "method": "POST",
+      "path": "/api/admin/tables-config",
+      "expected": 409,
+      "actual": 409,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: reservable toggle rejects null",
+      "method": "PATCH",
+      "path": "/api/admin/tables-config/19/reservable",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: unknown table is not found",
+      "method": "PUT",
+      "path": "/api/admin/tables-config/999999",
+      "expected": 404,
+      "actual": 404,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: renaming a table is rejected because the QR prints the number",
+      "passed": true,
+      "actual": [
+        409,
+        "TABLE_NO_IMMUTABLE"
+      ]
+    },
+    {
+      "name": "Iris seat config: rejected rename leaves the number unchanged",
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: same number in different case/spaces still saves other fields",
+      "passed": true,
+      "actual": 200
+    },
+    {
+      "name": "Iris seat config: QR image still served for the unchanged number",
+      "passed": true,
+      "actual": 200
+    },
+    {
+      "name": "Iris seat config: cannot shrink below a future confirmed 5-person reservation",
+      "passed": true,
+      "actual": [
+        409,
+        "SEATS_BELOW_BOOKINGS",
+        "10/26 20:42 有 5 位訂位在這張桌，座位數不能少於 5"
+      ]
+    },
+    {
+      "name": "Iris seat config: shrinking to exactly the reservation size is allowed (cancelled/past ignored)",
+      "passed": true,
+      "actual": 200
+    },
+    {
+      "name": "Iris seat config: cancel synthetic future reservation",
+      "method": "POST",
+      "path": "/api/admin/reservations/77/cancel",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: after the reservation is cancelled the table can shrink",
+      "passed": true,
+      "actual": 200
+    },
+    {
+      "name": "Iris seat config: open synthetic table for 4",
+      "method": "POST",
+      "path": "/api/admin/tables/19/open",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: cannot shrink below the 4 people dining now",
+      "passed": true,
+      "actual": [
+        409,
+        "SEATS_BELOW_BOOKINGS"
+      ]
+    },
+    {
+      "name": "Iris seat config: cannot deactivate a table that is dining",
+      "passed": true,
+      "actual": [
+        409,
+        "TABLE_IN_USE"
+      ]
+    },
+    {
+      "name": "Iris seat config: cancel empty synthetic session",
+      "method": "POST",
+      "path": "/api/admin/dining-sessions/62/cancel",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: cannot deactivate a table with a future reservation",
+      "passed": true,
+      "actual": [
+        409,
+        "TABLE_IN_USE"
+      ]
+    },
+    {
+      "name": "Iris seat config: cancel second synthetic reservation",
+      "method": "POST",
+      "path": "/api/admin/reservations/80/cancel",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: cannot deactivate a table waiting to be cleaned",
+      "passed": true,
+      "actual": [
+        409,
+        "TABLE_IN_USE"
+      ]
+    },
+    {
+      "name": "Iris seat config: deactivate an empty table",
+      "method": "PATCH",
+      "path": "/api/admin/tables-config/19/active",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: list still shows the inactive table after active ones",
+      "method": "GET",
+      "path": "/api/admin/tables-config",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: inactive tables are listed after every active table",
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: overview hides the inactive table",
+      "method": "GET",
+      "path": "/api/admin/tables",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: seat picker hides the inactive table",
+      "method": "GET",
+      "path": "/api/admin/tables/available?partySize=2",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: inactive table cannot be opened",
+      "passed": true,
+      "actual": 404
+    },
+    {
+      "name": "Iris seat config: inactive table can still be edited",
+      "passed": true,
+      "actual": 200
+    },
+    {
+      "name": "Iris seat config: reactivate",
+      "method": "PATCH",
+      "path": "/api/admin/tables-config/19/active",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: reactivated table is back on the overview",
+      "method": "GET",
+      "path": "/api/admin/tables",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: active flag rejects null",
+      "method": "PATCH",
+      "path": "/api/admin/tables-config/19/active",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: create race deactivate/open 0",
+      "method": "POST",
+      "path": "/api/admin/tables-config",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: round 0: deactivate vs open ends with exactly one winner",
+      "passed": true,
+      "actual": {
+        "codes": [
+          409,
+          200
+        ],
+        "active": true,
+        "sessions": 1
+      }
+    },
+    {
+      "name": "Iris seat config: create race deactivate/open 1",
+      "method": "POST",
+      "path": "/api/admin/tables-config",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: round 1: deactivate vs open ends with exactly one winner",
+      "passed": true,
+      "actual": {
+        "codes": [
+          409,
+          200
+        ],
+        "active": true,
+        "sessions": 1
+      }
+    },
+    {
+      "name": "Iris seat config: create race deactivate/open 2",
+      "method": "POST",
+      "path": "/api/admin/tables-config",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: round 2: deactivate vs open ends with exactly one winner",
+      "passed": true,
+      "actual": {
+        "codes": [
+          409,
+          200
+        ],
+        "active": true,
+        "sessions": 1
+      }
+    },
+    {
+      "name": "Iris seat config: create race shrink/open 0",
+      "method": "POST",
+      "path": "/api/admin/tables-config",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: round 0: shrink to 4 vs opening for 5 never leaves 5 people at a 4-seat table",
+      "passed": true,
+      "actual": {
+        "codes": [
+          409,
+          200
+        ],
+        "seats": 6,
+        "sessions": 1
+      }
+    },
+    {
+      "name": "Iris seat config: create race shrink/open 1",
+      "method": "POST",
+      "path": "/api/admin/tables-config",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: round 1: shrink to 4 vs opening for 5 never leaves 5 people at a 4-seat table",
+      "passed": true,
+      "actual": {
+        "codes": [
+          409,
+          200
+        ],
+        "seats": 6,
+        "sessions": 1
+      }
+    },
+    {
+      "name": "Iris seat config: create race shrink/open 2",
+      "method": "POST",
+      "path": "/api/admin/tables-config",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: round 2: shrink to 4 vs opening for 5 never leaves 5 people at a 4-seat table",
+      "passed": true,
+      "actual": {
+        "codes": [
+          409,
+          200
+        ],
+        "seats": 6,
+        "sessions": 1
+      }
+    },
+    {
+      "name": "Iris seat config: create race shrink/online reservation 0",
+      "method": "POST",
+      "path": "/api/admin/tables-config",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: round 0: shrink to 8 vs a 10-person online booking never strands the booking",
+      "passed": true,
+      "actual": {
+        "codes": [
+          409,
+          201
+        ],
+        "seats": 12,
+        "bookedParty": "10"
+      }
+    },
+    {
+      "name": "Iris seat config: create race shrink/online reservation 1",
+      "method": "POST",
+      "path": "/api/admin/tables-config",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: round 1: shrink to 8 vs a 10-person online booking never strands the booking",
+      "passed": true,
+      "actual": {
+        "codes": [
+          409,
+          201
+        ],
+        "seats": 12,
+        "bookedParty": "10"
+      }
+    },
+    {
+      "name": "Iris seat config: create race shrink/online reservation 2",
+      "method": "POST",
+      "path": "/api/admin/tables-config",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: round 2: shrink to 8 vs a 10-person online booking never strands the booking",
+      "passed": true,
+      "actual": {
+        "codes": [
+          409,
+          201
+        ],
+        "seats": 12,
+        "bookedParty": "10"
+      }
+    },
+    {
+      "name": "Iris seat config: create race reservable/deactivate 0",
+      "method": "POST",
+      "path": "/api/admin/tables-config",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: round 0: reservable toggle never undoes a concurrent deactivate",
+      "passed": true,
+      "actual": {
+        "codes": [
+          200,
+          200
+        ],
+        "activeReservable": "0\t0"
+      }
+    },
+    {
+      "name": "Iris seat config: create race reservable/deactivate 1",
+      "method": "POST",
+      "path": "/api/admin/tables-config",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: round 1: reservable toggle never undoes a concurrent deactivate",
+      "passed": true,
+      "actual": {
+        "codes": [
+          200,
+          200
+        ],
+        "activeReservable": "0\t0"
+      }
+    },
+    {
+      "name": "Iris seat config: create race reservable/deactivate 2",
+      "method": "POST",
+      "path": "/api/admin/tables-config",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: round 2: reservable toggle never undoes a concurrent deactivate",
+      "passed": true,
+      "actual": {
+        "codes": [
+          200,
+          200
+        ],
+        "activeReservable": "0\t0"
+      }
+    },
+    {
+      "name": "Iris seat config: create race reservable/open 0",
+      "method": "POST",
+      "path": "/api/admin/tables-config",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: round 0: reservable toggle never resets a table that was just opened",
+      "passed": true,
+      "actual": {
+        "codes": [
+          200,
+          200
+        ],
+        "status": "OCCUPIED"
+      }
+    },
+    {
+      "name": "Iris seat config: create race reservable/open 1",
+      "method": "POST",
+      "path": "/api/admin/tables-config",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: round 1: reservable toggle never resets a table that was just opened",
+      "passed": true,
+      "actual": {
+        "codes": [
+          200,
+          200
+        ],
+        "status": "OCCUPIED"
+      }
+    },
+    {
+      "name": "Iris seat config: create race reservable/open 2",
+      "method": "POST",
+      "path": "/api/admin/tables-config",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: round 2: reservable toggle never resets a table that was just opened",
+      "passed": true,
+      "actual": {
+        "codes": [
+          200,
+          200
+        ],
+        "status": "OCCUPIED"
+      }
+    },
+    {
+      "name": "Iris seat config: round 0: same new table number twice gives 200 + 409 TABLE_NO_TAKEN, never 500",
+      "passed": true,
+      "actual": {
+        "codes": [
+          200,
+          409
+        ],
+        "loser": "TABLE_NO_TAKEN"
+      }
+    },
+    {
+      "name": "Iris seat config: round 1: same new table number twice gives 200 + 409 TABLE_NO_TAKEN, never 500",
+      "passed": true,
+      "actual": {
+        "codes": [
+          200,
+          409
+        ],
+        "loser": "TABLE_NO_TAKEN"
+      }
+    },
+    {
+      "name": "Iris seat config: round 2: same new table number twice gives 200 + 409 TABLE_NO_TAKEN, never 500",
+      "passed": true,
+      "actual": {
+        "codes": [
+          200,
+          409
+        ],
+        "loser": "TABLE_NO_TAKEN"
+      }
+    },
+    {
+      "name": "Iris seat config: 11-character table number rejected",
+      "method": "POST",
+      "path": "/api/admin/tables-config",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: 21-character area rejected",
+      "method": "POST",
+      "path": "/api/admin/tables-config",
+      "expected": 400,
+      "actual": 400,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: cleanup session 63",
+      "method": "POST",
+      "path": "/api/admin/dining-sessions/63/cancel",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: cleanup session 64",
+      "method": "POST",
+      "path": "/api/admin/dining-sessions/64/cancel",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: cleanup session 65",
+      "method": "POST",
+      "path": "/api/admin/dining-sessions/65/cancel",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: cleanup session 66",
+      "method": "POST",
+      "path": "/api/admin/dining-sessions/66/cancel",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: cleanup session 67",
+      "method": "POST",
+      "path": "/api/admin/dining-sessions/67/cancel",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: cleanup session 68",
+      "method": "POST",
+      "path": "/api/admin/dining-sessions/68/cancel",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: cleanup session 69",
+      "method": "POST",
+      "path": "/api/admin/dining-sessions/69/cancel",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: cleanup session 70",
+      "method": "POST",
+      "path": "/api/admin/dining-sessions/70/cancel",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    },
+    {
+      "name": "Iris seat config: cleanup session 71",
+      "method": "POST",
+      "path": "/api/admin/dining-sessions/71/cancel",
+      "expected": 200,
+      "actual": 200,
+      "passed": true
+    }
+  ]
+}

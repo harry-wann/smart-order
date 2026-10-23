@@ -1,0 +1,62 @@
+{
+  "label": "iris-seat-config",
+  "commit": "a5fac00",
+  "testedAt": "2026-10-23T11:44:05.062Z",
+  "passed": true,
+  "resultCount": 11,
+  "sanitized": true,
+  "notes": [
+    "S-08 and the reservation page at 1024x768 as MANAGER; the deactivate request was held with page.route only to observe the busy state."
+  ],
+  "results": [
+    {
+      "name": "Iris seat config browser: S-08 lists the new table",
+      "passed": true,
+      "detail": "Z375"
+    },
+    {
+      "name": "Iris seat config browser: deactivate shows a busy state and locks the other deactivate buttons",
+      "passed": true
+    },
+    {
+      "name": "Iris seat config browser: deactivated row shows 已停用 and offers 重新啟用",
+      "passed": true
+    },
+    {
+      "name": "Iris seat config browser: summary counts only active tables and states how many are inactive",
+      "passed": true,
+      "detail": "統計只算啟用中的桌，另有 20 桌停用"
+    },
+    {
+      "name": "Iris seat config browser: deactivating a dining table shows the backend reason",
+      "passed": true,
+      "detail": "A01 停用失敗：這張桌正在用餐中，客人結帳後才能停用"
+    },
+    {
+      "name": "Iris seat config browser: edit dialog keeps the table number read-only with the QR explanation",
+      "passed": true
+    },
+    {
+      "name": "Iris seat config browser: shrinking below a future 3-person booking keeps the dialog open with the reason",
+      "passed": true,
+      "detail": "10/26 19:44 有 3 位訂位在這張桌，座位數不能少於 3"
+    },
+    {
+      "name": "Iris seat config browser: saving a capacity that still fits the booking updates the row",
+      "passed": true
+    },
+    {
+      "name": "Iris seat config browser: S-08 fits 1024px without horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "Iris seat config browser: reservation page ratio counts only active tables",
+      "passed": true,
+      "detail": "可預約比例 72%・18 桌中開放 13 桌"
+    },
+    {
+      "name": "Iris seat config browser: no page errors or API 5xx",
+      "passed": true
+    }
+  ]
+}

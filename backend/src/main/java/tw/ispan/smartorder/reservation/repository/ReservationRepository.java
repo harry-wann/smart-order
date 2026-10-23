@@ -43,6 +43,12 @@ public interface ReservationRepository extends JpaRepository<ReservationEntity, 
 
     List<ReservationEntity> findByMemberIdOrderByStartTimeDesc(Long memberId);
 
+    // S-08 改座位數、停用桌位：配到這張桌、還沒結束的訂位，最早的排前面
+    List<ReservationEntity> findByTableIdAndStatusAndEndTimeAfterOrderByStartTimeAsc(
+            Long tableId,
+            ReservationStatus status,
+            LocalDateTime now);
+
     List<ReservationEntity> findByStartTimeGreaterThanEqualAndStartTimeLessThanOrderByStartTimeAscIdAsc(
             LocalDateTime from,
             LocalDateTime to);
