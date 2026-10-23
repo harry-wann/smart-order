@@ -206,6 +206,12 @@ authorize.requestMatchers(HttpMethod.POST,
               整張表不用左右捲動，開關在 851–897px、編輯按鈕在 991px，都在畫面內。</span></li>
           </ul>
 
+          <div class="note-card">
+            <h3>遠端更新：全站隱藏捲軸（Clara 的 <code>d34cb19</code>）</h3>
+            <p>整合期間，Clara 在遠端 develop 推了「隱藏全站滾軸」：在 <code>base.css</code> 對所有元素隱藏捲軸外觀，元件上原本各自加的 <code>no-scrollbar</code> 就拿掉了。合併時以她的寫法為主，沒有衝突。因為上面已經把 1024px 的表格改成不需要左右捲動，合併後重跑瀏覽器檢查，開關和編輯按鈕仍然都在畫面內。</p>
+            <p>要記得的是：<strong>捲軸藏起來之後，「這裡還能捲」的提示也跟著不見了</strong>。之後新增畫面時，重要的按鈕要在最小寬度下直接看得到，不能放在需要捲動才找得到的地方。</p>
+          </div>
+
           <h3>5. 其他小修</h3>
           <ul class="prompt-list">
             <li><span>選項群組頁：驗證失敗時顯示具體原因，例如「價差最多 8 位整數與 2 位小數」，不再只顯示「欄位格式不正確」。</span></li>
