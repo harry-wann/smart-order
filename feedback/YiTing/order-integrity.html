@@ -36,6 +36,7 @@
           <li><a href="#fee-rounding">服務費取整錯誤</a></li>
           <li><a href="#cancel-total">取消後帳單未重算</a></li>
           <li><a href="#ticket-state">整單取消狀態不一致</a></li>
+<li><a href="#stock-snapshot">後續修正：取消時補錯庫存</a></li>
           <li><a href="#integrated-flow">本次一起接齊的流程</a></li>
           <li><a href="#review">本次審查建議</a></li>
           <li><a href="#interview">報告與面試亮點</a></li>
@@ -196,6 +197,28 @@
               <li>再查看帳單，確認整單取消後金額只依仍有效的明細計算。</li>
             </ol>
           </details>
+        </section>
+
+        <section class="section-card" id="stock-snapshot">
+          <span class="section-kicker">06b · 後續修正（整合時發現）</span>
+          <h2>改了「是否追蹤庫存」之後，取消會補錯庫存</h2>
+          <p>這不是原本的寫法錯，而是後來菜單管理讓店長可以隨時切換品項的「是否追蹤庫存」，原本的假設就不成立了。取消流程判斷「要不要補回庫存」時，看的是品項<strong>現在</strong>的設定，而不是送單那一刻的設定。</p>
+          <div class="compare-grid">
+            <div class="compare-side">
+              <div class="compare-label">原問題表現（修正前實測）</div>
+              <p>不追蹤時點了 3 份，店長改成追蹤、庫存設 20，再取消：庫存變成 <strong>23</strong>，憑空多了 3 份。反過來，追蹤時點了 3 份（20 扣成 17），改成不追蹤再取消：庫存停在 <strong>17</strong>，那 3 份不見了。單品取消、整單取消都一樣。</p>
+            </div>
+            <div class="compare-side after">
+              <div class="compare-label">目前程式怎麼處理</div>
+              <p>每筆訂單明細多記一個 <code>stock_deducted</code>：送單時有沒有真的扣庫存。取消時只看這個紀錄，有扣才補，不再看品項現在的設定。上面兩個情境的結果變成 20 和 20。</p>
+            </div>
+          </div>
+          <ul class="prompt-list">
+            <li><span><strong>記錄要跟扣庫存「同一刻」：</strong>送單時鎖住品項（<code>SELECT … FOR UPDATE</code>）後才讀「是否追蹤」並扣庫存，<code>stock_deducted</code> 也用同一個值寫入。店長要切換設定得改同一列，會被這把鎖擋住排隊，所以紀錄和實際扣庫存一定一致。顧客送單、櫃檯代客點餐都走同一段程式。</span></li>
+            <li><span><strong>舊資料怎麼辦：</strong>升級腳本 <code>migrate_order_item_stock_deducted.sql</code> 先把欄位加成可以空白，只替空白的列用品項<strong>現在</strong>的設定回填，最後才改成不可空白。舊單當時的設定已經查不到，這是最好的推測（店長沒切換過的品項，現在的值就等於當時的值）；腳本中途斷掉，重跑也能補完；只有每一列都回填好了才改成不可空白，不會把還沒回填的列默默變成 0，也不會改動舊列的更新時間。</span></li>
+            <li><span><strong>這種設計叫「快照」：</strong>跟訂單明細保存下單當時的品名與價格是同一個道理，凡是之後可能被改掉、但當下的值會影響後續處理的資料，都要在當下存一份。</span></li>
+          </ul>
+          <p class="intro-note">修正提交為 <code>4299123</code>，獨立審查後補強升級腳本的提交為 <code>258b5dd</code>（審查沒有 P1／P2）。驗證：修正前版本重現兩種錯誤；修正後情境測試 37 項（加上 36 項基線，共 73 項）全過（兩種切換 × 單品／整單取消，加上櫃檯代客點餐）；升級腳本在有 514 筆舊明細的資料庫跑兩次，第二次沒有任何變化；點餐交易、櫃檯代客點餐、結帳、個人購物車、出菜看板、菜單管理的回歸測試都通過。<a class="subtle-link" href="../evidence/4299123-http.json">查看完整紀錄</a>。</p>
         </section>
 
         <section class="section-card" id="integrated-flow">

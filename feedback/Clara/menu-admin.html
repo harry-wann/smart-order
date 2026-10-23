@@ -225,7 +225,7 @@ authorize.requestMatchers(HttpMethod.POST,
           <ul class="prompt-list">
             <li><span>兩位店長在同一瞬間新增同名分類，可能兩筆都成功，因為資料表沒有名稱唯一索引。</span></li>
             <li><span>排序只檢查「分類的成員一樣」，如果成員一樣、但你畫面上的順序是舊的，還是會蓋過別人剛排好的順序。</span></li>
-            <li><span>品項改過「是否追蹤庫存」之後，再取消改之前的訂單，補庫存會依<strong>現在</strong>的設定判斷。這是取消流程原本的寫法，後台能切換這個設定後才比較容易遇到。</span></li>
+            <li><span><del>品項改過「是否追蹤庫存」之後，再取消改之前的訂單，補庫存會依<strong>現在</strong>的設定判斷。</del> <strong>已在後續修正：</strong>訂單明細改成記下送單時有沒有扣庫存，取消時依這個紀錄補回，見 <a href="../YiTing/order-integrity.html#stock-snapshot">YiTing 點餐交易文章的後續修正</a>。</span></li>
             <li><span>極少見的三方情境：品項剛被搬進一個正在停用的分類，同時又有人送單。MySQL 會偵測到死結，取消其中一個請求並回錯誤，不會卡住。</span></li>
           </ul>
         </section>
