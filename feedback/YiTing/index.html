@@ -31,6 +31,16 @@
         <div class="article-links"><a class="subtle-link" href="order-integrity.html">點餐價格、帳單與取消一致性 →</a><span class="status">已驗證 · 39b6c08</span></div>
         <div class="article-links"><a class="subtle-link" href="checkout.html">櫃檯結帳與場次安全 →</a><span class="status">已驗證 · b0c2432</span></div>
       </section>
+      <section class="section-card" id="staff-order">
+        <span class="section-kicker">整合成果 · 已驗證</span>
+        <h2>櫃檯代客加點</h2>
+        <p>櫃檯可在桌位詳情選餐點、規格、數量與備註，組成待送清單後直接送廚房。這份清單屬於櫃檯本次操作，同桌客人手機上的購物車內容會保留。</p>
+        <p>程式提交 <code>de2a129</code> 沿用送單時的商品檢查、現價快照與庫存扣除。快照是把當時的名稱、選項與價格保存下來，日後菜單改價也不會改寫舊帳單。庫存不足時整筆不成立，畫面保留待送清單，讓櫃檯調整後重試。</p>
+        <p>108 項 HTTP（Hypertext Transfer Protocol，超文字傳輸協定）／資料庫檢查與 25 項瀏覽器檢查通過。涵蓋員工權限、兩種身分同時送單的單號與帳單、保留同桌購物車，以及手機寬度的對話框操作。</p>
+        <p><a href="../evidence/de2a129-http.json">介面與資料庫確認紀錄</a> · <a href="../evidence/de2a129-browser.json">瀏覽器確認紀錄</a></p>
+        <p><a href="../assets/staff-order-390.png">查看 390px 手機寬度的代客加點對話框</a>。此圖確認對話框版面，未宣稱整個店家後台皆已適配手機。</p>
+        <div class="note-card report"><h3>報告與履歷怎麼說</h3><p>報告可示範「顧客手機點餐」與「櫃檯代客加點」如何共用驗證、各自保存待送內容，再匯入同一桌帳單。履歷可依實際參與程度寫「參與櫃檯與顧客點餐流程整合，確認同桌資料隔離及庫存不足時的回復流程」；本次協作收尾成果應清楚標示參與範圍。</p></div>
+      </section>
       <section class="section-card">
         <span class="section-kicker">整理進度</span>
         <h2>技術亮點、報告與履歷</h2>

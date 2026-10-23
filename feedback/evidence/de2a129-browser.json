@@ -1,0 +1,124 @@
+{
+  "label": "staff-order",
+  "testedAt": "2026-10-23T01:33:04.360Z",
+  "results": [
+    {
+      "path": "/admin/table_overview",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/seats",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/waitlist",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/reservations",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/kitchen",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/menu",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/options",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/admin/table/A03",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/order/menu",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/order/cart/50",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/order/history",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/member/login",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/reserve/guest",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "path": "/reserve/datetime",
+      "passed": true,
+      "errors": []
+    },
+    {
+      "name": "Staff order browser: dialog opens and empty draft submit is disabled",
+      "passed": true
+    },
+    {
+      "name": "Staff order browser: required option stays blocked until selected, then can be added, removed, and re-added",
+      "passed": true
+    },
+    {
+      "name": "Staff order browser: soup quantity two and 26 emoji note are retained in the draft",
+      "passed": true
+    },
+    {
+      "name": "Staff order browser: 390px dialog fits without horizontal overflow",
+      "passed": true,
+      "detail": "screenshots saved under /tmp/smart-order-staff-order-{1440,390}.png"
+    },
+    {
+      "name": "Staff order browser: real ITEM_SOLD_OUT response preserves editable draft",
+      "passed": true
+    },
+    {
+      "name": "Staff order browser: real 201 is held while submit and close stay disabled",
+      "passed": true
+    },
+    {
+      "name": "Staff order browser: both guests receive the live counter notice with quantity total two",
+      "passed": true
+    },
+    {
+      "name": "Staff order browser: ticket source, owner, sequence, Unicode note, and SQL billing oracle match",
+      "passed": true,
+      "detail": "ticket 168, sequence 35"
+    },
+    {
+      "name": "Staff order browser: both guest carts preserve rows, options, notes, prices, and quantities",
+      "passed": true
+    },
+    {
+      "name": "Staff order browser: no uncaught browser page errors",
+      "passed": true
+    }
+  ],
+  "passed": true
+}
