@@ -1,0 +1,40 @@
+{
+  "label": "clara-menu-guards-browser",
+  "commit": "93e3700",
+  "testedAt": "2026-10-23T16:15:02.243Z",
+  "passed": true,
+  "resultCount": 6,
+  "notes": [
+    "Vite 127.0.0.1:5174 serving the menu-guards worktree at 1024px; the menu admin (17) and KDS (19) browser suites also passed on the same build."
+  ],
+  "results": [
+    {
+      "name": "Menu guards browser: selected category shows its cook order (肉品 = 4)",
+      "passed": true,
+      "detail": "4"
+    },
+    {
+      "name": "Menu guards browser: cook order select fits inside the 1024px sidebar",
+      "passed": true,
+      "detail": "296–404px"
+    },
+    {
+      "name": "Menu guards browser: changing it sends only cookOrder and succeeds",
+      "passed": true,
+      "detail": "200 {\"cookOrder\":3}"
+    },
+    {
+      "name": "Menu guards browser: database stores the new cook order",
+      "passed": true
+    },
+    {
+      "name": "Menu guards browser: no page-level horizontal overflow at 1024px",
+      "passed": true
+    },
+    {
+      "name": "Menu guards browser: no page errors or API 5xx",
+      "passed": true,
+      "detail": ""
+    }
+  ]
+}

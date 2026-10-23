@@ -30,6 +30,7 @@
           <li><a href="#changes">實際改法</a></li>
           <li><a href="#added">補上的基本功能</a></li>
           <li><a href="#review">審查後再修的地方</a></li>
+          <li><a href="#followup">收尾後補完的三件事</a></li>
           <li><a href="#walkthrough">手把手驗收</a></li>
           <li><a href="#evidence">提交與驗證紀錄</a></li>
           <li><a href="#feedback">前輩回饋、報告與履歷</a></li>
@@ -223,11 +224,52 @@ authorize.requestMatchers(HttpMethod.POST,
 
           <h3>已知限制（這次沒處理）</h3>
           <ul class="prompt-list">
-            <li><span>兩位店長在同一瞬間新增同名分類，可能兩筆都成功，因為資料表沒有名稱唯一索引。</span></li>
-            <li><span>排序只檢查「分類的成員一樣」，如果成員一樣、但你畫面上的順序是舊的，還是會蓋過別人剛排好的順序。</span></li>
+            <li><span><del>兩位店長在同一瞬間新增同名分類，可能兩筆都成功，因為資料表沒有名稱唯一索引。</del> <strong>已在後續修正</strong>，見<a href="#followup">收尾後補完的三件事</a>。</span></li>
+            <li><span><del>排序只檢查「分類的成員一樣」，如果成員一樣、但你畫面上的順序是舊的，還是會蓋過別人剛排好的順序。</del> <strong>已在後續修正</strong>，見<a href="#followup">收尾後補完的三件事</a>。</span></li>
             <li><span><del>品項改過「是否追蹤庫存」之後，再取消改之前的訂單，補庫存會依<strong>現在</strong>的設定判斷。</del> <strong>已在後續修正：</strong>訂單明細改成記下送單時有沒有扣庫存，取消時依這個紀錄補回，見 <a href="../YiTing/order-integrity.html#stock-snapshot">YiTing 點餐交易文章的後續修正</a>。</span></li>
             <li><span>極少見的三方情境：品項剛被搬進一個正在停用的分類，同時又有人送單。MySQL 會偵測到死結，取消其中一個請求並回錯誤，不會卡住。</span></li>
           </ul>
+        </section>
+
+        <section class="section-card" id="followup">
+          <span class="section-kicker">收尾後補完 · 整合成果</span>
+          <h2>名稱真的不重複、排序擋舊畫面、出餐順序交給店長</h2>
+          <p>上一節的已知限制，收尾時一起補完了（commit <code>93e3700</code>），另外也把出菜看板「靠分類名稱判斷肉品」的問題從根本解掉。</p>
+
+          <h3>1. 同名分類：讓資料庫當最後一道防線</h3>
+          <div class="compare-grid">
+            <div class="compare-side"><div class="compare-label">修正前實測</div><p>兩位店長同時新增「同一個名字」的分類，3 輪都是兩個請求都回 201，資料庫裡真的有兩筆同名分類。</p></div>
+            <div class="compare-side after"><div class="compare-label">修正後</div><p>3 輪都是一個 201、一個 409 <code>CATEGORY_NAME_DUPLICATED</code>，資料庫只有一筆。</p></div>
+          </div>
+          <p>原本的檢查是「先查有沒有同名，沒有才新增」。兩個請求同時查，都看到「沒有」，就都新增了。<strong>只要是「先查再寫」，中間就可能被插隊</strong>。修法是在資料表加上<strong>唯一索引</strong> <code>uk_menu_category_name</code>：第二筆寫進去時，資料庫直接拒絕，後端把這個錯誤轉成和平常一樣的 409。原本的「先查」還留著，因為它能給一般情況比較友善的訊息；唯一索引負責那極少數同時發生的情況。</p>
+
+          <h3>2. 排序：帶上「我看到的順序」</h3>
+          <div class="compare-grid">
+            <div class="compare-side"><div class="compare-label">修正前實測</div><p>店長 A 剛把前兩個分類對調；店長 B 的畫面還是舊順序，接著也排了一次。兩次都回 200，A 的結果被 B 蓋掉。</p></div>
+            <div class="compare-side after"><div class="compare-label">修正後</div><p>前端排序時多送 <code>expectedCategoryIds</code>（移動前畫面上的順序）。後端鎖住全部分類後比對，跟資料庫現在的順序不同就回 409 <code>CATEGORY_LIST_CHANGED</code>，畫面重新抓一次再讓店長調。</p></div>
+          </div>
+          <p>這種做法叫<strong>樂觀並發控制</strong>：不事先鎖住畫面，而是送出時附上「我是根據哪個版本改的」，版本不對就請你重來。沒帶這個欄位的舊呼叫端仍然照舊接受，不會一改就壞掉。</p>
+
+          <h3>3. 出餐順序：從「看名字」改成「店長設定」</h3>
+          <p>出菜看板原本用分類名稱是不是「肉品」來決定排在最後。菜單管理可以改分類名稱以後，這個判斷就不可靠了：修正前實測，把「肉品」改名後，牛五花就排到了蔬菜前面。</p>
+          <ul class="prompt-list">
+            <li><span>每個分類多一個「出餐順序」欄位 <code>cook_order</code>，照 API 規格 §4.12 分六級：鍋底 1、菜盤 2、火鍋料 3、肉品 4、主食 5、飲料甜點 6。鍋底品項不管放在哪個分類都排 1。</span></li>
+            <li><span>店長在分類操作列用下拉選單設定，前端只送 <code>{"cookOrder": 3}</code>；超出 1–6 回 400。</span></li>
+            <li><span>看板依「出餐順序 → 點餐順序」排列，每道菜也帶 <code>cookOrder</code>。改名後順序不變；把肉品改成 2，就跟菜盤照點餐順序排。</span></li>
+          </ul>
+          <div class="screen-gallery">
+            <figure class="screen-shot">
+              <a href="../assets/clara-menu-guards-1024.png"><img src="../assets/clara-menu-guards-1024.png" alt="1024 像素寬的菜單管理頁，選取肉品分類後，操作列下方有出餐順序下拉選單"></a>
+              <figcaption>選取分類後，操作列下方多了「出餐順序」。圖中示範把肉品改成 3（火鍋料），測試完再改回 4。</figcaption>
+            </figure>
+          </div>
+
+          <h3>升級腳本 <code>migrate_menu_category_guards.sql</code></h3>
+          <ul class="prompt-list">
+            <li><span>先加 <code>cook_order</code>，依名稱回填既有分類（鍋底 1、蔬菜 2、海鮮 2、火鍋料 3、肉品 4、主食 5、飲料 6、酒類 6，其他 2），只回填還沒有值的列。</span></li>
+            <li><span>再加唯一索引。如果資料庫裡<strong>已經有同名分類</strong>，這一步會停下來（實測錯誤是 <code>ERROR 1062 Duplicate entry</code>），腳本<strong>不刪任何資料</strong>；請先人工改名，再整份重跑。實測改名後重跑成功，第三次重跑什麼都沒改。</span></li>
+          </ul>
+          <p class="intro-note">驗證：新功能檢查 39 項加基線 36 項、瀏覽器 6 項全過；菜單管理、出菜看板、購物車、點餐交易、櫃檯代客點餐、結帳的回歸也都通過。獨立審查沒有 P1／P2；提到的規格與升級說明（六級順序、重名時怎麼改名、名稱不在對照表的分類）已補在 <code>2ece1fd</code>。<a class="subtle-link" href="../evidence/93e3700-http.json">查看 HTTP 紀錄</a>、<a class="subtle-link" href="../evidence/93e3700-browser.json">瀏覽器紀錄</a>。</p>
         </section>
 
         <section class="section-card" id="walkthrough">
