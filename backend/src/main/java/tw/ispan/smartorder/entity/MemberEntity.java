@@ -23,5 +23,7 @@ public class MemberEntity {
 	private LocalDate birthDate;
 	private Boolean profileCompleted;
 	private String status;
+
+	@Column(updatable = false,insertable = false)
 	private LocalDateTime createdAt;
 }
