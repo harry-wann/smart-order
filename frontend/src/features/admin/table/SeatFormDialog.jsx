@@ -6,7 +6,7 @@ const INPUT_CLASS =
 
 /**
  * S-08 新增 / 編輯桌位的對話框
- * - table：要編輯的那張桌；新增時傳 null
+ * - table：要編輯的那張桌；新增時傳 null。編輯時桌號唯讀：桌號印在 QR code 裡，後端也不讓改
  * - onClose()：關閉
  * - onSubmit({ tableNo, seats, area })：按儲存；回傳 Promise，失敗時對話框會顯示錯誤、不關閉
  */
@@ -34,7 +34,7 @@ function SeatFormDialog({ table, onClose, onSubmit }) {
     try {
       await onSubmit({ tableNo: tableNo.trim(), seats: Number(seats), area: area.trim() })
     } catch (err) {
-      // 例如桌號重複（409）：留在對話框，讓店員直接改
+      // 例如桌號重複、座位數少於訂位人數（409）：留在對話框，讓店員直接改
       setError(err.message)
       setSaving(false)
     }
@@ -60,10 +60,17 @@ function SeatFormDialog({ table, onClose, onSubmit }) {
             <input
               value={tableNo}
               onChange={(e) => setTableNo(e.target.value)}
+              readOnly={isEdit}
+              aria-describedby={isEdit ? 'seat-form-table-no-hint' : undefined}
               placeholder="例如：A09"
               maxLength={10}
-              className={INPUT_CLASS}
+              className={`${INPUT_CLASS} read-only:bg-surface-2 read-only:text-ink-600`}
             />
+            {isEdit && (
+              <span id="seat-form-table-no-hint" className="mt-1 block type-caption text-ink-600">
+                桌號印在 QR code 裡，建立後不能修改
+              </span>
+            )}
           </label>
 
           <label className="block">
@@ -90,7 +97,12 @@ function SeatFormDialog({ table, onClose, onSubmit }) {
           </label>
         </div>
 
-        {error && <p className="mt-4 type-body-sm text-danger">{error}</p>}
+        {/* 後端的原因原文照登，例如桌號重複、座位數少於訂位人數（409） */}
+        {error && (
+          <p role="alert" className="mt-4 type-body-sm text-danger">
+            {error}
+          </p>
+        )}
 
         <div className="mt-6 flex gap-3">
           <div className="w-28 flex-none">

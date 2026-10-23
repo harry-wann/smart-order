@@ -69,8 +69,10 @@ function ReservationManagement() {
     setSeatingTarget(null)
     setNotice(availableTables.error.message)
   }
-  const totalTables = seatsQuery.data?.length ?? 0
-  const reservableTables = seatsQuery.data?.filter((seat) => seat.reservable).length ?? 0
+  // 座位設定的 API 連停用的桌一起回，停用的不營業，不算進桌數
+  const activeSeats = seatsQuery.data?.filter((seat) => seat.active) ?? []
+  const totalTables = activeSeats.length
+  const reservableTables = activeSeats.filter((seat) => seat.reservable).length
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 30000)

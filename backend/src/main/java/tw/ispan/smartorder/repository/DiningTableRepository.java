@@ -17,6 +17,9 @@ public interface DiningTableRepository extends JpaRepository<DiningTableEntity, 
 
     List<DiningTableEntity> findByActiveTrueOrderByTableNoAsc();
 
+    // S-08 座位設定要列出停用的桌（才能重新啟用）：啟用的排前面，再依桌號
+    List<DiningTableEntity> findAllByOrderByActiveDescTableNoAsc();
+
     // 結帳要先鎖桌位
     @Query(nativeQuery = true, value = "SELECT * FROM dining_table WHERE table_no = :tableNo FOR UPDATE")
     Optional<DiningTableEntity> findWithLockByTableNo(@Param("tableNo") String tableNo);
@@ -25,6 +28,11 @@ public interface DiningTableRepository extends JpaRepository<DiningTableEntity, 
     // active = 1 也一起帶，停用的桌查不到，會被當成找不到這張桌
     @Query(nativeQuery = true, value = "SELECT * FROM dining_table WHERE id = :id AND active = 1 FOR UPDATE")
     Optional<DiningTableEntity> findByIdForUpdate(@Param("id") Long id);
+
+    // S-08 改座位數、停用桌位要先鎖這張桌：開桌、報到、建立訂位鎖的都是同一列，才會跟它們排隊。
+    // 不帶 active = 1，停用的桌也要能編輯、重新啟用
+    @Query(nativeQuery = true, value = "SELECT * FROM dining_table WHERE id = :id FOR UPDATE")
+    Optional<DiningTableEntity> findByIdForUpdateIncludingInactive(@Param("id") Long id);
 
     @Query("""
             SELECT t FROM DiningTableEntity t

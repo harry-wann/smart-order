@@ -54,6 +54,9 @@ public interface DiningSessionRepository extends JpaRepository<DiningSessionEnti
             """, nativeQuery = true)
     List<Long> findOpenSessionIdsByTableId(@Param("tableId") Long tableId);
 
+    // S-08 改座位數：這張桌 OPEN 的用餐紀錄各有幾位。呼叫端已經鎖住桌位，這裡照一般查詢讀，不鎖 session
+    List<DiningSessionEntity> findByTableIdAndStatus(Long tableId, String status);
+
     // S-02 桌況總覽：找出所有用餐中的紀錄，對應每桌的人數與開桌時間
     List<DiningSessionEntity> findByStatus(String status);
 
