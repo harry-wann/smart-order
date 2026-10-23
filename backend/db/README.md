@@ -14,6 +14,7 @@
 | `migrate_order_item_waste.sql` | 已有資料庫的出菜看板升級：`order_item` 加上 `wasted_at`（報廢／退菜時間），並修補用餐中桌次的單與品項狀態；可重複執行 |
 | `migrate_order_item_stock_deducted.sql` | 已有資料庫的取消補庫存升級：`order_item` 加上 `stock_deducted`（送單時有沒有扣庫存），舊資料用品項現在的 `track_inventory` 推測回填；可重複執行 |
 | `migrate_menu_category_guards.sql` | 已有資料庫的菜單分類升級：`menu_category` 加上 `cook_order`（出菜看板的出餐順序，既有分類依名稱回填）與分類名稱唯一索引 `uk_menu_category_name`；可重複執行 |
+| `migrate_order_item_waste_staff.sql` | 已有資料庫的報廢操作者升級：`order_item` 加上 `wasted_by_staff_id`（哪位員工報廢的，外鍵 → `staff`），舊資料維持 `NULL`；可重複執行 |
 
 進階功能（服務鈴、庫存異動紀錄、預先點餐、點數與優惠券）的表與欄位不在這裡，做到時再加。
 
@@ -49,6 +50,8 @@
 2. 替分類名稱加唯一索引 `uk_menu_category_name`（collation 不分大小寫，跟後端原本的重名檢查一樣），兩位店長同時新增同名分類時由資料庫擋下其中一個。索引已經存在就略過。
 
 整份可以重複執行。**執行前先跑檔案開頭的檢查查詢 2**，看有沒有重名的分類：有的話第 2 步的 `ALTER` 會失敗，這時第 1 步（出餐順序）已經做完。腳本不會自動刪除或改名，請擇一處理：先啟動新版後端（第 1 步完成後就能正常啟動，只是還沒有唯一索引），到菜單管理把其中一個改名；或直接用 SQL 改名 `UPDATE menu_category SET name = '…' WHERE id = …;`。分類底下可能有品項，不要直接刪。改完再整份重跑一次，第 1 步做過的部分不會再改。新的 `seed.sql` 會寫入 `cook_order`，舊資料庫要先跑這份（或重跑 `schema.sql`）才能重跑假資料。
+
+已有資料庫要升級「報廢記錄操作的員工」，**先執行 `migrate_order_item_waste_staff.sql`，再啟動新版後端**（新版報廢時會寫 `order_item.wasted_by_staff_id`，欄位不在報廢會直接出錯）。要先跑過上面的 `migrate_order_item_waste.sql`（新欄位接在 `wasted_at` 後面）。腳本替 `order_item` 新增可為 `NULL` 的 `wasted_by_staff_id` 與外鍵 `fk_order_item_wasted_staff`（→ `staff.id`），不改任何舊資料：升級前就報廢的品項不知道是誰報的，維持 `NULL`。欄位、外鍵各自用 `information_schema` 判斷，已經存在就略過，整份可以重複執行；萬一加欄位成功、加外鍵失敗，修好原因後整份再跑一次即可。`seed.sql` 不用重跑（假資料沒有報廢的品項）。
 
 ## 匯入
 

@@ -8,10 +8,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.http.HttpStatus;
+import tw.ispan.smartorder.common.exception.ApiException;
+import tw.ispan.smartorder.dto.KitchenCompletedTicketResponse;
 import tw.ispan.smartorder.dto.KitchenTicketResponse;
 import tw.ispan.smartorder.dto.CancelTicketRequest;
 import tw.ispan.smartorder.dto.WasteOrderItemRequest;
 import tw.ispan.smartorder.service.KitchenTicketService;
+import tw.ispan.smartorder.staff.security.StaffPrincipal;
 
 import java.util.List;
 
@@ -35,6 +38,14 @@ public class KitchenTicketsController {
         return kitchenTicketService.getKitchenTickets();
     }
 
+    // 「最近完成」分頁：最近 60 分鐘內完成（SERVED）的單，最新的在前、最多 50 張，只含用餐中（OPEN）的桌，
+    // 每張多帶 completedAt（完成時間）。
+    // 品項格式與單內順序跟 /kitchen/tickets 一樣；廚師在這裡取消勾選（unserve），誤勾完成的單就回到進行中
+    @GetMapping("/kitchen/tickets/recent")
+    public List<KitchenCompletedTicketResponse> getRecentCompletedTickets() {
+        return kitchenTicketService.getRecentCompletedTickets();
+    }
+
     // 計算 24 小時內完成訂單數量
     @GetMapping("/kitchen/tickets/completed-count")
     public int getCompletedTicketCountLast24Hours() {
@@ -55,7 +66,7 @@ public class KitchenTicketsController {
         kitchenTicketService.serveOrderItem(itemId);
     }
 
-    // 勾勾取消 - webSocket 事件類型 ITEM_UNSERVED
+    // 勾勾取消 - webSocket 事件類型 ITEM_UNSERVED；這桌已結帳或取消回 409 SESSION_CLOSED
     @PatchMapping("/order-items/{itemId}/unserve")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void unserveOrderItem(@PathVariable Long itemId) {
@@ -73,7 +84,12 @@ public class KitchenTicketsController {
     @PatchMapping("/order-items/{itemId}/waste")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void wasteOrderItem(@PathVariable Long itemId, @RequestBody WasteOrderItemRequest request) {
-        kitchenTicketService.wasteOrderItem(itemId, request.reason());
+        // 記下是哪位員工報廢的；SecurityConfig 已經要求廚房或店長登入，這裡拿不到只會是設定被改壞
+        StaffPrincipal staff = StaffPrincipal.current();
+        if (staff == null) {
+            throw ApiException.unauthorized("請先登入");
+        }
+        kitchenTicketService.wasteOrderItem(itemId, request.reason(), staff.id());
     }
 
     // 取消訂單，把 order_ticket 的狀態改為 CANCELLED，從畫面中移除 - webSocket 事件類型 TICKET_CANCELLED
