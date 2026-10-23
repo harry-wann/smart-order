@@ -46,7 +46,9 @@ export default function Entrance() {
         <CardLink data={ent} />
         <CardLink data={member} />
       </div>
-      <div onClick={()=>navigate("/order/checkin/A03")} className="px-4">
+      {/* 這裡只是提示，真正的入口是桌上 QR（/order/checkin/桌號）；
+          點了固定帶到某一桌，會把正在別桌點餐的人登出並帶到錯的桌 */}
+      <div className="px-4">
         <InfoBox outicon={SvgIconMap.OrderQrcode} col="quiet" text="F" custimtext={
             <>
               <p>
