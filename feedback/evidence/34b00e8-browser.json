@@ -1,0 +1,62 @@
+{
+  "label": "clara-kds-recent-browser",
+  "commit": "34b00e8",
+  "followUpCommit": "1756028",
+  "testedAt": "2026-10-23T16:24:03.485Z",
+  "passed": true,
+  "resultCount": 11,
+  "notes": [
+    "KDS at 1920x1080 on Vite 127.0.0.1:5174 serving the worktree; KDS (19), menu admin (17) and menu guards (6) browser suites also passed on the same build."
+  ],
+  "results": [
+    {
+      "name": "KDS recent browser: ticking the last dish fades the card off the active board",
+      "passed": true
+    },
+    {
+      "name": "KDS recent browser: the 最近完成 tab is pressed after clicking",
+      "passed": true
+    },
+    {
+      "name": "KDS recent browser: the completed card is announced as 已完成",
+      "passed": true,
+      "detail": "A03 第 41 單，已完成"
+    },
+    {
+      "name": "KDS recent browser: the completed card shows its completion time and every dish ticked",
+      "passed": true,
+      "detail": "A03 | ⋯ | 第 41 單 | 完成 00:24"
+    },
+    {
+      "name": "KDS recent browser: a completed card offers no 整單出完 button",
+      "passed": true
+    },
+    {
+      "name": "KDS recent browser: the completed card menu only offers 報廢細項",
+      "passed": true,
+      "detail": "報廢細項"
+    },
+    {
+      "name": "KDS recent browser: unticking calls unserve successfully",
+      "passed": true
+    },
+    {
+      "name": "KDS recent browser: the reopened ticket is back under 進行中 with one dish left to cook",
+      "passed": true
+    },
+    {
+      "name": "KDS recent browser: wasting from a completed card succeeds",
+      "passed": true
+    },
+    {
+      "name": "KDS recent browser: the waste records the reason and the kitchen staff member",
+      "passed": true,
+      "detail": "CANCELLED\t客人退回\t1"
+    },
+    {
+      "name": "KDS recent browser: no page errors or API 5xx",
+      "passed": true,
+      "detail": ""
+    }
+  ]
+}
