@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import tw.ispan.smartorder.entity.ReservationEntity;
 import tw.ispan.smartorder.reservation.enums.ReservationStatus;
 import tw.ispan.smartorder.reservation.projection.CalledWaitlistProjection;
@@ -73,11 +74,6 @@ public interface ReservationRepository extends JpaRepository<ReservationEntity, 
             """)
     List<CalledWaitlistProjection> findCalledWaitlist(@Param("seats") int seats);
 
-    List<ReservationEntity> findByStatusAndStartTimeGreaterThanEqualAndStartTimeLessThan(
-            ReservationStatus status,
-            LocalDateTime from,
-            LocalDateTime to);
-
     // 報到後客人實際坐哪張桌記在 dining_session，不在 reservation.table_id
     @Query(nativeQuery = true, value = """
             select s.reservation_id as reservationId, t.table_no as tableNo
@@ -97,6 +93,31 @@ public interface ReservationRepository extends JpaRepository<ReservationEntity, 
             @Param("cutoff") LocalDateTime cutoff,
             @Param("confirmed") ReservationStatus confirmed,
             @Param("noShow") ReservationStatus noShow);
+
+    // 該發訂位提醒的訂位：CONFIRMED、還沒提醒過、開始時間在 [from, to]（現在～現在 + 2 小時）。
+    // 這裡只是候選名單，誰真的提醒要看 markReminded 搶到沒有
+    @Query("""
+            select r from ReservationEntity r
+            where r.status = :status and r.reminderSentAt is null
+              and r.startTime >= :from and r.startTime <= :to
+            order by r.startTime asc, r.id asc
+            """)
+    List<ReservationEntity> findToRemind(
+            @Param("status") ReservationStatus status,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to);
+
+    // 搶「提醒這一筆」的資格：reminder_sent_at 還是 NULL 才寫，回 1 就是這次搶到、回 0 是別人先提醒了
+    // （排程和手動 API 同時跑，或剛好被取消／報到）。每一筆各自一個交易、馬上 commit，
+    // 搶到的人才去「送出」，所以同一筆不會被提醒兩次。
+    // 用原生 SQL：reminder_sent_at 在 entity 上設成 JPA 不寫，bulk update 不碰 entity 的欄位規則
+    @Transactional
+    @Modifying
+    @Query(nativeQuery = true, value = """
+            update reservation set reminder_sent_at = :sentAt
+            where id = :id and status = 'CONFIRMED' and reminder_sent_at is null
+            """)
+    int markReminded(@Param("id") Long id, @Param("sentAt") LocalDateTime sentAt);
 
     // 會員那邊（工作包 A）還沒有 entity，用原生 SQL 只讀需要的兩欄。
     // 只查 ACTIVE：停權的會員查不到，ReservationService.fillContact 會當成身分無效

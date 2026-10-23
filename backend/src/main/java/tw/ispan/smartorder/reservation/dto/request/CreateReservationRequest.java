@@ -17,7 +17,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class CreateReservationRequest {
-    // 帶 +08:00 的 ISO 時間，service 轉成店家時區再檢查是不是營業時段內的整點或半點
+    // 帶 +08:00 的 ISO 時間，service 轉成店家時區再檢查是不是在可訂的開始時間範圍內、而且精確到分鐘
     @NotNull(message = "請選擇訂位時段")
     private OffsetDateTime startTime;
 

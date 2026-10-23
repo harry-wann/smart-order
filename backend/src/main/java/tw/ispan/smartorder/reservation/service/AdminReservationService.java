@@ -390,6 +390,7 @@ public class AdminReservationService {
                 reservation.getCancelSource(),
                 reservation.getCancelledAt() == null ? null : properties.toOffset(reservation.getCancelledAt()),
                 cancelledByStaffName,
-                0);
+                0,
+                reservation.getReminderSentAt() == null ? null : properties.toOffset(reservation.getReminderSentAt()));
     }
 }

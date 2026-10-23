@@ -23,6 +23,7 @@ public class ReservationSchedulerController {
         return new SchedulerRunResponse("mark-no-show", jobService.markNoShow());
     }
 
+    // affected 是這次真正新提醒的筆數；已經提醒過的不會再算，所以連按幾次也不會重複提醒
     @PostMapping("/send-reminders")
     public SchedulerRunResponse sendReminders() {
         return new SchedulerRunResponse("send-reminders", jobService.sendReminders());

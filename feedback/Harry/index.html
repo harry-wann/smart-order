@@ -15,7 +15,7 @@
     </nav>
     <p class="breadcrumb"><a href="../index.html">成員索引</a> ／ Harry</p>
     <header class="person-header">
-      <div class="meta-row"><span class="scope-tag">工作包 E + L0（Level 0，全隊共用技術地基）</span><span class="status">整理中</span></div>
+      <div class="meta-row"><span class="scope-tag">工作包 E + L0（Level 0，全隊共用技術地基）</span><span class="status">訂位與共用地基已驗證</span></div>
       <h1>Harry｜訂位流程與全隊共用技術地基</h1>
     </header>
     <main class="content-stack">
@@ -27,15 +27,15 @@
       <section class="section-card" id="articles">
         <span class="section-kicker">文章索引</span>
         <h2>工作包紀錄</h2>
-        <div class="article-links"><a class="subtle-link" href="java-migration.html">本次收尾重構學習說明：純 Java 後端 →</a><span class="status">紀錄完成 · 081e34c</span><a class="subtle-link" href="l0-foundation.html">共用地基：金鑰、時區與推播權限 →</a><span class="status">已驗證 · 408cf18</span><p class="muted">三個全隊都會踩到的 P1，每一項都附修正前後對照。</p></div>
+        <div class="article-links"><a class="subtle-link" href="java-migration.html">本次收尾重構學習說明：純 Java 後端 →</a><span class="status">紀錄完成 · 081e34c</span><a class="subtle-link" href="l0-foundation.html">共用地基：金鑰、時區與推播權限 →</a><span class="status">已驗證 · 408cf18</span><a class="subtle-link" href="reservation-time.html">任意時間訂位與只寄一次的提醒 →</a><span class="status">已驗證 · f4430db</span><p class="muted">共用地基：三個全隊都會踩到的 P1，每一項都附修正前後對照。訂位：放寬合法時間、用條件式更新做提醒去重。</p></div>
       </section>
       <section class="section-card">
         <span class="section-kicker">整理進度</span>
         <h2>技術亮點、報告與履歷</h2>
         <div class="evidence-grid">
-          <div class="note-card"><h3>工作包技術亮點</h3><p>整理中</p></div>
-          <div class="note-card report"><h3>報告建議</h3><p>本次收尾重構可學到的說明：見文章索引</p></div>
-          <div class="note-card feedback"><h3>履歷建議</h3><p>整理中</p></div>
+          <div class="note-card"><h3>工作包技術亮點</h3><p>訂位以時間區間與悲觀鎖防止同桌重複配位，並支援任意分鐘訂位；提醒排程用條件式更新做到只寄一次。共用地基把 JWT 金鑰改為環境變數管理、統一程式與資料庫的時區、收斂 WebSocket 頻道權限。</p></div>
+          <div class="note-card report"><h3>報告建議</h3><p>用三張「修正前／修正後」對照（偽造 token 200→401、出餐時間差 −8 小時→0、匿名訂閱接受→拒絕）展示對系統地基的理解；再 demo 18:15 訂位成功與手動提醒「第一次 1、第二次 0」。</p></div>
+          <div class="note-card feedback"><h3>履歷建議</h3><p>「負責餐廳線上訂位模組與專案共用技術地基：以時間區間與悲觀鎖實作任意時間訂位、以條件式更新實作不重複的提醒排程；將 JWT 金鑰改為環境變數管理、修正資料庫與應用程式時區不一致，並收斂 WebSocket 頻道權限。」</p></div>
         </div>
       </section>
       <footer class="page-footer"><div class="link-row"><a class="subtle-link" href="../index.html">← 回成員索引</a></div></footer>

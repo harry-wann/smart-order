@@ -21,6 +21,7 @@ PASSWORD_1234 = '$2a$10$z6KItWPQbUzACtJJfbNzZeFDJ7N8FvQK9ICGHUrtzkfPKkS12S7pW'
 
 DINING_MINUTES = 100   # reservation.dining-minutes
 BUFFER_MINUTES = 15    # reservation.buffer-minutes
+REMIND_BEFORE_MINUTES = 120   # ReservationJobService.REMIND_BEFORE_MINUTES：用餐前 2 小時提醒
 
 
 # ── SQL 小工具 ───────────────────────────────────────────────────────────────
@@ -335,7 +336,7 @@ for i, (no, seats, area, reservable) in enumerate(TABLES, start=1):
 reservation = Table('reservation', ['id', 'member_id', 'contact_name', 'contact_phone', 'contact_email', 'start_time',
                                     'end_time', 'adult_count', 'child_count', 'party_size', 'table_id', 'status',
                                     'access_token', 'cancelled_at', 'cancelled_by_staff_id', 'cancel_source',
-                                    'created_at'])
+                                    'reminder_sent_at', 'created_at'])
 waitlist = Table('waitlist', ['id', 'ticket_no', 'contact_name', 'contact_phone', 'adult_count', 'child_count',
                               'party_size', 'status', 'called_at', 'seated_at', 'dining_session_id', 'created_at'])
 session = Table('dining_session', ['id', 'table_id', 'member_id', 'reservation_id', 'waitlist_id', 'session_token',
@@ -364,14 +365,22 @@ def nid(k):
 
 
 def add_reservation(start, table, party, status='CONFIRMED', mid=None, name=None, phone=None, email=None,
-                    child=0, created=None, cancelled_at=None, cancel_source=None, staff_id=None):
+                    child=0, created=None, cancelled_at=None, cancel_source=None, staff_id=None, reminded=None):
+    # 訂位提醒（模擬簡訊）送出的時間。店在營業、排程一直在跑的話，用餐前 2 小時就已經提醒過了，
+    # 所以已報到、逾時未到的歷史訂位預先標成「start − 2 小時」已提醒；取消的沒有。
+    # 還是 CONFIRMED 的只有明確標 reminded=True 的才預先標記（提醒時間已經過了的今天訂位）；
+    # 其餘維持 NULL：提醒時間還沒到的（明天起）照常等排程，剛好到點的留給 demo 手動觸發
+    if reminded is None:
+        reminded = status in ('SEATED', 'NO_SHOW')
     rid = nid('res')
     reservation.add(id=rid, member_id=mid, contact_name=name or member_name(mid), contact_phone=phone or member_phone(mid),
                     contact_email=email, start_time=start, end_time=plus(start, DINING_MINUTES + BUFFER_MINUTES),
                     adult_count=party - child, child_count=child, party_size=party,
                     table_id=None if status == 'CANCELLED' else (TID[table] if table else None), status=status,
                     access_token=token(), cancelled_at=cancelled_at, cancelled_by_staff_id=staff_id,
-                    cancel_source=cancel_source, created_at=created or plus(start, -60 * 24 * 3))
+                    cancel_source=cancel_source,
+                    reminder_sent_at=plus(start, -REMIND_BEFORE_MINUTES) if reminded else None,
+                    created_at=created or plus(start, -60 * 24 * 3))
     return rid
 
 
@@ -569,14 +578,19 @@ for d in range(-7, 0):
 
 # 2) 今天：以「現在」為準
 #    稍後要到的訂位（預約保留、報到、代客取消、太早、逾時的 demo 都在這裡）
-R_HOLD_A08 = add_reservation(now_min(20), 'A08', 4, name='陳怡君', phone='0933123210', created=day(-4, '20:15'))
-R_HOLD_B02 = add_reservation(now_min(25), 'B02', 2, name='林家豪', phone='0935456806', created=day(-2, '09:40'))
-R_HOLD_B04 = add_reservation(now_min(15), 'B04', 4, mid=9, child=1, created=day(-1, '22:05'))
+#    訂位提醒：提醒時間（start − 2 小時）早就過了的先標成已提醒；A04 剛好 2 小時後，提醒時間就是現在，
+#    不標記，匯入後手動觸發 send-reminders（或等下一個 15 分鐘整點的排程）會提醒它，店家端才有東西可看
+R_HOLD_A08 = add_reservation(now_min(20), 'A08', 4, name='陳怡君', phone='0933123210', created=day(-4, '20:15'),
+                             reminded=True)
+R_HOLD_B02 = add_reservation(now_min(25), 'B02', 2, name='林家豪', phone='0935456806', created=day(-2, '09:40'),
+                             reminded=True)
+R_HOLD_B04 = add_reservation(now_min(15), 'B04', 4, mid=9, child=1, created=day(-1, '22:05'), reminded=True)
 R_TOO_EARLY = add_reservation(now_min(65), 'A06', 5, name='吳美玲', phone='0987654553', child=2,
-                              email='meiling@example.com', created=day(-6, '11:30'))
-R_LATE = add_reservation(now_min(-15), 'A01', 2, name='鄭文彬', phone='0916222728', created=day(-3, '18:00'))
+                              email='meiling@example.com', created=day(-6, '11:30'), reminded=True)
+R_LATE = add_reservation(now_min(-15), 'A01', 2, name='鄭文彬', phone='0916222728', created=day(-3, '18:00'),
+                         reminded=True)
 R_LATER_A04 = add_reservation(now_min(120), 'A04', 4, name='黃先生', phone='0955888192', created=day(-1, '16:45'))
-R_LATER_C02 = add_reservation(now_min(90), 'C02', 8, mid=6, child=3, created=day(-8, '12:00'))
+R_LATER_C02 = add_reservation(now_min(90), 'C02', 8, mid=6, child=3, created=day(-8, '12:00'), reminded=True)
 add_reservation(now_min(90), None, 2, 'CANCELLED', name='張小雯', phone='0921555037', created=day(-5, '19:20'),
                 cancelled_at=now(-60), cancel_source='STAFF', staff_id=2)
 add_reservation(now_min(150), None, 4, 'CANCELLED', mid=13, created=day(-7, '08:50'),
@@ -741,6 +755,8 @@ parts = [f"""-- ================================================================
 --   ・現在有 5 桌在用餐（A02、A03、B01、B03、C01），2 桌待清理（A05、A07）
 --   ・A08、B02、B04 有 30 分鐘內要到的訂位（預約保留）；A06 約 1 小時後有訂位
 --   ・A01 有一筆已過時間 15 分鐘還沒報到的訂位
+--   ・訂位提醒（模擬簡訊）：提醒時間已過的今天訂位與歷史訂位都標了已提醒；A04（約 2 小時後）還沒提醒，
+--     手動觸發 send-reminders 或等下一個 15 分鐘整點的排程就會提醒它
 --   ・候位 A10 過號、A11 已入座、A12／A13 已叫號、A14 等待中
 --   ・過去 60 天的訂位與用餐紀錄、未來 14 天的訂位
 --

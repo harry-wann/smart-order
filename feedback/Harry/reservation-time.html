@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7fb">
+  <title>Harry｜任意時間訂位與訂位提醒</title>
+  <link rel="stylesheet" href="../assets/feedback.css">
+</head>
+<body>
+  <div class="site-shell">
+    <nav class="topbar" aria-label="主要導覽">
+      <a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">鍋</span><span>實作回饋整理</span></a>
+      <a class="toplink" href="index.html">回 Harry 工作包</a>
+    </nav>
+
+    <p class="breadcrumb"><a href="../index.html">成員索引</a> ／ <a href="index.html">Harry</a> ／ 任意時間訂位與提醒</p>
+    <header class="person-header">
+      <div class="meta-row"><span class="scope-tag">工作包 E（訂位）</span><span class="status">訂位時間與提醒已驗證</span></div>
+      <h1>Harry｜18:15 為什麼不能訂？提醒為什麼只能寄一次？</h1>
+      <p class="lede">訂位模組已經有悲觀鎖、區間重疊檢查這些很扎實的設計。這篇處理兩件事：讓「任意時間」真的能訂，以及把只寫在 log 裡的訂位提醒，變成可以追蹤、不會重複寄的通知。</p>
+    </header>
+
+    <main class="person-layout">
+      <nav class="toc" aria-label="文章目錄">
+        <h2>這篇會走過</h2>
+        <ol>
+          <li><a href="#situation">先看現場情境</a></li>
+          <li><a href="#time">任意時間訂位</a></li>
+          <li><a href="#reminder">訂位提醒只寄一次</a></li>
+          <li><a href="#layout">整合時順手修的版面</a></li>
+          <li><a href="#walkthrough">手把手驗收</a></li>
+          <li><a href="#evidence">提交與驗證紀錄</a></li>
+          <li><a href="#feedback">前輩回饋、報告與履歷</a></li>
+          <li><a href="#terms">新手名詞表</a></li>
+        </ol>
+      </nav>
+
+      <div class="content-stack">
+        <section class="scope-card" id="scope">
+          <span class="section-kicker">本篇範圍</span>
+          <h2>一個規格不符、一個基本功能、一個版面問題</h2>
+          <ul class="scope-list">
+            <li><strong>規格不符：</strong>M7 7.1 寫「任意時間預約、非固定時段」，但建立訂位只接受半小時整點。</li>
+            <li><strong>補上的基本功能：</strong>M7 7.12「用餐前 2 小時發通知」原本只寫一行 log，沒有記錄、會重複。</li>
+            <li><strong>版面：</strong>店家的預約管理頁在 1024 像素寬時，整個後台被表格撐出橫向捲軸。</li>
+            <li><strong>沒有動的：</strong>建立訂位時鎖住候選桌、檢查時間區間重疊、還沒結帳的已入座也算佔用，這些原本就正確的設計全部保留。</li>
+          </ul>
+          <p class="intro-note">提醒是規格裡有、原本只寫 log 的基本功能，這次補完屬於整合成果。規格文件（資料庫設計、API 規格、M7、UI 規格）也同步補上新的欄位與規則。</p>
+        </section>
+
+        <section class="section-card" id="situation">
+          <span class="section-kicker">情境</span>
+          <h2>客人想訂明天 18:15</h2>
+          <p>一位客人下班 18:00，想訂明天 18:15，四個人。店裡那個時間有空桌，也沒有和別的訂位重疊。但送出後拿到 400 錯誤：系統只接受 11:30、12:00、12:30……這種半小時整點。</p>
+          <p>M7 第 116 行附近其實特別討論過「固定時段」的設計，而且是被否決的：固定時段會讓 18:15 想來的客人只能選 18:00 或 18:30。正確的模型是存「開始時間」與「結束時間」，用<strong>區間重疊</strong>判斷能不能訂。訂位模組的資料模型和重疊檢查都已經照這個做了，只剩建立訂位的檢查還在要求整點。</p>
+        </section>
+
+        <section class="section-card" id="time">
+          <span class="section-kicker">任意時間訂位</span>
+          <h2>改的是「合法時間」的定義，不是重疊的算法</h2>
+          <ul class="prompt-list">
+            <li><span><strong>可以訂的時間：</strong>最早開始到最晚開始（預設 11:30～20:00，頭尾都算）之間的<strong>任意一分鐘</strong>，例如 13:07、18:15。</span></li>
+            <li><span><strong>精確到分鐘：</strong>帶了秒或毫秒（例如 18:15:30）就拒絕，而不是默默改成 18:15。這樣存進去的值就是客人選的值。</span></li>
+            <li><span><strong>其他規則不變：</strong>只能訂明天起 30 天內、人數、區間重疊、悲觀鎖都照舊。</span></li>
+            <li><span><strong>錯誤訊息說清楚：</strong>「訂位開始時間須在 11:30 到 20:00 之間，請重新選擇」「訂位時間只能精確到分鐘，請重新選擇」，都是 <code>400 VALIDATION_FAILED</code>。</span></li>
+            <li><span><strong>選時間頁：</strong>可訂時段查詢仍提供半小時一格的「建議時段」。UI 規格的選時間頁只有時段按鈕、沒有自訂時間的設計，所以畫面維持按鈕；後端已經不再限制，之後要加自訂時間輸入時不必再改後端。</span></li>
+          </ul>
+        </section>
+
+        <section class="section-card" id="reminder">
+          <span class="section-kicker">補上的基本功能 · 整合成果</span>
+          <h2>提醒要「寄過就記下來」，而且只能寄一次</h2>
+          <p>原本的提醒排程每 15 分鐘跑一次，找出接下來要開始的訂位，然後寫一行 log 就結束了：沒有記錄寄過沒有，所以下一次排程又會再寫一次；店長按手動觸發，回傳的數字也只是寫了幾行 log。</p>
+          <h3>1. 用一個欄位記錄「什麼時候提醒過」</h3>
+          <p>訂位表新增 <code>reminder_sent_at</code>。要提醒的條件：狀態是已確認、還沒提醒過、開始時間在「現在」到「現在＋2 小時」之間。</p>
+          <h3>2. 用「條件式更新」搶，搶到的才寄</h3>
+          <p>排程和店長的手動觸發可能同時跑。如果先查「還沒提醒的」再寄，兩邊都會查到同一筆、各寄一次。所以每一筆都先執行：</p>
+          <p><code>UPDATE reservation SET reminder_sent_at = 現在 WHERE id = ? AND status = 'CONFIRMED' AND reminder_sent_at IS NULL</code></p>
+          <p>資料庫一次只讓一個人改這一列：先改的那個看到「影響 1 列」，才真的寄；後到的看到「影響 0 列」，就跳過。剛好在這瞬間被取消的訂位，因為條件裡有 <code>status = 'CONFIRMED'</code>，也不會被寄到。實測兩個手動觸發同時送出，回傳 1 和 0，合計只提醒一次。</p>
+          <p>寄送的時機選在「搶到並存檔之後」。如果剛好在寄之前程式當掉，那筆就不會補寄。這是刻意的取捨：<strong>寧可漏寄一次，也不要重複寄</strong>，因為重複的提醒簡訊對客人更困擾。</p>
+          <h3>3. 模擬簡訊，不真的發送</h3>
+          <p>專題沒有串真的簡訊服務。比照會員驗證碼的「模擬簡訊」做法，提醒內容寫成一行 log：「訂位提醒（模擬簡訊，沒有真的發送）… → 0912***678：王小明 您好，提醒您 10/24 18:30 的訂位（4 位）……」，手機號碼中間遮起來。店家端預約管理頁在那筆訂位下方顯示「已提醒 18:32（模擬簡訊）」。</p>
+          <h3>4. 取消時不能把提醒時間洗掉</h3>
+          <p>取消、報到時，程式會把整筆訂位寫回資料庫。如果 <code>reminderSentAt</code> 也跟著被寫回，讀進來時的舊值（例如 NULL）可能蓋掉剛記下的提醒時間。所以這個欄位設定成「JPA 不寫入」，只由上面那句條件式更新負責。實測提醒後再取消，提醒時間仍然保留。</p>
+        </section>
+
+        <section class="section-card" id="layout">
+          <span class="section-kicker">整合時順手修的版面</span>
+          <h2>一個 <code>min-w-0</code>，修好整個後台在 1024 像素的橫向捲軸</h2>
+          <p>店家端規格從 1024 像素寬開始支援。預約管理頁的表格比畫面寬，表格外面雖然包了「可以橫向捲動」的框，但整個後台還是被撐到 1219 像素。原因是後台的右側內容欄是 flex 子元素，<strong>flex 子元素預設不會縮到比裡面的內容還窄</strong>（最小寬度是 auto），所以內層的捲動框根本沒有機會發揮作用。</p>
+          <p>在共用的後台版型（<code>DashboardLayout</code>）內容欄加上 <code>min-w-0</code> 後，寬表格就在自己的框裡捲動。修完逐頁檢查 8 個後台頁面，在 1024 與 1440 像素都不再有整頁橫向捲軸。這是改動前就存在的問題，不是作者的缺失，但因為規格要求 1024 起，這次一起修。</p>
+          <h3>主要程式檔案</h3>
+          <ul class="prompt-list">
+            <li><span><code>backend/src/main/java/tw/ispan/smartorder/reservation/service/ReservationService.java</code>：開始時間的檢查。</span></li>
+            <li><span><code>backend/src/main/java/tw/ispan/smartorder/reservation/service/ReservationJobService.java</code>、<code>reservation/repository/ReservationRepository.java</code>：提醒候選、條件式更新與模擬簡訊。</span></li>
+            <li><span><code>backend/src/main/java/tw/ispan/smartorder/entity/ReservationEntity.java</code>：<code>reminderSentAt</code> 欄位。</span></li>
+            <li><span><code>backend/db/schema.sql</code>、<code>backend/db/migrate_reservation_reminder.sql</code>、<code>backend/db/seed.sql</code>：新欄位、升級腳本、假資料。</span></li>
+            <li><span><code>frontend/src/features/admin/reservation/ReservationManagement.tsx</code>、<code>frontend/src/layouts/admin/DashboardLayout.tsx</code>：已提醒標示與後台版型。</span></li>
+          </ul>
+        </section>
+
+        <section class="section-card" id="walkthrough">
+          <span class="section-kicker">手把手驗收 · 請在本機隔離資料庫</span>
+          <h2>你可以照著做一次</h2>
+          <ol class="step-list">
+            <li class="step-card"><p><strong>任意時間。</strong>訂 3 天後的 18:15、11:30、20:00、13:07，都回 201，資料庫存的時間就是送出的時間（18:15:00）。</p></li>
+            <li class="step-card"><p><strong>邊界。</strong>11:29、20:01、18:15:30（帶秒）、今天、31 天後，都回 <code>400 VALIDATION_FAILED</code>。可訂時段查詢仍然回 18 個建議時段。</p></li>
+            <li class="step-card"><p><strong>提醒。</strong>用 SQL 放三筆訂位：90 分鐘後開始、180 分鐘後開始、60 分鐘後開始但已取消。同時送兩次手動提醒：合計只提醒 1 筆（就是 90 分鐘後那筆）；再送一次回 0。log 只有一行模擬簡訊，手機號碼有遮罩。管理端清單帶回提醒時間。櫃檯身分不能觸發提醒（403）。</p></li>
+            <li class="step-card"><p><strong>取消後保留。</strong>把已提醒的那筆取消，提醒時間仍然在。</p></li>
+            <li class="step-card"><p><strong>畫面（1024 像素寬）。</strong>預約管理頁顯示的「已提醒（模擬簡訊）」筆數，和 API 回傳的一致；8 個後台頁面在 1024 與 1440 都沒有整頁橫向捲軸。</p></li>
+            <li class="step-card"><p><strong>升級腳本。</strong>在舊結構的資料庫（72 筆訂位）上執行，新欄位都是 NULL，舊資料不變。</p></li>
+          </ol>
+        </section>
+
+        <section class="section-card" id="evidence">
+          <h2>提交與驗證紀錄</h2>
+          <p>程式版本：Git commit <code>f4430db</code>（審查後小修 <code>afca18d</code>）；規格文件同步：<code>d947275</code>。</p>
+          <div class="evidence-grid">
+            <div class="note-card report"><h3>HTTP 與資料庫檢查</h3><p>訂位專項 21 項全部通過，另有基線 36 項。<a href="../evidence/f4430db-http.json">查看完整 HTTP 紀錄</a>。</p></div>
+            <div class="note-card report"><h3>瀏覽器操作檢查</h3><p>預約管理頁 3 項全部通過：「已提醒」標示與 API 一致（9 筆）、1024 像素不溢出、沒有頁面錯誤；另外逐頁檢查 8 個後台頁面，在 1024 與 1440 像素都沒有整頁橫向捲軸。<a href="../evidence/f4430db-browser.json">查看完整瀏覽器紀錄</a>。</p></div>
+          </div>
+          <figure class="screen-shot">
+            <a href="../assets/reservation-reminder-1024.png"><img src="../assets/reservation-reminder-1024.png" alt="1024 像素寬的店家預約管理頁，訂位狀態下方顯示已提醒的時間與模擬簡訊字樣"></a>
+            <figcaption>預約管理（1024 像素寬）：狀態欄下方的「已提醒 HH:mm（模擬簡訊）」。</figcaption>
+          </figure>
+          <p class="intro-note">最終驗證是在已合併共用地基（L0）的同一份程式上重跑。獨立高風險審查沒有 P1／P2，確認任意分鐘之後的區間重疊、保留窗、報到、NO_SHOW、取消期限與可訂時段剩餘桌數都正確，提醒去重在兩種隔離層級下都成立。三個 P3 已修正：模擬簡訊改用店名「鼎沸鍋物」、設定檔註解更新、移除用不到的查詢。審查另外指出：<code>min-w-0</code> 讓菜單管理表格在 1024 像素時右側兩欄要捲動才看得到、而且捲軸被隱藏，這部分在 Clara 的菜單管理分支處理。</p>
+        </section>
+
+        <section class="section-card" id="feedback">
+          <h2>前輩回饋、報告與履歷</h2>
+          <div class="evidence-grid">
+            <div class="note-card feedback">
+              <h3>技術前輩的建議</h3>
+              <p>訂位模組的區間重疊與悲觀鎖寫得很好，這次只要放寬「合法時間」的檢查就能支援任意時間，證明當初的資料模型選對了。寫驗證規則時，可以回頭對照規格的每一句話（「非固定時段」），避免舊設計的痕跡留在檢查裡。</p>
+              <p>排程類功能先問：「跑兩次會不會重複？」用條件式 UPDATE 搶一列、看影響列數決定要不要做事，是讓排程冪等最簡單的方法；也要想清楚失敗時是「寧可漏」還是「寧可重複」。</p>
+            </div>
+            <div class="note-card report">
+              <h3>這個功能用到的技術</h3>
+              <ul>
+                <li>時間區間模型（開始／結束時間）與區間重疊檢查</li>
+                <li>悲觀鎖（<code>SELECT ... FOR UPDATE</code>）防止同一張桌被重複訂</li>
+                <li>條件式 UPDATE 做去重、影響列數判斷</li>
+                <li>Spring 排程、手動觸發 API、<code>Clock</code> 注入的業務時鐘</li>
+                <li>JPA 欄位 <code>insertable/updatable=false</code> 避免整列寫回覆蓋</li>
+                <li>CSS flex 的 <code>min-width: auto</code> 與 <code>min-w-0</code></li>
+              </ul>
+            </div>
+          </div>
+          <div class="note-card">
+            <h3>專題報告與履歷可以這樣寫</h3>
+            <p>報告：用「固定時段 vs 時間區間」的比較圖開場，說明為什麼選區間模型；再展示同時建立兩筆訂位時悲觀鎖如何讓其中一筆失敗。最後 demo 手動觸發提醒、畫面出現「已提醒」，再觸發一次回 0。</p>
+            <p>履歷：「負責餐廳線上訂位模組：以時間區間與悲觀鎖實作任意時間訂位與防重複配桌，並以條件式更新實作只寄一次的訂位提醒排程（含模擬簡訊與管理端追蹤）。」</p>
+          </div>
+        </section>
+
+        <section class="section-card" id="terms">
+          <h2>新手名詞表</h2>
+          <dl class="glossary">
+            <div class="term"><dt>區間重疊（interval overlap）</dt><dd>兩段時間只要「A 開始早於 B 結束，而且 B 開始早於 A 結束」就重疊。用它判斷同一張桌能不能再接一筆訂位。</dd></div>
+            <div class="term"><dt>悲觀鎖（pessimistic lock）</dt><dd>先假設會有人搶，所以讀資料時就鎖住（<code>SELECT ... FOR UPDATE</code>），其他人要等鎖放開才能動同一筆。</dd></div>
+            <div class="term"><dt>條件式更新（conditional update）</dt><dd>在 UPDATE 的 WHERE 裡寫上「必須還是某個狀態」，資料庫會告訴你改了幾列；改到 1 列代表你搶到了。</dd></div>
+            <div class="term"><dt>冪等（idempotent）</dt><dd>做一次或做很多次，結果都一樣。排程最好設計成冪等。</dd></div>
+            <div class="term"><dt>API（Application Programming Interface，應用程式介面）</dt><dd>前端或其他程式呼叫後端功能的網址與規則。</dd></div>
+            <div class="term"><dt>HTTP 狀態碼 201／400／403</dt><dd>HTTP 是 Hypertext Transfer Protocol（超文字傳輸協定）。201 建立成功；400 資料不合規則；403 角色沒有權限。</dd></div>
+            <div class="term"><dt>JPA（Java Persistence API，Java 持久化 API）</dt><dd>Java 用物件讀寫資料庫的標準介面。<code>insertable/updatable=false</code> 代表存檔時不寫這個欄位。</dd></div>
+            <div class="term"><dt>Clock（時鐘注入）</dt><dd>把「現在幾點」包成一個可以替換的物件，程式統一跟它問時間，時區一致，也方便測試。</dd></div>
+            <div class="term"><dt>migration（資料庫升級腳本）</dt><dd>把正在使用的資料庫升級成新結構的一次性腳本。</dd></div>
+            <div class="term"><dt>S-07</dt><dd>UI（User Interface，使用者介面）規格的畫面編號，S-07 是店家端預約管理頁。</dd></div>
+            <div class="term"><dt>flex 與 min-w-0</dt><dd>flex 是 CSS 的排版方式；flex 子元素預設最小寬度等於內容寬度，加上 Tailwind 的 <code>min-w-0</code>（<code>min-width: 0</code>）才允許它縮小，讓裡面的捲動框生效。</dd></div>
+            <div class="term"><dt>SHA／Git commit</dt><dd>SHA 是 Secure Hash Algorithm（安全雜湊演算法）；Git 用它幫每個版本（commit）產生識別碼。</dd></div>
+          </dl>
+        </section>
+
+        <footer class="page-footer"><a href="index.html">← 回 Harry 工作包</a></footer>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

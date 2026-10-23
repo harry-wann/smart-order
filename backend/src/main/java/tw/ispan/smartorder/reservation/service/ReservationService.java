@@ -64,7 +64,8 @@ public class ReservationService {
     }
 
     // 只是給客人看的剩餘桌數，沒有上鎖；按下確認時 create() 會在鎖裡重算一次，
-    // 所以這裡顯示有位、送出卻客滿是可能發生的
+    // 所以這裡顯示有位、送出卻客滿是可能發生的。
+    // 回的每一格是「建議時段」（slotTimes），建立訂位可以選格子之外的分鐘，那種時間不在這份清單裡，以 create() 為準
     @Transactional(readOnly = true)
     public AvailabilityResponse availability(LocalDate date, int partySize) {
         checkBookableDate(date);
@@ -114,7 +115,7 @@ public class ReservationService {
                 .atZoneSameInstant(properties.getZone())
                 .toLocalDateTime();
         checkBookableDate(start.toLocalDate());
-        checkSlot(start);
+        checkStartTime(start);
 
         int adultCount = Objects.requireNonNull(request.getAdultCount());
         int childCount = request.getChildCount() == null ? 0 : request.getChildCount();
@@ -347,14 +348,24 @@ public class ReservationService {
         }
     }
 
-    // start 要剛好落在設定排出來的格子上（firstSlot 起每 slotMinutes 一格到 lastSlot）。
-    // 資料模型本身不限固定時段，只是目前只開放這幾格；要放寬就改這裡和 slotTimes
-    private void checkSlot(LocalDateTime start) {
-        if (!slotTimes().contains(start.toLocalTime())) {
-            throw ApiException.badRequest("請選擇營業時段內的整點或半點");
+    // 開始時間是營業時間邊界內的任意分鐘（M7 7.1 任意時間預約，不是固定時段）：
+    // firstSlot 是最早、lastSlot 是最晚能「開始」的時間，兩端都算。
+    // 秒和毫秒直接拒絕，不默默歸零：客人選的 18:15 就是存 18:15，不會有 18:15:30 這種畫面上看不出來的值，
+    // 也不會讓同一分鐘的兩筆在 UNIQUE(table_id, start_time) 上變成不同的 key。畫面送的本來就是整分鐘
+    private void checkStartTime(LocalDateTime start) {
+        LocalTime time = start.toLocalTime();
+        if (time.isBefore(properties.getFirstSlot()) || time.isAfter(properties.getLastSlot())) {
+            throw ApiException.badRequest("訂位開始時間須在 "
+                    + properties.getFirstSlot().format(HH_MM) + " 到 " + properties.getLastSlot().format(HH_MM)
+                    + " 之間，請重新選擇");
+        }
+        if (time.getSecond() != 0 || time.getNano() != 0) {
+            throw ApiException.badRequest("訂位時間只能精確到分鐘，請重新選擇");
         }
     }
 
+    // 可訂時段查詢排出來的「建議時段」：firstSlot 起每 slotMinutes 一格到 lastSlot。
+    // 只是給畫面方便選的格子，建立訂位不要求落在這些格上（checkStartTime）
     private List<LocalTime> slotTimes() {
         List<LocalTime> times = new ArrayList<>();
         LocalTime slot = properties.getFirstSlot();

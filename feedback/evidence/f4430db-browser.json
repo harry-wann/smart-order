@@ -1,0 +1,26 @@
+{
+  "label": "harry-reservation-time",
+  "commit": "f4430db",
+  "testedAt": "2026-10-23T13:10:59.082Z",
+  "passed": true,
+  "sanitized": true,
+  "notes": [
+    "S-07 at 1024x768 as COUNTER.",
+    "Admin layout check after min-w-0: table_overview, reservations, waitlist, seats, kitchen, menu, options, table/A03 had no page-level horizontal overflow at 1024 and 1440."
+  ],
+  "results": [
+    {
+      "name": "Reservation browser: S-07 shows the simulated reminder time on reminded reservations",
+      "passed": true,
+      "detail": "9 shown / 9 in API"
+    },
+    {
+      "name": "Reservation browser: S-07 fits 1024px",
+      "passed": true
+    },
+    {
+      "name": "Reservation browser: no page errors",
+      "passed": true
+    }
+  ]
+}

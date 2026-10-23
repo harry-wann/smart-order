@@ -194,7 +194,7 @@
 | CRUD | `/api/admin/menu/option-groups` | 選項群組管理 | MANAGER |
 | CRUD | `/api/admin/tables-config` | 座位管理 | MANAGER |
 | GET | `/api/admin/tables-config/{id}/qrcode` | 產生桌位 QR code（PNG，內容 `/t/{tableNo}`） | MANAGER |
-| GET | `/api/admin/reservations` | 訂位管理（`?date=`；每列多回 `assignedTableNo`、`holding`（現在是否保留中，決定「保留 A08」小字）、`cancelSource`（`CUSTOMER`／`STAFF`／`null`）、`cancelledByStaffName`（櫃檯取消的才有，顯示「店家代取消・小美」）；`status = CONFIRMED` 就顯示「取消訂位」，跟 `holding` 無關） | COUNTER, MANAGER |
+| GET | `/api/admin/reservations` | 訂位管理（`?date=`；每列多回 `assignedTableNo`、`holding`（現在是否保留中，決定「保留 A08」小字）、`cancelSource`（`CUSTOMER`／`STAFF`／`null`）、`cancelledByStaffName`（櫃檯取消的才有，顯示「店家代取消・小美」）；`status = CONFIRMED` 就顯示「取消訂位」，跟 `holding` 無關；`reminderSentAt` 是訂位提醒（模擬簡訊）送出的時間，還沒提醒是 `null`，顯示「已提醒 18:32（模擬簡訊）」小字） | COUNTER, MANAGER |
 | POST | `/api/admin/reservations/{id}/seat` | 訂位報到並開桌（**帶 `tableId`**） | COUNTER, MANAGER |
 | POST | `/api/admin/reservations/{id}/cancel` | **櫃檯代客取消訂位**（M7 7.18，見 4.11d；**隨時可以取消**，不受期限；不是 `CONFIRMED` 回 `409 RESERVATION_NOT_CANCELLABLE`） | COUNTER, MANAGER |
 | GET | `/api/admin/inventory` | 庫存清單（低量優先，**進階 A3**） | MANAGER |
@@ -211,7 +211,7 @@
 | POST | `/api/admin/scheduler/expire-waitlist` | 候位過號標記 | MANAGER |
 | POST | `/api/admin/scheduler/remind-cleaning` | 待清理提醒 | MANAGER |
 | POST | `/api/admin/scheduler/mark-no-show` | NO_SHOW 標記 | MANAGER |
-| POST | `/api/admin/scheduler/send-reminders` | 訂位提醒 | MANAGER |
+| POST | `/api/admin/scheduler/send-reminders` | 訂位提醒（模擬簡訊；回 `affected` 是這次新提醒的筆數，已提醒過的不重複算） | MANAGER |
 | POST | `/api/admin/scheduler/check-low-stock` | 低庫存檢查（隨 A3） | MANAGER |
 | POST | `/api/admin/scheduler/daily-settlement?date=` | 營業日結算（隨 A4） | MANAGER |
 | POST | `/api/admin/scheduler/prep-suggestion?date=` | 明日備貨建議（隨 M5 5.E2） | MANAGER |
@@ -922,7 +922,7 @@ GET /api/reservations/availability?date=2026-09-20&partySize=4
 }
 ```
 
-每 30 分鐘一格。`19:55` 可訂代表「剛好接續」不算衝突（判斷式用 `<` 不是 `<=`）。
+每 30 分鐘一格，這是**建議時段**，給 C-16c 的按鈕用；建立訂位（4.11）不限於這些格子（M7 7.1 任意時間預約）。`19:55` 可訂代表「剛好接續」不算衝突（判斷式用 `<` 不是 `<=`）。
 
 ### 4.11 建立訂位
 
@@ -957,7 +957,9 @@ POST /api/reservations
 }
 ```
 
-**錯誤**：`409 SLOT_UNAVAILABLE`（客滿）；`400 VALIDATION_FAILED`（`startTime` 不在**明天起 30 天內**——C-16c 的月曆已經只給選這段，後端一樣要再擋一次；`GET /availability` 的 `date` 也是同一個範圍）
+**錯誤**：`409 SLOT_UNAVAILABLE`（客滿）；`400 VALIDATION_FAILED`（`startTime` 不在**明天起 30 天內**——C-16c 的月曆已經只給選這段，後端一樣要再擋一次；`GET /availability` 的 `date` 也是同一個範圍。開始時間不在可訂範圍 `reservation.first-slot`～`reservation.last-slot`（預設 11:30～20:00，含頭尾）內，或帶了秒／毫秒也是這個錯誤）
+
+**開始時間是範圍內的任意分鐘**（例如 18:15），不必落在 4.10 的建議時段上；秒與毫秒一律拒絕，不默默歸零。
 
 > **線上訂位只能訂明天以後**，所以同一天不會有新的線上訂位插進來；區間重疊只算 `CONFIRMED` 與「`SEATED` 且用餐紀錄還沒結帳」的理由見 [M7 問題 5](modules/M7-訂位.md)。
 

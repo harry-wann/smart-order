@@ -26,12 +26,15 @@ public class ReservationProperties {
     // 保留窗的結尾、NO_SHOW 的界線、開桌清單的 −10 也用這個值
     private long holdAfterMinutes = 10;
     private long bookableDays = 30;
-    // 可訂的開始時間：firstSlot 起每 slotMinutes 一格，到 lastSlot 為止（含）。
-    // lastSlot 是最晚能「開始」的時間，用餐超過它沒關係
+    // 可訂的開始時間範圍：firstSlot 到 lastSlot（含），建立訂位接受這段內的任意分鐘（M7 7.1）。
+    // lastSlot 是最晚能「開始」的時間，用餐超過它沒關係。
+    // slotMinutes 只用在可訂時段查詢排「建議時段」（firstSlot 起每 slotMinutes 一格），不限制建立訂位
     private LocalTime firstSlot = LocalTime.of(11, 30);
     private LocalTime lastSlot = LocalTime.of(20, 0);
     private long slotMinutes = 30;
     private ZoneId zone = ZoneId.of("Asia/Taipei");
+    // 訂位提醒（模擬簡訊）內容裡的店名
+    private String storeName = "鼎沸鍋物";
 
     // 一筆訂位佔桌的總長 = 用餐 + 清桌（預設 115 分）。
     // end_time、重疊判斷的查詢範圍、開桌時 115 分鐘內有別筆訂位的提醒窗都用它
