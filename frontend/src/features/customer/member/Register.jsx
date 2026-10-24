@@ -115,7 +115,8 @@ export function Register() {
         <p className="pt-3 type-body-sm">留這些是為了叫得出你的名字。都不是必填。</p>
       </div>
 
-      <div className="p-page pt-section">
+      {/* 底部按鈕區是 fixed，高約 132px；pb-40 留出同樣的空間，最下面的同意勾選框才不會被蓋住 */}
+      <div className="p-page pt-section pb-40">
         <p className="type-body-sm text-ink-600 pb-2">手機號碼</p>
         <Card data={cardData} col="dark" />
 
@@ -129,7 +130,7 @@ export function Register() {
         <p className="pt-2">出現在訂位紀錄和櫃檯畫面上</p>
 
         <p className="type-body-sm text-ink-600 pt-card-gap pb-2">性別</p>
-        <Time timeSlots={timeSlots} defaultValue={gender} onChange={(value) => setGender(value)} />
+        <Time timeSlots={timeSlots} label={null} defaultValue={gender} onChange={(value) => setGender(value)} />
 
         <p className="type-body-sm text-ink-600 pt-card-gap pb-2">生日</p>
         <input

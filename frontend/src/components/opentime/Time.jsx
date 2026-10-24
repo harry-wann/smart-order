@@ -2,7 +2,8 @@ import { useState } from 'react'
 
 // 原檔名 time.jsx
 
-export default function TimeSlot({ timeSlots = [], defaultValue = '', onChange }) {
+// label：上方的小標題，預設「時段」；借來選別的東西（例如性別）時傳 null 不顯示
+export default function TimeSlot({ timeSlots = [], label = '時段', defaultValue = '', onChange }) {
   // 目前選擇的時間
   const [selectedTime, setSelectedTime] = useState(defaultValue)
 
@@ -16,7 +17,7 @@ export default function TimeSlot({ timeSlots = [], defaultValue = '', onChange }
 
   return (
     <div className="max-w-140 p-2">
-      <p className="text-text-secondary mb-4 text-sm">時段</p>
+      {label && <p className="text-text-secondary mb-4 text-sm">{label}</p>}
 
       <div className="grid grid-cols-3 gap-2">
         {timeSlots.map((slot) => {
