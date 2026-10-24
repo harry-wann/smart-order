@@ -18,152 +18,99 @@
     <header class="person-header">
       <div class="meta-row"><span class="scope-tag">工作包 A（顧客入口與會員）</span><span class="status">遠端更新已整合驗證</span></div>
       <h1>Vincent｜新會員為什麼註冊不了？入口頁的提示為什麼會把人帶錯桌？</h1>
-      <p class="lede">這次把 develop 遠端分支上 Vincent 的兩個更新合併進來。兩個都是他自己發現並修好的問題，這篇說明它們為什麼是對的；另外整合時在入口頁找到一個新問題，一起修正。</p>
+      <p class="lede">這次把 develop 遠端分支上 Vincent 的兩個更新合併進來。兩個都是他自己發現並修好的問題，這篇說明它們為什麼是對的；整合時在入口頁另外找到一個新問題，一起修正。</p>
     </header>
 
     <main class="person-layout">
       <nav class="toc" aria-label="文章目錄">
         <h2>這篇會走過</h2>
         <ol>
-          <li><a href="#register">新會員註冊失敗</a></li>
-          <li><a href="#reservations">「我的預約」連結</a></li>
-          <li><a href="#qr-hint">QR 提示把人帶錯桌</a></li>
-          <li><a href="#walkthrough">手把手驗收</a></li>
-          <li><a href="#evidence">提交與驗證紀錄</a></li>
-          <li><a href="#feedback">前輩回饋、報告與履歷</a></li>
-          <li><a href="#terms">新手名詞表</a></li>
+          <li><a href="#problems">三個問題</a></li>
+          <li><a href="#changes">怎麼修</a></li>
+          <li><a href="#evidence">驗證</a></li>
+          <li><a href="#tech">用到的技術與設計模式</a></li>
+          <li><a href="#terms">名詞表</a></li>
         </ol>
       </nav>
 
       <div class="content-stack">
-        <section class="scope-card" id="scope">
-          <span class="section-kicker">本篇範圍</span>
-          <h2>遠端兩個 commit，加上一個整合時找到的問題</h2>
-          <ul class="scope-list">
-            <li><strong><code>d258ecb</code> fix register：</strong>Vincent 修好「新會員第一次驗證就失敗」。這次實測修正前、修正後都跑過，證實修法有效，原樣保留。</li>
-            <li><strong><code>5cce074</code> entrance link：</strong>「我的預約」改連到預約清單，這個改得對，原樣保留；同一個 commit 也把「已經坐在店裡了？」提示改成點下去固定帶到 A03 桌，這一點會出問題，這次修正。</li>
-          </ul>
-          <p class="intro-note">遠端的程式以 Vincent 的內容為主，合併時沒有任何衝突，只在入口頁的提示框做最小修改。會員登入、驗證碼（OTP）的其他整理，會在工作包 A 後續的文章裡處理。</p>
-        </section>
+        <section class="section-card" id="problems">
+          <span class="section-kicker">01 · 哪裡錯</span>
+          <h2>兩個 Vincent 自己修的問題，加一個整合時找到的</h2>
 
-        <section class="section-card" id="register">
-          <span class="section-kicker">Vincent 的修正 1</span>
-          <h2>新會員第一次驗證，為什麼會失敗？</h2>
-          <p>新客人輸入手機、收到驗證碼、按下驗證，後端會發現「這支電話還沒有會員」，於是新增一筆會員資料。修正前，這一步回 <code>409</code>，後端紀錄寫著：</p>
-          <p><code>Column 'created_at' cannot be null</code></p>
+          <h3>1. 新會員第一次驗證就失敗（Vincent 的 <code>d258ecb</code>）</h3>
+          <p>新客人輸入手機、收到驗證碼、按下驗證，後端發現這支電話還沒有會員，就新增一筆。修正前這一步回 <code>409</code>，後端紀錄寫著 <code>Column 'created_at' cannot be null</code>。</p>
           <div class="compare-grid">
-            <div class="compare-side"><div class="compare-label">原因</div><p>資料表的 <code>created_at</code> 是「不可為空，預設值是現在時間」。但程式新增會員時沒有設定建立時間，JPA（Java 持久化 API）仍然把這個欄位寫進 INSERT，值是 NULL。<strong>資料庫的預設值只有在 INSERT 完全沒寫這個欄位時才會套用</strong>；明確寫了 NULL，就會被「不可為空」擋下。</p></div>
-            <div class="compare-side after"><div class="compare-label">Vincent 的修法</div><p>在 <code>MemberEntity.createdAt</code> 加上 <code>@Column(updatable = false, insertable = false)</code>：新增時不寫這個欄位，讓資料庫自己填「現在時間」；之後更新會員資料也不會動到它。專案裡訂位、員工、用餐紀錄的建立時間本來就是這樣寫，所以這個修法和既有慣例一致。</p></div>
+            <div class="compare-side"><div class="compare-label">原因</div><p>資料表的 <code>created_at</code> 是「不可為空，預設值是現在時間」。但程式新增會員時沒設建立時間，JPA（Java Persistence API，Java 持久化介面）仍把這個欄位以 NULL 寫進 INSERT（新增資料的指令）。<strong>資料庫的預設值只有在 INSERT 完全沒寫這個欄位時才套用</strong>；明確寫了 NULL，就被「不可為空」擋下。</p></div>
+            <div class="compare-side after"><div class="compare-label">修正後</div><p>新電話第一次驗證回 <code>200</code>、<code>newMember=true</code>，會員中心讀得到建立時間；同一支電話第二次登入找到同一位會員，資料庫剛好一筆。</p></div>
           </div>
-          <p>修正後實測：新電話第一次驗證回 <code>200</code>、<code>newMember=true</code>，會員中心讀得到建立時間；同一支電話第二次登入找到同一位會員，資料庫裡剛好一筆。</p>
-          <div class="note-card">
-            <h3>延伸觀察：資料庫的「現在時間」是哪一區的時間？</h3>
-            <p>實測時會員的建立時間顯示 11:09，當時台北時間是 19:09，差了 8 小時。原因是團隊的 <code>backend/compose.yaml</code> 沒有設定 MySQL 時區，資料庫預設用 UTC（協調世界時）；用資料庫預設值填的時間，都會比台北時間早 8 小時。程式自己寫入的時間（例如候位、付款）則是台北時間，兩邊不一致。</p>
-            <p>這不是 Vincent 這次修正造成的，專案裡所有用資料庫預設值的建立時間都有一樣的情況。會員中心目前只顯示「某年某月加入」，影響很小；這個時區一致性問題會在 Harry 的共用技術地基（L0）整理中統一處理。</p>
-          </div>
-        </section>
 
-        <section class="section-card" id="reservations">
-          <span class="section-kicker">Vincent 的修正 2</span>
-          <h2>「我的預約」應該連到哪裡？</h2>
-          <p>首頁的「我的預約」原本連到 <code>/member</code>，也就是會員登入頁；沒有會員的客人想查自己的訂位，會被要求先登入。改成 <code>/member/reservations</code> 之後，這頁會同時處理兩種人：用這支手機匿名訂過位的客人直接看到自己的訂位，有會員身分的人看到會員的訂位。這個修正讓首頁卡片的文字「查看或取消訂位」和實際行為一致，實測點下去會正確打開預約清單。</p>
-        </section>
+          <h3>2. 「我的預約」連到會員登入頁（Vincent 的 <code>5cce074</code>）</h3>
+          <p>首頁「我的預約」原本連到 <code>/member</code>（會員登入頁），沒有會員的客人想查自己的訂位，會被要求先登入，和卡片文字「查看或取消訂位」不一致。</p>
 
-        <section class="section-card" id="qr-hint">
-          <span class="section-kicker">整合時找到的問題</span>
-          <h2>點一下提示，就從 A02 被帶到 A03</h2>
-          <p>首頁下方有一個提示框：「已經坐在店裡了？掃桌上的 QR code 就直接開始點餐」。遠端更新讓這個提示框可以點，點了會固定前往 <code>/order/checkin/A03</code>，也就是 A03 桌的報到頁。推測是為了 demo 時方便進入點餐流程。</p>
-          <p>問題在報到頁（C-01）有一段合理的保護：如果這支手機手上已經有用餐身分，但屬於<em>別張桌</em>，就先把它清掉（<code>leaveTable()</code>），因為掃到新桌的 QR 代表客人換桌了。兩段程式單獨看都沒錯，合在一起就出事：</p>
+          <h3>3. 點一下提示，就從 A02 被帶到 A03（整合時找到）</h3>
+          <p>同一個 <code>5cce074</code> 也把首頁下方「已經坐在店裡了？」的提示改成可以點，點了固定前往 <code>/order/checkin/A03</code>，推測是為了 demo（展示）方便。問題在報到頁（C-01）有一段合理的保護：手機上若有屬於<em>別張桌</em>的用餐身分，就先清掉（<code>leaveTable()</code>），因為掃到新桌的 QR（Quick Response，快速反應碼）代表客人換桌了。兩段程式單看都沒錯，合在一起就出事：</p>
           <ol class="step-list">
-            <li class="step-card"><p>客人坐在 A02，已經掃碼加入、正在點餐。</p></li>
-            <li class="step-card"><p>他回到首頁，看到「已經坐在店裡了？」，以為是說明，點了一下。</p></li>
-            <li class="step-card"><p>畫面跳到 A03 的報到頁。報到頁發現他的身分屬於 A02、不是 A03，於是把 A02 的身分清掉。</p></li>
-            <li class="step-card"><p>結果：他回不去 A02 的購物車；如果再按「開始點餐」，還會加入 A03 那桌別人的帳單。</p></li>
+            <li class="step-card"><p>客人坐在 A02，已經掃碼加入、正在點餐，回首頁點了提示。</p></li>
+            <li class="step-card"><p>畫面跳到 A03 報到頁，報到頁發現他的身分屬於 A02，於是把 A02 的身分清掉。</p></li>
+            <li class="step-card"><p>結果：回不去 A02 的購物車；再按「開始點餐」，還會加入 A03 那桌別人的帳單。</p></li>
           </ol>
-          <div class="compare-grid">
-            <div class="compare-side"><div class="compare-label">實測：修正前</div><p>A02 的客人點提示後，網址變成 <code>/order/checkin/A03</code>，手機上 A02 的用餐憑證被清掉。</p></div>
-            <div class="compare-side after"><div class="compare-label">修正後</div><p>提示框回到單純的說明，不能點；客人留在首頁，A02 的用餐憑證保留。真正的入口仍是桌上的 QR（每張桌一個網址），掃哪張桌就進哪張桌。</p></div>
-          </div>
-          <p>demo 時如果需要進入點餐流程，可以用座位管理列印出來的桌位 QR，或直接在網址列輸入 <code>/order/checkin/桌號</code>，不需要讓所有客人都看得到的首頁帶固定桌號。</p>
-          <h3>主要程式檔案</h3>
+          <p>實測修正前：A02 的客人點提示後，網址變成 <code>/order/checkin/A03</code>，手機上 A02 的用餐憑證被清掉。</p>
+        </section>
+
+        <section class="section-card" id="changes">
+          <span class="section-kicker">02 · 怎麼修</span>
+          <h2>每一項怎麼改、為什麼</h2>
           <ul class="prompt-list">
-            <li><span><code>backend/src/main/java/tw/ispan/smartorder/entity/MemberEntity.java</code>：建立時間交給資料庫填（Vincent 的修正，保留）。</span></li>
-            <li><span><code>frontend/src/features/customer/Entrance.jsx</code>：「我的預約」連結（Vincent 的修正，保留）；QR 提示框改為不可點的說明（這次修正）。</span></li>
-            <li><span><code>frontend/src/features/customer/order/CheckIn.jsx</code>：報到頁遇到別桌身分會先清掉，這段保護本身是對的，沒有修改。</span></li>
+            <li><span><strong>建立時間交給資料庫（Vincent 的修法，保留）：</strong><code>MemberEntity.createdAt</code> 加上 <code>@Column(updatable = false, insertable = false)</code>，新增時不寫這個欄位，讓資料庫自己填現在時間，之後更新會員也不會動到它。為什麼：專案裡訂位、員工、用餐紀錄的建立時間本來就這樣寫，修法和既有慣例一致。</span></li>
+            <li><span><strong>連結改到預約清單（Vincent 的修法，保留）：</strong><code>Entrance.jsx</code> 的「我的預約」改連 <code>/member/reservations</code>，這頁同時處理兩種人：用這支手機匿名訂過位的客人直接看到自己的訂位，有會員身分的人看到會員的訂位。</span></li>
+            <li><span><strong>提示框改成不能點（整合時補上，不算原作者的缺失）：</strong>回到單純的說明，客人留在首頁，A02 的用餐憑證保留。為什麼：為了 demo 寫死的桌號，一放在每位客人都看得到的頁面就變成真的行為；真正的入口是桌上的 QR（每張桌一個網址），掃哪張桌就進哪張桌。demo 時可用座位管理列印的桌位 QR，或在網址列輸入 <code>/order/checkin/桌號</code>。報到頁「別桌身分先清掉」的保護本身是對的，沒有修改（後來在<a href="guest-identity.html">同桌客人的身分憑證</a>改成先保留）。</span></li>
+            <li><span><strong>延伸觀察：資料庫的「現在時間」是哪一區的時間？</strong>實測會員建立時間顯示 11:09，當時台北時間是 19:09。團隊的 <code>backend/compose.yaml</code> 沒設 MySQL 時區，資料庫預設用 UTC（Coordinated Universal Time，協調世界時），用預設值填的時間都比台北早 8 小時；程式自己寫入的時間（候位、付款）則是台北時間。這不是這次修正造成的，會員中心只顯示「某年某月加入」，影響很小；時區一致性會在 Harry 的共用技術地基（L0，Level 0）整理中統一處理。</span></li>
           </ul>
-        </section>
-
-        <section class="section-card" id="walkthrough">
-          <span class="section-kicker">手把手驗收 · 請在本機隔離資料庫</span>
-          <h2>你可以照著做一次</h2>
-          <ol class="step-list">
-            <li class="step-card"><p><strong>重現註冊問題。</strong>在合併前的版本，用一支資料庫裡沒有的手機號碼呼叫 <code>POST /api/member/otp</code>，從測試資料庫的 <code>verification_code</code> 表讀出驗證碼，再呼叫 <code>POST /api/member/verify</code>：會得到 <code>409</code>，後端紀錄出現 <code>Column 'created_at' cannot be null</code>，會員表沒有新增資料。</p></li>
-            <li class="step-card"><p><strong>確認註冊修正。</strong>換到合併後的版本重做一次：回 <code>200</code>、<code>newMember</code> 是 true；用拿到的會員憑證呼叫 <code>GET /api/member/me</code>，<code>createdAt</code> 有值。再用同一支電話登入一次，<code>newMember</code> 變成 false，會員表仍只有一筆。</p></li>
-            <li class="step-card"><p><strong>重現帶錯桌。</strong>先讓測試手機加入一張用餐中的桌（例如 A02），打開首頁、點「已經坐在店裡了？」：修正前會跳到 A03 報到頁，瀏覽器 localStorage 裡的 <code>customer.sessionToken</code> 被清空。</p></li>
-            <li class="step-card"><p><strong>確認修正。</strong>同樣的步驟在修正後：網址維持在首頁，用餐憑證和原本一樣。再點「我的預約」，確認打開 <code>/member/reservations</code>。</p></li>
-            <li class="step-card"><p><strong>回歸檢查。</strong>合併後重跑既有的 36 項 HTTP 基線與 15 條頁面路由，確認其他功能沒有被影響。</p></li>
-          </ol>
         </section>
 
         <section class="section-card" id="evidence">
-          <h2>提交與驗證紀錄</h2>
-          <p>遠端合併：<code>d733f0a</code>（含 Vincent 的 <code>d258ecb</code>、<code>5cce074</code>）；入口頁修正：Git commit <code>e46a4fd</code>。</p>
-          <div class="evidence-grid">
-            <div class="note-card report"><h3>HTTP 與資料庫檢查</h3><p>新會員註冊：修正前 1 項失敗（重現 409），修正後 5 項全部通過；合併後 36 項既有基線全部通過。<a href="../evidence/e46a4fd-http.json">查看完整 HTTP 紀錄</a>。</p></div>
-            <div class="note-card report"><h3>瀏覽器操作檢查</h3><p>入口頁 390 像素寬：修正前 2 項失敗（重現帶錯桌、憑證被清），修正後 4 項全部通過；另有 15 條既有頁面路由全部通過。<a href="../evidence/e46a4fd-browser.json">查看完整瀏覽器紀錄</a>。</p></div>
-          </div>
+          <span class="section-kicker">03 · 驗證</span>
+          <h2>修正前重現、修正後通過</h2>
+          <ul class="prompt-list">
+            <li><span>遠端合併 <code>d733f0a</code>（含 Vincent 的 <code>d258ecb</code>、<code>5cce074</code>），沒有任何衝突；入口頁修正為 Git commit <code>e46a4fd</code>。</span></li>
+            <li><span>HTTP（Hypertext Transfer Protocol，超文字傳輸協定）與資料庫檢查：新會員註冊修正前 1 項失敗（重現 409），修正後 5 項全過；合併後 36 項既有基線全過。<a href="../evidence/e46a4fd-http.json">完整 HTTP 紀錄</a></span></li>
+            <li><span>瀏覽器（390 像素寬）：入口頁修正前 2 項失敗（重現帶錯桌、憑證被清），修正後 4 項全過（網址維持在首頁、用餐憑證不變、「我的預約」打開 <code>/member/reservations</code>）；另有 15 條既有頁面路由全過。<a href="../evidence/e46a4fd-browser.json">完整瀏覽器紀錄</a></span></li>
+            <li><span>測試在隔離的 MySQL 5.7 容器進行，驗證碼從測試資料庫讀出，沒有發送任何簡訊。</span></li>
+          </ul>
           <figure class="screen-shot">
             <a href="../assets/entrance-390.png"><img src="../assets/entrance-390.png" alt="手機寬度 390 像素的顧客首頁：線上訂位、我的預約、會員登入三張卡片，下方是不可點的掃碼提示"></a>
             <figcaption>修正後的顧客首頁（390 像素寬）。下方的掃碼提示只做說明。</figcaption>
           </figure>
-          <p class="intro-note">測試在隔離的 MySQL 5.7 容器進行。驗證碼是從測試資料庫讀出，沒有發送任何簡訊。</p>
         </section>
 
-        <section class="section-card" id="feedback">
-          <h2>前輩回饋、報告與履歷</h2>
-          <div class="evidence-grid">
-            <div class="note-card feedback">
-              <h3>技術前輩的建議</h3>
-              <p>註冊這個修正抓得很準：看懂錯誤訊息、找到「預設值只在沒寫欄位時才生效」這個關鍵，並且用專案既有的寫法解決。下次可以再多問一句：「資料庫的現在時間和程式的現在時間是同一個時區嗎？」時間欄位在跨時區的部署裡很容易出錯。</p>
-              <p>入口頁的問題提醒我們：<strong>為了 demo 方便寫死的值（例如固定桌號），一旦放在每個客人都看得到的頁面，就會變成真的行為</strong>。demo 捷徑最好放在只有開發者用得到的地方，或在提交前拿掉。另外，改一個連結時，也要看一下連過去的那一頁會做什麼事。</p>
-            </div>
-            <div class="note-card report">
-              <h3>這次用到的技術</h3>
-              <ul>
-                <li>JPA 欄位設定 <code>insertable</code>／<code>updatable</code>，與資料庫預設值的關係</li>
-                <li>MySQL 的 NOT NULL 約束、<code>CURRENT_TIMESTAMP</code> 預設值與伺服器時區</li>
-                <li>手機驗證碼（OTP）登入與首次登入自動建立會員</li>
-                <li>單頁應用程式（SPA）的路由，以及存在瀏覽器 localStorage 的用餐憑證</li>
-                <li>修正前後對照的實測方式：同一份測試腳本先重現問題、再證明修好</li>
-              </ul>
-            </div>
-          </div>
-          <div class="note-card">
-            <h3>專題報告與履歷可以這樣寫</h3>
-            <p>報告：用「新會員第一次驗證就失敗」當除錯案例，展示錯誤訊息 → 找到 NULL 與預設值的關係 → 一行設定修好 → 修正前後對照。這類「從錯誤訊息推回原因」的過程，評審通常很有興趣。</p>
-            <p>履歷：「負責餐廳系統的顧客入口與會員手機驗證登入；排除新會員註冊時建立時間欄位寫入 NULL 導致的失敗，並修正首頁入口連結。」入口頁帶錯桌是整合時一起修的，可以在面試時當作「demo 捷徑變成正式行為」的經驗分享，履歷上不用另外列。</p>
-          </div>
+        <section class="section-card" id="tech">
+          <span class="section-kicker">04 · 用到的技術與設計模式</span>
+          <h2>本篇真的用到的</h2>
+          <ul class="prompt-list">
+            <li><span><strong>JPA 欄位設定與資料庫預設值：</strong><code>insertable</code>／<code>updatable</code> 決定哪些欄位交給資料庫處理（<code>MemberEntity.java</code>）。</span></li>
+            <li><span><strong>MySQL 約束與時區：</strong><code>NOT NULL</code>、<code>DEFAULT CURRENT_TIMESTAMP(3)</code>（<code>schema.sql</code>）與伺服器時區。</span></li>
+            <li><span><strong>手機 OTP（One-Time Password，一次性密碼）登入、首次登入自動建立會員：</strong><code>MemberAuthService</code>。</span></li>
+            <li><span><strong>單頁應用程式的路由與瀏覽器儲存：</strong>React Router 換頁，用餐憑證存在 localStorage（<code>Entrance.jsx</code>、<code>tokenStore.ts</code>）。</span></li>
+            <li><span><strong>修正前後對照的實測：</strong>同一份測試腳本先重現問題、再證明修好。</span></li>
+            <li><span><strong>學到什麼：</strong>看懂錯誤訊息、找到「預設值只在沒寫欄位時才生效」，並用專案既有寫法解決；為 demo 寫死的值不要留在客人看得到的頁面；改一個連結時，也要看連過去那一頁會做什麼；時間欄位要問「資料庫與程式的現在時間是同一個時區嗎」。</span></li>
+          </ul>
         </section>
 
         <section class="section-card" id="terms">
+          <span class="section-kicker">05 · 名詞說明</span>
           <h2>新手名詞表</h2>
           <dl class="glossary">
-            <div class="term"><dt>遠端分支（remote branch）／合併（merge）</dt><dd>遠端分支是放在 GitHub 上、大家共用的版本；合併是把別人的更新和自己的版本整合在一起。</dd></div>
-            <div class="term"><dt>SHA／Git commit</dt><dd>SHA 是 Secure Hash Algorithm（安全雜湊演算法）；Git 用它幫每個版本（commit）產生識別碼，本文列的是短識別碼。</dd></div>
-            <div class="term"><dt>API（Application Programming Interface，應用程式介面）</dt><dd>前端向後端讀資料、送出操作的一組網址與規則。</dd></div>
-            <div class="term"><dt>HTTP 狀態碼 200／409</dt><dd>HTTP 是 Hypertext Transfer Protocol（超文字傳輸協定）。200 代表成功；409 代表和資料庫目前的資料或規則衝突，這裡是寫入違反「不可為空」。</dd></div>
+            <div class="term"><dt>遠端分支／合併（merge）</dt><dd>遠端分支是放在 GitHub 上、大家共用的版本；合併是把別人的更新和自己的版本整合在一起。</dd></div>
+            <div class="term"><dt>SHA／Git commit</dt><dd>SHA 是 Secure Hash Algorithm（安全雜湊演算法）；Git 用它為每個版本（commit）產生識別碼，本文列的是短識別碼。</dd></div>
+            <div class="term"><dt>HTTP 狀態碼 200／409</dt><dd>200 代表成功；409 代表和資料庫目前的資料或規則衝突，這裡是寫入違反「不可為空」。</dd></div>
             <div class="term"><dt>OTP（One-Time Password，一次性密碼）</dt><dd>手機收到的 6 位數驗證碼，只能用一次、有期限。</dd></div>
-            <div class="term"><dt>JPA（Java Persistence API，Java 持久化 API）</dt><dd>Java 用物件讀寫資料庫的標準介面。<code>@Column(insertable = false)</code> 表示新增時不寫這個欄位，<code>updatable = false</code> 表示更新時不改它。</dd></div>
-            <div class="term"><dt>NOT NULL 與預設值（DEFAULT）</dt><dd>NOT NULL 是「這個欄位不能是空的」；DEFAULT 是「新增時沒提供這欄，就用這個值」。明確寫入 NULL 不算「沒提供」，所以不會套用預設值。</dd></div>
-            <div class="term"><dt>INSERT</dt><dd>SQL（Structured Query Language，結構化查詢語言）新增資料的指令。</dd></div>
-            <div class="term"><dt>UTC（Coordinated Universal Time，協調世界時）</dt><dd>國際標準時間。台北時間是 UTC+8，所以 UTC 的 11:09 等於台北的 19:09。</dd></div>
-            <div class="term"><dt>L0（Level 0，共用技術地基）</dt><dd>專案裡全隊共用的基礎設定，例如登入驗證、資料庫連線與時區設定，由 Harry 負責整理。</dd></div>
-            <div class="term"><dt>SPA（Single-Page Application，單頁應用程式）</dt><dd>切換畫面時不重新載入整個網頁，只換內容；網址的變化由前端路由處理。</dd></div>
-            <div class="term"><dt>localStorage</dt><dd>瀏覽器替每個網站保存資料的空間。本案把顧客的用餐憑證存在這裡，關掉頁面再打開仍在同一桌。</dd></div>
+            <div class="term"><dt>NOT NULL 與預設值（DEFAULT）</dt><dd>NOT NULL 是欄位不能是空的；DEFAULT 是新增時沒提供這欄就用這個值。明確寫入 NULL 不算「沒提供」。</dd></div>
             <div class="term"><dt>用餐憑證（session token）</dt><dd>客人掃碼加入某張桌後拿到的一串識別碼，之後點餐、看帳單都靠它證明「我是這桌的人」。</dd></div>
-            <div class="term"><dt>QR（Quick Response，快速反應碼）</dt><dd>手機相機可以快速讀取的方形圖碼；本案每張桌一個，內容是該桌的報到網址。</dd></div>
-            <div class="term"><dt>C-00／C-01</dt><dd>UI（User Interface，使用者介面）規格裡的畫面編號：C-00 是顧客首頁，C-01 是掃碼後的桌位報到頁。</dd></div>
-            <div class="term"><dt>demo（展示）捷徑</dt><dd>為了展示方便暫時寫死的值或入口。放在正式頁面上，就會被真正的使用者用到。</dd></div>
+            <div class="term"><dt>localStorage</dt><dd>瀏覽器替每個網站保存資料的空間；用餐憑證存在這裡，關掉頁面再打開仍在同一桌。</dd></div>
+            <div class="term"><dt>QR</dt><dd>手機相機可快速讀取的方形圖碼；本案每張桌一個，內容是該桌的報到網址。</dd></div>
+            <div class="term"><dt>C-00／C-01</dt><dd>畫面規格的編號：C-00 是顧客首頁，C-01 是掃碼後的桌位報到頁。</dd></div>
+            <div class="term"><dt>demo（展示）捷徑</dt><dd>為了展示方便暫時寫死的值或入口；放在正式頁面上，就會被真正的使用者用到。</dd></div>
           </dl>
         </section>
 
