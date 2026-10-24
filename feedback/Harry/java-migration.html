@@ -21,28 +21,25 @@
         <span class="status">紀錄完成，附檢查證據</span>
       </div>
       <h1>後端純 Java 重構</h1>
-      <p class="lede">這是一項依專案要求進行的程式語言重構，不是修正 Harry 原先犯下的錯誤。本文只記錄這次轉換及已提供的驗證範圍，不把重構結果擴大描述成所有商務功能都已驗證。</p>
+      <p class="lede">這是一項依專案要求進行的程式語言重構，不是修正 Harry 原先犯下的錯誤。本文只記錄這次轉換和已提供的檢查證據，不把結果擴大說成所有商務功能都已驗證。</p>
     </header>
 
     <main class="person-layout">
       <nav class="toc" aria-label="本頁目錄">
         <h2>本頁目錄</h2>
         <ol>
-          <li><a href="#change">實際變更</a></li>
-          <li><a href="#scope">驗證範圍</a></li>
-          <li><a href="#limits">目前能下的結論</a></li>
-          <li><a href="#feedback">技術前輩角度建議</a></li>
-          <li><a href="#highlights">報告與面試亮點</a></li>
-          <li><a href="#resume">履歷句草稿</a></li>
-          <li><a href="#terms">專有名詞</a></li>
+          <li><a href="#changes">實際變更</a></li>
+          <li><a href="#evidence">驗證與結論邊界</a></li>
+          <li><a href="#tech">用到的技術</a></li>
+          <li><a href="#terms">名詞表</a></li>
         </ol>
       </nav>
 
       <div class="content-stack">
-        <section class="scope-card" id="change">
-          <span class="section-kicker">01 · 變更摘要</span>
-          <h2>後端純 Java 收尾重構</h2>
-          <p class="section-intro">Kotlin 和 Java 都可用來開發 Java 虛擬機器上的後端程式。本次收尾工作依指定方向整理語言與檔案結構；單看檔案數量變化，不能推論產品功能增加或減少。</p>
+        <section class="scope-card" id="changes">
+          <span class="section-kicker">實際變更</span>
+          <h2>後端從 Kotlin 整理成純 Java</h2>
+          <p class="section-intro">Kotlin 和 Java 都能開發跑在 Java 虛擬機器上的後端。團隊統一用 Java，新手比較容易閱讀與交接。檔案數量只是變更範圍的描述，不能拿來推論功能增加或減少。</p>
           <div class="compare-grid">
             <div class="compare-side">
               <div class="compare-label">重構前</div>
@@ -53,84 +50,37 @@
               <p>後端整理為 <strong>37 個 Java（<code>.java</code>）檔案</strong>。</p>
             </div>
           </div>
-          <p class="intro-note"><strong>程式提交：</strong><code>081e34c</code> — 純 Java 後端重構。此識別碼指向重構提交，不代表本頁列出的每個商務功能都經過完整驗收。</p>
+          <p class="intro-note"><strong>程式提交：</strong><code>081e34c</code>，純 Java 後端重構。這個識別碼只指向重構提交，不代表本頁每個商務功能都經過完整驗收。</p>
         </section>
 
-        <section class="section-card" id="scope">
-          <span class="section-kicker">02 · 已提供的驗證證據</span>
-          <h2>已確認的檢查範圍</h2>
-          <p class="section-intro">以下結果由本次工作紀錄提供。本頁沒有重新執行這些檢查，並依既有證據範圍描述。</p>
-          <div class="evidence-grid">
-            <div class="note-card">
-              <h3>後端與測試</h3>
-              <ul class="prompt-list">
-                <li><span>後端可打包。</span></li>
-                <li><span>既有測試只做編譯確認；沒有新增單元測試，也沒有宣稱執行測試案例。</span></li>
-              </ul>
-            </div>
-            <div class="note-card feedback">
-              <h3>整合操作與獨立檢視</h3>
-              <ul class="prompt-list">
-                <li><span>36 項 HTTP（Hypertext Transfer Protocol，超文字傳輸協定）操作檢查通過。</span></li>
-                <li><span>15 個 UI（User Interface，使用者介面）頁面操作檢查通過。</span></li>
-                <li><span>獨立程式檢視沒有提出發現事項。</span></li>
-              </ul>
-            </div>
-          </div>
+        <section class="section-card" id="evidence">
+          <span class="section-kicker">驗證</span>
+          <h2>檢查了什麼，又不能說明什麼</h2>
+          <ul class="prompt-list">
+            <li><span>後端可打包；既有測試只做編譯確認，沒有新增單元測試，也沒有宣稱執行過測試案例。</span></li>
+            <li><span>36 項 HTTP（Hypertext Transfer Protocol，超文字傳輸協定）操作檢查通過，15 個 UI（User Interface，使用者介面）頁面操作檢查通過。</span></li>
+            <li><span>獨立程式檢視沒有提出發現事項。</span></li>
+            <li><span><strong>結論邊界：</strong>打包與編譯只能確認程式結構可建置，有限數量的畫面與請求只能確認那些被操作的路徑；沒有執行過的輸入、權限、錯誤情境和商務規則，不能算已驗證。若要補成完整功能驗收，需要另列流程與證據。</span></li>
+          </ul>
           <p class="link-row"><a class="subtle-link" href="../evidence/081e34c-http.json">081e34c HTTP 檢查證據</a><a class="subtle-link" href="../evidence/081e34c-browser.json">081e34c 瀏覽器檢查證據</a></p>
         </section>
 
-        <section class="section-card" id="limits">
-          <span class="section-kicker">03 · 結論邊界</span>
-          <h2>這些檢查支持什麼結論？</h2>
-          <p>目前證據支持：純 Java 轉換後端可打包，指定的 HTTP 與 UI 操作檢查通過，獨立檢視沒有發現問題。既有測試只確認能編譯，不能說成測試案例全部通過。</p>
-          <p class="placeholder">本次資料沒有宣稱所有商務規則、邊界狀況、資料狀態組合都已驗證。若要補成完整功能驗收，需要另列對應流程與證據。</p>
-          <details class="details-card">
-            <summary>為什麼重構不代表所有行為都驗證完成？</summary>
-            <p>打包與編譯能確認程式結構可建置；有限數量的畫面與請求檢查能確認那些已操作的路徑。它們不能自動涵蓋未執行的輸入、權限、錯誤情境或商務規則。</p>
-          </details>
-        </section>
-
-        <section class="section-card" id="feedback">
-          <span class="section-kicker">04 · 本次審查建議</span>
-          <h2>技術前輩角度建議</h2>
-          <div class="note-card feedback">
-            <p>團隊統一使用 Java，有助新手閱讀、交接與共用維護。轉換時要保留原本的 null（空值）、default（預設值）、transaction（資料交易）和 clock（時間來源）等語義，不能只追求語法改寫成功。</p>
-            <p>檔案數不是成果價值；主要價值是用證據說明行為維持一致，並讓程式更容易交接。原作者個人的技術亮點需由工作包 E 主審另行整理。</p>
-          </div>
-        </section>
-
-        <section class="section-card" id="highlights">
-          <span class="section-kicker">05 · 報告與面試</span>
-          <h2>可以怎麼說明這次工作</h2>
-          <div class="note-card report">
-            <h3>本次收尾重構可學到的說明</h3>
-            <p>「本次收尾重構將後端由 Kotlin 轉為純 Java。從這次整理可以說明，語言轉換需要保留原本的預設值、空值處理、交易與時間來源等行為；打包、指定操作檢查和程式檢視提供部分證據，既有測試則只確認編譯。」</p>
-            <p class="placeholder">這段是本次收尾重構的學習說明，不代表 Harry 原本獨自完成這次改寫。原作者的實際技術亮點待工作包 E 主審提供。</p>
-          </div>
-          <details class="details-card">
-            <summary>面試時可以補充的問題</summary>
-            <p>如何確認轉換沒有漏掉程式？檔案數為什麼改變？編譯、操作檢查和單元測試各自能證明什麼？哪些商務流程仍需要另外測？回答時以實際差異與檢查範圍為準。</p>
-          </details>
-        </section>
-
-        <section class="section-card" id="resume">
-          <span class="section-kicker">06 · 履歷草稿</span>
-          <h2>務實履歷句</h2>
-          <p>本次收尾重構可學到的說明：整理程式語言時，應以行為維持一致與容易交接為主要價值；檔案數量只是描述變更範圍。這不是 Harry 原先獨自完成的履歷成果。原作者履歷內容待工作包 E 主審整理後再寫。</p>
-
+        <section class="section-card" id="tech">
+          <span class="section-kicker">用到的技術與設計模式</span>
+          <h2>這次重構碰到的技術</h2>
+          <ul class="prompt-list">
+            <li><span><strong>Java 21 與 Maven：</strong>後端統一用 Java 寫，用 Maven 打包確認可建置。</span></li>
+            <li><span><strong>學到什麼：</strong>轉換語言時要保留原本的 null（空值）、default（預設值）、transaction（資料交易）和 clock（時間來源）等語意，不能只追求語法改寫成功；價值在於用證據說明行為維持一致，並讓程式更容易交接，不在於檔案數。</span></li>
+          </ul>
         </section>
 
         <section class="section-card" id="terms">
-          <span class="section-kicker">07 · 名詞說明</span>
+          <span class="section-kicker">名詞表</span>
           <h2>專有名詞</h2>
           <dl class="glossary">
-            <div class="term"><dt>Kotlin</dt><dd>一種常用於 Java 虛擬機器環境的程式語言；<code>.kt</code> 是常見檔案副檔名。</dd></div>
-            <div class="term"><dt>Java</dt><dd>一種程式語言；<code>.java</code> 是 Java 原始程式檔的常見副檔名。</dd></div>
-            <div class="term"><dt>重構</dt><dd>整理程式內部結構或表達方式，目標是不改變原本對外行為；仍需用檢查證據確認。</dd></div>
-            <div class="term"><dt>HTTP — Hypertext Transfer Protocol（超文字傳輸協定）</dt><dd>瀏覽器、應用程式與伺服器傳送請求及回應時使用的通訊規則。</dd></div>
-            <div class="term"><dt>UI — User Interface（使用者介面）</dt><dd>人可以看到並操作的畫面，例如頁面、按鈕和欄位。</dd></div>
-            <div class="term"><dt>單元測試</dt><dd>針對一小段程式行為寫出的自動檢查；只確認測試程式可編譯，不等於執行並通過測試。</dd></div>
+            <div class="term"><dt>Kotlin／Java</dt><dd>兩種都能在 Java 虛擬機器上執行的程式語言；<code>.kt</code> 和 <code>.java</code> 分別是它們的檔案副檔名。</dd></div>
+            <div class="term"><dt>重構</dt><dd>整理程式內部結構或寫法，目標是不改變對外行為；仍要用檢查證據確認。</dd></div>
+            <div class="term"><dt>單元測試</dt><dd>針對一小段程式行為寫的自動檢查；只確認測試程式可編譯，不等於執行並通過。</dd></div>
             <div class="term"><dt>Commit（版本提交）</dt><dd>記錄一組程式變更的版本歷史項目，可用識別碼對照修改內容。</dd></div>
           </dl>
         </section>

@@ -18,194 +18,90 @@
     <header class="person-header">
       <div class="meta-row"><span class="scope-tag">工作包 D（桌位與候位）</span><span class="status">座位設定已驗證</span></div>
       <h1>Iris｜改一張桌的設定，會影響到誰？</h1>
-      <p class="lede">座位管理（S-08）看起來只是一張可以編輯的表格，但每張桌背後都連著桌上印好的 QR code、今晚的訂位和正在用餐的客人。這篇說明怎麼讓「改設定」不會悄悄弄壞這些已經存在的東西。</p>
+      <p class="lede">座位管理（S-08）看起來只是一張可編輯的表格，但每張桌背後都連著桌上印好的 QR（Quick Response，快速反應）碼、今晚的訂位和正在用餐的客人。這篇說明怎麼讓「改設定」不會悄悄弄壞這些已經存在的東西。</p>
     </header>
 
     <main class="person-layout">
       <nav class="toc" aria-label="文章目錄">
         <h2>這篇會走過</h2>
         <ol>
-          <li><a href="#situation">先看現場情境</a></li>
-          <li><a href="#problems">原本哪裡會錯</a></li>
-          <li><a href="#changes">實際改法</a></li>
-          <li><a href="#active">補上的基本功能：啟用與停用</a></li>
-          <li><a href="#walkthrough">手把手驗收</a></li>
-          <li><a href="#evidence">提交與驗證紀錄</a></li>
-          <li><a href="#feedback">前輩回饋、報告與履歷</a></li>
-          <li><a href="#terms">新手名詞表</a></li>
+          <li><a href="#problems">哪裡錯</a></li>
+          <li><a href="#changes">怎麼修</a></li>
+          <li><a href="#evidence">驗證</a></li>
+          <li><a href="#tech">用到的技術與設計模式</a></li>
+          <li><a href="#terms">名詞表</a></li>
         </ol>
       </nav>
 
       <div class="content-stack">
-        <section class="scope-card" id="scope">
-          <span class="section-kicker">本篇範圍</span>
-          <h2>兩個錯誤、一個基本功能、一套統一的錯誤格式</h2>
-          <ul class="scope-list">
-            <li><strong>錯誤 1：</strong>桌號可以隨意改，但桌上已經印好的 QR code 會跟著失效。</li>
-            <li><strong>錯誤 2：</strong>座位數可以改到比今晚的訂位、或正在用餐的人數還少。</li>
-            <li><strong>補上的基本功能：</strong>M2 規格 2.1 的「啟用狀態」原本無法管理，這次加上停用與重新啟用。</li>
-            <li><strong>錯誤格式：</strong>座位設定的錯誤改用專案統一的格式（有錯誤碼），畫面能清楚說明原因。</li>
-          </ul>
-          <p class="intro-note">錯誤 1、2 是原本審查確認的問題；啟用與停用是規格裡有、但還沒接好的基本功能，這次直接補上，屬於整合成果。</p>
-        </section>
-
-        <section class="section-card" id="situation">
-          <span class="section-kicker">情境 · 下午三點，店長整理座位</span>
-          <h2>店長只是想把桌子調整一下</h2>
-          <p>下午空檔，店長打開座位管理，想做兩件事：</p>
-          <ol class="step-list">
-            <li class="step-card"><p>把 A05 從 8 人桌改成 4 人桌，因為要把兩張椅子搬去別桌。但今晚 19:30 有一組 6 位客人的訂位，系統已經把 A05 配給他們。</p></li>
-            <li class="step-card"><p>覺得「A03」不好看，想改成「A3」。可是 A03 桌上已經貼著印好的 QR code，內容是 <code>…/order/checkin/A03</code>。</p></li>
-          </ol>
-          <p>原本兩件事都會成功，而且畫面沒有任何警告。問題要到晚上才會爆發。</p>
-        </section>
-
-        <section class="section-card" id="problems">
-          <span class="section-kicker">原本哪裡會錯</span>
+        <section class="scope-card" id="problems">
+          <span class="section-kicker">哪裡錯</span>
           <h2>設定改了，但「已經存在的東西」沒有跟著被檢查</h2>
+          <p>下午店長整理座位，兩件事原本都會成功，畫面也沒有任何警告，問題要到晚上才爆發。共同點是：修改的程式只檢查「新的值本身合不合理」（座位數 1～20、桌號不重複），卻沒檢查「改了之後，已存在的訂位、用餐、QR 還成不成立」。</p>
           <div class="compare-grid">
-            <div class="compare-side"><div class="compare-label">改小座位數</div><p>A05 變成 4 人桌，那筆 6 人訂位還是有效、而且仍然保留 A05。19:30 客人到店，櫃檯按報到開桌時，開桌的容量檢查會說「6 位坐不下 4 人桌」而拒絕。客人有訂位卻沒有桌。</p></div>
-            <div class="compare-side"><div class="compare-label">改桌號</div><p>A03 改成 A3 之後，客人掃桌上的 QR，打開的是 <code>/order/checkin/A03</code>，系統已經找不到 A03 這張桌，掃碼點餐整個失效。M2 規格的設計原則是：「QR 內容固定，貼上去永不換」。</p></div>
+            <div class="compare-side"><div class="compare-label">改小座位數</div><p>把 A05 從 8 人桌改成 4 人桌，但今晚 19:30 有一組 6 位的訂位已配給 A05。客人到店、櫃檯按報到開桌時，容量檢查說「6 位坐不下 4 人桌」而拒絕：客人有訂位卻沒有桌。</p></div>
+            <div class="compare-side"><div class="compare-label">改桌號</div><p>把 A03 改成 A3，桌上已貼好的 QR 內容是 <code>…/order/checkin/A03</code>，系統卻找不到 A03，掃碼點餐整個失效。M2 規格的原則是：「QR 內容固定，貼上去永不換」。</p></div>
           </div>
-          <p>兩個問題的共同點：<strong>修改的程式只檢查「新的值本身合不合理」（座位數 1～20、桌號不重複），卻沒有檢查「改了之後，已經存在的訂位、用餐、QR 還成不成立」</strong>。</p>
-          <p>另外還有兩個小問題：錯誤用 <code>ResponseStatusException</code> 丟出，回應裡沒有錯誤碼，前端只能顯示籠統的失敗；而且列表 API 只回傳啟用中的桌，停用的桌在畫面上直接消失，也沒有辦法重新啟用。</p>
+          <div class="compare-grid">
+            <div class="compare-side"><div class="compare-label">審查發現：遺失更新</div><p>「可否預約」開關原本先用一般查詢讀出整張桌、改一個欄位再存檔，而 Hibernate 存檔預設把<strong>整列所有欄位</strong>寫回，包括讀進來的舊值。店長 A 按「停用」（<code>active</code> 改 0）時，同一時間 B 切換「可否預約」讀到的還是 <code>active=1</code>；A 存檔回「停用成功」，B 存檔後整列寫回，<code>active</code> 又變回 1。兩個請求都回 200、畫面都說成功，桌子其實沒被停用。修正前實測確實如此。</p></div>
+            <div class="compare-side"><div class="compare-label">其他小問題</div><p>錯誤用 <code>ResponseStatusException</code> 丟出，回應沒有錯誤碼，前端只能顯示籠統的失敗；列表 API 只回傳啟用中的桌，停用的桌直接從畫面消失，也無法重新啟用（M2 規格 2.1 的「啟用狀態」原本無法管理，整合時補上，不算原作者的缺失）。</p></div>
+          </div>
         </section>
 
         <section class="section-card" id="changes">
-          <span class="section-kicker">實際改法</span>
+          <span class="section-kicker">怎麼修</span>
           <h2>改設定前，先問「這張桌現在被誰用著」</h2>
-
-          <h3>1. 桌號建立後不能修改</h3>
-          <p>桌號就是 QR code 的內容，所以把它當成這張桌的「身分證字號」：建立時決定，之後不能改。編輯時如果送來不同的桌號（先去掉空白、轉大寫再比），後端回 <code>409 TABLE_NO_IMMUTABLE</code>，訊息說明「桌號印在桌上的 QR code 裡，建立後不能修改；要換號請停用這張桌再新增」。畫面的編輯對話框也把桌號欄改成唯讀，旁邊寫出原因。</p>
-          <p class="intro-note">也可以設計成「保留舊號當別名」或「改號後強制重印 QR」，但這些都需要額外的資料表與流程。規格已經寫明 QR 永不換，最簡單、最不會出錯的做法就是桌號不能改。</p>
-
-          <h3>2. 改小座位數時，在桌位鎖裡檢查訂位與用餐</h3>
-          <p>只有「座位數變少」時才需要檢查。後端先用 <code>SELECT ... FOR UPDATE</code> 鎖住這張桌，再查兩件事：</p>
           <ul class="prompt-list">
-            <li><span>這張桌<strong>正在用餐</strong>的人數（成人＋兒童）。</span></li>
-            <li><span>指派到這張桌、狀態是<strong>已確認</strong>、而且<strong>還沒結束</strong>的訂位人數。已取消或已經過去的訂位不算。</span></li>
+            <li><span><strong>桌號建立後不能改：</strong>桌號就是 QR 的內容，像「身分證字號」，建立時決定、之後不能改。編輯時送來不同桌號（去空白、轉大寫再比），後端回 <code>409 TABLE_NO_IMMUTABLE</code>，說明「要換號請停用這張桌再新增」；畫面的桌號欄也改成唯讀。保留舊號當別名或強制重印 QR 都要額外的資料表與流程，規格又寫明 QR 永不換，所以桌號不能改最簡單。</span></li>
+            <li><span><strong>改小座位數時，在桌位鎖裡檢查訂位與用餐：</strong>只有座位數變少才檢查。後端先用 <code>SELECT ... FOR UPDATE</code> 鎖住這張桌，再查正在用餐的人數（成人加兒童），以及指派到這張桌、狀態已確認、還沒結束的訂位人數（已取消或已過去的不算）。新座位數比任一個少就回 <code>409 SEATS_BELOW_BOOKINGS</code>，訊息帶出衝突的那筆（例如「10/23 19:30 有 6 位訂位在這張桌，座位數不能少於 6」）。</span></li>
+            <li><span><strong>為什麼一定要「鎖住再檢查」：</strong>想像店長按下「改成 8 人」的同一秒，有客人在網路上訂了 10 人位，而只有這張 12 人桌坐得下。沒有鎖，兩邊都檢查通過、都成功，一筆 10 人訂位就配到 8 人桌。建立訂位本來就用 <code>FOR UPDATE</code> 鎖候選桌，座位設定鎖<strong>同一張桌</strong>，兩個請求就排隊，後到的拿到鎖後讀到最新資料，結果不是「訂位成功、改座位被擋」，就是「改座位成功、這張桌坐不下 10 人」。交易用 <code>READ_COMMITTED</code>，等到鎖後查訂位看得到對方剛提交的那筆。開桌、預約報到、候位入座也都鎖同一張桌再檢查容量。</span></li>
+            <li><span><strong>遺失更新的修法只有一行：</strong>「可否預約」也先用同一把桌位鎖讀資料，和停用、改座位數、開桌排隊。修正後同樣的同時操作跑 3 輪，停用都保留，開桌後也都維持「用餐中」。同樣的機制也可能把剛開桌的「用餐中」寫回「空桌」，是原本就有的風險。</span></li>
+            <li><span><strong>錯誤格式統一：</strong>座位設定的錯誤改用專案共用的 <code>ApiException</code>：<code>400 VALIDATION_FAILED</code>、<code>404 NOT_FOUND</code>、<code>409 TABLE_NO_TAKEN</code>，加上三個新的 409。兩位店長同時新增同一桌號時，資料庫的唯一索引擋下第二筆，並轉成 <code>TABLE_NO_TAKEN</code> 而不是 500（同時送 3 輪，都是一個 200、一個 409）。桌號與區域也加上長度檢查（10 字與 20 字，跟資料表欄位一致）。</span></li>
+            <li><span><strong>停用與重新啟用（整合時補上，不算原作者的缺失）：</strong>新增 <code>PATCH /api/admin/tables-config/{id}/active</code>。停用前同樣在桌位鎖裡檢查：桌子必須是空桌、沒有未結束的用餐、沒有未結束的已確認訂位，否則回 <code>409 TABLE_IN_USE</code> 並說明原因；重新啟用沒有條件。停用後，桌況總覽、開桌、選桌清單、線上訂位挑桌都看不到它（這些查詢原本就只找啟用中的桌，逐一確認過），座位管理仍以灰色列出，可編輯或重新啟用；上方統計與預約管理頁的「可預約比例」只算啟用中的桌。</span></li>
           </ul>
-          <p>新的座位數比其中任何一個少，就回 <code>409 SEATS_BELOW_BOOKINGS</code>，訊息帶出衝突的那筆，例如「10/23 19:30 有 6 位訂位在這張桌，座位數不能少於 6」。如果後面還有人數更多的訂位，也會一起提醒，避免店長改一次又被擋一次。</p>
-
-          <h3>3. 為什麼一定要「鎖住再檢查」？</h3>
-          <p>想像兩件事同時發生：店長按下「改成 8 人」，同一秒有一位客人在網路上訂了 10 人位，而系統裡只有這張 12 人桌坐得下。</p>
-          <div class="compare-grid">
-            <div class="compare-side"><div class="compare-label">沒有鎖</div><p>店長的請求查到「沒有超過 8 人的訂位」→ 準備存檔；同時訂位請求看到「12 人桌坐得下」→ 把桌配給 10 人。兩邊都成功：一筆 10 人訂位配到一張 8 人桌。</p></div>
-            <div class="compare-side after"><div class="compare-label">鎖同一張桌</div><p>建立訂位時本來就會用 <code>FOR UPDATE</code> 鎖住候選的桌。座位設定也鎖同一張桌，兩個請求就會排隊：誰先拿到鎖誰先做，後來的那個拿到鎖後讀到的是最新資料。結果不是「訂位成功、改座位被擋」，就是「改座位成功、這張桌已經坐不下 10 人」。</p></div>
-          </div>
-          <p>交易使用 <code>READ_COMMITTED</code>（讀取已提交資料）隔離層級：排隊等到鎖之後，查訂位時看得到對方剛提交的那筆。開桌、預約報到、候位入座也都是鎖同一張桌再檢查容量，所以這幾條路徑之間也不會產生「5 個人坐在 4 人桌」的結果。</p>
-
-          <h3>4. 錯誤格式統一</h3>
-          <p>座位設定的所有錯誤改用專案共用的 <code>ApiException</code>：資料不合規則是 <code>400 VALIDATION_FAILED</code>、找不到是 <code>404 NOT_FOUND</code>、桌號重複是 <code>409 TABLE_NO_TAKEN</code>，加上上面三個新的 409。兩位店長同時新增同一個桌號時，資料庫的唯一索引會擋下第二筆，也會轉成 <code>TABLE_NO_TAKEN</code>，而不是 500（實測同時送 3 輪，都是一個 200、一個 409）。桌號和區域也加上長度檢查（最多 10 字與 20 字，跟資料表欄位一致），太長回 400 而不是資料庫錯誤。</p>
-
-          <h3>5. 審查找到的另一個問題：「可否預約」開關會蓋掉別人剛存的資料</h3>
-          <p>獨立程式審查發現，原本的「可否預約」開關是先用一般查詢讀出整張桌，改一個欄位再存檔。專案用的 Hibernate 存檔時預設會把<strong>整列所有欄位</strong>都寫回去，包括讀進來時的舊值。於是會發生：</p>
-          <ol class="step-list">
-            <li class="step-card"><p>店長 A 按「停用」：鎖住桌、檢查、把 <code>active</code> 改成 0，準備存檔。</p></li>
-            <li class="step-card"><p>同一時間店長 B（或同一個人手快）切換「可否預約」：讀到的還是 <code>active=1</code>。</p></li>
-            <li class="step-card"><p>A 存檔成功，回應「停用成功」。接著 B 存檔，把整列寫回，<code>active</code> 又變回 1。</p></li>
-          </ol>
-          <p>兩個請求都回 200，畫面也都說成功，但桌子其實沒有被停用。這種錯誤叫做<strong>遺失更新（lost update）</strong>：後寫的人拿著舊資料覆蓋了先寫的人。這次在修正前實際跑出來了（兩個都回 200，資料庫的 <code>active</code> 卻是 1）。同樣的機制也可能把剛開桌的「用餐中」寫回「空桌」，這是原本的程式就有的風險。</p>
-          <p>修法只有一行：「可否預約」也先用同一把桌位鎖讀資料，跟停用、改座位數、開桌排隊。修正後同樣的同時操作跑 3 輪，停用都保留、開桌後也都維持「用餐中」。畫面上，停用送出中也會把同一列的開關鎖住。</p>
-
-          <h3>主要程式檔案</h3>
-          <ul class="prompt-list">
-            <li><span><code>backend/src/main/java/tw/ispan/smartorder/service/SeatService.java</code>：桌號不可改、改小座位數的檢查、啟用與停用、統一錯誤。</span></li>
-            <li><span><code>backend/src/main/java/tw/ispan/smartorder/repository/DiningTableRepository.java</code>：包含停用桌的鎖定查詢、全部桌的排序查詢。</span></li>
-            <li><span><code>backend/src/main/java/tw/ispan/smartorder/controller/SeatController.java</code>、<code>dto/SeatActiveRequest.java</code>、<code>dto/SeatResponse.java</code>：新增啟用／停用 API 與 <code>active</code> 欄位。</span></li>
-            <li><span><code>frontend/src/features/admin/table/SeatManagement.jsx</code>、<code>SeatFormDialog.jsx</code>、<code>frontend/src/services/api/table/seatApi.ts</code>：停用列、busy 狀態、唯讀桌號、錯誤顯示。</span></li>
-            <li><span><code>frontend/src/features/admin/reservation/ReservationManagement.tsx</code>：可預約比例只算啟用中的桌。</span></li>
-          </ul>
-        </section>
-
-        <section class="section-card" id="active">
-          <span class="section-kicker">補上的基本功能 · 整合成果</span>
-          <h2>停用一張桌：只有「現在沒人用、之後也沒人訂」才可以</h2>
-          <p>M2 規格 2.1 的桌位主檔包含「啟用狀態」，例如某張桌壞了要維修，就先停用。新增 <code>PATCH /api/admin/tables-config/{id}/active</code>，送 <code>{"active": false}</code> 停用、<code>{"active": true}</code> 重新啟用。</p>
-          <ul class="prompt-list">
-            <li><span><strong>停用前檢查（同樣在桌位鎖裡）：</strong>桌子必須是空桌、沒有未結束的用餐、沒有還沒結束的已確認訂位；否則回 <code>409 TABLE_IN_USE</code>，並說明是哪一個原因（用餐中、還沒清潔完、10/24 18:00 還有 4 位的訂位…）。</span></li>
-            <li><span><strong>重新啟用：</strong>沒有條件，按了就恢復。</span></li>
-            <li><span><strong>停用後：</strong>桌況總覽、開桌、選桌清單、線上訂位挑桌都看不到這張桌（這些查詢原本就各自只找啟用中的桌，這次逐一確認過）；座位管理仍然列出它，灰色顯示「已停用」，可以編輯或重新啟用。</span></li>
-            <li><span><strong>畫面：</strong>停用送出中按鈕顯示「處理中…」，其他停用鈕也先鎖住，避免連點；失敗時把後端的原因顯示在表格上方。上方統計只算啟用中的桌，並註明「另有 N 桌停用」；預約管理頁的「可預約比例」也只算啟用中的桌。</span></li>
-            <li><span><strong>1024 像素寬：</strong>表格在店家端最小寬度下原本會把「開放預約」「空桌」擠成直排；這次讓這些短字不換行，並在 1280 像素以下收起 QR 網址欄（表格下方仍有說明），只留「印 QR」按鈕。</span></li>
-          </ul>
-        </section>
-
-        <section class="section-card" id="walkthrough">
-          <span class="section-kicker">手把手驗收 · 請在本機隔離資料庫</span>
-          <h2>你可以照著做一次</h2>
-          <ol class="step-list">
-            <li class="step-card"><p><strong>權限。</strong>不登入讀座位設定回 <code>401</code>；COUNTER 可以讀，但新增、編輯、停用都回 <code>403</code>；MANAGER 都可以。</p></li>
-            <li class="step-card"><p><strong>驗證與桌號。</strong>新增空白桌號、0 或 21 個座位、空白區域都回 <code>400</code>；重複桌號回 <code>409 TABLE_NO_TAKEN</code>。編輯時改成別的桌號回 <code>409 TABLE_NO_IMMUTABLE</code>，資料庫的桌號不變；同一個桌號只是大小寫或空白不同，其他欄位照樣能存，QR 圖片照常產生。</p></li>
-            <li class="step-card"><p><strong>座位數與訂位。</strong>替測試桌加一筆 3 天後 5 位的已確認訂位，另加一筆已取消、一筆昨天的訂位。把座位數改成 4 → <code>409 SEATS_BELOW_BOOKINGS</code>；改成 5 → 成功（已取消、過去的不算）。取消那筆訂位後，改成 2 也成功。</p></li>
-            <li class="step-card"><p><strong>座位數與用餐中。</strong>讓測試桌開桌 4 位，改成 3 → <code>409</code>；此時停用也回 <code>409 TABLE_IN_USE</code>。</p></li>
-            <li class="step-card"><p><strong>停用與重新啟用。</strong>有未來訂位、待清理時停用都被擋；空桌停用成功後，桌況總覽與選桌清單看不到它、開桌被拒、但仍能編輯；重新啟用後回到桌況總覽。</p></li>
-            <li class="step-card"><p><strong>同時操作（各 3 輪）。</strong>「停用」和「開桌」同時送；「改成 4 人」和「開 5 人桌」同時送；「改成 8 人」和「10 人線上訂位」同時送。每一輪都只有一邊成功，而且資料庫最後的座位數、用餐、訂位彼此一致。另外「可否預約」和「停用」、「可否預約」和「開桌」同時送，兩邊都成功時資料都要保留（修正前停用會被蓋掉）；兩位店長同時新增同一個桌號，只會有一個成功。</p></li>
-            <li class="step-card"><p><strong>畫面（1024 像素寬）。</strong>停用時看到「處理中…」與鎖住的其他按鈕；停用正在用餐的桌，表格上方出現「A01 停用失敗：這張桌正在用餐中…」；編輯時桌號唯讀；改小座位數被擋時對話框不關，顯示原因；預約管理頁的比例與 API 算出的一致。</p></li>
-          </ol>
         </section>
 
         <section class="section-card" id="evidence">
-          <h2>提交與驗證紀錄</h2>
-          <p>程式版本：Git commit <code>a5fac00</code>。</p>
-          <div class="evidence-grid">
-            <div class="note-card report"><h3>HTTP 與資料庫檢查</h3><p>座位設定專項 83 項全部通過，包含 6 組同時操作各 3 輪；另重跑 36 項既有基線也全部通過。紀錄裡另附修正前那一次的失敗結果（停用被「可否預約」蓋掉）。<a href="../evidence/a5fac00-http.json">查看完整 HTTP 紀錄</a>。</p></div>
-            <div class="note-card report"><h3>瀏覽器操作檢查</h3><p>座位管理與預約管理頁 11 項全部通過，含 busy 狀態、錯誤原因顯示、唯讀桌號與 1024 像素版面。<a href="../evidence/a5fac00-browser.json">查看完整瀏覽器紀錄</a>。</p></div>
-          </div>
+          <span class="section-kicker">驗證</span>
+          <h2>數字與證據</h2>
+          <ul class="prompt-list">
+            <li><span>Git commit <code>a5fac00</code>。HTTP（Hypertext Transfer Protocol，超文字傳輸協定）座位設定專項 83 項全部通過，含 6 組同時操作各 3 輪，另重跑 36 項基線也通過；紀錄另附修正前那次的失敗結果（停用被「可否預約」蓋掉）。<a href="../evidence/a5fac00-http.json">完整 HTTP 紀錄</a>。</span></li>
+            <li><span>桌號與座位數：編輯改成別的桌號回 409 <code>TABLE_NO_IMMUTABLE</code>，資料庫桌號不變。測試桌有一筆 3 天後 5 位的已確認訂位（另有已取消、昨天的）：座位數改成 4 回 409，改成 5 成功，取消那筆後改成 2 也成功。開桌 4 位後改成 3 回 409，此時停用回 409 <code>TABLE_IN_USE</code>。權限：未登入 401，COUNTER 可讀但新增、編輯、停用都是 403。</span></li>
+            <li><span>同時操作各 3 輪：「停用」和「開桌」、「改成 4 人」和「開 5 人桌」、「改成 8 人」和「10 人線上訂位」，每輪只有一邊成功，座位數、用餐、訂位彼此一致；「可否預約」與停用或開桌兩邊都成功時，資料都保留。</span></li>
+            <li><span>瀏覽器 11 項全部通過，含處理中狀態、錯誤原因顯示、唯讀桌號與 1024 像素版面。<a href="../evidence/a5fac00-browser.json">完整瀏覽器紀錄</a>。獨立高風險審查找到 1 個 P2（上面的遺失更新），已實際重現並修正，其餘鎖的推論、隔離層級、唯一鍵處理與權限都沒問題。</span></li>
+          </ul>
           <figure class="screen-shot">
             <a href="../assets/iris-seat-config-1024.png"><img src="../assets/iris-seat-config-1024.png" alt="1024 像素寬的座位管理表格：啟用中的桌有停用按鈕，停用的桌整列灰色並顯示已停用與重新啟用"></a>
-            <figcaption>座位管理（1024 像素寬）：灰色列是已停用的桌，可以編輯或重新啟用。</figcaption>
+            <figcaption>座位管理（1024 像素寬）：灰色列是已停用的桌，可編輯或重新啟用。</figcaption>
           </figure>
-          <p class="intro-note">測試在隔離的 MySQL 5.7 容器進行，測試桌使用「驗證區」區域與 Z 開頭的桌號，結束後停用。最終驗證是在包含提醒功能的同一份程式上重跑。獨立高風險審查找到 1 個 P2（上面第 5 點的遺失更新），已實際重現並修正；其餘鎖的推論、隔離層級、時間基準、唯一鍵處理與權限都確認沒有問題。</p>
         </section>
 
-        <section class="section-card" id="feedback">
-          <h2>前輩回饋、報告與履歷</h2>
-          <div class="evidence-grid">
-            <div class="note-card feedback">
-              <h3>技術前輩的建議</h3>
-              <p>寫「編輯」功能時，除了檢查新值本身，還要問：「有誰正在依賴舊值？」桌號被 QR 依賴、座位數被訂位和用餐依賴。把這些依賴列出來，就知道哪些欄位不能改、哪些改了要先檢查。</p>
-              <p>「先查再改」只要中間可能有別人插隊，就要鎖。這次的關鍵是<strong>和其他程式鎖同一筆資料</strong>：訂位、開桌都鎖桌位這一列，座位設定也鎖它，大家就自然排隊，不需要另外發明機制。</p>
-            </div>
-            <div class="note-card report">
-              <h3>這個功能用到的技術</h3>
-              <ul>
-                <li>資料完整性設計：不可變欄位（immutable）、軟刪除（啟用旗標）</li>
-                <li>MySQL <code>SELECT ... FOR UPDATE</code> 資料列鎖、<code>READ_COMMITTED</code> 隔離層級</li>
-                <li>跨模組一致性：座位設定、訂位、開桌、候位入座共用同一把桌位鎖</li>
-                <li>唯一索引衝突轉成業務錯誤碼（<code>saveAndFlush</code>）</li>
-                <li>統一錯誤格式 <code>ApiException</code> 與前端錯誤顯示</li>
-                <li>併發 HTTP 測試（同時送出、交替先後順序）與 Playwright 瀏覽器測試</li>
-              </ul>
-            </div>
-          </div>
-          <div class="note-card">
-            <h3>專題報告與履歷可以這樣寫</h3>
-            <p>報告：用「下午改小座位數、晚上訂位客人沒桌」的故事開場，再展示被擋下時的錯誤訊息；接著畫出「改座位數」和「線上訂位」同時發生的時間線，說明為什麼兩邊要鎖同一張桌。最後 demo 停用與重新啟用。</p>
-            <p>履歷：「參與餐廳座位管理後台開發，設計桌號不可變更以保護桌上 QR code，並以資料列鎖確保座位數調整、線上訂位與開桌之間的資料一致；補上桌位啟用／停用管理與統一錯誤格式。」請寫「參與」，不寫成獨立完成整個桌位模組。</p>
-          </div>
+        <section class="section-card" id="tech">
+          <span class="section-kicker">用到的技術與設計模式</span>
+          <h2>本篇真的用到的</h2>
+          <ul class="prompt-list">
+            <li><span><strong>不可變欄位與軟刪除（啟用旗標）：</strong>桌號建立後不改、停用不刪資料，<code>SeatService.java</code>。</span></li>
+            <li><span><strong>悲觀鎖（<code>SELECT ... FOR UPDATE</code>）加 <code>READ_COMMITTED</code>，跨模組共用同一把桌位鎖：</strong>座位設定、訂位、開桌、候位入座，<code>SeatService.java</code>、<code>DiningTableRepository.java</code>。</span></li>
+            <li><span><strong>唯一索引衝突轉成業務錯誤碼：</strong>用 <code>saveAndFlush</code> 抓 <code>DataIntegrityViolationException</code>，<code>SeatService.java</code>。</span></li>
+            <li><span><strong>統一錯誤格式 <code>ApiException</code>：</strong>後端丟錯誤碼、前端顯示原因，<code>SeatService.java</code>。</span></li>
+            <li><span><strong>前端防連點（處理中狀態）：</strong><code>SeatManagement.jsx</code>。</span></li>
+            <li><span><strong>學到什麼：</strong>寫編輯功能時，除了檢查新值，還要問「有誰正在依賴舊值」（桌號被 QR 依賴、座位數被訂位與用餐依賴）；「先查再改」只要可能被插隊就要鎖，關鍵是<strong>和其他程式鎖同一筆資料</strong>，大家自然排隊，不必另外發明機制。</span></li>
+          </ul>
         </section>
 
         <section class="section-card" id="terms">
+          <span class="section-kicker">名詞表</span>
           <h2>新手名詞表</h2>
           <dl class="glossary">
-            <div class="term"><dt>S-08</dt><dd>UI（User Interface，使用者介面）規格裡的畫面編號，S-08 是店長用的座位管理頁。</dd></div>
-            <div class="term"><dt>QR（Quick Response，快速反應碼）</dt><dd>手機相機可以快速讀取的方形圖碼；本案每張桌貼一張，內容是該桌的報到網址，網址裡有桌號。</dd></div>
-            <div class="term"><dt>不可變欄位（immutable）</dt><dd>建立後就不能再修改的資料，通常是被其他地方當作識別的值，例如桌號。</dd></div>
-            <div class="term"><dt>軟刪除（soft delete）與啟用旗標</dt><dd>不真的把資料刪掉，而是用一個欄位（例如 <code>active</code>）標記「停用」。歷史訂單、帳單還能找到這張桌。</dd></div>
-            <div class="term"><dt>API（Application Programming Interface，應用程式介面）</dt><dd>前端呼叫後端功能的網址與規則，例如 <code>PATCH /api/admin/tables-config/{id}/active</code>。</dd></div>
-            <div class="term"><dt>HTTP 狀態碼 400／401／403／404／409</dt><dd>HTTP 是 Hypertext Transfer Protocol（超文字傳輸協定）。400 資料不合規則；401 沒有登入；403 角色沒有權限；404 找不到；409 跟目前資料狀態衝突。</dd></div>
-            <div class="term"><dt>COUNTER／MANAGER</dt><dd>店員角色：COUNTER 是櫃檯，可以看座位設定；MANAGER 是店長，可以修改。</dd></div>
-            <div class="term"><dt>資料列鎖（row lock）與 FOR UPDATE</dt><dd><code>SELECT ... FOR UPDATE</code> 會鎖住讀到的那一筆資料到交易結束；其他也要鎖它的請求必須排隊。</dd></div>
-            <div class="term"><dt>交易（transaction）</dt><dd>把一組資料庫操作當成一次完整的動作：全部成功才存檔，中間失敗就全部取消。</dd></div>
-            <div class="term"><dt>READ_COMMITTED（讀取已提交資料）</dt><dd>資料庫隔離層級的一種：每次查詢都讀得到其他交易已經存檔的最新結果。</dd></div>
-            <div class="term"><dt>唯一索引（UNIQUE index）</dt><dd>資料庫規則：某個欄位的值不能重複，例如兩張桌不能同一個桌號。</dd></div>
-            <div class="term"><dt>遺失更新（lost update）</dt><dd>兩個人讀了同一筆資料、各自修改後存檔，後存的人用舊資料蓋掉先存的人的修改。加鎖讓兩人排隊，或只更新有改的欄位，都可以避免。</dd></div>
-            <div class="term"><dt>Hibernate</dt><dd>專案用的 JPA（Java Persistence API，Java 持久化 API）實作，負責把 Java 物件存進資料庫；預設存檔時會把整列欄位一起寫回。</dd></div>
-            <div class="term"><dt>競態（race condition）</dt><dd>兩個操作同時進行、互相插隊，單獨看都對、合在一起卻寫錯資料的情況。</dd></div>
-            <div class="term"><dt>busy（處理中）與防連點</dt><dd>請求送出後把按鈕停用並顯示「處理中…」，避免連按送出兩次。後端仍要靠鎖保護。</dd></div>
-            <div class="term"><dt>JSON（JavaScript Object Notation，JavaScript 物件表示法）</dt><dd>API 請求與回應使用的文字資料格式，例如 <code>{"active": false}</code>。</dd></div>
-            <div class="term"><dt>SHA／Git commit</dt><dd>SHA 是 Secure Hash Algorithm（安全雜湊演算法）；Git 用它幫每個版本（commit）產生識別碼。</dd></div>
+            <div class="term"><dt>S-08／M2 規格</dt><dd>S-08 是 UI（User Interface，使用者介面）規格的座位管理頁編號；M2 是專案規格文件的第 2 個模組「桌位、開桌與候位」。</dd></div>
+            <div class="term"><dt>不可變欄位（immutable）</dt><dd>建立後就不能再修改的資料，通常是被其他地方當識別的值，例如桌號。</dd></div>
+            <div class="term"><dt>軟刪除（soft delete）與啟用旗標</dt><dd>不真的刪資料，而是用 <code>active</code> 欄位標記「停用」，歷史訂單、帳單還能找到這張桌。</dd></div>
+            <div class="term"><dt>HTTP 狀態碼 400／401／403／404／409</dt><dd>400 資料不合規則；401 沒有登入；403 角色沒有權限；404 找不到；409 與目前資料狀態衝突。</dd></div>
+            <div class="term"><dt>COUNTER／MANAGER</dt><dd>店員角色：COUNTER 是櫃檯，可看座位設定；MANAGER 是店長，可修改。</dd></div>
+            <div class="term"><dt>資料列鎖與 READ_COMMITTED</dt><dd><code>SELECT ... FOR UPDATE</code> 鎖住讀到的那筆資料到交易結束，其他請求要排隊；READ_COMMITTED（讀取已提交資料）是資料庫隔離層級，每次查詢都讀得到別人已存檔的結果。</dd></div>
+            <div class="term"><dt>唯一索引（UNIQUE index）</dt><dd>資料庫規則：某欄位的值不能重複，例如兩張桌不能同一個桌號。</dd></div>
+            <div class="term"><dt>遺失更新（lost update）</dt><dd>兩人讀同一筆資料、各自修改後存檔，後存的人用舊資料蓋掉先存的人的修改；加鎖排隊或只更新有改的欄位都能避免。</dd></div>
+            <div class="term"><dt>Hibernate</dt><dd>專案用的 JPA（Java Persistence API，Java 持久化 API）實作，負責把 Java 物件存進資料庫；預設存檔時把整列欄位一起寫回。</dd></div>
           </dl>
         </section>
 

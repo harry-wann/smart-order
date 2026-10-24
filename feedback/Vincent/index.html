@@ -30,13 +30,65 @@
         <h2>工作包紀錄</h2>
         <div class="article-links"><a href="payment-integration.html">結帳模組 M6：手機付款與全桌結清的一致性</a><span class="status">已驗證 · 97391a4</span><a href="entrance-register-update.html">新會員註冊與入口頁更新（遠端 develop 整合）</a><span class="status">已驗證 · e46a4fd</span><a href="guest-identity.html">同桌客人的身分憑證（guest token 取代裝置 ID）</a><span class="status">已驗證 · dcbba26</span><a href="member-otp.html">手機驗證碼登入：一組驗證碼只能用一次</a><span class="status">已驗證 · 6c5c17b</span></div>
       </section>
-      <section class="section-card">
-        <span class="section-kicker">整理進度</span>
-        <h2>技術亮點、報告與履歷</h2>
+      <section class="section-card" id="highlights">
+        <span class="section-kicker">技術亮點、報告與履歷</span>
+        <h2>用到的技術與設計模式</h2>
         <div class="evidence-grid">
-          <div class="note-card"><h3>手機付款技術亮點</h3><p>結帳模組 M6 的手機付款跨包新增已完成指定案例驗證：帳單採共用金額規則，送出時比對客人確認的總額；待確認付款會重用同一筆交易，結果查詢驗證原用餐憑證與裝置，成功回呼後再同步清除全桌未送購物車並通知同桌。</p></div>
-          <div class="note-card report"><h3>報告建議</h3><p>示範帳單顯示 528 元後，另一位同桌客人加點使帳單成為 1,056 元；用舊金額付款收到 409 後重新載入，確認新總額再繼續。接著展示本機簽章回呼，以及第二位客人收到全桌結帳通知。說明這是本機測試環境，沒有對綠界送出表單或實際扣款。</p></div>
-          <div class="note-card feedback"><h3>履歷建議</h3><p>可寫：「參與跨包手機付款整合，補上預期金額核對、待確認付款保護與付款結果身分驗證，並以本機回呼及瀏覽器案例驗證同桌結帳同步。」工作包 A 的會員驗證碼登入與同桌身分憑證，履歷寫法見各自文章最後一節，建議和付款分開呈現。</p></div>
+          <div class="note-card">
+            <h3>全隊共用的技術</h3>
+            <ul>
+              <li>後端：Java 21、Spring Boot 4.1（Spring MVC REST API：用網址和 HTTP（Hypertext Transfer Protocol，超文字傳輸協定）方法讓前端讀寫資料，例如 <code>MemberAuthController</code>）</li>
+              <li>Spring Data JPA／Hibernate 7（用 Java 物件存取資料庫，例如 <code>MemberEntity</code>）、MySQL 5.7</li>
+              <li>Bean Validation（請求欄位驗證，例如 <code>SendCodeRequest</code> 的手機格式）</li>
+              <li>Lombok（自動產生 getter／setter）、Maven（Java 專案建置工具）</li>
+              <li>統一錯誤格式：<code>ApiException</code>、<code>@RestControllerAdvice</code>（驗證碼限流的 429 回應）</li>
+              <li>前端：React 19、React Router 8（換頁，例如 <code>RequireEmployee.tsx</code>）、Vite 8（建置工具）、Tailwind CSS 4（用 class 名稱寫樣式）</li>
+              <li>TanStack Query 5（伺服器資料快取，<code>checkoutApi.js</code> 的帳單查詢）、axios（<code>customerClient</code>）</li>
+              <li>JavaScript／TypeScript 混用（<code>.jsx</code> 與 <code>.ts</code>）</li>
+              <li>工具：Git 分支與 merge、oxlint（JavaScript 程式碼檢查）</li>
+            </ul>
+          </div>
+          <div class="note-card report">
+            <h3>這個工作包特有的</h3>
+            <ul>
+              <li>Spring Security＋JWT（JSON Web Token，jjwt）：<code>SessionTokenFilter</code> 驗證顧客的兩個 token；會員 7 天、員工 12 小時的有效期</li>
+              <li>Spring WebSocket／STOMP（Simple Text Oriented Messaging Protocol，簡單文字導向訊息協定） 即時推播（<code>@stomp/stompjs</code>）：連線只驗 session token，付款完成後通知同桌 <code>SESSION_CLOSED</code></li>
+              <li>綠界金流整合（ECPay）：產生付款表單、驗證回呼的 <code>CheckMacValue</code>（<code>EcpayService</code>）；本機測試，未實際扣款</li>
+              <li><code>@Scheduled</code> 排程：<code>VerificationCodeScheduler</code> 每 10 分鐘清理過期驗證碼</li>
+              <li><code>SecureRandom</code> 產生亂數 token、SHA-256 雜湊儲存（<code>GuestToken.java</code>）</li>
+              <li>JPA 原生 SQL 查詢（<code>@Query(nativeQuery = true)</code>）：鎖定手機鎖表、<code>INSERT … ON DUPLICATE KEY UPDATE</code></li>
+              <li>資料庫升級腳本：<code>migrate_guest_token.sql</code>、<code>migrate_member_otp.sql</code></li>
+              <li>瀏覽器 API：<code>AbortController</code> 取消舊請求、<code>sessionStorage</code> 與 <code>localStorage</code> 保存憑證</li>
+            </ul>
+          </div>
+        </div>
+        <div class="evidence-grid">
+          <div class="note-card">
+            <h3>設計模式</h3>
+            <ul>
+              <li>分層架構（Controller–Service–Repository）：<code>MemberAuthController</code>、<code>MemberAuthService</code>、<code>VerificationCodeRepository</code></li>
+              <li>DTO（Data Transfer Object，資料傳輸物件）：<code>SendCodeRequest</code>、<code>VerifyCodeRequest</code></li>
+              <li>悲觀鎖（<code>SELECT … FOR UPDATE</code>）與固定鎖順序：每支手機一把鎖；付款回呼依場次、付款紀錄、桌位的順序上鎖</li>
+              <li>樂觀並發控制（帶預期值）：付款時帶 <code>expectedTotal</code>，金額變了就回 <code>409 BILL_CHANGED</code></li>
+              <li>冪等（同一個請求做幾次結果都一樣）：付款通知重送只造成一次結果</li>
+              <li>單一真相來源：線上與櫃檯結帳共用 <code>BillingCalculator</code></li>
+              <li>交易提交後才發布事件（<code>afterCommit</code>）：<code>MenuCheckoutNotifier</code> 發出 <code>SESSION_CLOSED</code></li>
+              <li>限流：同一支手機 10 分鐘最多要 3 次碼，超過回 429 與 <code>Retry-After</code></li>
+              <li>路由守門：<code>RequireEmployee</code> 沒員工憑證就導回登入頁（真正權限仍由後端檢查）</li>
+              <li>憑證只存雜湊：guest token 在資料庫只留 SHA-256 指紋</li>
+              <li>忽略過期回應：付款結果查詢確認回應仍屬目前交易</li>
+            </ul>
+          </div>
+          <div class="note-card feedback">
+            <h3>報告與履歷</h3>
+            <ul>
+              <li>報告：示範帳單顯示 528 元後，另一位同桌客人加點使帳單成為 1,056 元；用舊金額付款收到 409，重新載入確認新總額再繼續；接著展示本機簽章回呼，以及第二位客人收到全桌結帳通知（154 項 HTTP 與資料庫檢查、31 項瀏覽器案例）。說明這是本機測試，沒有向綠界送出表單或實際扣款。</li>
+              <li>報告：先用修正前版本示範「知道別人的裝置 ID 就能改他的購物車」，再說明識別碼與憑證的差別，最後示範同樣步驟被擋下（38 項身分專項、12 項瀏覽器檢查）。</li>
+              <li>報告：先示範「同一組驗證碼同時送兩次，兩個都登入成功」，再示範加鎖後只有一個成功，並展示倒數畫面與「10 分鐘最多 3 次」（39 項專項、15 項瀏覽器檢查）。</li>
+              <li>履歷（工作包 A）：「參與餐廳系統顧客入口與會員流程：驗證碼登入以每支手機一把資料列鎖處理並發問題；參與同桌身分改寫，以伺服器簽發的隨機 token（僅存 SHA-256 雜湊）取代可偽造的裝置識別碼，並以 HTTP 與瀏覽器測試驗證。」</li>
+              <li>履歷（付款，建議與上面分開寫）：「參與跨包手機付款整合，補上預期金額核對、待確認付款保護與付款結果身分驗證，並以本機回呼及瀏覽器案例驗證同桌結帳同步。」付款與同桌身分都是跨工作包的整合，請寫「參與」，不要寫成獨立完成或已上線營運。</li>
+            </ul>
+          </div>
         </div>
       </section>
       <footer class="page-footer"><div class="link-row"><a class="subtle-link" href="../index.html">← 回成員索引</a></div></footer>

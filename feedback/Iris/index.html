@@ -38,13 +38,49 @@
           <p class="muted">桌號不可改以保護桌上 QR、改小座位數不能弄壞訂位、停用與重新啟用，以及「遺失更新」的實際重現與修正；含 83 項 HTTP 與 11 項瀏覽器驗收。</p>
         </div>
       </section>
-      <section class="section-card">
-        <span class="section-kicker">整理進度</span>
-        <h2>技術亮點、報告與履歷</h2>
+      <section class="section-card" id="highlights">
+        <span class="section-kicker">技術亮點、報告與履歷</span>
+        <h2>用到的技術與設計模式</h2>
         <div class="evidence-grid">
-          <div class="note-card"><h3>已驗證亮點</h3><p>開桌預約保留與人數容量檢查、清潔和開桌共用資料列鎖、角色權限與桌況即時通知；候位狀態機與資料列鎖、並行取號不重號、叫號 10 分鐘過號排程、WebSocket 推到叫號螢幕與多台櫃檯；用餐超時與待清理提醒排程（冪等、可手動觸發）；座位設定的不可變桌號、容量與訂位一致性、啟用管理。</p></div>
-          <div class="note-card report"><h3>報告建議</h3><p>用「兩台櫃檯同時讓同一組入座」的時間線開場，再 demo 兩個櫃檯視窗加叫號螢幕同步；用 20 筆同時取號、連線池用光的除錯過程和驗收數字收尾。1024px 起是本次店家端版面驗收範圍。</p></div>
-          <div class="note-card feedback"><h3>履歷建議</h3><p>以「參與、協作」描述桌位與候位流程整合，重點放在競態問題與即時推播。這些是在既有程式上的修正與補齊，請寫成「參與、協作」，不寫成獨立完成整個工作包。</p></div>
+          <div class="note-card"><h3>全隊共用的技術</h3><ul>
+            <li><span>後端：Java 21、Spring Boot 4.1（Spring MVC REST API）、Spring Data JPA／Hibernate 7、MySQL 5.7、Lombok、Maven、統一錯誤格式（<code>ApiException</code> 加 <code>@RestControllerAdvice</code>）</span></li>
+            <li><span>前端：React 19、React Router 8、Vite 8、Tailwind CSS 4、TanStack Query 5（伺服器資料快取）、axios、JavaScript／TypeScript 混用</span></li>
+            <li><span>工具：Git 分支與 merge、oxlint（程式碼檢查）</span></li>
+          </ul></div>
+          <div class="note-card report"><h3>這個工作包特有的</h3><ul>
+            <li><span>Spring WebSocket／STOMP 即時推播：後端 <code>WaitlistNotifier</code>、<code>TableStatusNotifier</code>；前端 <code>@stomp/stompjs</code>（<code>useWaitlistSocket.ts</code>、<code>useTableStatusSocket.js</code>）</span></li>
+            <li><span>Spring Security 角色權限：COUNTER（櫃檯）與 MANAGER（店長），依 API 路徑與 HTTP 方法授權（<code>SecurityConfig.java</code>）</span></li>
+            <li><span><code>@Scheduled</code> 排程（cron 加 <code>Asia/Taipei</code> 時區）與手動觸發 API：候位過號、用餐超時與待清理提醒</span></li>
+            <li><span>原生 SQL <code>SELECT ... FOR UPDATE</code>（JPA 的 <code>@Query</code> nativeQuery）加 <code>@Transactional(isolation = READ_COMMITTED)</code></span></li>
+            <li><span>JPQL 分組查詢（<code>GROUP BY</code>／<code>HAVING</code>）與投影介面（<code>DiningSessionRepository.java</code>）</span></li>
+            <li><span>HikariCP 連線池用盡問題的除錯（候位取號，見候位文章）</span></li>
+            <li><span>資料庫唯一索引與不破壞舊資料的升級腳本（<code>schema.sql</code>、<code>migrate_waitlist_flow.sql</code>）</span></li>
+            <li><span>前端：桌位 QR 圖片以 Blob／Object URL 列印（<code>qrPrint.js</code>）、請求世代防舊回應（<code>TableOpen.jsx</code>）、Tailwind <code>motion-safe:</code></span></li>
+            <li><span>請求欄位檢查在 Service 手寫（<code>ApiException.badRequest</code>），沒有用 Bean Validation</span></li>
+            <li><span>驗證工具：Python 同時送請求的併發測試、Playwright 多視窗瀏覽器自動化</span></li>
+          </ul></div>
+        </div>
+        <div class="evidence-grid">
+          <div class="note-card"><h3>設計模式</h3><ul>
+            <li><span>分層架構（Controller–Service–Repository）：例如 <code>WaitlistController</code>、<code>WaitlistService</code>、<code>WaitlistRepository</code></span></li>
+            <li><span>DTO（Data Transfer Object，資料傳輸物件）：<code>TableOverviewResponse</code>、<code>WaitlistTodaySummary</code>、<code>SeatResponse</code></span></li>
+            <li><span>悲觀鎖與固定鎖順序：入座一律先鎖候位、再鎖桌位（<code>WaitlistService</code>）；取號鎖只有一列的序號表</span></li>
+            <li><span>唯一索引當最後防線：<code>uk_waitlist_ticket_no</code>、<code>uk_dining_session_waitlist</code></span></li>
+            <li><span>狀態機與終態保護：候位 <code>WAITING→CALLED→SEATED／EXPIRED／ABANDONED</code></span></li>
+            <li><span>交易提交後才發布事件（<code>afterCommit</code>，發布／訂閱）加單一背景執行緒依序推播（<code>WaitlistNotifier</code>）</span></li>
+            <li><span>冪等：提醒排程每次重算、不存狀態（<code>TableReminderService</code>）</span></li>
+            <li><span>狀態推導：桌子實體 <code>status</code> 不動，畫面另算 <code>displayStatus</code>（<code>TableHoldService</code>）</span></li>
+            <li><span>不可變欄位與軟刪除：桌號建立後不能改、停用不刪資料（<code>SeatService</code>）</span></li>
+          </ul></div>
+          <div class="note-card feedback"><h3>報告與履歷</h3>
+            <p><strong>報告</strong></p>
+            <ul>
+            <li><span>候位：用「兩台櫃檯同時讓 A13 入座」的時間線開場，demo 兩個櫃檯視窗加叫號螢幕同步；數字收尾：20 筆同時取號約 3 秒完成、號碼連續（修正前卡 30 秒）、128 項 HTTP 加 26 項瀏覽器候位專項驗收。</span></li>
+            <li><span>連線池用光的除錯過程：20 個同時取號卡 30 秒，看 HikariCP 逾時紀錄，找到提交後回呼又借連線，改單一背景執行緒推播。</span></li>
+            <li><span>桌位與座位設定：「清潔拿著舊資料把新開的桌改回空桌」與「兩個請求都回 200、桌子卻沒被停用」的遺失更新，分別以 101 項 HTTP 加 36 項瀏覽器、83 項 HTTP 加 11 項瀏覽器證明；店家端版面以 1024px 為驗收範圍。</span></li>
+            </ul>
+            <p><strong>履歷</strong>：「參與餐廳桌位與候位流程開發：以資料列鎖與唯一索引解決並行取號重號、同一組候位重複入座與開桌／清潔競態，設計候位狀態機與 10 分鐘過號排程，並以 WebSocket（STOMP）在交易提交後推播叫號到候位螢幕與多台櫃檯，以併發 HTTP 測試與 Playwright 多視窗測試驗證。」請寫「參與、協作」，這些是在既有程式上的修正與補齊，不寫成獨立完成整個工作包。</p>
+          </div>
         </div>
       </section>
       <footer class="page-footer"><div class="link-row"><a class="subtle-link" href="../index.html">← 回成員索引</a></div></footer>

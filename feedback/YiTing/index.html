@@ -39,15 +39,60 @@
         <p>108 項 HTTP（Hypertext Transfer Protocol，超文字傳輸協定）／資料庫檢查與 25 項瀏覽器檢查通過。涵蓋員工權限、兩種身分同時送單的單號與帳單、保留同桌購物車，以及手機寬度的對話框操作。</p>
         <p><a href="../evidence/de2a129-http.json">介面與資料庫確認紀錄</a> · <a href="../evidence/de2a129-browser.json">瀏覽器確認紀錄</a></p>
         <p><a href="../assets/staff-order-390.png">查看 390px 手機寬度的代客加點對話框</a>。此圖確認對話框版面，未宣稱整個店家後台皆已適配手機。</p>
-        <div class="note-card report"><h3>報告與履歷怎麼說</h3><p>報告可示範「顧客手機點餐」與「櫃檯代客加點」如何共用驗證、各自保存待送內容，再匯入同一桌帳單。履歷可依實際參與程度寫「參與櫃檯與顧客點餐流程整合，確認同桌資料隔離及庫存不足時的回復流程」；本次協作收尾成果應清楚標示參與範圍。</p></div>
       </section>
-      <section class="section-card">
-        <span class="section-kicker">整理進度</span>
-        <h2>技術亮點、報告與履歷</h2>
+      <section class="section-card" id="highlights">
+        <span class="section-kicker">技術亮點、報告與履歷</span>
+        <h2>用到的技術與設計模式</h2>
         <div class="evidence-grid">
-          <div class="note-card"><h3>工作包技術亮點</h3><p>三篇文章依序說明同桌購物車的列擁有權、送單快照與庫存及取消的一致性，以及結帳以場次編號和預期總額保護付款。原始審查缺失與協作收尾項目分開記錄。</p></div>
-          <div class="note-card report"><h3>報告建議</h3><p>用一張流程圖串起購物車、送單、取消到結帳，並標出場次識別、金額來源及失敗回復。分別引用三篇文章的後端介面與瀏覽器報告，清楚說明各自驗證範圍。</p></div>
-          <div class="note-card feedback"><h3>履歷建議</h3><p>依可追溯的實作與參與程度描述資料隔離、交易一致性或結帳確認；協作者完成的通知與整合應標成「參與整合」或「協作驗收」，勿統稱個人獨立完成。</p></div>
+          <div class="note-card">
+            <h3>全隊共用的技術</h3>
+            <ul>
+              <li>後端：Java 21、Spring Boot 4.1（Spring MVC REST API：用網址和 HTTP 方法讓前端讀寫資料，例如 <code>OrderSubmitController</code>）</li>
+              <li>Spring Data JPA／Hibernate 7（用 Java 物件存取資料庫）、MySQL 5.7（訂單、購物車的資料表與查詢）</li>
+              <li>Lombok（自動產生 getter／setter，用在 <code>OrderItemEntity</code> 等資料類別）、Maven（Java 專案建置工具）</li>
+              <li>統一錯誤格式：<code>ApiException</code>、<code>@RestControllerAdvice</code></li>
+              <li>前端：React 19、React Router 8（換頁）、Vite 8（建置工具）、Tailwind CSS 4（用 class 名稱寫樣式）</li>
+              <li>axios（前端呼叫 API 的工具；<code>customerClient</code>、<code>employeeClient</code>）</li>
+              <li>JavaScript／TypeScript 混用（<code>.jsx</code> 與 <code>.ts</code>）</li>
+              <li>工具：Git 分支與 merge、oxlint（JavaScript 程式碼檢查）</li>
+            </ul>
+          </div>
+          <div class="note-card report">
+            <h3>這個工作包特有的</h3>
+            <ul>
+              <li>Spring Security 角色權限（COUNTER／MANAGER／KITCHEN）＋ <code>SessionTokenFilter</code> 驗證顧客 JWT（JSON Web Token，jjwt）</li>
+              <li>Spring WebSocket／STOMP（Simple Text Oriented Messaging Protocol，簡單文字導向訊息協定） 即時推播（<code>@stomp/stompjs</code>）：伺服器主動通知，購物車、帳單即時更新</li>
+              <li><code>JdbcTemplate</code> 原生 SQL（Structured Query Language，結構化查詢語言）：送單時鎖定品項與選項</li>
+              <li><code>BigDecimal</code>＋<code>HALF_UP</code>：金額精確到小數兩位</li>
+              <li>資料庫升級腳本：<code>migrate_order_item_stock_deducted.sql</code> 可重複執行</li>
+            </ul>
+          </div>
+        </div>
+        <div class="evidence-grid">
+          <div class="note-card">
+            <h3>設計模式</h3>
+            <ul>
+              <li>分層架構（Controller–Service–Repository）：<code>OrderSubmitController</code>、<code>OrderSubmitService</code>、<code>CartItemRepository</code></li>
+              <li>DTO（Data Transfer Object，資料傳輸物件）：<code>OrderSubmittedResponse</code>、<code>StaffOrderRequest</code></li>
+              <li>悲觀鎖（<code>SELECT … FOR UPDATE</code>）與固定鎖順序：先鎖用餐場次，再依品項編號鎖</li>
+              <li>樂觀並發控制：<code>decreaseIfEnough</code> 庫存夠才扣；結帳帶 <code>expectedTotal</code> 比對</li>
+              <li>快照：送單當下存單價、品名、選項與是否扣過庫存</li>
+              <li>單一真相來源：<code>BillingCalculator</code> 從有效明細重算帳單，送單、取消、結帳共用</li>
+              <li>交易提交後才發布事件（<code>afterCommit</code>）：帳單、訂單、取消通知</li>
+              <li>擁有者檢查：購物車列只有加入者能改，後端每次驗證</li>
+              <li>忽略過期回應（世代編號、流水號）：切桌與帳單刷新時舊回應不能蓋新畫面</li>
+            </ul>
+          </div>
+          <div class="note-card feedback">
+            <h3>報告與履歷</h3>
+            <ul>
+              <li>報告：示範兩位客人各加品項，A 看得到 B 的品項但改、刪都回 403，A 送單後 B 的購物車仍在（56 項 HTTP、23 項瀏覽器檢查）。</li>
+              <li>報告：示範資料一致性，改價後再送單仍用送單當時的價格，取消後帳單由有效明細重算（214 項後端與資料庫冒煙核對）；結帳時帳單被改會收到 <code>BILL_CHANGED</code>（156 項 HTTP、27 項瀏覽器檢查）。</li>
+              <li>報告：「顧客手機點餐」與「櫃檯代客加點」共用驗證與快照、各自保存待送內容，再匯入同一桌帳單（108 項 HTTP／資料庫、25 項瀏覽器檢查）。</li>
+              <li>履歷：「參與點餐交易與櫃檯結帳的資料一致性修正：以快照保存送單當下價格與選項，金額由單一規則重算，用資料列鎖與條件式更新處理同時送單、搶庫存，並以 HTTP 與瀏覽器案例驗證。」</li>
+              <li>通知份數、代客加點等協作收尾的部分，請寫「參與整合」，不要寫成獨立完成。</li>
+            </ul>
+          </div>
         </div>
       </section>
       <footer class="page-footer"><div class="link-row"><a class="subtle-link" href="../index.html">← 回成員索引</a></div></footer>

@@ -27,176 +27,115 @@
           <span class="status">指定 HTTP API 與瀏覽器驗收通過</span>
           <span class="subtle">修正提交：b0c2432</span>
         </div>
-        <p class="lede">這篇把五個已確認的結帳與訂單存取問題，整理成「發生情境 → 原因 → 修法 → 如何操作驗收」。另外說明前端如何避免舊請求覆蓋新帳單，以及場次結束通知的處理方式。</p>
-        <p class="intro-note">本次指定 HTTP API 冒煙驗證 156 項通過，瀏覽器驗收 27 項通過。驗證集中在已列出的流程與付款視窗，不代表所有裝置、瀏覽器或營運情境都已涵蓋。</p>
+        <p class="lede">五個已確認的結帳與訂單存取問題，每個都寫成「修正前怎麼壞 → 改成什麼 → 為什麼」；另外說明前端如何避免舊請求覆蓋新帳單，以及場次結束通知怎麼處理。</p>
       </header>
 
       <div class="person-layout">
         <aside class="toc">
           <h2>本文導覽</h2>
           <ol>
-            <li><a href="#access">櫃檯資料與取消操作的權限</a></li>
-            <li><a href="#guest-order">顧客只能查看自己場次的訂單</a></li>
-            <li><a href="#expected-total">結帳前確認金額沒有改變</a></li>
-            <li><a href="#session-id">桌號重用時仍鎖定正確場次</a></li>
-            <li><a href="#countdown">結帳倒數與按鈕行為一致</a></li>
-            <li><a href="#timing">請求時序與場次結束通知</a></li>
-            <li><a href="#integration">本次一起接齊的流程</a></li>
-            <li><a href="#feedback">前輩建議、報告與履歷</a></li>
-            <li><a href="#terms">新手名詞表</a></li>
+            <li><a href="#problems">五個問題</a></li>
+            <li><a href="#changes">時序保護與一起接齊的流程</a></li>
+            <li><a href="#evidence">驗證</a></li>
+            <li><a href="#dialog-visuals">付款視窗畫面</a></li>
+            <li><a href="#tech">用到的技術與設計模式</a></li>
+            <li><a href="#terms">名詞表</a></li>
           </ol>
         </aside>
 
         <div class="content-stack">
-          <section class="scope-card">
-            <h2>先掌握這條結帳路徑</h2>
-            <p>櫃檯畫面先讀取指定桌號目前的用餐場次，再顯示這個場次的帳單。店員選付款方式後，前端把當下看到的總額一起送給後端；後端重新計算並比對。成功後才記錄付款、關閉該場次並更新桌況。</p>
-            <p>因此，付款操作的識別對象是「場次編號」，不是單獨的桌號。桌號會重複使用，場次編號則代表一次具體的用餐。</p>
-          </section>
+          <section class="section-card" id="problems">
+            <p class="section-kicker">01 · 哪裡錯</p>
+            <h2>先掌握結帳路徑，再看五個問題</h2>
+            <p>櫃檯先讀某桌目前的用餐場次（session，一組客人的一次用餐）與帳單；店員付款時，前端把看到的總額一起送給後端，後端重算比對，成功才記錄付款、關閉場次。付款對象是「場次編號」，不是會重複使用的桌號。</p>
 
-          <section class="section-card" id="access">
-            <p class="section-kicker">問題一 · 權限</p>
-            <h2>櫃檯明細、結帳和取消操作不能只靠藏按鈕</h2>
+            <h3>1. 櫃檯明細、結帳和取消不能只靠藏按鈕</h3>
             <div class="compare-grid">
               <div class="compare-side">
-                <h3>發生情境</h3>
-                <p>沒有員工登入憑證的人，可能直接呼叫櫃檯明細或結帳網址；若取消訂單品項的路徑也沒有伺服器權限檢查，只把畫面按鈕藏起來並不能阻止直接送請求。</p>
+                <div class="compare-label">修正前</div>
+                <p>部分管理操作落在公開 API（Application Programming Interface，應用程式介面）路徑之下，沒有員工憑證也能直接呼叫櫃檯明細或結帳網址。只藏按鈕沒用，使用者能自己組 HTTP（Hypertext Transfer Protocol，超文字傳輸協定）請求。</p>
               </div>
-              <div class="compare-side">
-                <h3>原程式原因</h3>
-                <p>部分管理操作落在公開的 API 路徑規則之下。前端顯示與否不是安全邊界，因為使用者仍能自行組出 HTTP 請求。</p>
+              <div class="compare-side after">
+                <div class="compare-label">修正後</div>
+                <p><code>SecurityConfig.java</code> 在公開規則之前明確限制管理路徑：櫃檯明細、場次明細與結帳要 <code>COUNTER</code>（櫃檯）或 <code>MANAGER</code>（店長）；單品取消再加 <code>KITCHEN</code>（廚房）；空場次取消只有店長。為什麼：前端顯示不是安全邊界，要由伺服器擋。</p>
               </div>
             </div>
-            <div class="after">
-              <h3>目前修法與位置</h3>
-              <p><code>backend/src/main/java/.../config/SecurityConfig.java</code> 在公開 API 規則之前明確限制管理路徑：櫃檯明細、場次明細與結帳要求櫃檯或店長角色；單品取消依路徑規則要求櫃檯、店長或廚房角色；空場次取消只允許店長。後端服務仍會檢查場次狀態與操作條件。</p>
-              <p>控制器入口在 <code>TableController</code> 與 <code>OrderSubmitController</code>。角色名稱對照：<code>COUNTER</code> 是櫃檯、<code>MANAGER</code> 是店長、<code>KITCHEN</code> 是廚房。</p>
-            </div>
-            <div class="details-card">
-              <h3>操作驗收</h3>
-              <ol>
-                <li>不帶員工登入憑證，直接讀取 <code>GET /api/admin/tables/{桌號}/detail</code>，確認伺服器拒絕。</li>
-                <li>以顧客憑證呼叫管理員的結帳或單品取消路徑，確認伺服器拒絕；只隱藏畫面按鈕不算通過。</li>
-                <li>以有權限的櫃檯或店長登入，再讀取明細並執行允許的操作，確認成功。</li>
-              </ol>
-            </div>
-          </section>
 
-          <section class="section-card" id="guest-order">
-            <p class="section-kicker">問題二 · 顧客資料範圍</p>
-            <h2>顧客訂單明細必須屬於目前登入的場次</h2>
+            <h3>2. 顧客訂單明細必須屬於目前登入的場次</h3>
             <div class="compare-grid">
               <div class="compare-side">
-                <h3>發生情境</h3>
-                <p>顧客知道或猜到另一張訂單的編號時，嘗試直接開啟那張訂單的明細。</p>
+                <div class="compare-label">修正前</div>
+                <p>顧客知道或猜到另一張訂單的編號，就能直接開啟那張訂單的明細。只用訂單編號查資料、沒確認所屬場次，登入本身限制不了讀取範圍。</p>
               </div>
-              <div class="compare-side">
-                <h3>原程式原因</h3>
-                <p>若只用訂單編號查資料，沒有再確認訂單所屬場次，登入狀態本身不足以限制顧客讀取範圍。</p>
+              <div class="compare-side after">
+                <div class="compare-label">修正後</div>
+                <p><code>SessionTokenFilter</code> 驗證顧客憑證後，把場次編號放進這次請求；<code>GET /api/order-tickets/{id}</code> 呼叫 <code>OrderSubmitService.getOrder(ticketId, sessionId)</code>，訂單與場次不符就回「找不到」。為什麼回找不到：避免洩漏另一桌的訂單內容。</p>
               </div>
             </div>
-            <div class="after">
-              <h3>目前修法與位置</h3>
-              <p><code>SessionTokenFilter</code> 驗證顧客憑證後，將其中的場次編號放入此次請求上下文。<code>OrderSubmitController</code> 的 <code>GET /api/order-tickets/{id}</code> 取得這個場次編號，再呼叫 <code>OrderSubmitService.getOrder(ticketId, sessionId)</code>。服務會確認訂單和場次相符，不相符就回傳找不到，避免洩漏另一桌的訂單內容。</p>
-            </div>
-            <div class="details-card">
-              <h3>操作驗收</h3>
-              <ol>
-                <li>用 A 場次的顧客憑證讀取 A 的訂單，確認明細可見。</li>
-                <li>沿用 A 的憑證，把網址中的訂單編號換成 B 場次的訂單編號，確認不能取得 B 的明細。</li>
-                <li>用 B 的憑證讀取 B 的同一張訂單，確認原本的顧客仍可正常查看。</li>
-              </ol>
-            </div>
-          </section>
 
-          <section class="section-card" id="expected-total">
-            <p class="section-kicker">問題三 · 金額確認</p>
-            <h2>櫃檯看到的總額必須和實際結帳總額一致</h2>
+            <h3>3. 櫃檯看到的總額必須和實際結帳總額一致</h3>
             <div class="compare-grid">
               <div class="compare-side">
-                <h3>發生情境</h3>
-                <p>櫃檯打開帳單後，同桌又有人加點、取消品項或改變了帳單。店員按下付款時，畫面上的金額已經過期。</p>
+                <div class="compare-label">修正前</div>
+                <p>櫃檯打開帳單後，同桌有人加點或取消，店員按付款時畫面金額已過期。結帳請求只帶付款方式，後端用請求到達時的金額直接完成付款。</p>
               </div>
+              <div class="compare-side after">
+                <div class="compare-label">修正後</div>
+                <p><code>TableDetail.jsx</code> 在按下付款的瞬間凍結場次編號、付款方式與金額，送出 <code>{ method, expectedTotal }</code> 到 <code>POST /api/admin/dining-sessions/{id}/settle</code>。<code>TableService.settle</code> 鎖定場次重算，總額不同就回 <code>BILL_CHANGED</code> 加完整新帳單、不付款；前端更新畫面請店員再確認，不自動重送。為什麼：付款金額必須是店員看過的那個。</p>
+              </div>
+            </div>
+
+            <h3>4. 桌號被重用後，舊畫面不能結掉新一桌的帳</h3>
+            <div class="compare-grid">
               <div class="compare-side">
-                <h3>原程式原因</h3>
-                <p>結帳請求只帶付款方式，後端便以請求到達時的帳單金額完成付款，沒有確認店員看到的金額是否仍相同。</p>
+                <div class="compare-label">修正前</div>
+                <p>店員開著某桌舊畫面，原場次結束後桌子接待下一組客人；舊畫面若仍以桌號送付款，可能操作到新場次。舊流程用桌號當付款目標，缺少「哪一次用餐」的精確識別。</p>
+              </div>
+              <div class="compare-side after">
+                <div class="compare-label">修正後</div>
+                <p>櫃檯明細回傳 <code>sessionId</code>、<code>sessionStatus</code>、<code>hasOrderHistory</code>，付款改走 <code>/api/admin/dining-sessions/{id}/settle</code>。<code>TableService.settle</code> 鎖定該場次與桌況，確認仍是開啟中的場次才付款。</p>
               </div>
             </div>
-            <div class="after">
-              <h3>目前修法與位置</h3>
-              <p><code>TableDetail.jsx</code> 在店員按下付款的當下，凍結場次編號、付款方式、小計、服務費與總額。<code>services/api/table/tableApi.ts</code> 呼叫 <code>POST /api/admin/dining-sessions/{id}/settle</code>，送出 <code>{ method, expectedTotal }</code>。後端 <code>TableService.settle(sessionId, request)</code> 鎖定正確場次並重新計算帳單；總額不同時回傳 <code>BILL_CHANGED</code> 和完整的新帳單，不完成付款。前端更新畫面並要求店員再次確認，不會自動重送。</p>
-            </div>
-            <div class="details-card">
-              <h3>操作驗收</h3>
-              <ol>
-                <li>打開帳單並記下總額，先不要付款。</li>
-                <li>讓同桌另一位顧客新增或取消一個品項，改變場次帳單。</li>
-                <li>送出舊畫面上的付款確認，確認收到 <code>BILL_CHANGED</code>、顯示最新帳單並關閉付款確認視窗。</li>
-                <li>確認畫面沒有替店員自動完成第二次付款；店員重新核對並按一次付款後，才送出新的確認。</li>
-              </ol>
+
+            <h3>5. 倒數必須從 5 到 0，成功後等待 1.5 秒再離開</h3>
+            <div class="compare-grid">
+              <div class="compare-side">
+                <div class="compare-label">修正前</div>
+                <p>規格要求先倒數五秒、歸零才送出付款。舊畫面卻只從 3 顯示到 1，之後還會再等約 10 秒，成功後的回頁節奏也不符合需求。</p>
+              </div>
+              <div class="compare-side after">
+                <div class="compare-label">修正後</div>
+                <p><code>PaymentProcessing.jsx</code> 以明確的階段倒數 5 到 0，只有歸零才呼叫一次付款；送出中鎖住付款與取消，歸零前取消不送付款；成功畫面顯示 1.5 秒才回桌況頁，失敗顯示錯誤。為什麼：畫面上的倒數要等於實際行為。</p>
+              </div>
             </div>
           </section>
 
-          <section class="section-card" id="session-id">
-            <p class="section-kicker">問題四 · 場次識別</p>
-            <h2>桌號被重用後，舊畫面不能結掉新一桌的帳</h2>
-            <div class="compare-grid">
-              <div class="compare-side">
-                <h3>發生情境</h3>
-                <p>店員開著某桌的舊畫面。原場次結束後，桌子又接待下一組客人；如果舊畫面仍以桌號送出付款，它可能操作到新場次。</p>
-              </div>
-              <div class="compare-side">
-                <h3>原程式原因</h3>
-                <p>桌號是會重複使用的位置編號，不能單獨表示哪一次用餐。舊流程以桌號作為付款目標，缺少一次用餐的精確識別。</p>
-              </div>
-            </div>
-            <div class="after">
-              <h3>目前修法與位置</h3>
-              <p>櫃檯明細回傳 <code>sessionId</code>、<code>sessionStatus</code> 和 <code>hasOrderHistory</code>。前端付款時使用當下讀到的 <code>sessionId</code>；管理端 API 對場次使用 <code>/api/admin/dining-sessions/{id}</code> 與 <code>/settle</code>，不再用桌號尋找付款對象。<code>TableService.settle</code> 鎖定該場次及其桌況，確認仍是有效的開啟場次，才繼續付款。</p>
-            </div>
-            <div class="details-card">
-              <h3>操作驗收</h3>
-              <ol>
-                <li>開啟桌子 A 的場次明細，保留這個櫃檯畫面。</li>
-                <li>以另一個有權限的流程結束原場次，讓桌子 A 開始新的場次。</li>
-                <li>從舊畫面送出原場次付款，確認後端不會結束新場次；新場次帳單與狀態保持完整。</li>
-                <li>重新讀取桌子 A 的明細，確認新的 <code>sessionId</code> 與新帳單一致。</li>
-              </ol>
-            </div>
+          <section class="section-card" id="changes">
+            <p class="section-kicker">02 · 怎麼修</p>
+            <h2>舊請求、場次結束與一起接齊的流程</h2>
+            <ul class="prompt-list">
+              <li><span><strong>舊帳單讀取不覆蓋新帳單：</strong><code>TableDetail.jsx</code> 為每次帳單讀取編流水號（每次加一的編號），只有最新一次能更新畫面；收到 <code>BILL_CHANGED</code> 也讓先前未完成的讀取失效，再套用錯誤內附的新帳單。為什麼：較早開始、較晚返回的舊讀取，不能把新帳單蓋回去。</span></li>
+              <li><span><strong>場次結束可辨認：</strong>顧客憑證簽章有效但場次已關閉時，<code>SessionTokenFilter</code> 回 401 <code>INVALID_SESSION_TOKEN</code> 並附 <code>reason: PAID</code> 或 <code>CANCELLED</code>，真正無效的憑證沒有 reason。前端統一處理：PAID 顯示已結帳畫面，CANCELLED 清憑證回入口，無 reason 走重新掃碼；處理前先核對場次編號，已切到別場次時舊通知不能清掉新場次狀態。</span></li>
+              <li><span><strong>整合時補上，不算原作者的缺失：</strong>取消沒有訂單的空場次（只有店長能呼叫 <code>POST /api/admin/dining-sessions/{id}/cancel</code>，取消後清購物車並釋放桌子）；帳單即時更新（<code>BillingNotifier</code> 在交易提交後才通知員工端，<code>useBillingSocket</code> 在重連或網路恢復時也刷新）；付款或取消完成後，交易提交才發出場次結束訊息。</span></li>
+              <li><span><strong>既有的保護沒動：</strong>後端原本就有同場次結帳鎖防重複結帳，不是缺陷；新增的總額比對補的是畫面過期時的確認。</span></li>
+            </ul>
           </section>
 
-          <section class="section-card" id="countdown">
-            <p class="section-kicker">問題五 · 操作時序</p>
-            <h2>倒數必須從 5 到 0，成功後等待 1.5 秒再離開</h2>
-            <div class="compare-grid">
-              <div class="compare-side">
-                <h3>發生情境</h3>
-                <p>櫃檯操作規格要求先倒數五秒，歸零後才送出付款；成功畫面保留一小段時間，再回到桌況頁。</p>
-              </div>
-              <div class="compare-side">
-                <h3>原程式原因</h3>
-                <p>舊畫面倒數顯示與實際等待行為不一致：畫面從 3 顯示到 1，之後還會再等待約 10 秒，成功後的回頁節奏也不符合需求。</p>
-              </div>
-            </div>
-            <div class="after">
-              <h3>目前修法與位置</h3>
-              <p><code>PaymentProcessing.jsx</code> 以明確的付款階段倒數 5、4、3、2、1、0。只有歸零時可以呼叫一次付款；送出中鎖住付款和取消操作。歸零前取消只關閉流程、不送出付款。成功畫面顯示 1.5 秒後才返回桌況頁；請求失敗則顯示錯誤，不會誤顯示成功。</p>
-            </div>
-            <div class="details-card">
-              <h3>操作驗收</h3>
-              <ol>
-                <li>開啟付款確認，觀察畫面依序從 5 倒數到 0；在 0 之前取消，確認沒有送出結帳請求。</li>
-                <li>重新付款並等到 0，確認只出現一次結帳請求；送出期間付款與取消控制不可重複操作。</li>
-                <li>讓後端回覆錯誤，確認畫面顯示錯誤而非成功。</li>
-                <li>完成付款，確認成功畫面保留約 1.5 秒後才返回桌況頁。</li>
-              </ol>
-            </div>
+          <section class="section-card" id="evidence">
+            <p class="section-kicker">03 · 驗證</p>
+            <h2>指定案例通過，但有範圍界線</h2>
+            <ul class="prompt-list">
+              <li><span><code>b0c2432</code>：乾淨後端打包通過，209 個來源檔案完成編譯；4 個既有測試只編譯、沒執行，也未新增測試。前端打包通過（產出約 739 KB，工具仍顯示既有的檔案大小提醒）。</span></li>
+              <li><span>HTTP API 冒煙驗證（smoke test，快速走過主要流程）156 項通過，含權限、金額變更、場次結帳與空場次取消。<a class="subtle-link" href="../evidence/b0c2432-http.json">HTTP API 報告（156 項）</a></span></li>
+              <li><span>瀏覽器驗收 27 項通過（15 條主要路徑加 12 條結帳專項）：5 秒倒數、舊帳單讀取淘汰、金額凍結、歸零前取消不送請求、成功後 1.5 秒返回、兩位顧客收到已付款結果、店長取消後顧客回入口、櫃檯無權取消，以及付款後 401 先於 WebSocket 通知到達時仍顯示已結帳。<a class="subtle-link" href="../evidence/b0c2432-browser.json">瀏覽器報告（27 項）</a></span></li>
+                            <li><span>界線：不含實際收款，不代表所有裝置、瀏覽器或營運情境，也不是完整回歸。</span></li>
+            </ul>
           </section>
 
           <section class="section-card" id="dialog-visuals">
             <p class="section-kicker">付款視窗畫面紀錄</p>
             <h2>1440px 與 390px 寬度下可辨識倒數、金額和取消操作</h2>
-            <p>兩張圖都來自隔離驗收資料。畫面停在倒數 5 秒時截圖，隨即按取消並確認沒有送出結帳請求；這不是實際付款。窄畫面結果只說明付款對話框在 390px 視窗內可用，不代表整個管理後台都已完成窄螢幕響應式驗收。</p>
+            <p>截圖停在倒數 5 秒，隨即按取消，沒有送出結帳請求，不是實際付款。窄畫面結果只代表付款對話框在 390px 內可用，不代表整個後台已適配手機。</p>
             <div class="evidence-grid">
               <figure class="details-card">
                 <img src="../assets/checkout-dialog-1440.png" alt="1440px 視窗中的現金付款確認對話框，顯示五秒倒數、金額與取消付款按鈕" style="display:block;width:100%;height:auto;border-radius:12px">
@@ -209,86 +148,32 @@
             </div>
           </section>
 
-          <section class="section-card" id="timing">
-            <p class="section-kicker">跨畫面時序</p>
-            <h2>舊請求、金額變更和場次結束都要有明確的先後判斷</h2>
-            <div class="details-card">
-              <h3>帳單刷新不讓慢回應蓋掉新資料</h3>
-              <p><code>TableDetail.jsx</code> 對每次帳單讀取編流水號。只有目前最新的一次讀取可以更新畫面。收到 <code>BILL_CHANGED</code> 時也會使先前尚未完成的讀取失效，再套用錯誤回應內附的完整帳單。如此一來，較早開始、較晚返回的舊讀取不能把新帳單蓋回去。付帳期間使用的金額則來自付款按下瞬間凍結的資料，不跟背景刷新一起變動。</p>
-            </div>
-            <div class="details-card">
-              <h3>場次結束有 WebSocket 通知，也有可辨認的 401 回應</h3>
-              <p>後端 <code>SessionTokenFilter</code> 對簽章及裝置資料有效、但場次已關閉的顧客憑證，回傳 <code>INVALID_SESSION_TOKEN</code>，並附上 <code>reason: PAID</code> 或 <code>reason: CANCELLED</code>。真正無效的憑證沒有這個原因。<code>customerClient</code> 清除被拒絕的對應憑證，但保留並傳遞原錯誤，讓頁面判斷結束原因。</p>
-              <p>顧客選單與購物車的請求錯誤、連線檢查和 WebSocket 場次結束事件都交給一致的結束處理方式：<code>PAID</code> 顯示已結帳完成畫面；<code>CANCELLED</code> 清除憑證並回入口；沒有結束原因的無效憑證走重新掃碼或入口流程。購物車收到場次結束事件時不再另外發起一個可能因 401 搶先導頁的讀取。</p>
-              <p>這些事件處理會核對目前頁面仍掛載、場次編號及切換代號仍相符。若使用者已切到另一場次，舊場次的回應或通知就不能清掉新場次狀態、顯示舊錯誤或把人帶離新頁面。</p>
-            </div>
-            <div class="details-card">
-              <h3>操作驗收</h3>
-              <ol>
-                <li>讓舊帳單讀取延遲，再收到新帳單通知；確認舊讀取晚到時不會覆蓋新帳單。</li>
-                <li>付款按下後，在背景帳單更新期間確認付款內容仍是當時凍結的場次、付款方式和總額。</li>
-                <li>一桌完成付款後，確認顧客看到「已經結帳完成」；另一桌取消時，確認顧客回到入口。</li>
-                <li>在舊桌請求尚未回覆時切換到另一桌，再讓舊回應或舊通知到達；確認新桌畫面、錯誤狀態和導頁不受影響。</li>
-              </ol>
-            </div>
-          </section>
-
-          <section class="section-card" id="integration">
-            <p class="section-kicker">協作收尾</p>
-            <h2>本次一起接齊的流程</h2>
-            <p>以下是讓結帳前後能連成一條可操作流程的整合工作，不列為原作者的五項缺失。</p>
-            <ul>
-              <li><strong>取消沒有訂單的空場次：</strong>櫃檯可提出取消確認，只有店長能呼叫 <code>POST /api/admin/dining-sessions/{id}/cancel</code>；後端只接受沒有訂單的場次，取消後清理購物車並釋放桌子。</li>
-              <li><strong>帳單即時更新：</strong><code>BillingNotifier</code> 在資料庫交易成功提交後，才通知員工端重新讀取同一場次帳單。<code>useBillingSocket</code> 也會在重連、視窗返回前景或網路恢復時刷新，以補上離線期間的變更。</li>
-              <li><strong>結束事件在提交後通知：</strong>付款或空場次取消完成後，服務在交易提交後發出顧客場次結束訊息和櫃檯桌況更新。顧客端依付款或取消原因顯示對應結果。</li>
-              <li><strong>維持既有防重複機制：</strong>後端原本就有同場次結帳鎖，避免同一場次被重複結帳。本次沒有把「原本可並發雙重扣款」當成缺陷；新增的總額比對補上的是櫃檯畫面過期時的確認。</li>
+          <section class="section-card" id="tech">
+            <p class="section-kicker">04 · 用到的技術與設計模式</p>
+            <h2>本篇真的用到的</h2>
+            <ul class="prompt-list">
+              <li><span><strong>Spring Security 角色權限＋自訂 Filter：</strong><code>SecurityConfig</code> 依 COUNTER／MANAGER／KITCHEN 限制路徑，<code>SessionTokenFilter</code> 驗證顧客的 JWT（JSON Web Token，帶簽章的登入憑證）。</span></li>
+              <li><span><strong>悲觀鎖（資料列鎖，暫時鎖住一筆資料讓同時操作排隊）：</strong><code>TableService.settle</code> 先鎖開啟中的場次與桌況，再重算與付款。</span></li>
+              <li><span><strong>樂觀並發控制（帶預期總額）：</strong>前端送 <code>expectedTotal</code>，後端重算不同就拒絕。</span></li>
+              <li><span><strong>統一錯誤格式：</strong><code>SettlementException</code> 搭配 <code>@RestControllerAdvice</code>，<code>BILL_CHANGED</code> 回應內附完整新帳單。</span></li>
+              <li><span><strong>交易提交後才通知＋WebSocket／STOMP（Simple Text Oriented Messaging Protocol，簡單文字導向訊息協定） 推播：</strong><code>BillingNotifier</code> 在 <code>afterCommit</code> 推到 <code>/topic/billing</code>，前端 <code>useBillingSocket.ts</code> 用 <code>@stomp/stompjs</code> 訂閱。</span></li>
+              <li><span><strong>忽略過期回應：</strong>帳單讀取流水號只讓最新一次更新畫面（<code>TableDetail.jsx</code>）。</span></li>
+              <li><span><strong>學到什麼：</strong>每個請求都要問「代表哪個場次、有沒有權限、金額以哪個時間點為準、舊回應會不會影響已切換的畫面」，驗收也要涵蓋舊讀取晚到、場次先關閉這類先後順序。</span></li>
             </ul>
-          </section>
-
-          <section class="section-card feedback" id="feedback">
-            <p class="section-kicker">學習與表達</p>
-            <h2>前輩建議：把狀態邊界和資料歸屬說清楚</h2>
-            <p>這類流程的關鍵不只在按鈕能否點擊，而是每筆請求代表哪個場次、使用者是否有權讀取、金額以哪個時間點為準，以及舊回應能否影響已切換的畫面。走讀時先畫出「畫面 → API → 權限過濾器 → 服務 → 資料庫 → 通知」路徑，再逐段確認資料歸屬與失敗分支，通常比只追成功案例更快找到缺口。</p>
-            <p>驗收也要涵蓋競爭順序：舊讀取晚到、新帳單先到、場次先關閉、使用者再切桌。單看每個請求各自成功，無法證明組合時序安全。</p>
-
-            <h2>報告可以怎麼呈現</h2>
-            <p>用一張時序圖呈現店員讀帳單、顧客同時改單、付款送出與 <code>BILL_CHANGED</code> 的順序；再用一張權限表對照匿名、顧客、櫃檯、店長和廚房可執行的操作。這能讓讀者快速理解金額確認與角色檢查各自解決什麼問題。</p>
-            <p>結果段落要分清楚「原始程式的五項問題與本次修正」和「協作收尾接上的通知、空場次取消與整合驗證」，也應列出未涵蓋的裝置、瀏覽器或營運例外，不把局部冒煙結果寫成全面保證。本次 HTTP API 156 項及瀏覽器 27 項均有報告可查；桌面與窄螢幕兩張截圖僅驗收付款對話框。</p>
-
-            <h2>履歷描述建議</h2>
-            <p>可依實際負責範圍寫成：「修正櫃檯結帳流程的權限、顧客訂單場次隔離、金額變更確認、桌號重用與付款倒數問題；以場次識別、交易鎖、最新請求序號與結帳總額比對，避免舊畫面或過期回應影響付款；參與即時帳單更新與場次結束通知整合，並以 HTTP API 與瀏覽器操作驗收主要流程。」</p>
-            <p>若某項通知或整合由協作者完成，履歷可寫「參與整合」或「協作驗收」，不要寫成自己獨立設計或實作。可寫明本次指定驗證有 156 項 API、27 項瀏覽器檢查通過，同時說明這些數量不代表全產品測試。</p>
           </section>
 
           <section class="section-card glossary" id="terms">
-            <p class="section-kicker">新手名詞表</p>
+            <p class="section-kicker">05 · 名詞表</p>
             <h2>本文常用詞</h2>
             <dl class="glossary">
-              <div class="term"><dt>API — Application Programming Interface（應用程式介面）</dt><dd>讓前端與後端依約定路徑和資料格式交換資訊的入口。</dd></div>
-              <div class="term"><dt>HTTP — Hypertext Transfer Protocol（超文字傳輸協定）</dt><dd>瀏覽器和伺服器常用的請求與回應規則；例如讀取明細或送出結帳。</dd></div>
-              <div class="term"><dt>JSON — JavaScript Object Notation（JavaScript 物件表示法）</dt><dd>常見的文字資料格式，例如付款請求中的付款方式與預期總額。</dd></div>
-              <div class="term"><dt>JWT — JSON Web Token（JSON 網頁權杖）</dt><dd>一種帶有簽章的登入憑證格式。服務端仍須檢查憑證所屬場次與目前狀態。</dd></div>
-              <div class="term"><dt>UI — User Interface（使用者介面）</dt><dd>使用者實際看到和操作的畫面。藏起按鈕不能取代後端權限檢查。</dd></div>
-              <div class="term"><dt>WebSocket（網頁雙向連線）</dt><dd>建立後可由伺服器主動推送更新的連線方式；本流程用來通知帳單或場次狀態改變。</dd></div>
-              <div class="term"><dt>401 未授權</dt><dd>伺服器表示這個請求沒有可接受的登入憑證。這次流程另用結束原因區分已付款、已取消與一般無效憑證。</dd></div>
-              <div class="term"><dt>409 Conflict（資源狀態衝突）</dt><dd>請求格式可讀，但目前資料狀態不允許照原內容完成；本流程的 <code>BILL_CHANGED</code> 會附上最新帳單，要求重新確認。</dd></div>
-              <div class="term"><dt>交易提交後通知（afterCommit）</dt><dd>先讓資料庫確認付款或取消已正式完成，再發送外部通知，避免通知內容和實際資料狀態不一致。</dd></div>
-              <div class="term"><dt>冒煙驗證（smoke test）</dt><dd>用少量端到端操作快速確認主要流程能工作；它有範圍限制，不能代替完整測試或所有情境驗收。</dd></div>
+              <div class="term"><dt>場次編號（sessionId）</dt><dd>代表一次具體用餐的編號；桌號會重複使用，所以付款一律認場次編號。</dd></div>
+              <div class="term"><dt>expectedTotal／BILL_CHANGED</dt><dd>前端送出的「我看到的總額」／後端發現金額已變時回的錯誤碼。</dd></div>
+              <div class="term"><dt>JWT — JSON Web Token（JSON 網頁權杖）</dt><dd>帶簽章的登入憑證格式；服務端仍要檢查它所屬的場次與目前狀態。</dd></div>
+              <div class="term"><dt>401／409</dt><dd>401：沒有可接受的登入憑證；409：請求可讀，但資料目前的狀態不允許照做。</dd></div>
+              <div class="term"><dt>WebSocket（網頁雙向連線）</dt><dd>連線建立後伺服器可主動推送更新，本流程用來通知帳單或場次狀態改變。</dd></div>
+              <div class="term"><dt>afterCommit（交易提交後）</dt><dd>先讓資料庫確認付款或取消已正式完成，再發通知，避免通知和實際資料不一致。</dd></div>
+              <div class="term"><dt>冒煙驗證（smoke test）</dt><dd>用少量端到端操作快速確認主要流程能工作，不能代替完整測試。</dd></div>
             </dl>
-          </section>
-
-          <section class="scope-card">
-            <h2>驗證紀錄</h2>
-            <ul>
-              <li>修正提交：<code>b0c2432</code></li>
-              <li>乾淨後端打包通過，209 個來源檔案完成編譯；4 個既有測試僅編譯、沒有執行，也未新增測試。</li>
-              <li>前端打包通過；產出檔案約 739 KB，工具仍顯示既有打包檔案大小提醒。</li>
-              <li>HTTP API 冒煙驗證：156 項通過，含權限、金額變更、場次結帳與空場次取消。</li>
-              <li>瀏覽器驗收：27 項通過，包含 15 條主要操作路徑與 12 條結帳專項；涵蓋 5 秒倒數、舊帳單讀取淘汰、金額凍結、取消不送結帳請求、成功後 1.5 秒返回、兩位顧客收到已付款結果、店長取消後兩位顧客清除憑證回入口、櫃檯無權取消，以及付款後 401 先於 WebSocket 關桌通知到達時仍顯示已結帳面板。</li>
-              <li>付款對話框於 1440px 與 390px 視窗寬度完成截圖及立即取消驗收；窄畫面結論僅適用於對話框。</li>
-              <li>原始驗證報告：<a class="subtle-link" href="../evidence/b0c2432-http.json">HTTP API 報告（156 項）</a> · <a class="subtle-link" href="../evidence/b0c2432-browser.json">瀏覽器報告（27 項）</a>。</li>
-              <li>本文列出的手動步驟是驗收指引，不代表每一項都已在所有瀏覽器與資料組合上實測；驗證不包含實際收款，也不代表完整回歸。</li>
-            </ul>
           </section>
         </div>
       </div>
