@@ -233,7 +233,7 @@ ER 圖見 <a href="../spec/06-圖表總覽.html">06-圖表總覽</a>。本文件
 進階最後沒做，資料庫裡也不會留一堆空表與用不到的欄位。</p>
 <pre><code>db/migration/
 基礎
-├── V1__create_account_tables.sql       member, verification_code, staff
+├── V1__create_account_tables.sql       member, verification_code, verification_phone_lock, staff
 ├── V2__create_menu_tables.sql          menu_category, menu_item, option_group, option_value, menu_item_option_group
 ├── V3__create_table_tables.sql         dining_table, reservation, waitlist
 ├── V4__create_dining_tables.sql        dining_session（建完補上 waitlist → dining_session 的外鍵）、
@@ -381,6 +381,29 @@ ER 圖見 <a href="../spec/06-圖表總覽.html">06-圖表總覽</a>。本文件
 <blockquote>
 <p><strong>建議改用 <a href="../tech/realtime/44-Redis.html">Redis</a></strong>（<code>SET otp:&lt;phone&gt; &lt;code&gt; EX 300</code>），天生有 TTL，不用寫清理排程。這張表是還沒導入 <a class="gloss" href="../tech/realtime/44-Redis.html" title="看這個技術的白話說明">Redis</a> 時的後備方案。</p>
 </blockquote>
+<h3 id="verification_phone_lock-每支手機一把鎖"><code>verification_phone_lock</code> 每支手機一把鎖</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>型別</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>phone</td>
+<td>VARCHAR(20) PK</td>
+<td></td>
+</tr>
+<tr>
+<td>last_requested_at</td>
+<td>DATETIME(3) NOT NULL</td>
+<td>最後一次要驗證碼的時間</td>
+</tr>
+</tbody>
+</table></div>
+<p>同一支手機的「要碼」與「驗碼」先鎖這一列再做事，讓「10 分鐘最多 3 次」「錯 3 次作廢」在同時送出時也算得對。要碼用 <code>INSERT … ON DUPLICATE KEY UPDATE</code>（新手機新增、舊手機更新，兩種都拿獨佔鎖），驗碼用 <code>SELECT … FOR UPDATE</code>。已有資料庫用 <code>backend/db/migrate_member_otp.sql</code> 升級。</p>
 <h3 id="staff-員工"><code>staff</code> 員工</h3>
 <div class="tablewrap"><table>
 <thead>
@@ -429,8 +452,45 @@ ER 圖見 <a href="../spec/06-圖表總覽.html">06-圖表總覽</a>。本文件
 <hr />
 <h2 id="2-菜單">2. 菜單</h2>
 <h3 id="menu_category-分類"><code>menu_category</code> 分類</h3>
-<p>id、name、sort_order、active</p>
-<p>種子：鍋底／肉品／海鮮／蔬菜／火鍋料／主食／飲料／酒類 共 8 類。</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>型別</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>BIGINT PK</td>
+<td></td>
+</tr>
+<tr>
+<td>name</td>
+<td>VARCHAR(50) <strong>UNIQUE</strong></td>
+<td>不分大小寫（collation <code>utf8mb4_unicode_ci</code>）；新增或改名撞到回 <code>409 CATEGORY_NAME_DUPLICATED</code></td>
+</tr>
+<tr>
+<td>sort_order</td>
+<td>INT</td>
+<td>顯示順序，小的在前（同值再比 id）</td>
+</tr>
+<tr>
+<td><strong>cook_order</strong></td>
+<td>TINYINT UNSIGNED DEFAULT 2</td>
+<td>出餐順序（04 §4.12）：1 鍋底、2 菜盤、3 火鍋料、4 肉品、5 主食、6 飲料甜點。KDS 同一張單依這個值排，鍋底品項（<code>is_soup_base = 1</code>）固定 1；店長在菜單管理設定，不看分類名稱</td>
+</tr>
+<tr>
+<td>active</td>
+<td>TINYINT(1) DEFAULT 1</td>
+<td>停用用</td>
+</tr>
+</tbody>
+</table></div>
+<p>索引：<code>UNIQUE(name)</code>（<code>uk_menu_category_name</code>）</p>
+<p>種子：鍋底／肉品／海鮮／蔬菜／火鍋料／主食／飲料／酒類 共 8 類，<code>cook_order</code> 依序是 1／4／2／2／3／5／6／6。
+已有資料庫用 <code>backend/db/migrate_menu_category_guards.sql</code> 升級（新增 <code>cook_order</code> 並依名稱回填、加名稱唯一索引）。</p>
 <h3 id="menu_item-品項"><code>menu_item</code> 品項</h3>
 <div class="tablewrap"><table>
 <thead>
@@ -999,6 +1059,11 @@ session 進終態（<code>PAID</code> 或 <code>CANCELLED</code>）時，整桌�
 <td></td>
 </tr>
 <tr>
+<td>stock_deducted</td>
+<td>TINYINT(1) DEFAULT 0</td>
+<td>送單時是否扣了庫存（= 當下的 <code>menu_item.track_inventory</code>）。取消未出餐的品項時<strong>只補回這欄是 1 的</strong>，不看品項現在的 <code>track_inventory</code>——店長送單後才切換追蹤，看現在的設定會多補或漏補。預點轉單（進階 A2）也要依當下實際有沒有扣寫入。舊資料由升級腳本用品項現在的 <code>track_inventory</code> 推測回填</td>
+</tr>
+<tr>
 <td>line_total</td>
 <td>DECIMAL(10,2)</td>
 <td><code>(unit_price + options_price) × quantity</code></td>
@@ -1023,9 +1088,19 @@ session 進終態（<code>PAID</code> 或 <code>CANCELLED</code>）時，整桌�
 <td>DATETIME(3) NULL</td>
 <td></td>
 </tr>
+<tr>
+<td>wasted_at</td>
+<td>DATETIME(3) NULL</td>
+<td>報廢（退菜）時間。有值代表這筆 <code>CANCELLED</code> 是 KDS 報廢：做壞或客人退回、<strong>庫存不回補</strong>、不計入帳單；<code>NULL</code> 是一般取消（未出餐、庫存依 <code>stock_deducted</code> 回補）</td>
+</tr>
+<tr>
+<td><strong>wasted_by_staff_id</strong></td>
+<td>BIGINT FK NULL</td>
+<td>→ <code>staff</code>，報廢（退菜）的員工，報廢時從登入的員工 JWT 取得；同一筆重送報廢不覆寫。只有報廢才有值，一般取消與升級前的舊報廢為 NULL</td>
+</tr>
 </tbody>
 </table></div>
-<p>索引：<code>INDEX(order_ticket_id)</code>、<strong><code>INDEX(menu_item_id)</code></strong>（推薦查詢會大量用到）</p>
+<p>索引：<code>INDEX(order_ticket_id)</code>、<strong><code>INDEX(menu_item_id)</code></strong>（推薦查詢會大量用到）；<code>wasted_by_staff_id</code> 的外鍵 <code>fk_order_item_wasted_staff</code> 由 MySQL 自動建索引</p>
 <h3 id="order_item_option-單品選項快照"><code>order_item_option</code> 單品選項快照</h3>
 <p>id、order_item_id FK、<code>group_name_snapshot</code>、<code>value_name_snapshot</code>、<code>price_delta</code></p>
 <blockquote>
@@ -1261,6 +1336,11 @@ session 進終態（<code>PAID</code> 或 <code>CANCELLED</code>）時，整桌�
 <td><strong>cancel_source</strong></td>
 <td>VARCHAR(10) NULL</td>
 <td><code>CUSTOMER</code>（客人線上取消，M7 7.8）/ <code>STAFF</code>（櫃檯代客取消，M7 7.18）；沒取消是 NULL。<code>STAFF</code> 時 <code>cancelled_by_staff_id</code> 一定有值</td>
+</tr>
+<tr>
+<td><strong>reminder_sent_at</strong></td>
+<td>DATETIME(3) NULL</td>
+<td>訂位提醒（模擬簡訊，M7 7.12）送出的時間；<code>NULL</code> = 還沒提醒。只由條件式 <code>UPDATE ... WHERE id = ? AND status = 'CONFIRMED' AND reminder_sent_at IS NULL</code> 寫入，搶到（影響 1 列）的人才「送出」，所以排程和手動 API 同時跑也只會提醒一次</td>
 </tr>
 </tbody>
 </table></div>

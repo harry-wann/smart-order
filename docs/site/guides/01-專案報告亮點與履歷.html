@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>專案報告亮點與履歷建議 · 火鍋店點餐系統文件</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand-700:#A63522; --brand-600:#C8442E; --brand-500:#DB5B42; --brand-100:#FBE8E3;
+  --accent-500:#E8A33D; --accent-100:#FCF0DC;
+  --bg:#FBF7F0; --surface:#FFFFFF; --surface-2:#F5EFE5; --line:#E6DED2;
+  --t900:#2B211C; --t600:#6B5D54; --t400:#9C8E84;
+  --ok:#3F7A4E; --ok-bg:#E4EFE7; --warn:#D98324; --bad:#B3261E;
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --serif:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --shadow:0 1px 2px rgba(43,33,28,.06),0 4px 12px rgba(43,33,28,.05);
+  --sidebar:280px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:var(--bg);color:var(--t900);font-family:var(--sans);
+  font-size:16px;line-height:1.8;-webkit-font-smoothing:antialiased}
+
+.layout{display:flex;min-height:100vh;align-items:flex-start}
+.sidebar{width:var(--sidebar);flex:0 0 var(--sidebar);position:sticky;top:0;height:100vh;
+  overflow-y:auto;background:var(--surface);border-right:1px solid var(--line);padding:22px 0 48px}
+.brand{padding:0 20px 16px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.brand a{text-decoration:none;color:inherit;display:block}
+.brand .logo{font-family:var(--serif);font-weight:900;font-size:18px;line-height:1.35;color:var(--brand-600)}
+.brand .sub{font-size:11.5px;color:var(--t400);margin-top:4px;letter-spacing:.02em}
+.navgroup{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--t400);
+  padding:15px 20px 5px}
+.sidebar a.nav{display:block;padding:6px 20px;color:var(--t600);text-decoration:none;
+  font-size:14px;border-left:3px solid transparent;line-height:1.5}
+.sidebar a.nav:hover{background:var(--brand-100);color:var(--brand-700)}
+.sidebar a.nav.active{background:var(--brand-100);color:var(--brand-700);
+  border-left-color:var(--brand-600);font-weight:700}
+.sidebar details{border-top:1px solid transparent}
+.sidebar details>summary{list-style:none;cursor:pointer;font-size:11px;font-weight:700;
+  letter-spacing:.1em;color:var(--t400);padding:12px 20px 5px;user-select:none}
+.sidebar details>summary::-webkit-details-marker{display:none}
+.sidebar details>summary::before{content:"▸ ";font-size:10px}
+.sidebar details[open]>summary::before{content:"▾ "}
+.sidebar details>summary:hover{color:var(--brand-600)}
+.sidebar .foot{padding:18px 20px;margin-top:14px;border-top:1px solid var(--line);
+  font-size:11.5px;color:var(--t400);line-height:1.7}
+
+.main{flex:1;min-width:0;display:flex;justify-content:center;padding:0 32px 96px}
+.wrap{width:100%;max-width:1140px;display:flex;gap:36px;align-items:flex-start}
+article{flex:1;min-width:0;max-width:880px;padding-top:40px}
+.toc{width:196px;flex:0 0 196px;position:sticky;top:24px;padding-top:52px;font-size:12.5px;
+  max-height:calc(100vh - 60px);overflow-y:auto}
+.toc .tt{font-size:10.5px;letter-spacing:.1em;color:var(--t400);font-weight:700;margin-bottom:9px}
+.toc a{display:block;color:var(--t600);text-decoration:none;padding:3px 0 3px 10px;
+  border-left:2px solid var(--line);line-height:1.5}
+.toc a:hover{color:var(--brand-600);border-left-color:var(--brand-500)}
+
+.topbar{display:none;position:sticky;top:0;z-index:40;background:var(--surface);
+  border-bottom:1px solid var(--line);padding:10px 16px;align-items:center;gap:12px}
+.topbar .logo{font-family:var(--serif);font-weight:900;color:var(--brand-600);font-size:16px}
+.menubtn{background:var(--brand-600);color:#fff;border:0;border-radius:8px;height:40px;
+  padding:0 14px;font-size:15px;font-family:inherit;cursor:pointer}
+
+article h1{font-family:var(--serif);font-weight:900;font-size:32px;line-height:1.35;margin:0 0 10px}
+article h1+p{color:var(--t600)}
+article h2{font-family:var(--serif);font-weight:700;font-size:24px;line-height:1.45;
+  margin:50px 0 14px;padding-bottom:9px;border-bottom:2px solid var(--line)}
+article h3{font-weight:700;font-size:18.5px;margin:30px 0 10px}
+article h4{font-weight:700;font-size:16px;margin:22px 0 8px;color:var(--t600)}
+article p{margin:0 0 16px}
+article ul,article ol{margin:0 0 16px;padding-left:24px}
+article li{margin:5px 0}
+article a{color:var(--brand-600);text-decoration:none;border-bottom:1px solid rgba(200,68,46,.3)}
+article a:hover{border-bottom-color:var(--brand-600)}
+article a.gloss{color:var(--t900);border-bottom:1px dashed var(--accent-500);
+  background:linear-gradient(transparent 72%,var(--accent-100) 72%)}
+article a.gloss:hover{color:var(--brand-700);border-bottom-color:var(--brand-500)}
+article strong{font-weight:700;color:var(--t900)}
+article hr{border:0;border-top:1px solid var(--line);margin:42px 0}
+article img{max-width:100%;border-radius:12px}
+article details{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:12px 16px;margin:0 0 18px}
+article details>summary{cursor:pointer;font-weight:700;color:var(--brand-600)}
+
+article code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.87em;
+  background:var(--surface-2);padding:2px 6px;border-radius:5px;color:var(--brand-700);
+  word-break:break-word}
+article pre{background:#2B211C;color:#F5EFE5;padding:18px 20px;border-radius:12px;
+  overflow-x:auto;margin:0 0 18px;line-height:1.65;font-size:13.5px}
+article pre code{background:none;color:inherit;padding:0;font-size:inherit}
+
+blockquote{margin:0 0 20px;padding:14px 18px;background:var(--accent-100);
+  border-left:4px solid var(--accent-500);border-radius:0 10px 10px 0;color:var(--t600)}
+blockquote p:last-child{margin-bottom:0}
+blockquote strong{color:var(--t900)}
+
+.tablewrap{overflow-x:auto;margin:0 0 20px;border:1px solid var(--line);
+  border-radius:12px;background:var(--surface);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:420px}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--surface-2);font-weight:700;white-space:nowrap;color:var(--t900)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--brand-100)}
+td code,th code{white-space:nowrap}
+article li input[type=checkbox]{width:16px;height:16px;margin-right:6px;accent-color:var(--brand-600)}
+
+pre.mermaid{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:22px;text-align:center;overflow-x:auto;box-shadow:var(--shadow);margin:0 0 22px;color:inherit}
+pre.mermaid svg{max-width:100%;height:auto}
+
+.hero{padding:52px 0 32px;border-bottom:1px solid var(--line);margin-bottom:32px}
+.hero .eyebrow{display:inline-block;background:var(--brand-100);color:var(--brand-700);
+  font-size:12.5px;font-weight:700;padding:5px 13px;border-radius:999px;letter-spacing:.04em}
+.hero h1{font-family:var(--serif);font-weight:900;font-size:40px;line-height:1.25;margin:18px 0 12px}
+.hero p{font-size:17px;color:var(--t600);max-width:680px;margin:0}
+.facts{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:10px 16px;font-size:13px;box-shadow:var(--shadow)}
+.fact b{display:block;font-family:var(--serif);font-size:19px;color:var(--brand-600);font-weight:900}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:13px;margin:18px 0 8px}
+.card{display:block;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:16px;text-decoration:none;color:inherit;box-shadow:var(--shadow);transition:.15s}
+.card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(43,33,28,.12);border-color:var(--brand-500)}
+.card .k{font-size:10.5px;letter-spacing:.09em;color:var(--t400);font-weight:700}
+.card .n{font-family:var(--serif);font-weight:700;font-size:17px;margin:5px 0 6px;color:var(--t900)}
+.card .d{font-size:13px;color:var(--t600);line-height:1.6}
+.callout{background:var(--brand-100);border:1px solid var(--brand-500);border-radius:12px;
+  padding:18px 20px;margin:24px 0}
+.callout .h{font-family:var(--serif);font-weight:700;font-size:17px;margin-bottom:6px;color:var(--brand-700)}
+.callout p{margin:0;color:var(--t600);font-size:14.5px}
+.pending{background:var(--accent-100);border-color:var(--accent-500)}
+.pending .h{color:#8A5B12}
+
+.pager{display:flex;gap:12px;margin-top:52px;padding-top:22px;border-top:1px solid var(--line)}
+.pager a{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:13px 16px;text-decoration:none;color:inherit;box-shadow:var(--shadow)}
+.pager a:hover{border-color:var(--brand-500)}
+.pager .k{font-size:11px;color:var(--t400);letter-spacing:.06em}
+.pager .n{font-weight:700;color:var(--brand-600);margin-top:3px;font-size:14.5px}
+.pager .next{text-align:right}
+
+@media(max-width:1200px){ .toc{display:none} }
+@media(max-width:940px){
+  .topbar{display:flex}
+  .layout{display:block}
+  .sidebar{position:fixed;left:0;top:0;height:100vh;z-index:50;transform:translateX(-100%);
+    transition:transform .2s;box-shadow:0 0 40px rgba(43,33,28,.2);width:286px}
+  .sidebar.open{transform:translateX(0)}
+  .main{padding:0 16px 72px}
+  article{padding-top:24px}
+  .hero{padding:30px 0 24px}
+  .hero h1{font-size:30px}
+  article h1{font-size:26px}
+  article h2{font-size:21px;margin-top:38px}
+  .pager{flex-direction:column}
+}
+@media print{
+  .sidebar,.toc,.topbar,.pager{display:none!important}
+  body{background:#fff}
+  .main{padding:0}
+  article{max-width:none}
+  article h2{page-break-after:avoid}
+  .tablewrap,pre.mermaid{box-shadow:none;page-break-inside:avoid}
+  a.gloss{background:none!important;border:0!important}
+}
+</style>
+</head>
+<body>
+<div class="topbar"><button class="menubtn" onclick="document.getElementById('sb').classList.toggle('open')">☰ 目錄</button><span class="logo">火鍋店點餐系統</span></div>
+<div class="layout">
+<nav class="sidebar" id="sb"><div class="brand"><a href="../index.html"><div class="logo">火鍋店點餐系統</div><div class="sub">專案文件 · 78 頁</div></a></div><a class="nav" href="../index.html">首頁</a><div class="navgroup">開始使用</div><a class="nav" href="../setup.html">環境建置與啟動</a><div class="navgroup">規格文件</div><a class="nav" href="../spec/00-架構分層與技術選型.html">00 架構分層與技術選型</a><a class="nav" href="../spec/01-專案總覽.html">01 專案總覽</a><a class="nav" href="../spec/02-需求規格.html">02 需求規格：基礎與進階功能總表</a><a class="nav" href="../spec/03-資料庫設計.html">03 資料庫設計</a><a class="nav" href="../spec/04-API規格.html">04 API 規格</a><a class="nav" href="../spec/05-開發流程與分工.html">05 開發流程與時程</a><a class="nav" href="../spec/06-圖表總覽.html">06 圖表總覽</a><div class="navgroup">模組規格</div><a class="nav" href="../spec/modules/M1-菜單與品項.html">M1 菜單與品項</a><a class="nav" href="../spec/modules/M2-桌位開桌與候位.html">M2 桌位、開桌與候位</a><a class="nav" href="../spec/modules/M3-點餐與服務鈴.html">M3 點餐</a><a class="nav" href="../spec/modules/M4-出菜看板.html">M4 出菜看板（KDS）</a><a class="nav" href="../spec/modules/M5-庫存.html">M5 庫存</a><a class="nav" href="../spec/modules/M6-結帳.html">M6 結帳</a><a class="nav" href="../spec/modules/M7-訂位.html">M7 訂位</a><a class="nav" href="../spec/modules/M8-會員.html">M8 會員</a><div class="navgroup">UI 文件</div><a class="nav" href="../ui/10-UI-UX規格.html">10 UI / UX 規格</a><a class="nav" href="../ui/11-設計系統.html">11 設計系統</a><a class="nav" href="../ui/12-UI設計流程.html">12 UI 設計流程</a><a class="nav" href="../ui/13-畫框註解.html">13 畫框註解</a><a class="nav" href="../ui/14-色彩Token.html">14 色彩 Token</a><div class="navgroup">操作教學</div><a class="nav" href="../guides/00-Cloudflare-R2圖片上傳.html">00 Cloudflare R2 圖片上傳（React + Spring Boot）</a><a class="nav active" href="../guides/01-專案報告亮點與履歷.html">01 專案報告亮點與履歷建議</a><div class="navgroup">Spring Boot 專案</div><a class="nav" href="../spring-boot/README.html">Spring Boot 學習導覽</a><div class="navgroup">技術總表</div><a class="nav" href="../tech/00-技術總表.html">00 技術總表</a><details><summary>技術 · 團隊與工具（5）</summary><a class="nav" href="../tech/team/01-命令列.html">01 命令列基本操作</a><a class="nav" href="../tech/team/02-Git是什麼.html">02 Git 是什麼</a><a class="nav" href="../tech/team/03-分支與合併.html">03 分支、合併與衝突</a><a class="nav" href="../tech/team/04-GitHub與PR.html">04 GitHub 與 Pull Request</a><a class="nav" href="../tech/team/05-Docker與Compose.html">05 Docker 與 Docker Compose</a></details><details><summary>技術 · 網頁運作原理（6）</summary><a class="nav" href="../tech/web/06-前端後端在做什麼.html">06 前端與後端各在做什麼</a><a class="nav" href="../tech/web/07-HTTP請求與回應.html">07 HTTP 請求與回應</a><a class="nav" href="../tech/web/08-HTTP狀態碼.html">08 HTTP 狀態碼</a><a class="nav" href="../tech/web/09-JSON.html">09 JSON</a><a class="nav" href="../tech/web/10-REST-API設計.html">10 REST API 設計</a><a class="nav" href="../tech/web/11-CORS跨來源.html">11 CORS 跨來源問題</a></details><details><summary>技術 · 後端（10）</summary><a class="nav" href="../tech/backend/12-Java與JDK.html">12 Java 與 JDK</a><a class="nav" href="../tech/backend/13-Maven.html">13 Maven 與相依套件</a><a class="nav" href="../tech/backend/14-SpringBoot是什麼.html">14 Spring Boot 是什麼</a><a class="nav" href="../tech/backend/15-依賴注入.html">15 依賴注入</a><a class="nav" href="../tech/backend/16-三層架構.html">16 Controller / Service / Repository</a><a class="nav" href="../tech/backend/17-Entity與DTO.html">17 Entity 與 DTO</a><a class="nav" href="../tech/backend/18-全域例外處理.html">18 全域例外處理</a><a class="nav" href="../tech/backend/19-Swagger.html">19 Swagger 自動產生 API 文件</a><a class="nav" href="../tech/backend/20-SpringSecurity.html">20 Spring Security 基礎</a><a class="nav" href="../tech/backend/21-JWT.html">21 JWT 與登入狀態</a></details><details><summary>技術 · 資料庫（8）</summary><a class="nav" href="../tech/database/22-關聯式資料庫與SQL.html">22 關聯式資料庫與 SQL</a><a class="nav" href="../tech/database/23-資料表設計.html">23 資料表設計</a><a class="nav" href="../tech/database/24-索引.html">24 索引是什麼</a><a class="nav" href="../tech/database/25-ORM與JPA.html">25 ORM 與 JPA</a><a class="nav" href="../tech/database/26-JPA關聯對應.html">26 JPA 關聯對應</a><a class="nav" href="../tech/database/27-交易Transaction.html">27 交易 Transaction</a><a class="nav" href="../tech/database/28-鎖與併發.html">28 鎖與併發（防超賣）</a><a class="nav" href="../tech/database/29-Flyway.html">29 Flyway 資料庫版本控管</a></details><details><summary>技術 · 前端（14）</summary><a class="nav" href="../tech/frontend/30-現代JavaScript.html">30 現代 JavaScript 速成</a><a class="nav" href="../tech/frontend/31-非同步與async.html">31 非同步與 async/await</a><a class="nav" href="../tech/frontend/32-npm與套件.html">32 npm 與 node_modules</a><a class="nav" href="../tech/frontend/33-Vite.html">33 Vite</a><a class="nav" href="../tech/frontend/34-React與JSX.html">34 React 與 JSX</a><a class="nav" href="../tech/frontend/35-Props與State.html">35 Props 與 State</a><a class="nav" href="../tech/frontend/36-useState.html">36 useState</a><a class="nav" href="../tech/frontend/37-useEffect.html">37 useEffect</a><a class="nav" href="../tech/frontend/38-ReactRouter.html">38 React Router</a><a class="nav" href="../tech/frontend/39-Tailwind.html">39 Tailwind CSS</a><a class="nav" href="../tech/frontend/40-fetch串接API.html">40 fetch 串接後端 API</a><a class="nav" href="../tech/frontend/51-Axios.html">51 Axios 串接後端 API</a><a class="nav" href="../tech/frontend/52-TanStackQuery.html">52 TanStack Query 管理後端資料</a><a class="nav" href="../tech/frontend/53-Northwind範例.html">53 Axios + TanStack Query 實作</a></details><details><summary>技術 · 即時與排程（4）</summary><a class="nav" href="../tech/realtime/41-WebSocket與STOMP.html">41 WebSocket 與 STOMP</a><a class="nav" href="../tech/realtime/42-前端接WebSocket.html">42 前端接 WebSocket</a><a class="nav" href="../tech/realtime/43-排程與Cron.html">43 排程任務與 Cron</a><a class="nav" href="../tech/realtime/44-Redis.html">44 Redis</a></details><details><summary>技術 · 進階（2）</summary><a class="nav" href="../tech/advanced/45-訊息佇列RabbitMQ.html">45 訊息佇列 RabbitMQ</a><a class="nav" href="../tech/advanced/46-區間重疊與訂位排程.html">46 訂位排程的演算法</a></details><details><summary>技術 · 品質與部署（4）</summary><a class="nav" href="../tech/quality/47-單元測試.html">47 單元測試 JUnit + Mockito</a><a class="nav" href="../tech/quality/48-Testcontainers.html">48 Testcontainers</a><a class="nav" href="../tech/quality/49-GitHubActions.html">49 GitHub Actions CI</a><a class="nav" href="../tech/quality/50-部署上線.html">50 部署上線</a></details><a class="nav" href="../../spring-boot/tutorial/index.html">Spring Boot 逐步課程</a><div class="foot">由 Markdown 自動產生<br>環境建置請編輯根目錄 README.md<br>其餘文件請編輯 <code>docs/</code> 下的 .md<br>再執行 <code>python3 docs/build_site.py</code></div></nav>
+<div class="main"><div class="wrap">
+<article>
+<h1 id="專案報告亮點與履歷建議">專案報告亮點與履歷建議</h1>
+<blockquote>
+<p>以<strong>各工作包照 <a href="../spec/05-開發流程與分工.html">05 §1.4</a> 與模組規格全部做完</strong>為前提整理。
+技術細節出自 <code>spec/modules/M1～M8</code> 的「問題思考與解決思路」，報告與面試時可以直接引用那幾節。
+寫進履歷前，請確認自己那幾條真的都做完、能打開程式碼講。</p>
+</blockquote>
+<hr />
+<h2 id="0-寫法原則">0. 寫法原則</h2>
+<ol>
+<li><strong>一條 = 情境 + 做法 + 為什麼</strong>。「用 <a class="gloss" href="../tech/frontend/34-React與JSX.html" title="看這個技術的白話說明">React</a> 寫頁面」沒有資訊量；「同桌多支手機改同一份購物車，用<a class="gloss" href="../tech/database/28-鎖與併發.html" title="看這個技術的白話說明">悲觀鎖</a>讓操作排隊」才有。</li>
+<li><strong>講取捨</strong>：每個亮點都有「直覺會怎麼寫 → 為什麼會壞 → 我們怎麼做」，面試官最想聽的是後兩段。</li>
+<li><strong>自己負責的寫「設計／實作」，共用的寫「參與」</strong>。</li>
+<li><strong>每人準備一個主打的技術故事</strong>（下面每一包第一個亮點），1～2 分鐘講得完：問題 → 考慮過的做法 → 選擇與理由 → 怎麼驗證。</li>
+</ol>
+<hr />
+<h2 id="1-全體共用五人都可以寫">1. 全體共用（五人都可以寫）</h2>
+<h3 id="11-專案一句話">1.1 專案一句話</h3>
+<p>一套給多人共鍋火鍋店用的<strong>掃碼點餐系統</strong>：顧客掃桌上 QR code，同桌多支手機共用一份購物車即時點餐；店家端有桌況與開桌、候位、訂位、菜單管理、庫存與出菜看板，櫃檯結帳。
+5 人團隊，前後端分離，規格先行、依工作包平行開發。</p>
+<h3 id="12-技術棧">1.2 技術棧</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>層</th>
+<th>技術</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>前端</td>
+<td>React 19、TypeScript、<a class="gloss" href="../tech/frontend/33-Vite.html" title="看這個技術的白話說明">Vite</a>、<a class="gloss" href="../tech/frontend/39-Tailwind.html" title="看這個技術的白話說明">Tailwind</a> CSS 4、react-router、<code>@stomp/stompjs</code></td>
+</tr>
+<tr>
+<td>後端</td>
+<td>Java 21、<a class="gloss" href="../tech/backend/14-SpringBoot是什麼.html" title="看這個技術的白話說明">Spring Boot</a>、<a class="gloss" href="../tech/database/25-ORM與JPA.html" title="看這個技術的白話說明">Spring Data JPA</a>、<a class="gloss" href="../tech/backend/20-SpringSecurity.html" title="看這個技術的白話說明">Spring Security</a>＋<a class="gloss" href="../tech/backend/21-JWT.html" title="看這個技術的白話說明">JWT</a>、<a class="gloss" href="../tech/realtime/41-WebSocket與STOMP.html" title="看這個技術的白話說明">WebSocket</a>／<a class="gloss" href="../tech/realtime/41-WebSocket與STOMP.html" title="看這個技術的白話說明">STOMP</a>、<code>@Scheduled</code>、springdoc-openapi</td>
+</tr>
+<tr>
+<td>資料</td>
+<td><a class="gloss" href="../tech/database/22-關聯式資料庫與SQL.html" title="看這個技術的白話說明">MySQL</a>、<a class="gloss" href="../tech/database/29-Flyway.html" title="看這個技術的白話說明">Flyway</a>、<a class="gloss" href="../tech/realtime/44-Redis.html" title="看這個技術的白話說明">Redis</a></td>
+</tr>
+<tr>
+<td>測試</td>
+<td><a class="gloss" href="../tech/quality/47-單元測試.html" title="看這個技術的白話說明">JUnit</a> 5、<a class="gloss" href="../tech/quality/47-單元測試.html" title="看這個技術的白話說明">Mockito</a>、<a class="gloss" href="../tech/quality/48-Testcontainers.html" title="看這個技術的白話說明">Testcontainers</a></td>
+</tr>
+<tr>
+<td>工具</td>
+<td><a class="gloss" href="../tech/team/05-Docker與Compose.html" title="看這個技術的白話說明">Docker Compose</a>、<a class="gloss" href="../tech/quality/49-GitHubActions.html" title="看這個技術的白話說明">GitHub Actions</a>、Git／GitHub PR、Figma</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="13-共同亮點">1.3 共同亮點</h3>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>亮點</th>
+<th>講法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>一條完整、不會壞的交易線</strong></td>
+<td>掃碼入座 → 同桌點餐 → 扣庫存、出單到廚房 → 出菜進度 → 櫃檯結清 → 清桌，每一段都處理了併發與異常</td>
+</tr>
+<tr>
+<td><strong>即時同步，但不怕斷線</strong></td>
+<td>同桌手機、廚房、櫃檯都用 WebSocket／STOMP 推播；連線（重連）時一律重抓一次完整資料，所以「即時」和「不會錯」兩個都拿到（<a href="../spec/modules/M3-點餐與服務鈴.html">M3 問題 3</a>）</td>
+</tr>
+<tr>
+<td><strong>併發問題用資料庫解，不用 <code>synchronized</code></strong></td>
+<td><a class="gloss" href="../tech/database/28-鎖與併發.html" title="看這個技術的白話說明">防超賣</a>用條件式 <code>UPDATE</code>、開桌與結帳用悲觀鎖、訂位用悲觀鎖＋唯一約束；<code>synchronized</code> 只鎖得住一台伺服器</td>
+</tr>
+<tr>
+<td><strong>依<a class="gloss" href="../tech/database/27-交易Transaction.html" title="看這個技術的白話說明">交易邊界</a>切工作包</strong></td>
+<td>不是照前後端切，而是同一段交易、同一把鎖的東西給同一個人（例：送出點餐與結帳鎖同一筆用餐紀錄，都在 C），五個人平行開發不互相踩</td>
+</tr>
+<tr>
+<td><strong>規格先行</strong></td>
+<td>需求、資料表、API、每張畫面的狀態都先寫成文件，每張畫面有代號（C-04、S-02…），前後端、設計稿、文件用同一套代號溝通</td>
+</tr>
+<tr>
+<td><strong>規格會變，流程跟得上</strong></td>
+<td>中途把服務鈴移出範圍、購物車改成「只能改自己點的」：規格、API、資料表、設計稿（保留舊稿對照）一起改</td>
+</tr>
+<tr>
+<td><strong>設計系統</strong></td>
+<td>色彩、字級、間距、動畫做成 design token，共用元件有展示頁；廚房看板依場景改用深色大字</td>
+</tr>
+<tr>
+<td><strong>工程規範</strong></td>
+<td>功能分支 → PR → 自動指派其他四人 review；CI 跑 typecheck、lint、build、測試；<a class="gloss" href="../tech/team/05-Docker與Compose.html" title="看這個技術的白話說明">Docker</a> Compose 一鍵起 My<a class="gloss" href="../tech/database/22-關聯式資料庫與SQL.html" title="看這個技術的白話說明">SQL</a>＋Redis</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="14-五人都能用的履歷句子">1.4 五人都能用的履歷句子</h3>
+<ul>
+<li>5 人團隊開發火鍋店掃碼點餐系統（React 19＋TypeScript／Spring Boot＋MySQL＋Redis），涵蓋顧客點餐、廚房出菜看板、櫃檯桌況、候位、訂位與結帳。</li>
+<li>以 WebSocket（STOMP）同步同桌多裝置、廚房與櫃檯畫面，重連時重抓完整狀態確保資料一致。</li>
+<li>採規格先行流程，依交易邊界拆分五個工作包平行開發，透過 <a class="gloss" href="../tech/team/02-Git是什麼.html" title="看這個技術的白話說明">Git</a>Hub PR、交叉 code review 與 CI 協作。</li>
+<li>共同建立 Tailwind CSS 設計系統（design token＋共用元件庫），統一顧客端與店家端介面。</li>
+</ul>
+<hr />
+<h2 id="2-各工作包">2. 各工作包</h2>
+<h3 id="a-顧客入口會員vincent-shih">A　顧客入口＋會員｜Vincent Shih</h3>
+<p><strong>負責範圍</strong>：C-00 入口、C-01 掃碼進入、C-12／12b／13 會員登入註冊、C-14 會員中心、C-16／16b 訂位入口與匿名訂位、S-01 員工登入畫面；後端 M8 會員（OTP 註冊登入、驗證碼、限流、會員 JWT、會員中心），以及掃碼入座的用餐權杖。</p>
+<p><strong>報告亮點</strong></p>
+<ol>
+<li><strong>主打：模擬簡訊的手機 OTP 驗證</strong>（<a href="../spec/modules/M8-會員.html">M8 問題 1、2</a>）
+   - 直覺做法是跳過驗證直接用手機註冊——流程不完整，也講不出東西。
+   - 我們做完整流程：6 位數驗證碼 5 分鐘效期、錯 3 次鎖定、請求限流（超過回 429），<strong>簡訊發送用模擬的</strong>；換成真的 Twilio 只要換一個 <code>SmsGateway</code> 實作。
+   - 驗證碼存 Redis：<code>set(key, code, 5 分鐘)</code> 一行就有效期，不用建表、也不用寫清理排程——短期、會過期、掉了也沒關係的資料正是 Redis 的典型用途。</li>
+<li><strong>匿名顧客怎麼被「認得」</strong>：顧客不用註冊就能點餐。掃碼加入時後端用 jjwt 簽一張用餐權杖，之後每個請求經過自訂的 Security Filter 解析出這次用餐；顧客與會員是兩種不同的權杖。</li>
+<li><strong>JWT 怎麼登出</strong>（<a href="../spec/modules/M8-會員.html">M8 問題 4</a>）：JWT 無狀態，刪掉 <code>localStorage</code> 不等於失效。我們的決定是縮短效期，並說明黑名單（Redis）與 refresh token 輪替的取捨——面試很常問。</li>
+<li><strong>前端藏按鈕不等於安全</strong>（<a href="../spec/modules/M8-會員.html">M8 問題 5</a>）：權限一律在後端檢查，前端只負責體驗。</li>
+<li>會員與訂位的分岔：會員訂位免填資料，匿名訂位填姓名電話，兩條路接到同一個訂位流程。</li>
+</ol>
+<p><strong>可能被追問</strong>：Redis 掛了驗證碼怎麼辦？限流怎麼算時間窗？JWT 放 <code>localStorage</code> 和 cookie 的差別？權杖被偷了怎麼辦？</p>
+<p><strong>履歷建議</strong></p>
+<ul>
+<li>設計並實作手機 OTP 註冊登入：驗證碼存 Redis（TTL 5 分鐘）、錯誤 3 次鎖定、請求限流（429），簡訊發送採模擬並抽象為介面，可替換為真實服務。</li>
+<li>以 jjwt 簽發會員與用餐兩種權杖，透過自訂 Spring Security Filter 驗證，讓匿名顧客免註冊即可掃碼加入用餐。</li>
+<li>實作顧客入口、會員登入／註冊／驗證碼、會員中心與匿名訂位等 React 頁面。</li>
+</ul>
+<h3 id="b-菜單出菜看板clara">B　菜單＋出菜看板｜Clara</h3>
+<p><strong>負責範圍</strong>：C-04 菜單主頁、C-05 品項詳情、C-08 本桌出菜進度、S-04 出菜看板 KDS、S-05 菜單管理、S-06 選項群組管理；後端 M1 菜單與品項、M4 出菜看板；顧客端版型與 Tailwind 樣式基礎。</p>
+<p><strong>報告亮點</strong></p>
+<ol>
+<li><strong>主打：「份量、辣度、加料」怎麼存</strong>（<a href="../spec/modules/M1-菜單與品項.html">M1 問題 1</a>）
+   - 直覺是在品項上加欄位（<code>has_size</code>、<code>half_price</code>…），第三種需求出現就爆炸，複選也表達不出來。
+   - 我們用<strong>選項群組模型</strong>：<code>option_group</code> 用 <code>min_select</code>／<code>max_select</code> 兩個數字表達必選／選填、單選／複選，<code>menu_item_option_group</code> 中間表做多對多。「辣度」建一次掛在 20 個品項上，改一次全部生效。</li>
+<li><strong>鴛鴦鍋不另外建表</strong>（<a href="../spec/modules/M1-菜單與品項.html">M1 問題 2</a>）：用既有的選項群組表達左鍋、右鍋湯底，零額外資料表——不是每個需求都要多一張表。</li>
+<li><strong>出菜狀態由品項推導</strong>（<a href="../spec/modules/M4-出菜看板.html">M4 問題 1</a>）：一張單的狀態不手動設，而是每次品項狀態改變就由品項重算（全部出完 → 已完成、部分出 → 製作中）。兩個廚師同時勾不同品項也不會把狀態蓋錯——單一真相來源。</li>
+<li><strong>KDS 即時推播與排序</strong>：新單、退菜即時推到廚房；預約預點的單用 <code>ORDER BY is_preorder DESC, placed_at ASC</code> 排最前面，等待時間從報到開桌算，不會誤觸久候警示（<a href="../spec/modules/M4-出菜看板.html">M4 問題 2</a>）。</li>
+<li><strong>為場景設計 UI</strong>（<a href="../spec/modules/M4-出菜看板.html">M4 問題 3、4</a>）：廚房螢幕掛在牆上、廚師手是濕的，所以全站唯一深色介面、品項 20px、勾選框 40×40；完成的卡片 0.5 秒淡出並可回看，避免「剛剛勾的是哪一桌」。</li>
+<li>售完即時推播到所有點餐中的手機，菜單立刻變灰。</li>
+</ol>
+<p><strong>可能被追問</strong>：多對多為什麼要中間表、中間表能放什麼欄位？品項詳情怎麼避免 N+1？狀態推導和直接存狀態的效能取捨？</p>
+<p><strong>履歷建議</strong></p>
+<ul>
+<li>設計可重用的選項群組資料模型（多對多＋最少／最多選擇數），支援份量、辣度、複選加料與鴛鴦鍋，新增選項類型不需改表。</li>
+<li>實作廚房出菜看板（KDS）：WebSocket 即時接單、逐項勾選、單據狀態由品項自動推導、久候警示與預點優先排序。</li>
+<li>實作菜單與選項群組後台管理（CRUD、上下架、售完標示），並導入 Tailwind CSS 建立樣式基礎。</li>
+</ul>
+<h3 id="c-點餐交易櫃檯結帳yiting">C　點餐交易＋櫃檯結帳｜YiTing</h3>
+<p><strong>負責範圍</strong>：C-04b／04c 同桌通知、C-06 購物車、C-07 送出成功、S-03 桌位詳情、S-03b 櫃檯結帳；後端 M3 點餐、M5 庫存（基礎）、M6 結帳。</p>
+<p><strong>報告亮點</strong></p>
+<ol>
+<li><strong>主打：兩個人同時點最後一份牛五花</strong>（<a href="../spec/modules/M3-點餐與服務鈴.html">M3 問題 1</a>、<a href="../spec/modules/M5-庫存.html">M5 問題 1</a>）
+   - 先查再扣會<a class="gloss" href="../tech/database/28-鎖與併發.html" title="看這個技術的白話說明">超賣</a>。我們用<strong>條件式 <code>UPDATE</code></strong>：<code>SET quantity = quantity - :qty WHERE quantity &gt;= :qty</code>，看影響筆數判斷成敗，0 筆就整張單回滾、回 409 告訴客人是哪一項。
+   - 為什麼不用 <code>synchronized</code>：只鎖得住一台伺服器，資料庫層的問題要在資料庫層解。
+   - 多品項依 id 排序再扣，避免兩筆交易用不同順序鎖而<a class="gloss" href="../tech/database/28-鎖與併發.html" title="看這個技術的白話說明">死鎖</a>。
+   - <strong>用多執行緒＋Testcontainers 真的 MySQL 測試證明防超賣有效</strong>（<a href="../spec/modules/M5-庫存.html">M5 問題 5</a>）——手動按十次是「依序」不是「同時」。</li>
+<li><strong>同桌兩個人同時按「送出整桌點餐」</strong>（<a href="../spec/modules/M3-點餐與服務鈴.html">M3 問題 7</a>）：送出一開頭就 <code>SELECT … FOR UPDATE</code> 鎖住這次用餐，拿到鎖之後才讀購物車；第一個人送出後購物車清空，第二個人拿到 <code>409 CART_EMPTY</code>，不會成立兩張單。</li>
+<li><strong>結帳到一半有人加點</strong>（<a href="../spec/modules/M6-結帳.html">M6 問題 1</a>）：櫃檯把畫面上看到的金額（<code>expectedTotal</code>）一起送上來，後端在同一把鎖裡重算，對不上就回 <code>409 BILL_CHANGED</code>。結清、送出點餐搶同一把鎖，一定一先一後——不需要「鎖桌不能加點」的額外狀態。</li>
+<li><strong>同桌多手機的購物車同步</strong>：購物車存後端、整桌一份，只有加入者能改自己的列（他人 403）；每次異動遞增版本號並推 <code>CART_UPDATED</code>（帶整份購物車），前端只套用比本機新的版本，擋掉亂序推播；推播在<strong>交易 commit 之後</strong>才送，避免其他手機讀到未提交的資料。</li>
+<li><strong>金額從頭到尾 <code>BigDecimal</code></strong>（<a href="../spec/modules/M6-結帳.html">M6 問題 2</a>）：<code>DECIMAL(10,2)</code>、用字串建構、每步 <code>setScale(2, HALF_UP)</code>、比較用 <code>compareTo</code>；送單時快照品名與單價，日後改價不影響歷史帳單。</li>
+<li><strong>櫃檯按錯付款方式</strong>（<a href="../spec/modules/M6-結帳.html">M6 問題 5</a>）：付款倒數到 0 才送出，倒數中可取消。</li>
+</ol>
+<p><strong>可能被追問</strong>：悲觀鎖和<a class="gloss" href="../tech/database/28-鎖與併發.html" title="看這個技術的白話說明">樂觀鎖</a>怎麼選？條件式 <code>UPDATE</code> 和 <code>SELECT FOR UPDATE</code> 差在哪？為什麼推播要等 commit？<code>equals</code> 比 <code>BigDecimal</code> 會怎樣？</p>
+<p><strong>履歷建議</strong></p>
+<ul>
+<li>以條件式 <code>UPDATE</code> 實作庫存扣減防超賣，依品項 id 排序避免死鎖，並以多執行緒＋Testcontainers（MySQL）測試驗證併發正確性。</li>
+<li>實作多裝置共用購物車與整桌送單：悲觀鎖序列化同桌操作、版本號擋亂序推播、交易提交後才以 STOMP 通知，確保同桌畫面一致。</li>
+<li>實作櫃檯結帳：以 <code>expectedTotal</code> 金額比對與同一把列鎖處理「結帳中加點」，金額全程以 <code>BigDecimal</code> 計算並保存價格快照。</li>
+</ul>
+<h3 id="d-桌位開桌候位ting-chiu">D　桌位開桌＋候位｜ting chiu</h3>
+<p><strong>負責範圍</strong>：S-02 桌況總覽、S-02b／02c 開桌（現場、候位）、S-08 座位管理、S-10 候位管理、S-10b 候位報到選桌（共用選桌對話框）；後端 M2 桌位（狀態機、QR code、開桌、關桌、清桌、桌況推播、用餐計時）與候位（登記、叫號、報到、過號）、三支排程；店家端後台版型。</p>
+<p><strong>報告亮點</strong></p>
+<ol>
+<li><strong>主打：兩個人同時開同一張桌</strong>（<a href="../spec/modules/M2-桌位開桌與候位.html">M2 問題 2</a>）
+   - 直覺寫法「查到空桌 → 開桌」，兩邊的查都在對方的改之前，會產生兩筆用餐紀錄，兩邊看到不同帳單。
+   - 我們用<strong>悲觀鎖</strong>：<code>SELECT … FOR UPDATE</code> 鎖住桌子，鎖住後才檢查狀態，非空桌回 409。
+   - 為什麼不用條件式 <code>UPDATE</code>：開桌不只改一個欄位，還要建立用餐紀錄、發權杖——要做好幾件事的情況適合悲觀鎖。</li>
+<li><strong>「預約保留」不存成桌位狀態，而是算出來的</strong>（<a href="../spec/modules/M2-桌位開桌與候位.html">M2 問題 5</a>）：舊設計用排程在訂位前 30 分鐘把桌子改成 <code>RESERVED</code>，結果兩份資料要靠 cron 同步，排程晚跑或漏一條「轉回去」就卡桌。改成查桌況時從訂位資料算出 <code>displayStatus</code>，桌位欄位只有三種狀態，沒有同步問題。</li>
+<li><strong>桌位狀態機</strong>：空桌 → 用餐中 → 待清理 → 空桌，每一步檢查前一個狀態，不合法的轉換直接拒絕；用餐一進終態，該次的用餐權杖全部失效，上一組客人的手機不能點到下一組的帳單上（<a href="../spec/modules/M2-桌位開桌與候位.html">M2 問題 3</a>）。</li>
+<li><strong>固定 QR code 的取捨</strong>（<a href="../spec/modules/M2-桌位開桌與候位.html">M2 問題 1</a>）：QR 永不換、開桌由櫃檯控制，掃到空桌只會看到「請洽櫃檯帶位」——不用每次印紙，風險靠服務生帶位控制。</li>
+<li><strong>排程自動處理沒人記得的事</strong>（<a href="../spec/modules/M2-桌位開桌與候位.html">M2 問題 4</a>）：用餐超時、待清理提醒、候位過號三支 <code>@Scheduled</code>，每支都配手動觸發 API；排程只呼叫 Service，邏輯和手動 API 共用。</li>
+<li><strong>桌況即時推播</strong>：開桌、清桌、結清都推 <code>TABLE_STATUS</code>，櫃檯不用重新整理；選桌對話框做成共用元件，訂位報到（E）直接沿用。</li>
+</ol>
+<p><strong>可能被追問</strong>：悲觀鎖鎖住期間別人查桌況會被卡住嗎？為什麼「算出來」比「存起來」好、效能呢？排程在多台伺服器會不會重複跑？</p>
+<p><strong>履歷建議</strong></p>
+<ul>
+<li>以悲觀鎖（<code>SELECT … FOR UPDATE</code>）實作開桌，防止同一張桌被重複開立；設計桌位狀態機與用餐權杖失效規則。</li>
+<li>將「預約保留」改為依訂位資料即時推導的顯示狀態，移除排程同步，消除桌況與訂位不一致的問題。</li>
+<li>實作候位登記、叫號、報到與過號，並以 <code>@Scheduled</code> 處理用餐超時、待清理提醒與候位過號（皆提供手動觸發 API）。</li>
+<li>實作店家端桌況總覽（WebSocket 即時更新）、開桌、座位管理與候位管理頁面，以及共用的選桌開桌對話框。</li>
+</ul>
+<h3 id="e-訂位harry-wang另負責-l0-技術地基">E　訂位｜Harry Wang（另負責 L0 技術地基）</h3>
+<p><strong>負責範圍</strong>：C-16c 選日期時段人數、C-18 訂位完成、C-19 我的預約、S-02d 開桌預約頁籤、S-07 預約管理、S-07b 預約報到；後端 M7 訂位（<a class="gloss" href="../tech/advanced/46-區間重疊與訂位排程.html" title="看這個技術的白話說明">區間重疊</a>、best-fit 配桌、併發控制、預約保留、取消、報到、兩支排程）。
+另負責 <strong>L0 技術地基</strong>：Spring Boot 骨架、Docker Compose、Flyway、統一回應與<a class="gloss" href="../tech/backend/18-全域例外處理.html" title="看這個技術的白話說明">全域例外處理</a>、Spring Security＋JWT、用餐權杖 filter、WebSocket 設定與頻道權限、CI 與部署；以及前端 API client 分層、R2 圖片上傳、規格文件與分工規劃。</p>
+<p><strong>報告亮點</strong></p>
+<ol>
+<li><strong>主打：這張桌這個時間有沒有空</strong>（<a href="../spec/modules/M7-訂位.html">M7 問題 1、2</a>）
+   - 直覺做法是切固定時段（11:30／13:30…），簡單但客人只能選那幾個時間，也學不到真實訂位系統的模型。
+   - 我們存完整的開始、結束時間，用<strong>區間重疊</strong> <code>A.start &lt; B.end AND B.start &lt; A.end</code> 判斷；用 <code>&lt;</code> 不是 <code>&lt;=</code>，剛好接續不算衝突。
+   - <strong>清桌緩衝直接加進 <code>end_time</code></strong>（用餐 100 分＋清桌 15 分），把業務規則轉成資料，演算法完全不用知道緩衝存在。
+   - <code>ORDER BY seats ASC LIMIT 1</code> 就是 <strong>best-fit</strong>：2 個人不佔 8 人桌，大桌留給大團。</li>
+<li><strong>兩個人同時訂同一桌</strong>（<a href="../spec/modules/M7-訂位.html">M7 問題 3</a>）：配桌要做區間計算，壓不成一句條件式 <code>UPDATE</code>，所以用<strong>悲觀鎖＋資料庫唯一約束 <code>UNIQUE(table_id, start_time)</code> 雙層保護</strong>——程式有 bug，資料庫也擋得住。</li>
+<li><strong>訂了位沒來</strong>（<a href="../spec/modules/M7-訂位.html">M7 問題 4</a>）：保留 10 分鐘，排程每 5 分鐘標 <code>NO_SHOW</code>；但<strong>不能只靠排程</strong>——報到 API 自己檢查時間（太早 <code>RESERVATION_TOO_EARLY</code>、太晚 <code>RESERVATION_EXPIRED</code>），保留窗、開桌清單、線上取消期限共用同一個設定值。</li>
+<li><strong>預約保留是算出來的鎖定</strong>：訂位前 30 分到後 10 分，桌況顯示「預約保留」，別人開這張桌回 <code>409 TABLE_RESERVED</code>；不動桌位欄位，所以取消、NO_SHOW 都不用「轉回去」（與 D 共同設計）。</li>
+<li><strong>取消的訂位不佔位、已報到的只算到結帳</strong>（<a href="../spec/modules/M7-訂位.html">M7 問題 5</a>）：狀態納入重疊判斷，否則位子永遠訂不到或容量算錯。</li>
+<li><strong>技術地基讓五個人能平行開發</strong>：統一回應格式與全域例外處理（錯誤碼一致）、JWT 與用餐權杖兩條認證、WebSocket 頻道權限（只能訂閱自己那桌）、Flyway 版本化建表、Docker Compose 一鍵起環境、CI；前端 API client 分顧客端／員工端、權杖集中管理、錯誤統一成 <code>ApiError</code>。</li>
+<li><strong>R2 圖片直傳</strong>：後端簽 presigned URL，前端直接上傳到物件儲存，大檔不經過 Spring Boot。</li>
+</ol>
+<p><strong>可能被追問</strong>：區間重疊 SQL 要建什麼<a class="gloss" href="../tech/database/24-索引.html" title="看這個技術的白話說明">索引</a>？悲觀鎖鎖的是哪一列（桌子還是訂位）？排程在多台機器重複跑怎麼辦？presigned URL 為什麼安全？為什麼選 Flyway？</p>
+<p><strong>履歷建議</strong></p>
+<ul>
+<li>設計並實作線上訂位：以區間重疊查詢判斷空桌、清桌緩衝併入結束時間、best-fit 自動配桌，並以悲觀鎖＋唯一約束雙層防止重複訂位。</li>
+<li>以 <code>@Scheduled</code> 處理 NO_SHOW 與訂位提醒，並將「預約保留」設計為由訂位資料推導的狀態，避免排程同步造成桌況不一致。</li>
+<li>擔任技術負責人：規劃系統架構、規格文件與五個工作包分工，建置 Spring Boot 專案地基（Spring Security＋JWT、統一錯誤處理、Flyway、WebSocket 頻道權限、Docker Compose、CI）。</li>
+<li>設計前端 API client 分層（顧客端／員工端、權杖管理、統一錯誤型別），並實作 Cloudflare R2 presigned URL 圖片直傳。</li>
+<li>實作顧客端訂位流程（選日期時段人數、我的預約）與店家端預約管理、報到開桌頁面。</li>
+</ul>
+<hr />
+<h2 id="3-報告的建議安排">3. 報告的建議安排</h2>
+<ol>
+<li><strong>一句話＋demo 動線</strong>（2～3 分鐘）：線上訂位（E）→ 到店掃碼、會員登入（A）→ 看菜單、選選項（B）→ 兩支手機同時加購物車、送出，搶最後一份（C）→ 廚房看板接單、出菜（B）→ 櫃檯桌況、結帳、清桌、候位叫號（C、D）。一條動線經過五個人。</li>
+<li><strong>共同亮點</strong>（2 分鐘）：即時同步不怕斷線、併發用資料庫解、依交易邊界分工、規格先行。</li>
+<li><strong>每人一個技術故事</strong>（每人 1～2 分鐘）：</li>
+</ol>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>人</th>
+<th>技術故事</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Vincent Shih</td>
+<td>模擬簡訊的手機 OTP 驗證（Redis TTL、限流）</td>
+</tr>
+<tr>
+<td>Clara</td>
+<td>選項群組模型、出菜狀態由品項推導</td>
+</tr>
+<tr>
+<td>YiTing</td>
+<td>搶最後一份牛五花（條件式 <code>UPDATE</code>＋並行測試）</td>
+</tr>
+<tr>
+<td>ting chiu</td>
+<td>同時開同一張桌（悲觀鎖）、預約保留改為推導</td>
+</tr>
+<tr>
+<td>Harry Wang</td>
+<td>區間重疊＋best-fit 配桌、雙層防重複訂位</td>
+</tr>
+</tbody>
+</table></div>
+<ol start="4">
+<li><strong>現場證明</strong>（1 分鐘）：跑一次防超賣的並行測試，或兩支手機同時按送出。</li>
+<li><strong>規格變更案例</strong>（1 分鐘）：服務鈴移出範圍、購物車改成只能改自己的，規格、API、設計稿怎麼一起改。</li>
+</ol><div class="pager"><a href="../guides/00-Cloudflare-R2圖片上傳.html"><div class="k">← 上一篇</div><div class="n">00 Cloudflare R2 圖片上傳（React + Spring Boot）</div></a><a class="next" href="../spring-boot/README.html"><div class="k">下一篇 →</div><div class="n">Spring Boot 學習導覽</div></a></div>
+</article>
+<aside class="toc"><div class="tt">本頁目錄</div><a href="#0-寫法原則">0. 寫法原則</a><a href="#1-全體共用五人都可以寫">1. 全體共用（五人都可以寫）</a><a href="#2-各工作包">2. 各工作包</a><a href="#3-報告的建議安排">3. 報告的建議安排</a></aside>
+</div></div>
+</div>
+<script src="../vendor/mermaid.min.js"></script>
+<script>
+mermaid.initialize({
+  startOnLoad: true, securityLevel: 'loose', theme: 'base',
+  fontFamily: '"Noto Sans TC","PingFang TC",system-ui,sans-serif',
+  themeVariables: {
+    background:'#FFFFFF',
+    primaryColor:'#FBE8E3', primaryTextColor:'#2B211C', primaryBorderColor:'#C8442E',
+    secondaryColor:'#FCF0DC', secondaryBorderColor:'#E8A33D',
+    tertiaryColor:'#F5EFE5', tertiaryBorderColor:'#E6DED2',
+    lineColor:'#9C8E84', textColor:'#2B211C',
+    mainBkg:'#FBE8E3', nodeBorder:'#C8442E', clusterBkg:'#FBF7F0', clusterBorder:'#E6DED2',
+    titleColor:'#2B211C', edgeLabelBackground:'#FBF7F0',
+    actorBkg:'#FBE8E3', actorBorder:'#C8442E', actorTextColor:'#2B211C',
+    signalColor:'#6B5D54', signalTextColor:'#2B211C',
+    labelBoxBkgColor:'#FCF0DC', labelBoxBorderColor:'#E8A33D', labelTextColor:'#2B211C',
+    loopTextColor:'#2B211C', noteBkgColor:'#FCF0DC', noteBorderColor:'#E8A33D', noteTextColor:'#2B211C',
+    activationBkgColor:'#E6DED2', activationBorderColor:'#9C8E84', sequenceNumberColor:'#FFFFFF',
+    altBackground:'#F5EFE5',
+    taskBkgColor:'#FBE8E3', taskBorderColor:'#C8442E', taskTextColor:'#2B211C',
+    taskTextOutsideColor:'#2B211C', taskTextDarkColor:'#2B211C',
+    activeTaskBkgColor:'#E8A33D', activeTaskBorderColor:'#C9862A',
+    doneTaskBkgColor:'#E4EFE7', doneTaskBorderColor:'#3F7A4E',
+    critBkgColor:'#C8442E', critBorderColor:'#A63522',
+    gridColor:'#E6DED2', todayLineColor:'#B3261E',
+    sectionBkgColor:'#FBF7F0', sectionBkgColor2:'#F5EFE5', altSectionBkgColor:'#FFFFFF',
+    classText:'#2B211C',
+    attributeBackgroundColorOdd:'#FFFFFF', attributeBackgroundColorEven:'#F5EFE5'
+  },
+  gantt:{barHeight:18,barGap:5,topPadding:52,leftPadding:180,fontSize:12},
+  mindmap:{padding:12},
+  sequence:{actorMargin:42,boxTextMargin:6,noteMargin:10,messageMargin:32,width:150},
+  er:{entityPadding:12,minEntityWidth:110}
+});
+</script>
+<script>document.addEventListener('click',function(e){var sb=document.getElementById('sb');if(window.innerWidth<=940&&sb.classList.contains('open')&&!sb.contains(e.target)&&!e.target.closest('.menubtn')){sb.classList.remove('open');}});</script>
+</body>
+</html>
