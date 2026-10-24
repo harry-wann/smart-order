@@ -119,6 +119,7 @@
 | GET | `/api/menu/recommendations` | 推薦（`?type=POPULAR\|HISTORY\|PROFILE&audience=ADULT\|CHILD`），**進階**：`POPULAR` 是 A7 人氣推薦，`HISTORY`／`PROFILE` 是 8.E3／8.E4 | `POPULAR` 無；`HISTORY`／`PROFILE` 要會員 JWT |
 | POST | `/api/dining-sessions/me/orders` | **只送出目前 guest 自己加入的購物車列，建立一張點餐單**（不帶品項；只讀本人列） | Session + Guest |
 | GET | `/api/dining-sessions/me/orders` | 本桌所有點餐單 | Session |
+| POST | `/api/dining/service-calls` | 按服務鈴（簡化版，只推播、不存表，見 4.7） | Session + Guest |
 | DELETE | `/api/dining-sessions/me/order-items/{id}` | 取消單品 | Session |
 | GET | `/api/dining-sessions/me/bill` | 帳單明細（C-09，**進階 A5**） | Session |
 | POST | `/api/payments` | 模擬付款（C-10，**進階 A5**） | Session |
@@ -291,6 +292,7 @@
 | `MENU_CATEGORY_CHANGED` | menu | 扁平：`{ type, categoryId, active }` | 分類啟用／停用：重抓分類與菜單（停用的分類連同品項一起從顧客菜單消失） |
 | `TABLE_STATUS` | counter | 扁平：`{ type, tableId, tableNo, status, displayStatus, heldFor }` | 依 `displayStatus` 更新桌況色塊（四種）；開桌、結清、清潔、取消用餐、櫃檯代客取消訂位都會推 |
 | `TABLE_OVERTIME`／`TABLE_CLEANING_OVERDUE` | counter | 扁平：`{ type, tableId, tableNo, minutes }` | 用餐超時、待清理過久的提醒列 |
+| `SERVICE_CALL` | counter | 扁平：`{ type, id, tableNo, request }`；`id` 是每次呼叫的亂數 UUID，`request` 是 `CALL_WAITER`／`ADD_SOUP`／`CHANGE_POT` | S-02 服務鈴數字加一並展開 S-11 面板；同桌同種還沒處理的不重複列（見 4.7） |
 | `WAITLIST_CALLED` | waitlist | `{ type, payload: { ticketNo, partySize } }` | 候位螢幕顯示叫號 |
 | `WAITLIST_UPDATED` | waitlist、counter | `{ type, payload: { waitingCount } }` | 更新候位清單 |
 
@@ -772,22 +774,28 @@ GET /api/dining-sessions/me/orders
 
 > **這支 API 有 WebSocket 還是要留**：進頁面時要抓一次，斷線重連後也要抓一次。
 
-### 歷史設計（已移出本次範圍）：服務鈴
-
-以下端點與 payload 是舊版設計紀錄，不屬於現行 API 合約；本次沒有顧客呼叫、櫃檯處理或推播服務鈴的端點。
+### 4.7 服務鈴（簡化版）
 
 ```http
-POST /api/service-calls
+POST /api/dining/service-calls
 X-Session-Token: ...
-{ "type": "SOUP" }          // SERVICE / SOUP / POT_CLEAN（沒有結帳，要結帳請到櫃檯）
+X-Guest-Token: ...
+
+{ "type": "ADD_SOUP" }      // CALL_WAITER（呼叫服務生）／ADD_SOUP（加湯）／CHANGE_POT（換鍋撈渣）；沒有結帳，要結帳請到櫃檯
 ```
 
-```json
-201 Created
-{ "callId": 771, "type": "SOUP", "status": "PENDING", "createdAt": "..." }
+```
+200 OK（沒有 body）
 ```
 
-同時推 `SERVICE_CALL` 到 `/topic/counter`。
+| 狀態 | code | 什麼時候 |
+|---|---|---|
+| 400 | `VALIDATION_FAILED` | `type` 不是上面三種 |
+| 401 | `INVALID_SESSION_TOKEN` | 用餐權杖無效，或這桌已結帳／取消（帶 `reason`） |
+| 401 | `INVALID_GUEST_TOKEN` | 沒帶 guest 權杖，或它不屬於這張用餐權杖 |
+
+成功後推 `SERVICE_CALL` 到 `/topic/counter`（見 3.4）。**不存資料庫**，沒有查詢或標記已處理的 API；
+櫃檯的未處理／已處理清單存在櫃檯瀏覽器，限制見 [M3 服務鈴](modules/M3-點餐與服務鈴.md#服務鈴簡化版已實作)。
 
 ### 4.8 結帳（基礎：櫃檯結清）
 

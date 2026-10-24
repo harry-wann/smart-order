@@ -252,7 +252,7 @@ ER 圖見 <a href="../spec/06-圖表總覽.html">06-圖表總覽</a>。本文件
 <p><strong>順序有外鍵的限制</strong>：<code>dining_session</code> 有外鍵指向 <code>reservation</code> 與 <code>waitlist</code>，這兩張要先建；
 <code>waitlist.dining_session_id</code> 反過來指向 <code>dining_session</code>，所以這個外鍵等 <code>dining_session</code> 建好後用 <code>ALTER TABLE</code> 補上（<code>schema.sql</code> 就是這樣寫的）。</p>
 <p>下面各表的欄位表裡，標「進階」的欄位都不在基礎的建表裡，要等對應的進階 migration 才加。
-舊版曾規劃服務鈴與 <code>service_call</code>，現已移出本次範圍；不建立 migration 或資料表。歷史欄位草案見下方明確標記的歷史設計。</p>
+服務鈴以簡化版實作（只推 <a class="gloss" href="../tech/realtime/41-WebSocket與STOMP.html" title="看這個技術的白話說明">WebSocket</a>），<strong>不建立 <code>service_call</code> 資料表</strong>。下方的欄位草案是之後補強用的原設計。</p>
 </blockquote>
 <p><strong>migration 檔案要指定唯一負責人</strong>（工作分配定案後指派），其他人要改表就開 issue 請他加。
 <strong>已經合併進 <code>develop</code> 的檔案永遠不能修改</strong>——別人的資料庫已經跑過那一版了，改了 Flyway 會拒絕啟動。要改就寫一支新的。</p>
@@ -1106,9 +1106,9 @@ session 進終態（<code>PAID</code> 或 <code>CANCELLED</code>）時，整桌�
 <blockquote>
 <p>選項也要存快照，否則刪掉一個選項後歷史訂單會顯示空白。</p>
 </blockquote>
-<h3 id="歷史設計已移出本次範圍service_call-服務鈴">歷史設計（已移出本次範圍）：<code>service_call</code> 服務鈴</h3>
+<h3 id="原設計尚未實作service_call-服務鈴">原設計（尚未實作）：<code>service_call</code> 服務鈴</h3>
 <blockquote>
-<p>以下欄位僅保留舊版設計紀錄，不是現行 schema；本次不建表、不寫 migration、不提供 API 或 <a class="gloss" href="../tech/realtime/41-WebSocket與STOMP.html" title="看這個技術的白話說明">WebSocket</a> 事件。</p>
+<p>現行服務鈴只推 WebSocket、不存表（見 <a href="../spec/modules/M3-點餐與服務鈴.html#服務鈴簡化版已實作">M3 服務鈴</a>）。以下是之後要補強時的欄位草案，現在不建表、不寫 migration。</p>
 </blockquote>
 <div class="tablewrap"><table>
 <thead>

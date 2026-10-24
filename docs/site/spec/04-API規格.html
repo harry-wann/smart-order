@@ -572,6 +572,12 @@ pre.mermaid svg{max-width:100%;height:auto}
 <td>Session</td>
 </tr>
 <tr>
+<td>POST</td>
+<td><code>/api/dining/service-calls</code></td>
+<td>按服務鈴（簡化版，只推播、不存表，見 4.7）</td>
+<td>Session + Guest</td>
+</tr>
+<tr>
 <td>DELETE</td>
 <td><code>/api/dining-sessions/me/order-items/{id}</code></td>
 <td>取消單品</td>
@@ -1194,6 +1200,12 @@ pre.mermaid svg{max-width:100%;height:auto}
 <td>用餐超時、待清理過久的提醒列</td>
 </tr>
 <tr>
+<td><code>SERVICE_CALL</code></td>
+<td>counter</td>
+<td>扁平：<code>{ type, id, tableNo, request }</code>；<code>id</code> 是每次呼叫的亂數 UUID，<code>request</code> 是 <code>CALL_WAITER</code>／<code>ADD_SOUP</code>／<code>CHANGE_POT</code></td>
+<td>S-02 服務鈴數字加一並展開 S-11 面板；同桌同種還沒處理的不重複列（見 4.7）</td>
+</tr>
+<tr>
 <td><code>WAITLIST_CALLED</code></td>
 <td>waitlist</td>
 <td><code>{ type, payload: { ticketNo, partySize } }</code></td>
@@ -1663,16 +1675,43 @@ X-Device-Id: 7f1c2a9e-4b6d-4e2a-9c1f-2d8e5a0b3c71
 <p>每張單的 <code>quantity</code> 是份數加總（這張 1 ＋ 2 ＝ 3），C-07 單號下的件數用它，跟 <code>NEW_TICKET</code> 的 <code>quantity</code> 同一個欄位。</p>
 <p><strong>這支 API 有 WebSocket 還是要留</strong>：進頁面時要抓一次，斷線重連後也要抓一次。</p>
 </blockquote>
-<h3 id="歷史設計已移出本次範圍服務鈴">歷史設計（已移出本次範圍）：服務鈴</h3>
-<p>以下端點與 payload 是舊版設計紀錄，不屬於現行 API 合約；本次沒有顧客呼叫、櫃檯處理或推播服務鈴的端點。</p>
-<pre><code class="language-http">POST /api/service-calls
+<h3 id="47-服務鈴簡化版">4.7 服務鈴（簡化版）</h3>
+<pre><code class="language-http">POST /api/dining/service-calls
 X-Session-Token: ...
-{ &quot;type&quot;: &quot;SOUP&quot; }          // SERVICE / SOUP / POT_CLEAN（沒有結帳，要結帳請到櫃檯）
+X-Guest-Token: ...
+
+{ &quot;type&quot;: &quot;ADD_SOUP&quot; }      // CALL_WAITER（呼叫服務生）／ADD_SOUP（加湯）／CHANGE_POT（換鍋撈渣）；沒有結帳，要結帳請到櫃檯
 </code></pre>
-<pre><code class="language-json">201 Created
-{ &quot;callId&quot;: 771, &quot;type&quot;: &quot;SOUP&quot;, &quot;status&quot;: &quot;PENDING&quot;, &quot;createdAt&quot;: &quot;...&quot; }
+<pre><code>200 OK（沒有 body）
 </code></pre>
-<p>同時推 <code>SERVICE_CALL</code> 到 <code>/topic/counter</code>。</p>
+<div class="tablewrap"><table>
+<thead>
+<tr>
+<th>狀態</th>
+<th>code</th>
+<th>什麼時候</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>400</td>
+<td><code>VALIDATION_FAILED</code></td>
+<td><code>type</code> 不是上面三種</td>
+</tr>
+<tr>
+<td>401</td>
+<td><code>INVALID_SESSION_TOKEN</code></td>
+<td>用餐權杖無效，或這桌已結帳／取消（帶 <code>reason</code>）</td>
+</tr>
+<tr>
+<td>401</td>
+<td><code>INVALID_GUEST_TOKEN</code></td>
+<td>沒帶 guest 權杖，或它不屬於這張用餐權杖</td>
+</tr>
+</tbody>
+</table></div>
+<p>成功後推 <code>SERVICE_CALL</code> 到 <code>/topic/counter</code>（見 3.4）。<strong>不存資料庫</strong>，沒有查詢或標記已處理的 API；
+櫃檯的未處理／已處理清單存在櫃檯瀏覽器，限制見 <a href="../spec/modules/M3-點餐與服務鈴.html#服務鈴簡化版已實作">M3 服務鈴</a>。</p>
 <h3 id="48-結帳基礎櫃檯結清">4.8 結帳（基礎：櫃檯結清）</h3>
 <pre><code class="language-http">POST /api/admin/dining-sessions/1052/settle
 Authorization: Bearer &lt;員工 JWT&gt;

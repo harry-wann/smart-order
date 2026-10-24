@@ -105,7 +105,7 @@ PATCH  /api/dining-sessions/me/cart/items/5501  改數量、備註
 DELETE /api/dining-sessions/me/cart/items/5501  刪掉一列
 POST   /api/dining-sessions/me/orders        送出點餐（不帶品項，整桌購物車一起送）
 GET    /api/dining-sessions/me/orders        本桌所有點餐單
-POST   /api/service-calls                    按服務鈴
+POST   /api/dining/service-calls             按服務鈴
 GET    /api/admin/tables                     桌況總覽（含算出來的「預約保留」）
 POST   /api/admin/tables/3/open              開桌（櫃檯點空桌）
 POST   /api/admin/dining-sessions/1052/settle 櫃檯結清（現金／信用卡／條碼，可綁會員）

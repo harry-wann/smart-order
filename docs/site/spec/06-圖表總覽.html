@@ -859,7 +859,7 @@ pre.mermaid svg{max-width:100%;height:auto}
 <li><strong><code>DiningSession → OrderTicket → OrderItem</code> 是三層組合</strong>，對應「一次用餐 → 多張點餐單 → 多個品項」。這是整個系統的骨幹。</li>
 <li><strong><code>MenuItem</code> 與 <code>OptionGroup</code> 是多對多</strong>，「辣度」建立一次可掛在 20 個品項上。鴛鴦鍋也是靠這個機制（掛兩個群組）表達，<strong>不需要「鍋位」類別</strong>。</li>
 <li><strong><code>OrderItem</code> 存快照</strong>（<code>itemNameSnapshot</code> / <code>unitPriceSnapshot</code>），改菜單價格不影響歷史帳單。</li>
-<li><strong><code>ServiceCall</code> 和 <code>Waitlist</code> 是新增的兩個類別</strong>，分別支撐服務鈴與現場候位。</li>
+<li><strong><code>ServiceCall</code> 和 <code>Waitlist</code> 是新增的兩個類別</strong>，分別支撐服務鈴與現場候位。<code>ServiceCall</code> 是原設計：現行服務鈴是簡化版，只推播、不建表。</li>
 <li><strong><code>CartItem</code> 掛在 <code>DiningSession</code> 底下、整桌共用</strong>；<code>DiningSessionGuest</code> 只記「誰」（裝置 UUID＋顯示名稱），不是身分驗證。
    <code>DiningTable.displayStatus()</code> 與 <code>Reservation.isHolding()</code> 是<strong>算出來的</strong>，沒有對應的欄位。
    <code>Reservation.isCancellableByCustomer(now)</code> 只給客人線上取消用（<code>now ≤ startTime − 30 分</code>）；櫃檯代客取消 <code>cancel("STAFF", staffId)</code> 不看期限，只看狀態是不是 <code>CONFIRMED</code>。</li>
@@ -1403,7 +1403,7 @@ CREATE UNIQUE INDEX uk_guest_session_device ON dining_session_guest (dining_sess
     WS-->>G: 鴛鴦鍋底 已出餐
     WS-->>G2: 同步更新
 
-    G->>API: POST /service-calls type SOUP
+    G->>API: POST /dining/service-calls type ADD_SOUP
     API->>WS: SERVICE_CALL 到 /topic/counter
     Note over WS: 櫃檯畫面立刻跳出
 

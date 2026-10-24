@@ -291,6 +291,12 @@ pre.mermaid svg{max-width:100%;height:auto}
 <td>☐</td>
 </tr>
 <tr>
+<td>3.12</td>
+<td>服務鈴（簡化版）</td>
+<td>客人選呼叫服務生／加湯／換鍋撈渣，後端驗過權杖後只推 <code>SERVICE_CALL</code> 到 <code>/topic/counter</code>，<strong>不存表</strong>；櫃檯 S-02 的未處理／已處理清單存在瀏覽器（見<a href="#服務鈴簡化版已實作">服務鈴：簡化版</a>）</td>
+<td>☐</td>
+</tr>
+<tr>
 <td>3.13</td>
 <td>防重複送出</td>
 <td>送出中按鈕停用；同一 guest 同時送出兩次時，只建立一張單，第二次因本人已無待送列而回 <code>409 CART_EMPTY</code>。不同 guest 各有待送列時，兩張單都成立，session 鎖保護單號與帳單（見問題 7）</td>
@@ -514,17 +520,25 @@ public OrderTicketDto submitOrder(String sessionToken, String guestToken) {   //
 <p>同一 guest 快速重送時，第一次成功會刪掉該 guest 自己的列；後續請求在 session 鎖後重讀，因本人沒有待送列而回 <code>409 CART_EMPTY</code>，不會重複建立訂單。不同 guest 各有待送列時，都可以各自建立一張單，見問題 7。</p>
 </blockquote>
 <hr />
-<h3 id="歷史設計已移出本次範圍服務鈴">歷史設計（已移出本次範圍）：服務鈴</h3>
-<p>以下是舊版方案，僅供理解既有設計稿與舊連結；本次不實作服務鈴，不建立資料表、不提供 API 或 WebSocket 事件，也不列入開發時程與驗收。</p>
+<h3 id="服務鈴簡化版已實作">服務鈴：簡化版（已實作）</h3>
+<blockquote>
+<p>2026-10-14 曾把服務鈴移出範圍；組員之後仍做出可用的簡化版，2026-10-24 確認功能完整後補回規格。
+現行採下面的做法 A（只推 WebSocket、不存表），櫃檯端用瀏覽器暫存補上「重新整理還在」和「已處理」。</p>
+</blockquote>
 <p><strong>情境</strong>
 客人按「加湯」，櫃檯要看到。</p>
-<p><strong>做法 A：只推 WebSocket，不存</strong>
-最省事。</p>
-<p><strong>為什麼不好</strong>
-- 櫃檯重新整理頁面，未處理的呼叫就不見了
-- 沒辦法統計
-- 沒辦法標記「已處理」</p>
-<p><strong>舊版做法 B：存表 + 推 WebSocket</strong></p>
+<p><strong>做法 A：只推 WebSocket，不存</strong> ← 現行做法</p>
+<ol>
+<li>客人在 C-04 頂欄按服務鈴，開出 C-21 面板，選「呼叫服務生」「加湯」「換鍋撈渣」其中一種</li>
+<li>前端送 <code>POST /api/dining/service-calls</code>（見 <a href="../../spec/04-API規格.html">04 §4.7</a>）；後端驗過用餐權杖與 guest 權杖、確認這桌還在用餐，就推 <code>SERVICE_CALL</code> 到 <code>/topic/counter</code></li>
+<li>櫃檯 S-02 頂欄的服務鈴顯示未處理數字，收到呼叫自動展開 S-11 面板；按「已處理」移到「今天已處理」</li>
+<li>同一桌同一種呼叫還沒處理時不重複列；不同種類各列一筆</li>
+</ol>
+<p><strong>沒有存表的代價（已知限制）</strong>
+- 未處理與已處理清單只存在那台櫃檯瀏覽器的 localStorage（只留當天）：同一台重新整理還在，換一台電腦或另一個瀏覽器就看不到先前的呼叫，「已處理」也不會同步
+- 呼叫只在 S-02 接收；櫃檯停在其他頁面（例如 S-03）時按的會漏接，之後打開 S-02 也補不回來
+- 沒辦法統計；客人端沒有冷卻時間，連按只靠櫃檯端「同桌同種不重複列」擋</p>
+<p><strong>之後要補強：做法 B，存表 + 推 WebSocket</strong>（原設計，尚未實作）</p>
 <pre><code class="language-sql">service_call (
   id, dining_session_id, table_id,
   type    VARCHAR(20),   -- SERVICE / SOUP / POT_CLEAN（沒有結帳，結帳請到櫃檯）
@@ -532,7 +546,7 @@ public OrderTicketDto submitOrder(String sessionToken, String guestToken) {   //
   created_at, acknowledged_at, staff_id
 )
 </code></pre>
-<p>成本只多一點點，但櫃檯體驗完全不同。</p>
+<p>成本只多一點點，但櫃檯體驗完全不同：換電腦、重新整理都不會掉資料，「已處理」各台同步，也能統計。</p>
 <hr />
 <h3 id="問題-6購物車要放在哪裡">問題 6：購物車要放在哪裡</h3>
 <p><strong>情境</strong>
