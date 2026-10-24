@@ -155,7 +155,7 @@ export default function OptionGroupDetail({
                   <td className="px-2 text-center type-body-sm text-ink-900">+{item.priceDiff}</td>
                   <td className="px-2 text-center type-body-sm text-ink-900">{item.sortOrder}</td>
                   <td className="px-2">
-                    <span className="inline-flex items-center gap-2 type-body-sm text-ink-600">
+                    <span className="inline-flex items-center gap-2 whitespace-nowrap type-body-sm text-ink-600">
                       <button
                         type="button"
                         role="switch"

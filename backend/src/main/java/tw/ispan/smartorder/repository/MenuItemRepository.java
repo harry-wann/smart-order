@@ -18,11 +18,13 @@ public interface MenuItemRepository extends JpaRepository<MenuItemEntity,Long> {
     long countByCategory_Id(Long categoryId);
 
     // 顧客端看得到的品項：品項上架、所屬分類也啟用。
-    // 全部分類時照分類排序值，同分類內照品項排序值，排序值相同再依 id，順序才固定
+    // 全部分類時照分類排序值，同分類內照品項排序值，排序值相同再依 id，順序才固定。
+    // 庫存跟著 LEFT JOIN FETCH 一起抓回來：判斷售完只讀 mi.inventory，不用每個品項再查一次庫存
     @Query("""
     SELECT mi
     FROM MenuItemEntity mi
     JOIN mi.category category
+    LEFT JOIN FETCH mi.inventory
     WHERE mi.active = true
       AND category.active = true
     ORDER BY category.sortOrder, category.id, mi.sortOrder, mi.id
@@ -33,6 +35,7 @@ public interface MenuItemRepository extends JpaRepository<MenuItemEntity,Long> {
     SELECT mi
     FROM MenuItemEntity mi
     JOIN mi.category category
+    LEFT JOIN FETCH mi.inventory
     WHERE mi.active = true
       AND category.active = true
       AND category.id = :categoryId
@@ -44,6 +47,7 @@ public interface MenuItemRepository extends JpaRepository<MenuItemEntity,Long> {
     SELECT mi
     FROM MenuItemEntity mi
     JOIN mi.category category
+    LEFT JOIN FETCH mi.inventory
     WHERE mi.active = true
       AND category.active = true
       AND (LOWER(mi.name) LIKE LOWER(CONCAT('%', :keyword, '%'))

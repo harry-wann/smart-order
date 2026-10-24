@@ -1,0 +1,74 @@
+{
+  "label": "clara-mobile-menu",
+  "commit": "b9f5102",
+  "sanitized": true,
+  "passed": true,
+  "notes": [
+    "Branch fix/clara/mobile-menu (05448c5 rebased onto develop ec3b7b2 as b9f5102, same code); isolated MySQL 5.7 reseeded.",
+    "SQL count for one GET /api/order/items measured with MySQL general_log: develop 125 SELECTs (123 on inventory_item) → branch 3 SELECTs (1 on inventory_item).",
+    "GET /api/order/items now returns CustomerMenuItemDto: every old JSON field kept, categoryId and hasRequiredOptions added."
+  ],
+  "sqlCount": {
+    "beforeDevelop": {
+      "selects": 125,
+      "inventorySelects": 123
+    },
+    "afterBranch": {
+      "selects": 3,
+      "inventorySelects": 1
+    }
+  },
+  "regressions": {
+    "java-only": {
+      "passed": true,
+      "resultCount": 36,
+      "testedAt": "2026-10-24T10:50:16.444065+08:00"
+    },
+    "menu-admin": {
+      "passed": true,
+      "resultCount": 131,
+      "testedAt": "2026-10-24T10:36:58.373522+08:00"
+    },
+    "menu-guards": {
+      "passed": true,
+      "resultCount": 75,
+      "testedAt": "2026-10-24T10:37:02.968301+08:00"
+    },
+    "kds": {
+      "passed": true,
+      "resultCount": 138,
+      "testedAt": "2026-10-24T10:37:19.249006+08:00"
+    },
+    "kds-recent": {
+      "passed": true,
+      "resultCount": 85,
+      "testedAt": "2026-10-24T10:37:23.484846+08:00"
+    },
+    "stock-snapshot": {
+      "passed": true,
+      "resultCount": 73,
+      "testedAt": "2026-10-24T10:37:27.867619+08:00"
+    },
+    "order-integrity": {
+      "passed": true,
+      "resultCount": 200,
+      "testedAt": "2026-10-24T10:37:39.021871+08:00"
+    },
+    "staff-order": {
+      "passed": true,
+      "resultCount": 108,
+      "testedAt": "2026-10-24T10:50:59.842507+08:00"
+    },
+    "checkout": {
+      "passed": true,
+      "resultCount": 156,
+      "testedAt": "2026-10-24T10:51:27.299603+08:00"
+    },
+    "personal-cart": {
+      "passed": true,
+      "resultCount": 56,
+      "testedAt": "2026-10-24T10:50:18.222740+08:00"
+    }
+  },
+  "followUpCommit": "e1fa197"
+}

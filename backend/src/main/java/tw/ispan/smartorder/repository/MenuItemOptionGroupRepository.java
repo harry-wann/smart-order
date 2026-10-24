@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 import tw.ispan.smartorder.dto.AdminAssociatedMenuItemDto;
+import tw.ispan.smartorder.dto.OptionGroupMenuItemCountRow;
 import tw.ispan.smartorder.entity.MenuItemOptionGroupEntity;
 import tw.ispan.smartorder.entity.embeddable.MenuOptionEntity;
 
@@ -23,6 +24,36 @@ public interface MenuItemOptionGroupRepository extends JpaRepository<MenuItemOpt
             ORDER BY relation.id.menuItemId, relation.sortOrder, relation.id.optionGroupId
             """)
     List<MenuItemOptionGroupEntity> findByMenuItemIds(@Param("menuItemIds") Collection<Long> menuItemIds);
+
+    // 挑出「掛了必選群組（min_select > 0）」的品項 id；顧客端菜單列表用它判斷 [+] 能不能直接加入購物車，
+    // 一次查完，不要每個品項各查一次
+    @Query("""
+            SELECT DISTINCT relation.id.menuItemId
+            FROM MenuItemOptionGroupEntity relation
+            JOIN OptionGroupEntity optionGroup ON optionGroup.id = relation.id.optionGroupId
+            WHERE relation.id.menuItemId IN :menuItemIds
+              AND optionGroup.minSelect > 0
+            """)
+    List<Long> findMenuItemIdsWithRequiredOptions(@Param("menuItemIds") Collection<Long> menuItemIds);
+
+    // 每個群組掛在幾個品項，GROUP BY 一次查回來；後台群組清單（S-06）用。
+    // 算法跟 findAdminMenuItemsByOptionGroupId 一樣（含下架的品項），左邊的數字才會跟右邊「共 N 個品項」對得上
+    @Query("""
+            SELECT relation.id.optionGroupId AS optionGroupId,
+                   COUNT(menuItem.id) AS menuItemCount
+            FROM MenuItemOptionGroupEntity relation
+            JOIN MenuItemEntity menuItem ON menuItem.id = relation.id.menuItemId
+            GROUP BY relation.id.optionGroupId
+            """)
+    List<OptionGroupMenuItemCountRow> countMenuItemsByOptionGroup();
+
+    @Query("""
+            SELECT COUNT(menuItem.id)
+            FROM MenuItemOptionGroupEntity relation
+            JOIN MenuItemEntity menuItem ON menuItem.id = relation.id.menuItemId
+            WHERE relation.id.optionGroupId = :optionGroupId
+            """)
+    long countMenuItemsByOptionGroupId(@Param("optionGroupId") Long optionGroupId);
 
     @Modifying
     @Transactional

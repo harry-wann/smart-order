@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { SvgIconMap } from '@/assets/SvgIconMap';
 
 interface MenuItemRowProps {
@@ -10,7 +11,10 @@ interface MenuItemRowProps {
   isVegetarian?: boolean | null,
   containsBeef?: boolean | null,
   spicyLevel?: number | null,
-  onClick: () => void
+  onClick?: () => void,
+  // 價格右邊的操作區（例如菜單上的 [+] 加入購物車按鈕）。放什麼、怎麼運作由使用的畫面決定，
+  // 這個元件只負責留位置；售完的品項要不要顯示也由使用的畫面決定
+  action?: ReactNode
 }
 
 enum TagType {
@@ -25,15 +29,16 @@ export default function MenuItemRow(props: MenuItemRowProps) {
 
   return <article onClick={ isSoldOut ? undefined : props.onClick } className="w-full min-h-36 p-card rounded-card border border-line bg-surface">
     <div className="h-full flex gap-4 items-center">
-      
-      { props.img && <Img src={ props.img } isSoldOut={isSoldOut} /> }
-      
+
+      {/* 沒有照片也留照片框：版面不會因為有沒有圖而跑掉，售完的灰階與印章也才有地方放 */}
+      <Photo src={ props.img } isSoldOut={isSoldOut} />
+
       <div className="min-w-0 h-full flex flex-col flex-1">
-        <div className="min-w-0 flex flex-1 flex-col"> 
+        <div className="min-w-0 flex flex-1 flex-col">
           <div className="flex gap-2 items-center">
             <h3 className={`min-w-0 type-h3 truncate ${isSoldOut ? 'text-ink-400' : ''}`}>{props.title}</h3>
             { props.isPopular && <Tag type={TagType.popular} /> }
-            { isSoldOut && <Tag type={TagType.soldOut} /> }  
+            { isSoldOut && <Tag type={TagType.soldOut} /> }
           </div>
           <p className={`type-body-sm text-ink-600 line-clamp-2 ${isSoldOut ? 'text-ink-400' : ''}`}>{props.desc}</p>
           <div className={`mt-1 flex flex-wrap gap-1 type-caption ${isSoldOut ? 'text-ink-400' : 'text-ink-600'}`}>
@@ -46,24 +51,34 @@ export default function MenuItemRow(props: MenuItemRowProps) {
             )}
           </div>
         </div>
-        
-        <div className="flex h-8 items-center justify-between">
-          <span className={`type-price ${isSoldOut ? 'text-ink-400' : 'text-brand-600'}`}>{`NT$ ${formattedPrice}`}</span>
-          
+
+        <div className="flex h-8 items-center justify-between gap-2">
+          {/* 售完：價格灰色加劃線 */}
+          <span className={`type-price ${isSoldOut ? 'text-ink-400 line-through' : 'text-brand-600'}`}>{`NT$ ${formattedPrice}`}</span>
+          { props.action }
         </div>
       </div>
     </div>
   </article>
 }
 
-function Img({ src, isSoldOut }: { src: string, isSoldOut: boolean }) {
-  return <div className="size-22 relative shrink-0 bg-surface-2 border border-dashed border-line-strong rounded-card">
-    <img 
-      className={`rounded-card object-cover ${isSoldOut ? 'grayscale opacity-55' : ''}`}
-      src={src}
-    />
-    { isSoldOut && <SvgIconMap.SoldOutStamp className="absolute inset-0 m-auto" /> }
-  </div> 
+// 照片框固定 80×80、圓角 12px，印章只畫在框裡面（overflow-hidden），不會蓋到旁邊的文字，
+// 窄螢幕（320px）上框的大小也不變，所以不會跑版。
+// pointer-events-none：框是 relative 定位，會畫在菜單頁蓋滿整列的透明按鈕上面，不關掉的話點照片會被框擋住、進不了詳情頁
+function Photo({ src, isSoldOut }: { src?: string | null, isSoldOut: boolean }) {
+  return <div className="pointer-events-none relative size-20 shrink-0 overflow-hidden rounded-card bg-surface-2">
+    { src
+      ? <img
+          className={`size-full object-cover ${isSoldOut ? 'grayscale opacity-55' : ''}`}
+          src={src}
+          alt=""
+        />
+      : <span className="flex size-full items-center justify-center rounded-card border border-dashed border-line-strong type-caption text-ink-400">
+          無圖片
+        </span>
+    }
+    { isSoldOut && <SvgIconMap.SoldOutStamp aria-hidden="true" className="pointer-events-none absolute inset-0 m-auto max-h-full max-w-full" /> }
+  </div>
 }
 
 function Tag({ type }: { type: TagType }) {

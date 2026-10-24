@@ -15,7 +15,7 @@
     </nav>
     <p class="breadcrumb"><a href="../index.html">成員索引</a> ／ Clara</p>
     <header class="person-header">
-      <div class="meta-row"><span class="scope-tag">工作包 B</span><span class="status">菜單管理與出菜看板皆已驗證</span></div>
+      <div class="meta-row"><span class="scope-tag">工作包 B</span><span class="status">手機菜單、菜單管理、出菜看板皆已驗證</span></div>
       <h1>Clara｜菜單、選項群組與廚房出菜看板</h1>
     </header>
     <main class="content-stack">
@@ -27,15 +27,58 @@
       <section class="section-card" id="articles">
         <span class="section-kicker">文章索引</span>
         <h2>工作包紀錄</h2>
-        <div class="article-links"><a href="kds-progress.html">出菜看板：讓「單的狀態」跟著品項走</a><span class="status">已驗證 · 2d5574c</span><a href="menu-admin.html">菜單管理：先把門鎖上，再把功能補齊</a><span class="status">已驗證 · 528f45b</span></div>
+        <div class="article-links"><a href="mobile-menu.html">手機版菜單：照規格補齊，125 次查詢降到 3 次</a><span class="status">已驗證 · b9f5102</span><a href="kds-progress.html">出菜看板：讓「單的狀態」跟著品項走</a><span class="status">已驗證 · 2d5574c</span><a href="menu-admin.html">菜單管理：先把門鎖上，再把功能補齊</a><span class="status">已驗證 · 528f45b</span></div>
       </section>
-      <section class="section-card">
-        <span class="section-kicker">整理進度</span>
-        <h2>技術亮點、報告與履歷</h2>
+      <section class="section-card" id="highlights">
+        <span class="section-kicker">技術亮點、報告與履歷</span>
+        <h2>用到的技術與設計模式</h2>
         <div class="evidence-grid">
-          <div class="note-card"><h3>工作包技術亮點</h3><p>菜單管理：用 Spring Security 角色規則與員工 JWT 過濾器，把後台菜單 API 限定給店長；顧客端只看得到「品項上架、分類也啟用」的菜，停用分類同時停止加入購物車與送單；分類的改名、排序、停用、刪除用資料列鎖排隊，兩位店長同時操作也不會出錯。出菜看板：點餐單的狀態一律由品項推導，勾選、整單完成、取消、報廢走同一套邏輯；出餐進度在交易提交後用 WebSocket 推給同桌每位客人；補上退菜紀錄、久候警示與深色大字看板。收尾後再補完：出餐順序改成分類設定（六級）、分類名稱唯一索引、排序防舊畫面、看板「最近完成」分頁（誤勾可撤回）與報廢記錄員工。</p></div>
-          <div class="note-card report"><h3>報告建議</h3><p>先用修正前的版本示範「沒登入也能刪菜單」，再展示修正後回 401、櫃檯帳號回 403。接著開著客人的菜單，店長在後台停用一個分類，客人畫面立刻少掉那一類，購物車裡的那道菜也送不出去。出菜看板：左邊開廚房看板、右邊開客人手機，廚師一勾，客人畫面馬上變「已出餐」；全部勾完卡片淡出；報廢一道菜，帳單自動扣掉。</p></div>
-          <div class="note-card feedback"><h3>履歷建議</h3><p>可寫：「負責餐廳系統菜單管理：以 Spring Security 角色規則修正後台菜單 API 可被匿名呼叫的漏洞；實作分類排序、停用與防誤刪，並以資料列鎖讓停用分類與顧客送單正確排隊。」以及：「負責廚房出菜看板（KDS）：將點餐單狀態改為由品項推導，以固定鎖順序處理多名廚師同時操作，並以 WebSocket 在交易提交後把出餐進度推送給同桌顧客。」</p></div>
+          <div class="note-card">
+            <h3>全隊共用的技術</h3>
+            <ul>
+              <li>後端：Java 21、Spring Boot 4.1（Spring MVC REST API：用網址和 HTTP 方法讓前端讀寫資料，例如 <code>MenuController</code>、<code>KitchenTicketsController</code>）</li>
+              <li>Spring Data JPA／Hibernate 7（用 Java 物件存取資料庫）、MySQL 5.7、Lombok（<code>MenuItemEntity</code> 的 getter／setter）、Maven</li>
+              <li>Bean Validation（請求欄位驗證：<code>SaveMenuItemRequest</code> 的 <code>@NotBlank</code>、<code>@Min</code>、<code>@Max</code>）、統一錯誤格式（<code>ApiException</code> 加 <code>@RestControllerAdvice</code>）</li>
+              <li>前端：React 19、React Router 8、Vite 8、Tailwind CSS 4、TanStack Query 5（伺服器資料快取：<code>KitchenOverview.jsx</code>、<code>OrderHistory.jsx</code>）、axios、JavaScript／TypeScript 混用</li>
+              <li>工具：Git 分支與 merge、oxlint</li>
+            </ul>
+          </div>
+          <div class="note-card report">
+            <h3>這個工作包特有的</h3>
+            <ul>
+              <li>Spring Security 角色權限：菜單管理 <code>/api/order/admin/**</code> 只給店長，報廢只給廚房與店長（<code>SecurityConfig</code>）</li>
+              <li>Spring WebSocket／STOMP（Simple Text Oriented Messaging Protocol）即時推播：看板 <code>/topic/kitchen</code>、菜單 <code>/topic/menu</code>、同桌客人的個人信箱；前端 <code>@stomp/stompjs</code>（<code>useKitchenSocket</code>、<code>useMenuWebSocket</code>、<code>useOrderProgressSocket</code>）</li>
+              <li><code>JdbcTemplate</code> 原生 SQL 與 <code>SELECT … FOR UPDATE</code>（<code>KitchenTicketService</code>、<code>OrderTicketStatusUpdater</code>）</li>
+              <li>JPA <code>LEFT JOIN FETCH</code> 解決 N+1 查詢（顧客菜單 125 次 → 3 次）</li>
+              <li>可重複執行的升級腳本（<code>migrate_order_item_waste.sql</code>、<code>migrate_menu_category_guards.sql</code>、<code>migrate_order_item_waste_staff.sql</code>）</li>
+              <li>前端：深色看板色票（<code>kds.colors.css</code>）、ResizeObserver 與 <code>requestAnimationFrame</code> 做捲動高亮、<code>sticky</code> 頂欄、淡出動畫與 <code>prefers-reduced-motion</code></li>
+            </ul>
+          </div>
+        </div>
+        <div class="evidence-grid">
+          <div class="note-card">
+            <h3>設計模式</h3>
+            <ul>
+              <li>分層架構（Controller–Service–Repository）與 DTO（Data Transfer Object，資料傳輸物件）：<code>CustomerMenuItemDto</code>、<code>KitchenTicketResponse</code></li>
+              <li>單一真相來源／狀態推導：點餐單狀態一律由品項算出來（<code>OrderTicketStatusUpdater</code>）</li>
+              <li>悲觀鎖與固定鎖順序：同一桌先鎖用餐場次再鎖單與品項；分類用排他鎖、送單用共享鎖排隊</li>
+              <li>樂觀並發控制：排序帶 <code>expectedCategoryIds</code>，畫面過期就回 409</li>
+              <li>唯一索引當最後防線：<code>uk_menu_category_name</code> 擋住同時新增同名分類</li>
+              <li>交易提交後才發布事件（<code>afterCommit</code>，發布／訂閱）：<code>KitchenNotificationService</code>、<code>MenuStatusNotifier</code></li>
+              <li>冪等：整單出完、報廢重送都回成功、不重複寫入</li>
+              <li>樂觀更新：看板勾選先改畫面再送 API，失敗就還原</li>
+              <li>批次查詢取代逐筆查詢（N+1）、捲動監聽（scroll spy）</li>
+            </ul>
+          </div>
+          <div class="note-card feedback">
+            <h3>報告與履歷</h3>
+            <ul>
+              <li>報告①：用修正前的版本示範「沒登入也能刪菜單」，再示範修正後回 401、櫃檯回 403。</li>
+              <li>報告②：左邊廚房看板、右邊客人手機，廚師一勾，客人約 0.1 秒內變「已出餐」；全部勾完卡片淡出；報廢一道菜，帳單自動扣掉。</li>
+              <li>報告③：手機菜單點頁籤捲到該分類、<code>[+]</code> 直接加入；用資料庫紀錄展示一次載入從 125 次查詢降到 3 次。</li>
+              <li>履歷：「參與餐廳點餐系統的菜單與出菜看板（KDS）：以 Spring Security 角色規則修正後台菜單 API 可被匿名呼叫的問題；點餐單狀態改由品項推導，並以固定鎖順序處理多人同時操作；以 WebSocket 在交易提交後推送出餐進度；以 JOIN FETCH 把菜單查詢從 125 次降到 3 次。」</li>
+            </ul>
+          </div>
         </div>
       </section>
       <footer class="page-footer"><div class="link-row"><a class="subtle-link" href="../index.html">← 回成員索引</a></div></footer>

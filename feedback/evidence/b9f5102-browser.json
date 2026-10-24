@@ -1,0 +1,145 @@
+{
+  "label": "clara-mobile-menu-browser",
+  "commit": "b9f5102",
+  "testedAt": "2026-10-24T03:03:24.187Z",
+  "passed": true,
+  "resultCount": 19,
+  "notes": [
+    "390px phone (C-04/C-05) and 1024px (S-06) on Vite 127.0.0.1:5174 serving the branch.",
+    "Older browser suites re-run on the same build after updating the scripts for the guest token and the 127.0.0.1 address: personal-cart 23, staff-order 25, checkout 27 — all passed.",
+    "Review follow-up e1fa197: tapping the photo opens the detail (check added), tapping a tab right after clearing search waits for the full list. Re-run after the fix: 19/19, personal-cart 23, staff-order 25, checkout 27."
+  ],
+  "olderSuites": {
+    "personal-cart": {
+      "passed": true,
+      "resultCount": 23
+    },
+    "staff-order": {
+      "passed": true,
+      "resultCount": 25
+    },
+    "checkout": {
+      "passed": true,
+      "resultCount": 27
+    }
+  },
+  "beforeFix": [
+    {
+      "name": "C-04 category sections rendered at once (spec: one scrolling list)",
+      "value": [
+        "鍋底"
+      ]
+    },
+    {
+      "name": "C-04 quick add [+] buttons on rows (spec: present for items without required options)",
+      "value": 0
+    },
+    {
+      "name": "C-04 sold-out row (spec: greyscale photo, struck price, label + stamp, not clickable)",
+      "value": {
+        "rowDisabled": true,
+        "photoFilter": "none",
+        "priceDecoration": "none",
+        "stampCount": 1
+      }
+    },
+    {
+      "name": "C-05 single-choice group: other options disabled after one pick (spec: tap another to switch)",
+      "value": true
+    },
+    {
+      "name": "S-06 group list shows how many items each group is attached to (spec)",
+      "value": false
+    }
+  ],
+  "results": [
+    {
+      "name": "Phone menu browser: every active category is a section of one list, in sort order",
+      "passed": true,
+      "detail": "鍋底,肉品,海鮮,蔬菜,火鍋料,主食,飲料,酒類"
+    },
+    {
+      "name": "Phone menu browser: tapping 蔬菜 scrolls its heading just below the sticky header and highlights the tab",
+      "passed": true,
+      "detail": "197 vs header 180"
+    },
+    {
+      "name": "Phone menu browser: scrolling into 肉品 highlights the 肉品 tab",
+      "passed": true,
+      "detail": "肉品"
+    },
+    {
+      "name": "Phone menu browser: [+] posts one portion without options",
+      "passed": true,
+      "detail": "201 {\"sessionId\":50,\"menuItemId\":28,\"quantity\":1,\"optionValueIds\":[]}"
+    },
+    {
+      "name": "Phone menu browser: the [+] shows a tick and the cart bar count goes up",
+      "passed": true,
+      "detail": "7 -> 8"
+    },
+    {
+      "name": "Phone menu browser: the [+] touch target is at least 44×44",
+      "passed": true,
+      "detail": "44×44"
+    },
+    {
+      "name": "Phone menu browser: tapping the photo of an available item opens its detail page",
+      "passed": true,
+      "detail": "http://127.0.0.1:5174/order/itemdetail"
+    },
+    {
+      "name": "Phone menu browser: [+] on an item with required options opens the detail page",
+      "passed": true
+    },
+    {
+      "name": "Phone menu browser: sold-out row: disabled, price struck through, stamp inside the photo frame",
+      "passed": true,
+      "detail": "{\"disabled\":true,\"priceLine\":\"line-through\",\"stamp\":true}"
+    },
+    {
+      "name": "Phone menu browser: sold-out row has no [+]",
+      "passed": true
+    },
+    {
+      "name": "Phone menu browser: search shows only categories with matches",
+      "passed": true,
+      "detail": "蔬菜,火鍋料"
+    },
+    {
+      "name": "Phone menu browser: a dish sold out in menu admin turns sold-out on the phone without reloading",
+      "passed": true
+    },
+    {
+      "name": "Phone menu browser: single choice: tapping another option switches directly",
+      "passed": true
+    },
+    {
+      "name": "Phone menu browser: optional single choice (辣度) can be cleared by tapping it again",
+      "passed": true
+    },
+    {
+      "name": "Phone menu browser: no horizontal overflow at 320px",
+      "passed": true
+    },
+    {
+      "name": "Phone menu browser: no horizontal overflow at 390px",
+      "passed": true
+    },
+    {
+      "name": "Phone menu browser: no horizontal overflow at 480px",
+      "passed": true
+    },
+    {
+      "name": "Phone menu browser: S-06 group list shows the item count per group",
+      "passed": true,
+      "detail": "份量 19"
+    },
+    {
+      "name": "Phone menu browser: no page errors or API 5xx",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "followUpCommit": "e1fa197"
+}

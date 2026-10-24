@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7fb">
+  <title>Clara｜手機版菜單與品項詳情</title>
+  <link rel="stylesheet" href="../assets/feedback.css">
+</head>
+<body>
+  <div class="site-shell">
+    <nav class="topbar" aria-label="主要導覽">
+      <a class="brand" href="../index.html"><span class="brand-mark" aria-hidden="true">鍋</span><span>實作回饋整理</span></a>
+      <a class="toplink" href="index.html">回 Clara 工作包</a>
+    </nav>
+    <p class="breadcrumb"><a href="../index.html">成員索引</a> ／ <a href="index.html">Clara</a> ／ 手機版菜單</p>
+
+    <header class="person-header">
+      <div class="meta-row"><span class="scope-tag">工作包 B · C-04／C-05／S-06</span><span class="status">已完成並驗證</span></div>
+      <h1>手機版菜單：照規格補齊，順便把 125 次查詢降到 3 次</h1>
+      <p class="lede">C-04 菜單主頁和 C-05 品項詳情是客人在手機上最常看的兩頁。對照 UI（User Interface，使用者介面）規格，畫面大致完成，但單選無法換、少了快速加入、售完樣式不完整、分類不會跟著捲動高亮；後端每載入一次菜單就查 125 次資料庫。</p>
+    </header>
+
+    <main class="person-layout">
+      <nav class="toc" aria-label="本頁目錄">
+        <h2>本頁目錄</h2>
+        <ol>
+          <li><a href="#problems">哪裡跟規格不一樣</a></li>
+          <li><a href="#changes">怎麼改</a></li>
+          <li><a href="#evidence">驗證</a></li>
+          <li><a href="#tech">用到的技術與設計模式</a></li>
+          <li><a href="#terms">名詞表</a></li>
+        </ol>
+      </nav>
+
+      <div class="content-stack">
+        <section class="section-card" id="problems">
+          <span class="section-kicker">01 · 哪裡跟規格不一樣</span>
+          <h2>在 390px 手機寬度逐條對照規格</h2>
+          <ul class="prompt-list">
+            <li><span><strong>單選不能直接換（錯誤）：</strong>鴛鴦鍋的「左鍋湯底」只能選一個。選了麻辣之後，同一組的昆布就被停用，要先取消才能換。原因是「選滿上限就停用其他選項」這條規則，連上限是 1 的單選也套用了。</span></li>
+            <li><span><strong>少了 <code>[+]</code> 快速加入：</strong>規格要每列有 <code>[+]</code>，沒有必選選項的菜按一下就進購物車，少一次點擊；目前每道菜都要先進詳情頁。</span></li>
+            <li><span><strong>售完樣式不完整：</strong>規格是照片灰階、價格劃線、名稱旁標籤加照片上的「售完」印章、整列不能點。原本只有標籤和不能點，印章因為絕對定位跑版被拿掉過。</span></li>
+            <li><span><strong>分類頁籤是「切換」不是「捲動」：</strong>規格寫「捲動時自動高亮目前分類」，代表全部菜色在同一條清單；原本點頁籤只顯示那一類。</span></li>
+            <li><span><strong>S-06 選項群組清單少一個數字：</strong>規格要左側每個群組標「掛在幾個品項」，原本只有右側詳情才看得到。</span></li>
+            <li><span><strong>效能：</strong>顧客菜單 API（Application Programming Interface，應用程式介面）每個品項都另外查一次庫存，用 MySQL 查詢紀錄實測，載入一次菜單共 <strong>125 次</strong> SELECT，其中 123 次在查庫存。</span></li>
+          </ul>
+          <div class="screen-gallery">
+          <figure class="screen-shot">
+            <a href="../assets/clara-mobile-menu-before-390.png"><img src="../assets/clara-mobile-menu-before-390.png" alt="修正前的手機菜單，點肉品只顯示肉品，售完的羊肩只有灰字與標籤，沒有加入按鈕"></a>
+            <figcaption>修正前：一次只顯示一類、沒有 <code>[+]</code>、售完只有灰字。</figcaption>
+          </figure>
+          </div>
+          <p class="intro-note">右上角的服務鈴是另一位組員加的功能。規格把服務鈴列為「已移出本次範圍」，這次照「以實作者的內容為主」保留，由團隊決定要不要留。</p>
+        </section>
+
+        <section class="section-card" id="changes">
+          <span class="section-kicker">02 · 怎麼改（commit b9f5102，整合時補齊，不算原作者的缺失）</span>
+          <h2>五個畫面修正＋一個查詢合併</h2>
+          <ul class="prompt-list">
+            <li><span><strong>單選：</strong>只有複選群組才「選滿就停用」；單選點另一個直接換掉。非必選的單選（例如辣度）再點一次可以取消，不然選了就回不到「不選」。</span></li>
+            <li><span><strong><code>[+]</code>：</strong>後端在每道菜多回一個 <code>hasRequiredOptions</code>（有沒有必選群組，一次查好全部）。沒有必選的直接加 1 份並短暫顯示打勾；有必選的進詳情頁。觸控範圍 44×44，連點只送一次。</span></li>
+            <li><span><strong>售完：</strong>沒圖片也畫固定 80×80 的照片框，印章畫在框裡（框有 <code>overflow-hidden</code>，不會蓋到文字），價格加劃線，售完不顯示 <code>[+]</code>。</span></li>
+            <li><span><strong>捲動清單：</strong>一次抓全部品項，依分類分段。點頁籤平滑捲到該段；手動捲動時，「標題已經捲過頂欄下緣」的最後一段就是目前分類。頂欄高度用 ResizeObserver 量，搜尋改在手機端跨全部分類篩選。即時更新（售完、上下架、分類停用）不再清空清單，捲動位置不會跳回頂端。</span></li>
+            <li><span><strong>S-06：</strong>群組清單用一次 GROUP BY 查出每個群組的品項數，顯示「必選 單選・19 個品項」。</span></li>
+            <li><span><strong>查詢合併：</strong>原本拿到品項後，再逐筆查庫存（這叫 N+1：1 次查清單，再 N 次查明細）。改成查品項時用 <code>LEFT JOIN FETCH</code> 把庫存一起帶回來，在記憶體裡判斷售完。</span></li>
+          </ul>
+        </section>
+
+        <section class="section-card" id="evidence">
+          <span class="section-kicker">03 · 驗證</span>
+          <h2>修正前後都實測</h2>
+          <ul class="prompt-list">
+            <li><span><strong>查詢次數：</strong>同一個菜單 API，<strong>125 次 → 3 次</strong> SELECT（隔離的 MySQL 5.7，用 general log 計數）。</span></li>
+            <li><span><strong>瀏覽器 19 項全過：</strong>分段順序、點頁籤捲動與高亮、手動捲動高亮、<code>[+]</code> 加入後購物車 16 → 17 份、點照片也進詳情、必選品項進詳情、售完樣式、搜尋只顯示有結果的分類、店長在後台改售完，手機不用重新整理就變灰、單選直接換、辣度可取消、320／390／480px 都沒有橫向溢出、S-06 顯示數量。</span></li>
+            <li><span><strong>回歸：</strong>HTTP 10 套（菜單管理、出菜看板、購物車、點餐交易、櫃檯代客點餐、結帳等）、舊的瀏覽器測試（個人購物車 23、櫃檯代客點餐 25、結帳 27）都通過。菜單 API 改成回傳 DTO，舊欄位名稱一個不少，只多了兩個欄位。</span></li>
+            <li><span><strong>獨立審查：</strong>沒有 P1；P2「點可售品項的照片沒反應」（照片框蓋在整列按鈕上面，點擊被擋住）已在 <code>e1fa197</code> 修正，並補上「清空搜尋後馬上點頁籤會捲錯位置」。</span></li>
+            <li><span><a href="../evidence/b9f5102-http.json">HTTP 與查詢次數紀錄</a>、<a href="../evidence/b9f5102-browser.json">瀏覽器紀錄</a>（含修正前觀察）。</span></li>
+          </ul>
+          <div class="screen-gallery">
+            <figure class="screen-shot">
+              <a href="../assets/clara-mobile-menu-390.png"><img src="../assets/clara-mobile-menu-390.png" alt="修正後的手機菜單，所有分類在同一條清單，每道菜右下角有加號按鈕"></a>
+              <figcaption>修正後：同一條清單，每列有 <code>[+]</code>。</figcaption>
+            </figure>
+            <figure class="screen-shot">
+              <a href="../assets/clara-mobile-soldout-390.png"><img src="../assets/clara-mobile-soldout-390.png" alt="售完的品項照片上有售完印章、價格劃線，畫面下方顯示已加入購物車的提示"></a>
+              <figcaption>售完印章在照片框內；按 <code>[+]</code> 後出現「已加入購物車」。</figcaption>
+            </figure>
+            <figure class="screen-shot">
+              <a href="../assets/clara-mobile-detail-390.png"><img src="../assets/clara-mobile-detail-390.png" alt="鴛鴦鍋底詳情頁，左右鍋湯底都已選擇，可以直接換選項"></a>
+              <figcaption>C-05：單選點另一個選項就直接換。</figcaption>
+            </figure>
+            <figure class="screen-shot">
+              <a href="../assets/clara-s06-1024.png"><img src="../assets/clara-s06-1024.png" alt="選項群組管理頁，左側每個群組顯示掛在幾個品項"></a>
+              <figcaption>S-06：左側群組顯示掛了幾個品項。</figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <section class="section-card" id="tech">
+          <span class="section-kicker">04 · 用到的技術與設計模式</span>
+          <h2>這篇用到的東西</h2>
+          <ul class="prompt-list">
+            <li><span>React 19 狀態管理、Tailwind CSS 4 的 <code>sticky</code> 與 <code>overflow-hidden</code>、ResizeObserver、<code>requestAnimationFrame</code> 節流捲動事件、<code>prefers-reduced-motion</code>（使用者關掉動畫時改成瞬間跳轉）。</span></li>
+            <li><span>Spring Data JPA 的 <code>LEFT JOIN FETCH</code> 解決 N+1；DTO（Data Transfer Object，資料傳輸物件）讓 API 回傳格式不再綁死資料表。</span></li>
+            <li><span>設計模式：<strong>捲動監聽（scroll spy）</strong>；<strong>批次查詢</strong>取代逐筆查詢；<strong>向下相容的 API 變更</strong>（只加欄位、不改舊欄位名稱）。</span></li>
+            <li><span>學到什麼：先拿規格逐條對照畫面，再量測，例如查詢次數要用資料庫紀錄數出來，不要用猜的。</span></li>
+          </ul>
+        </section>
+
+        <section class="section-card" id="terms">
+          <span class="section-kicker">05 · 名詞表</span>
+          <h2>新手名詞</h2>
+          <dl class="glossary">
+            <div class="term"><dt>C-04／C-05／S-06</dt><dd>UI 規格的畫面編號：菜單主頁、品項詳情、選項群組管理。</dd></div>
+            <div class="term"><dt>單選（radio）／複選（checkbox）</dt><dd>一組只能選一個／可以選多個。單選換選項時，舊的應該自動取消。</dd></div>
+            <div class="term"><dt>sticky（黏住）</dt><dd>捲動時固定在畫面頂端的 CSS 定位方式。</dd></div>
+            <div class="term"><dt>scroll spy（捲動監聽）</dt><dd>依目前捲到哪裡，自動高亮對應的頁籤或目錄。</dd></div>
+            <div class="term"><dt>N+1 查詢</dt><dd>先查 1 次清單，再為每一筆各查 1 次，資料一多就很慢。</dd></div>
+            <div class="term"><dt>LEFT JOIN FETCH</dt><dd>JPA 的寫法：查主資料時，把關聯資料一起帶回來，不再逐筆另外查。</dd></div>
+            <div class="term"><dt>DTO（Data Transfer Object，資料傳輸物件）</dt><dd>專門用來裝 API 回傳內容的物件，跟資料表的結構分開。</dd></div>
+            <div class="term"><dt>SHA／Git commit</dt><dd>SHA 是 Secure Hash Algorithm（安全雜湊演算法）；Git 用它替每個版本產生識別碼。</dd></div>
+          </dl>
+        </section>
+
+        <footer class="page-footer"><a href="index.html">← 回 Clara 工作包</a></footer>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
