@@ -14,6 +14,7 @@ import {
 
 import useCartWebSocket from '@/services/realtime/useCartWebSocket'
 import { leaveTable } from '@/services/client/auth'
+import TableOrdersButton from '@/features/customer/order/TableOrdersButton'
 
 export default function OrderCart() {
   const navigate = useNavigate()
@@ -401,7 +402,9 @@ export default function OrderCart() {
             : '各自送出自己的餐點'
         }
         showBackButton={true}
-      />
+      >
+        <TableOrdersButton />
+      </CustomerTopBar>
 
       <div className="flex shrink-0 items-start gap-2 border-b border-info-line bg-info-bg px-4 py-3">
         <SvgIconMap.OrdercartPeople className="mt-0.5 h-5 w-5 shrink-0 text-info-ink" aria-hidden="true" />

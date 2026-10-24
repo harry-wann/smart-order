@@ -6,6 +6,7 @@ import { SvgIconMap } from '@/assets/SvgIconMap'
 import CustomerTopBar from '@/components/CustomerTopBar'
 import SOButton from '@/components/SOButton'
 import ServiceBell from '@/features/customer/order/ServiceBell'
+import TableOrdersButton from '@/features/customer/order/TableOrdersButton'
 import { getCurrentDining } from '@/services/api/dining/diningApi'
 import { getCart } from '@/services/api/cart/cartApi'
 import { addMenuItemToCart } from '@/services/api/order/orderApi'
@@ -538,9 +539,12 @@ export default function Menu() {
         {/* 固定在頂部：桌號頂欄、搜尋框、分類頁籤。內容捲動時它們不動 */}
         <div ref={headerRef} className="sticky top-0 z-20 bg-paper">
           <CustomerTopBar title={tableNo ? `${tableNo} 桌` : '菜單'} subTitle={diningSubtitle} showBackButton={false}>
-            <button onClick={() => setIsBellOpen(true)} type="button" className="cursor-pointer text-gray-600">
-              <SvgIconMap.MenuBell role="img" aria-label="服務鈴" />
-            </button>
+            <div className="flex items-center">
+              <TableOrdersButton />
+              <button onClick={() => setIsBellOpen(true)} type="button" className="cursor-pointer text-gray-600">
+                <SvgIconMap.MenuBell role="img" aria-label="服務鈴" />
+              </button>
+            </div>
           </CustomerTopBar>
 
           {diningStatus === 'error' && (
