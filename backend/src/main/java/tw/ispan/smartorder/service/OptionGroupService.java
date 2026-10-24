@@ -11,6 +11,7 @@ import tw.ispan.smartorder.dto.AdminAssociatedMenuItemDto;
 import tw.ispan.smartorder.dto.AdminOptionGroupDetailDto;
 import tw.ispan.smartorder.dto.AdminOptionGroupDto;
 import tw.ispan.smartorder.dto.AdminOptionValueDto;
+import tw.ispan.smartorder.dto.OptionGroupMenuItemCountRow;
 import tw.ispan.smartorder.dto.request.CreateOptionGroupRequest;
 import tw.ispan.smartorder.dto.request.CreateOptionValueRequest;
 import tw.ispan.smartorder.dto.request.UpdateOptionGroupRequest;
@@ -24,7 +25,9 @@ import tw.ispan.smartorder.repository.OptionValueRepository;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class OptionGroupService {
@@ -39,9 +42,15 @@ public class OptionGroupService {
 
     public List<AdminOptionGroupDto> getAllOptionGroups() {
         Sort sort = Sort.by("sortOrder").ascending().and(Sort.by("id").ascending());
+        // 每個群組掛幾個品項用一次 GROUP BY 查回來，沒掛任何品項的群組不會出現在結果裡，算 0
+        Map<Long, Long> menuItemCounts = menuItemOptionGroupRepository.countMenuItemsByOptionGroup()
+                .stream()
+                .collect(Collectors.toMap(
+                        OptionGroupMenuItemCountRow::getOptionGroupId,
+                        OptionGroupMenuItemCountRow::getMenuItemCount));
         return optionGroupRepository.findAll(sort)
                 .stream()
-                .map(this::toDto)
+                .map(entity -> toDto(entity, menuItemCounts.getOrDefault(entity.getId(), 0L)))
                 .toList();
     }
 
@@ -54,7 +63,8 @@ public class OptionGroupService {
         entity.setSortOrder(optionGroupRepository.findMaxSortOrder() + 1);
         entity.setCreatedAt(now);
         entity.setUpdatedAt(now);
-        return toDto(optionGroupRepository.save(entity));
+        // 剛建立的群組還沒掛任何品項
+        return toDto(optionGroupRepository.save(entity), 0L);
     }
 
     public AdminOptionGroupDto updateOptionGroup(Long optionGroupId, UpdateOptionGroupRequest request) {
@@ -66,7 +76,8 @@ public class OptionGroupService {
         entity.setMaxSelect(request.maxSelect());
         entity.setSortOrder(request.sortOrder());
         entity.setUpdatedAt(LocalDateTime.now());
-        return toDto(optionGroupRepository.save(entity));
+        OptionGroupEntity saved = optionGroupRepository.save(entity);
+        return toDto(saved, menuItemOptionGroupRepository.countMenuItemsByOptionGroupId(saved.getId()));
     }
 
     @Transactional
@@ -200,13 +211,14 @@ public class OptionGroupService {
         );
     }
 
-    private AdminOptionGroupDto toDto(OptionGroupEntity entity) {
+    private AdminOptionGroupDto toDto(OptionGroupEntity entity, long menuItemCount) {
         return new AdminOptionGroupDto(
                 entity.getId(),
                 entity.getName(),
                 entity.getMinSelect(),
                 entity.getMaxSelect(),
-                entity.getSortOrder()
+                entity.getSortOrder(),
+                menuItemCount
         );
     }
 }

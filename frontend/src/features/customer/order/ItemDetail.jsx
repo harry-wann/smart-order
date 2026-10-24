@@ -6,6 +6,7 @@ import Counter from '../../../components/steper/Counter'
 import { useLocation, useNavigate } from 'react-router'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import { customerClient } from '@/services/client/customerClient'
+import { addMenuItemToCart } from '@/services/api/order/orderApi'
 
 const MAX_NOTE_LENGTH = 50
 
@@ -80,7 +81,7 @@ export default function ItemDetail() {
     setError('')
     try {
       if (!sessionId) throw new Error('找不到桌次資訊，請返回菜單重新進入')
-      await customerClient.post('/order/cart/items', {
+      await addMenuItemToCart({
         sessionId,
         menuItemId: Number(productId),
         quantity,
@@ -143,13 +144,16 @@ export default function ItemDetail() {
           ? '必選'
           : group.maxSelect > 1 ? `可選 最多 ${group.maxSelect} 項` : '可選'
         const hintText = group.selectionType === 'radio'
-          ? '單選'
+          ? (group.isRequired ? '單選' : '單選・可取消')
           : `已選 ${selectedIds.length}・還有 ${Math.max(0, group.maxSelect - selectedIds.length)} 種`
         const mappedOptions = group.options.map((option) => ({
           value: option.id,
           title: option.name,
           desc: option.priceDelta > 0 ? `+NT$ ${option.priceDelta}` : '',
-          disabled: !selectedIds.includes(option.id) && selectedIds.length >= group.maxSelect,
+          // 只有複選群組選滿上限才停用其他選項；單選群組（maxSelect = 1）點另一個選項就是直接換掉原本的
+          disabled: group.selectionType === 'checkbox'
+            && !selectedIds.includes(option.id)
+            && selectedIds.length >= group.maxSelect,
         }))
 
         return (
@@ -168,7 +172,9 @@ export default function ItemDetail() {
                 name={group.id}
                 options={mappedOptions}
                 value={selectedIds[0] || ''}
-                onChange={(value) => setSelections((prev) => ({ ...prev, [group.id]: [value] }))}
+                // 非必選的單選群組（例如辣度）再點一次已選的選項可以取消；必選的一定要留一個，不能取消
+                allowDeselect={!group.isRequired}
+                onChange={(value) => setSelections((prev) => ({ ...prev, [group.id]: value ? [value] : [] }))}
               />
             ) : (
               <OptionCheckboxGroup

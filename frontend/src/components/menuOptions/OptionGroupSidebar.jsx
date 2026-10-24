@@ -25,6 +25,8 @@ export default function OptionGroupSidebar({
         const minSelect = Number(group.minSelect ?? 0);
         const maxSelect = Number(group.maxSelect ?? 1);
         const selectionRule = `${minSelect > 0 ? '必選' : '非必選'} ${maxSelect > 1 ? '可複選' : '單選'}`;
+        // 規則後面接「掛在幾個品項」；後端沒給數字時不顯示，免得誤導成 0
+        const itemCountText = Number.isInteger(group.menuItemCount) ? `・${group.menuItemCount} 個品項` : '';
         const isDragging = group.id === draggedGroupId;
         const isDropTarget = group.id === dropGroupId && group.id !== draggedGroupId;
 
@@ -73,7 +75,7 @@ export default function OptionGroupSidebar({
               className="flex min-w-0 flex-1 flex-col items-start text-left"
             >
               <span className="type-body-sm font-semibold text-ink-900">{group.name}</span>
-              <span className="type-caption text-ink-600">{selectionRule}</span>
+              <span className="type-caption text-ink-600">{selectionRule}{itemCountText}</span>
             </button>
             <span aria-hidden="true" className="ml-2 inline-flex h-8 w-5 shrink-0 items-center justify-center text-ink-400">
               ›

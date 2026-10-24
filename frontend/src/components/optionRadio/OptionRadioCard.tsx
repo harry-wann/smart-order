@@ -6,6 +6,8 @@ export type Props = {
   selected?: boolean
   disabled?: boolean
   onChange?: (value: string) => void /** 選項改變時回報該選項的 value。 */
+  /** 已選取的選項又被點一次時回報（原生 radio 這種情況不會觸發 onChange），給「可取消選取」的群組用。 */
+  onClickSelected?: (value: string) => void
 }
 
 const OptionRadioCard = ({
@@ -16,6 +18,7 @@ const OptionRadioCard = ({
   selected = false,
   disabled = false,
   onChange,
+  onClickSelected,
 }: Props) => {
   return (
     <label className={`block ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
@@ -28,6 +31,9 @@ const OptionRadioCard = ({
         checked={selected}
         disabled={disabled}
         onChange={() => onChange?.(value)}
+        onClick={() => {
+          if (selected) onClickSelected?.(value)
+        }}
       />
 
       <div

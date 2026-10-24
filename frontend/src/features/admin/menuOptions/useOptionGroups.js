@@ -38,6 +38,8 @@ export default function useOptionGroups() {
           minSelect: group.minSelect,
           maxSelect: group.maxSelect,
           sortOrder: group.sortOrder,
+          // 掛在幾個品項（左側群組清單顯示用，後端群組清單一次帶回來）
+          menuItemCount: group.menuItemCount,
           items: [],
           associatedProducts: null,
         }));
@@ -91,6 +93,7 @@ export default function useOptionGroups() {
         minSelect: data.minSelect,
         maxSelect: data.maxSelect,
         sortOrder: data.sortOrder,
+        menuItemCount: data.menuItemCount,
         items: [],
         associatedProducts: null,
       };

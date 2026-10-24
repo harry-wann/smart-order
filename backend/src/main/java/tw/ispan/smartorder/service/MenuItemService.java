@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tw.ispan.smartorder.common.exception.ApiException;
 import tw.ispan.smartorder.dto.AdminMenuItemDto;
+import tw.ispan.smartorder.dto.CustomerMenuItemDto;
 import tw.ispan.smartorder.dto.MenuItemOptionDetailDto;
 import tw.ispan.smartorder.dto.MenuItemOptionDetailRow;
 import tw.ispan.smartorder.dto.request.SaveMenuItemRequest;
@@ -28,6 +29,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -288,14 +290,14 @@ public class MenuItemService {
 
     // 顧客端：品項上架且所屬分類啟用才看得到；依分類 sort_order、品項 sort_order 排序
     @Transactional
-    public List<MenuItemEntity> findMenuItem(Long categoryId){
+    public List<CustomerMenuItemDto> findMenuItem(Long categoryId){
         List<MenuItemEntity> items;
         if (categoryId == null) {
             items = menuItemRepository.findVisibleMenuItems();
         } else {
             items = menuItemRepository.findVisibleMenuItemsByCategoryId(categoryId);
         }
-        return withCurrentSoldOutStatus(items);
+        return toCustomerMenuItemDtos(withCurrentSoldOutStatus(items));
     }
 
     @Transactional(readOnly = true)
@@ -333,22 +335,37 @@ public class MenuItemService {
     }
 
     @Transactional
-    public List<MenuItemEntity> searchMenuItem(String keyword){
+    public List<CustomerMenuItemDto> searchMenuItem(String keyword){
         String searchKeyword = keyword == null ? "" : keyword.trim();
         if (searchKeyword.isEmpty()) {
-            return withCurrentSoldOutStatus(menuItemRepository.findVisibleMenuItems());
+            return toCustomerMenuItemDtos(withCurrentSoldOutStatus(menuItemRepository.findVisibleMenuItems()));
         }
-        return withCurrentSoldOutStatus(menuItemRepository.searchActiveMenuItemsByKeyword(searchKeyword));
+        return toCustomerMenuItemDtos(
+                withCurrentSoldOutStatus(menuItemRepository.searchActiveMenuItemsByKeyword(searchKeyword)));
     }
 
-    // 售完旗標以現在的庫存為準；不追蹤庫存的品項（免費續加等）庫存 0 也不是售完
+    // 顧客端列表：有沒有掛必選群組一次查回來（只讀取），再分給各品項，不要每個品項各查一次
+    private List<CustomerMenuItemDto> toCustomerMenuItemDtos(List<MenuItemEntity> items) {
+        if (items.isEmpty()) {
+            return List.of();
+        }
+        Set<Long> itemIdsWithRequiredOptions = new HashSet<>(
+                menuItemOptionGroupRepository.findMenuItemIdsWithRequiredOptions(
+                        items.stream().map(MenuItemEntity::getId).toList()));
+        return items.stream()
+                .map(item -> CustomerMenuItemDto.from(item, itemIdsWithRequiredOptions.contains(item.getId())))
+                .toList();
+    }
+
+    // 售完旗標以現在的庫存為準；不追蹤庫存的品項（免費續加等）庫存 0 也不是售完。
+    // 庫存已經跟品項一起查回來（見 MenuItemRepository 的 LEFT JOIN FETCH mi.inventory），這裡只在記憶體裡判斷，
+    // 傳進來的清單一定要是那幾支查詢的結果，不然 item.getInventory() 會一個一個另外去查
     private List<MenuItemEntity> withCurrentSoldOutStatus(List<MenuItemEntity> items) {
         for (MenuItemEntity item : items) {
             boolean soldOut = false;
             if (!Boolean.FALSE.equals(item.getTrackInventory())) {
-                int stock = inventoryRepository.findByMenuItem_Id(item.getId())
-                        .map(inventory -> inventory.getQuantity() == null ? 0 : inventory.getQuantity())
-                        .orElse(0);
+                InventoryEntity inventory = item.getInventory();
+                int stock = inventory == null || inventory.getQuantity() == null ? 0 : inventory.getQuantity();
                 soldOut = stock <= 0;
             }
             if (!Boolean.valueOf(soldOut).equals(item.getSoldOut())) {

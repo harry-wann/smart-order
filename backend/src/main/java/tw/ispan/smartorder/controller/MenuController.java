@@ -9,6 +9,7 @@ import tw.ispan.smartorder.dto.AdminMenuCategoryDto;
 import tw.ispan.smartorder.dto.AdminMenuItemDto;
 import tw.ispan.smartorder.dto.AdminOptionGroupDetailDto;
 import tw.ispan.smartorder.dto.AdminOptionGroupDto;
+import tw.ispan.smartorder.dto.CustomerMenuItemDto;
 import tw.ispan.smartorder.dto.MenuItemOptionDetailDto;
 import tw.ispan.smartorder.dto.request.CreateOptionGroupRequest;
 import tw.ispan.smartorder.dto.request.CreateOptionValueRequest;
@@ -21,7 +22,6 @@ import tw.ispan.smartorder.dto.request.UpdateOptionGroupRequest;
 import tw.ispan.smartorder.dto.request.UpdateMenuItemStatusRequest;
 import tw.ispan.smartorder.dto.AdminOptionValueDto;
 import tw.ispan.smartorder.entity.MenuCategoryEntity;
-import tw.ispan.smartorder.entity.MenuItemEntity;
 import tw.ispan.smartorder.service.MenuCategoryService;
 import tw.ispan.smartorder.service.MenuItemService;
 import tw.ispan.smartorder.service.OptionGroupService;
@@ -63,13 +63,14 @@ public class MenuController {
         return ResponseEntity.ok(menuCategoryService.findAdminCategoriesWithItemCount());
     }
 
-    // Menu 畫面 照觸發類別提取商品指定資訊，或依照關鍵字搜尋商品資訊
+    // Menu 畫面 提取商品資訊：不帶參數是全部上架品項（依分類、品項排序），帶 categoryId 只取該分類，帶 keyword 依關鍵字搜尋。
+    // 每個品項附 categoryId（前端依分類分段）與 hasRequiredOptions（有必選群組就不能在菜單上直接加入）
     @GetMapping("/items")
-    public ResponseEntity<List<MenuItemEntity>> items(
+    public ResponseEntity<List<CustomerMenuItemDto>> items(
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) String keyword
     ){
-        List<MenuItemEntity> items = keyword == null || keyword.isBlank()
+        List<CustomerMenuItemDto> items = keyword == null || keyword.isBlank()
                 ? menuItemService.findMenuItem(categoryId)
                 : menuItemService.searchMenuItem(keyword);
 
