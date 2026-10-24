@@ -63,9 +63,10 @@ export default function MenuItemRow(props: MenuItemRowProps) {
 }
 
 // 照片框固定 80×80、圓角 12px，印章只畫在框裡面（overflow-hidden），不會蓋到旁邊的文字，
-// 窄螢幕（320px）上框的大小也不變，所以不會跑版
+// 窄螢幕（320px）上框的大小也不變，所以不會跑版。
+// pointer-events-none：框是 relative 定位，會畫在菜單頁蓋滿整列的透明按鈕上面，不關掉的話點照片會被框擋住、進不了詳情頁
 function Photo({ src, isSoldOut }: { src?: string | null, isSoldOut: boolean }) {
-  return <div className="relative size-20 shrink-0 overflow-hidden rounded-card bg-surface-2">
+  return <div className="pointer-events-none relative size-20 shrink-0 overflow-hidden rounded-card bg-surface-2">
     { src
       ? <img
           className={`size-full object-cover ${isSoldOut ? 'grayscale opacity-55' : ''}`}

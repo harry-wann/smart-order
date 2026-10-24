@@ -361,7 +361,8 @@ export default function Menu() {
     target.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
   }, [releaseProgrammaticScroll]);
   const handleCategoryClick = (selectedCategory) => {
-    if (searchKeyword.trim()) {
+    // 輸入框已經清空、但 debounce 還沒到時，畫面上仍是篩選後的清單（isSearching 還是 true），所以兩個條件都要看
+    if (searchKeyword.trim() || isSearching) {
       clearSearch();
       if (isSearching) {
         // 篩選結果還掛在畫面上，等清單換回完整版再捲
