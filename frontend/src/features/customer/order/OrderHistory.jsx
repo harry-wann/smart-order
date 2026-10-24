@@ -11,7 +11,6 @@ const orderHistoryKey = ['customer', 'order-history']
 
 async function getOrderHistory(signal) {
   const { data } = await customerClient.get('/dining/orders', { signal })
-  console.log('取得的訂單資料：', data)
   return data
 }
 
@@ -127,11 +126,7 @@ export default function OrderHistory() {
   return (
     <div className="relative mx-auto flex min-h-screen w-full max-w-full flex-col bg-paper font-sans text-ink-900">
       <div className="sticky top-0 z-10 shadow-sm [&>nav]:h-14">
-        <CustomerTopBar title="本桌訂單" showBackButton>
-          <button className="flex h-11 w-11 items-center justify-center active:opacity-70">
-            <SvgIconMap.OrderHeaderBell role="img" aria-label="通知鈴鐺" className="h-6 w-6" />
-          </button>
-        </CustomerTopBar>
+        <CustomerTopBar title="本桌訂單" showBackButton />
       </div>
 
       <SyncStatus status={socketStatus} lastUpdated={formatSyncTime(query.dataUpdatedAt)} />

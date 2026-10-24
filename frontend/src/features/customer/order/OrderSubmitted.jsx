@@ -99,7 +99,8 @@ export default function OrderSubmitted() {
       <main className="flex min-h-164.75 flex-1 flex-col items-center px-6 pt-26.25">
         {/* 成功圖示 */}
         <div className="flex h-24 w-24 items-center justify-center rounded-pill bg-success-bg">
-          <svg w-13 h-13
+          <svg
+            className="h-13 w-13"
             viewBox="0 0 22 24"
             fill="none"
           >

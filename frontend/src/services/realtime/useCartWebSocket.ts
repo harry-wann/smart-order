@@ -42,7 +42,6 @@ export default function useCartWebSocket(
       onConnect: () => {
         if (disposed) return
         onConnectionChange?.(true)
-        console.log('WebSocket 已連線')
 
         // 訂閱目前客人的購物車通知
         client.subscribe('/user/queue/cart-updates', (message) => {
