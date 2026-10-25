@@ -45,7 +45,7 @@ export default function SOFormInput({
         placeholder={placeholder}
         value={content}
         onChange={handleChange}
-        className="h-full w-full border-none bg-transparent text-sm outline-none"
+        className="h-full w-full border-none bg-transparent text-sm text-ink-900 outline-none"
       />
     </div>
   )

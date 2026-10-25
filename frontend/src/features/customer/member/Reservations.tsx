@@ -73,7 +73,7 @@ function Reservations() {
         <div className="flex flex-col items-center gap-4 p-page pt-16 text-center">
           <p className="type-body text-ink-600">登入會員後，就能看到用會員訂的所有預約。</p>
           <SOButton
-            height="h-12"
+            height="h-13"
             text="登入／註冊會員"
             onClick={() =>
               navigate('/member/login', { state: { returnTo: '/member/reservations?view=member' } })

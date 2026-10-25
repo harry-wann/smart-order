@@ -10,7 +10,7 @@ import { fetchTables, openTable } from '@/services/api/table/tableApi'
 import { queryScope } from '@/services/client/queryClient'
 import SOButton from '@/components/SOButton'
 import { SvgIconMap } from '@/assets/SvgIconMap'
-import BellButtonPlaceholder from './BellButtonPlaceholder'
+import ServiceBellCounter from './ServiceBellCounter'
 import ReservationTab from './ReservationTab'
 import { seatWaitlist } from '@/services/api/waitlist/waitlistApi'
 
@@ -60,7 +60,7 @@ function OpenPageHeader({ tableNo, tableInfo, isHeld }) {
 
       <div className="ml-auto flex flex-row items-center gap-2">
         <span className="type-caption text-ink-600">今天 {clockTime}</span>
-        <BellButtonPlaceholder />
+        <ServiceBellCounter />
       </div>
     </header>
   )
@@ -536,7 +536,7 @@ function TableOpen() {
           {tablesQuery.isSuccess && !table && (
             <div className="flex flex-col items-center gap-3 py-10 text-center">
               <p className="type-body-sm text-danger">找不到 {tableNo} 桌的資料，請返回桌況總覽重新選擇。</p>
-              <SOButton text="回桌況總覽" variant="secondary" height="h-10" onClick={() => navigate('/admin/table_overview')} />
+              <SOButton text="回桌況總覽" variant="secondary" height="h-11" onClick={() => navigate('/admin/table_overview')} />
             </div>
           )}
           {table && optionsQuery.isPending && !options && (
@@ -653,7 +653,7 @@ function LoadError({ message, onRetry }) {
   return (
     <div className="flex flex-col items-center gap-3 py-10 text-center">
       <p role="alert" className="type-body-sm text-danger">資料讀取失敗：{message}</p>
-      <SOButton text="重試" height="h-10" onClick={onRetry} />
+      <SOButton text="重試" height="h-11" onClick={onRetry} />
     </div>
   )
 }

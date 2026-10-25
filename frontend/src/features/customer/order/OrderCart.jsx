@@ -541,7 +541,7 @@ export default function OrderCart() {
 
           <div className="mt-3">
             <SOButton
-              height="min-h-12 py-3"
+              height="min-h-13 py-3"
               variant="default"
               onClick={handleSubmit}
               disabled={submitDisabled}

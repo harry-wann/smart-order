@@ -1,0 +1,40 @@
+@media print {
+  body[data-printing-seat-qr='true'] * {
+    visibility: hidden !important;
+  }
+
+  body[data-printing-seat-qr='true'] [data-seat-qr-dialog],
+  body[data-printing-seat-qr='true'] [data-seat-qr-dialog] * {
+    visibility: visible !important;
+  }
+
+  body[data-printing-seat-qr='true'] [data-seat-qr-dialog] {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 99999 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  [data-seat-qr-dialog-panel] {
+    width: 100% !important;
+    max-width: none !important;
+    border: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+
+  [data-seat-qr-dialog-close],
+  [data-seat-qr-dialog-actions] {
+    display: none !important;
+  }
+
+  [data-seat-qr-dialog-image] {
+    width: 70mm !important;
+    height: 70mm !important;
+    max-width: none !important;
+  }
+}

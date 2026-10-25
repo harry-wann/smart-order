@@ -162,7 +162,7 @@ export function Register() {
 
       <div className="fixed bottom-0 flex w-full flex-col justify-center bg-surface px-3 pt-2 pb-8 type-caption">
         <SOButton
-          height="h-12"
+          height="h-13"
           text={saving ? '儲存中…' : isEdit ? '儲存' : '完成註冊'}
           disabled={(!isEdit && !agree) || saving}
           onClick={() => saveProfile(false)}

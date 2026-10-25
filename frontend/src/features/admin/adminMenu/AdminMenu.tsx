@@ -495,7 +495,7 @@ export default function AdminMenu() {
           <SOButton 
             type="button"
             onClick={handleOpenAdd} 
-            className="flex h-11 shrink-0 items-center rounded-(--radius-btn) bg-brand-600 px-5 type-body-sm text-surface transition-colors hover:bg-brand-700"
+            className="flex h-11 shrink-0 items-center rounded-(--radius-btn) bg-brand-600 px-5 text-base leading-none font-medium text-surface transition-colors hover:bg-brand-700"
             content={[
               <div key="param-2" className="flex items-center gap-1">
                 <SvgIconMap.AdminMenuPlus aria-hidden="true" />

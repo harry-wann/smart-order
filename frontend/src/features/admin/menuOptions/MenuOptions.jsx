@@ -121,7 +121,7 @@ export default function MenuOptions() {
               type="button"
               onClick={handleOpenAddGroupModal}
               disabled={isLoading}
-              height="h-9"
+              height="h-11"
               content={
                 <span className="flex items-center gap-1.5">
                   <SvgIconMap.DashboardPlus aria-hidden="true" />

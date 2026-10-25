@@ -108,7 +108,7 @@ export function Guest() {
       <div className="fixed bottom-0 flex w-full flex-col justify-center bg-surface px-3 pt-2 pb-8 type-caption">
         {error && <p className="pb-2 text-center type-body-sm text-danger">{error}</p>}
         <SOButton
-        height="h-12"
+        height="h-13"
           text="下一步，選時間"
           disabled={false}
           onClick={handleNext}

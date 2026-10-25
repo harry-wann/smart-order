@@ -84,7 +84,7 @@ export function Reservation() {
       'other',
       <div className="w-[301px]">
         <SOButton
-          height="h-12"
+          height="h-13"
           text="登入／註冊會員"
           disabled={false}
           onClick={handleMember}
@@ -122,7 +122,7 @@ export function Reservation() {
       'other',
       <div className="w-[301px]">
         <SOButton
-          height="h-12"
+          height="h-11"
           variant = 'secondary'
           text="直接訂位"
           disabled={false}

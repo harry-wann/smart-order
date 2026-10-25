@@ -7,7 +7,6 @@ import { SvgIconMap } from '@/assets/SvgIconMap'
 import { fetchTables, cleanTable } from '@/services/api/table/tableApi'
 import { fetchWaitlist } from '@/services/api/waitlist/waitlistApi'
 import { useTableStatusSocket } from '@/services/realtime/useTableStatusSocket'
-import ServiceBellCounter from './ServiceBellCounter'
 
 // 把後臺狀態的英文轉成中文顯示、根據桌位狀態決定顏色、根據狀態決定標籤底色
 const statusStyles = {
@@ -426,7 +425,6 @@ function TableOverview() {
         childrenRight={
           <>
             <SyncIndicator isLive={isLive} />
-            <ServiceBellCounter />
           </>
         }
       />
@@ -448,7 +446,7 @@ function TableOverview() {
 
       {/* 正常畫面（cached 也是正常畫面，只是上面多了黃條） */}
       {(viewState === 'ready' || viewState === 'cached') && !showEmpty && (
-        <div className="flex flex-col gap-6 p-4 md:flex-row md:p-6">
+        <div className="flex flex-col gap-6 p-4 md:p-6">
           <main className="flex min-w-0 flex-1 flex-col gap-4">
             <div className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-card border border-line bg-surface px-5 py-4">
               <StatItem count={availableCount} label="空桌" swatchClass="bg-table-available" />
@@ -477,7 +475,7 @@ function TableOverview() {
 
             <ReminderBar reminders={visibleReminders} onOpen={handleOpenReminder} onDismiss={handleDismissReminder} />
 
-            <div className="grid grid-cols-2 gap-card-gap md:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-card-gap md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
               {tableList.map((table) => (
                 <TableCard key={table.id} table={table} onCleanClick={setCleaningTable} />
               ))}
@@ -510,8 +508,6 @@ function TableOverview() {
               </div>
             </section>
           </main>
-          <aside className="hidden w-75 shrink-0 lg:block" />
-
         </div>
       )}
 </div>

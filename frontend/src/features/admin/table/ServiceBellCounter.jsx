@@ -44,18 +44,20 @@ function BellCall({ call, now, onDone }) {
 }
 
 function ServiceBellCounter() {
-  const [calls, setCalls] = useState(() => loadBell().calls)              
-  const [doneCalls, setDoneCalls] = useState(() => loadBell().doneCalls)  
-  const [isOpen, setIsOpen] = useState(false)                             
-  const [now, setNow] = useState(Date.now())                             
-  const dayRef = useRef(todayKey())                                       
+  const [calls, setCalls] = useState(() => loadBell().calls)
+  const [doneCalls, setDoneCalls] = useState(() => loadBell().doneCalls)
+  const [isOpen, setIsOpen] = useState(false)
+  const [now, setNow] = useState(Date.now())
+  const dayRef = useRef(todayKey())
+  const triggerRef = useRef(null)
+  const panelRef = useRef(null)
 
   useTableStatusSocket(
     () => {},
     (data) => {
       setCalls((prev) => {
         const exists = prev.some((c) => c.tableNo === data.tableNo && c.request === data.request)
-        if (exists) return prev 
+        if (exists) return prev
         return [...prev, { ...data, receivedAt: Date.now() }]
       })
       setIsOpen(true)
@@ -80,6 +82,59 @@ function ServiceBellCounter() {
     return () => clearInterval(timer)
   }, [])
 
+  useEffect(() => {
+    if (!isOpen) return undefined
+    const previouslyFocused = document.activeElement
+    const panel = panelRef.current
+    const focusableSelector =
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    const getFocusable = () =>
+      Array.from(panel?.querySelectorAll(focusableSelector) ?? []).filter(
+        (element) => !element.hasAttribute('hidden') && element.getAttribute('aria-hidden') !== 'true',
+      )
+
+    panel?.querySelector('button:not([disabled])')?.focus()
+
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') {
+        setIsOpen(false)
+        return
+      }
+      if (event.key !== 'Tab') return
+
+      const focusable = getFocusable()
+      if (focusable.length === 0) {
+        event.preventDefault()
+        panel?.focus()
+        return
+      }
+
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (!panel?.contains(document.activeElement)) {
+        event.preventDefault()
+        const target = event.shiftKey ? last : first
+        target.focus()
+      } else if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      if (previouslyFocused instanceof HTMLElement && previouslyFocused.isConnected) {
+        previouslyFocused.focus()
+      } else {
+        triggerRef.current?.focus()
+      }
+    }
+  }, [isOpen])
+
   function handleDone(id) {
     const call = calls.find((c) => c.id === id)
     if (!call) return
@@ -90,8 +145,11 @@ function ServiceBellCounter() {
   return (
     <>
       <button
+        ref={triggerRef}
         type="button"
         aria-label="服務鈴"
+        aria-expanded={isOpen}
+        aria-controls="service-bell-panel"
         onClick={() => setIsOpen((o) => !o)}
         className="relative flex size-11 items-center justify-center rounded-full hover:bg-surface-2"
       >
@@ -104,34 +162,65 @@ function ServiceBellCounter() {
       </button>
 
       {isOpen && (
-        <section className="fixed top-20 right-6 z-40 flex w-80 flex-col overflow-hidden rounded-card border border-line bg-surface shadow-pop">
-          <div className="flex shrink-0 items-center gap-2 bg-surface-2 px-4 py-3 type-body-sm font-bold text-ink-900">
-            <SvgIconMap.TableOverviewBell className="size-4.5" />
-            服務鈴
-            <div className="flex-1" />
-            <span className="rounded-pill bg-danger px-2.5 py-0.5 type-caption text-white">{calls.length}</span>
-          </div>
+        <>
+          <button
+            type="button"
+            aria-label="關閉服務鈴"
+            tabIndex={-1}
+            className="fixed inset-0 z-40 bg-ink-900/30"
+            onClick={() => setIsOpen(false)}
+          />
+          <section
+            ref={panelRef}
+            id="service-bell-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="service-bell-title"
+            tabIndex={-1}
+            className="fixed top-16 right-3 z-50 flex max-h-[calc(100dvh-5rem)] w-80 max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-card border border-line bg-surface shadow-pop sm:right-6"
+          >
+            <div className="flex shrink-0 items-center gap-2 bg-surface-2 px-4 py-3 type-body-sm font-bold text-ink-900">
+              <SvgIconMap.TableOverviewBell className="size-4.5" />
+              <h2 id="service-bell-title" className="type-body-sm font-bold">
+                服務鈴
+              </h2>
+              <div className="flex-1" />
+              <span className="rounded-pill bg-danger px-2.5 py-0.5 type-caption text-white">
+                {calls.length}
+              </span>
+              <button
+                type="button"
+                aria-label="關閉服務鈴"
+                onClick={() => setIsOpen(false)}
+                className="flex size-8 items-center justify-center rounded-full type-body hover:bg-ink-900/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-600"
+              >
+                ×
+              </button>
+            </div>
 
-          <div className="max-h-[194px] divide-y divide-line overflow-y-auto border-t border-line">
-            {calls.length === 0 ? (
-              <p className="px-4 py-6 text-center type-caption text-ink-600">目前沒有呼叫</p>
-            ) : (
-              calls.map((call) => <BellCall key={call.id} call={call} now={now} onDone={handleDone} />)
-            )}
-          </div>
+            <div className="max-h-[194px] divide-y divide-line overflow-y-auto border-t border-line">
+              {calls.length === 0 ? (
+                <p className="px-4 py-6 text-center type-caption text-ink-600">目前沒有呼叫</p>
+              ) : (
+                calls.map((call) => (
+                  <BellCall key={call.id} call={call} now={now} onDone={handleDone} />
+                ))
+              )}
+            </div>
 
-          <p className="shrink-0 border-y border-line bg-surface-2 px-4 py-2 text-center type-caption text-ink-600">
-            今天已處理 {doneCalls.length} 則
-          </p>
+            <p className="shrink-0 border-y border-line bg-surface-2 px-4 py-2 text-center type-caption text-ink-600">
+              今天已處理 {doneCalls.length} 則
+            </p>
 
-          <div className="max-h-[194px] divide-y divide-line overflow-y-auto">
-            {doneCalls.length === 0 ? (
-              <p className="px-4 py-6 text-center type-caption text-ink-600">還沒有處理紀錄</p>
-            ) : (
-              doneCalls.map((call) => <BellCall key={call.id} call={call} now={now} />)
-            )}
-          </div>
-        </section>
+            <div className="max-h-[194px] divide-y divide-line overflow-y-auto">
+              {doneCalls.length === 0 ? (
+                <p className="px-4 py-6 text-center type-caption text-ink-600">還沒有處理紀錄</p>
+              ) : (
+                doneCalls.map((call) => <BellCall key={call.id} call={call} now={now} />)
+              )}
+            </div>
+          </section>
+        </>
       )}
     </>
   )

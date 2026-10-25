@@ -50,11 +50,6 @@ const menuGroups: DashboardMenu[] = [
         path: 'table_overview',
       },
       {
-        label: '出菜看板',
-        icon: SvgIconMap.DashboardKitchen,
-        path: 'kitchen',
-      },
-      {
         label: '預約管理',
         icon: SvgIconMap.DashboardCalendar,
         path: 'reservations',
@@ -63,6 +58,11 @@ const menuGroups: DashboardMenu[] = [
         label: '候位管理',
         icon: SvgIconMap.DashboardList,
         path: 'waitlist',
+      },
+      {
+        label: '出菜看板',
+        icon: SvgIconMap.DashboardKitchen,
+        path: 'kitchen',
       },
     ],
   },

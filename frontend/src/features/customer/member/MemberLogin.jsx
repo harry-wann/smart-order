@@ -113,7 +113,7 @@ export function MemberLogin() {
           <SOButton
             text={waiting ? `${formatCountdown(secondsLeft)} 後可以再傳送` : sending ? "傳送中…" : "傳送驗證碼"}
             disabled={sending || !phone || waiting}
-            height="h-12"
+            height="h-13"
             onClick={handleSendCode}                                       
           />
         </div>

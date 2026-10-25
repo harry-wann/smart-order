@@ -1,22 +1,14 @@
-/* ==========================================================================
-   S-04 出菜看板 專用色 — 全站唯一的深色畫面
-   廚房光線強、站得遠，深底高對比才看得清楚。其他畫面不要 import 這個檔。
-
-   來源：docs/ui/14-色彩Token.md §5.1、docs/ui/mockups/s04-kds.html
-   用法：KitchenOverview 最外層加 kds-theme，裡面的元件用任意值語法 bg-[var(--kds-card)]。
-   深底上的紅字綠字用 --kds-late／--kds-done（全站的 danger、success 放在深底上對比不夠）；
-   當邊框或色塊底色時照樣用全站語意色（久候卡片 border-danger、勾完的框 bg-success）。
-   ========================================================================== */
+/* 出菜看板沿用後台共用色票；保留 kds-* 別名，讓看板和訂單卡共用既有元件樣式。 */
 
 .kds-theme {
-  --kds-bg: #241c18; /* 畫面底 */
-  --kds-topbar: #1b1512; /* 頂列，比畫面底再深一階 */
-  --kds-card: #33261f; /* 訂單卡 */
-  --kds-line: #4a3a31; /* 分隔線、按鈕底 */
-  --kds-box: #6e594c; /* 未勾選的勾選框邊框 */
-  --kds-ink: #f3eae0; /* 主文字、桌號 14.08:1 */
-  --kds-ink-2: #c4b3a6; /* 等待時間、次要資訊 7.20:1 */
-  --kds-ink-3: #a8968a; /* 品項選項 5.14:1 */
-  --kds-late: #f08a80; /* 久候紅字 6.02:1 */
-  --kds-done: #8cc79b; /* 完成綠字 7.48:1 */
+  --kds-bg: var(--color-paper);
+  --kds-topbar: var(--color-surface);
+  --kds-card: var(--color-surface);
+  --kds-line: var(--color-line);
+  --kds-box: var(--color-ink-400);
+  --kds-ink: var(--color-ink-900);
+  --kds-ink-2: var(--color-ink-600);
+  --kds-ink-3: var(--color-ink-600);
+  --kds-late: var(--color-danger);
+  --kds-done: var(--color-success);
 }

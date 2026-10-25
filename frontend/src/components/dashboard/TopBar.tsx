@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link, useLocation } from 'react-router'
 import { SvgIconMap } from '@/assets/SvgIconMap'
+import ServiceBellCounter from '@/features/admin/table/ServiceBellCounter'
 
 export type Props = {
   tag?: string
@@ -28,7 +29,10 @@ function TopBar({ tag, childrenLeft, childrenRight }: Props) {
         )}
         <div className="flex flex-row items-center gap-2">{childrenLeft}</div>
       </div>
-      <div className="flex flex-row items-center gap-2">{childrenRight}</div>
+      <div className="flex flex-row items-center gap-2">
+        {childrenRight}
+        <ServiceBellCounter />
+      </div>
     </header>
   )
 }

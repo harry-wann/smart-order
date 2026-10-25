@@ -106,11 +106,11 @@ function SeatFormDialog({ table, onClose, onSubmit }) {
 
         <div className="mt-6 flex gap-3">
           <div className="w-28 flex-none">
-            <SOButton variant="ghost" height="h-12" text="取消" onClick={onClose} />
+            <SOButton variant="ghost" height="h-13" text="取消" onClick={onClose} />
           </div>
           <div className="flex-1">
             <SOButton
-              height="h-12"
+              height="h-13"
               text={saving ? '儲存中…' : '儲存'}
               disabled={!canSubmit}
               onClick={handleSubmit}

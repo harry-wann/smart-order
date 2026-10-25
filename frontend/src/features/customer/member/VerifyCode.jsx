@@ -147,7 +147,7 @@ export default function VerifyCode() {
         <SOButton
           text={verifying ? "驗證中…" : leng > 0 ? `確認（還差 ${leng} 碼）` : "確認"}
           disabled={leng > 0 || verifying || resending}
-          height="h-12"
+          height="h-13"
           onClick={handleverifycode}
         />
         <button type='button' className='flex justify-center w-full py-2 type-body' onClick={() => navigate(skipTo, { replace: true })}>

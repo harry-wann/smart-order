@@ -257,7 +257,7 @@ export default function OrderHistory() {
             <div className="mt-6 flex justify-end">
               <SOButton
                 type="button"
-                height="h-12"
+                height="h-11"
                 text="知道了"
                 onClick={() => setCheckoutNoticeOpen(false)}
               />

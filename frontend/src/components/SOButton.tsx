@@ -15,11 +15,20 @@ export default function SOButton({
   variant = 'default',
   disabled = false,
   type = 'button',
-  height = '',
+  height = 'h-11',
   ...props
 }: SOButtonProps) {
   const justifyClass = Array.isArray(text) && text.length > 1 ? 'justify-between' : 'justify-center';
   const contentClass = Array.isArray(content) && content.length > 1 ? 'justify-between' : 'justify-center';
+  // DS-02: lg / md / sm 對應 52 / 44 / 36px，水平留白也跟著尺寸固定。
+  const isLarge = height.includes('h-13') || height.includes('52px') || height.includes('56px');
+  const isMedium = height.includes('h-11') || height.includes('h-12');
+  const paddingClass = isLarge ? 'px-6' : isMedium ? 'px-5' : 'px-3.5';
+  const textClass = isLarge
+    ? 'type-button'
+    : isMedium
+      ? 'text-base leading-none font-medium'
+      : 'text-sm leading-none font-medium';
 
   const themeClass: Record<string, string> = {
     danger: 'bg-danger text-surface hover:bg-[color-mix(in_srgb,var(--color-danger),black_8%)]',
@@ -32,7 +41,7 @@ export default function SOButton({
     <button
       type={type}
       disabled={disabled}
-      className={`flex ${height} w-full items-center rounded-(--radius-btn) type-button sm:px-3.5 md:px-5 lg:px-6 ${themeClass[variant] || themeClass.default} transition-all duration-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100`}
+      className={`flex ${height} w-full items-center rounded-(--radius-btn) ${paddingClass} ${textClass} ${themeClass[variant] || themeClass.default} transition-all duration-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100`}
       {...props}
     >
       {text !== null ? (

@@ -221,19 +221,11 @@ function WaitlistManagement() {
             <button
               type="button"
               onClick={() => window.open('/admin/waitlist/display', 'waitlist-display')}
-              className="h-9 rounded-btn border border-line bg-surface px-3 type-caption font-medium text-ink-700 hover:bg-surface-2"
+              className="h-11 rounded-btn border border-line bg-surface px-5 text-base leading-none font-medium text-ink-700 hover:bg-surface-2"
             >
               開啟候位叫號螢幕
             </button>
             <SyncIndicator isLive={connected} />
-            <button
-              type="button"
-              aria-label="通知"
-              className="relative flex size-11 flex-none items-center justify-center rounded-full hover:bg-surface-2"
-            >
-              <SvgIconMap.OrderHeaderBell aria-hidden="true" className="size-5" />
-              <span className="absolute top-2 right-2 size-2 rounded-full bg-danger ring-2 ring-surface" />
-            </button>
           </>
         }
       />

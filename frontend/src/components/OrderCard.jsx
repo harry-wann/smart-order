@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import SOButton from './SOButton'
 
-// 出菜看板（S-04）的一張點餐單卡片，只用在深色的 KitchenOverview（顏色來自 kds.colors.css 的 --kds-*）。
+// 出菜看板（S-04）的一張點餐單卡片（顏色來自 kds.colors.css 的 --kds-*）。
 // 有 completedAt 就是「最近完成」分頁的已完成卡片：顯示完成時間、可以取消勾選（撤回出餐），
 // 選單只有報廢細項；不算等待時間，也沒有整單出完
 
@@ -47,7 +47,7 @@ function clockTime(value) {
   return new Date(value).toTimeString().slice(0, 5)
 }
 
-// 深色的對話框外框。放在元件外面：看板每秒更新時鐘，寫在 OrderCard 裡面會每秒重建、輸入框失去焦點
+// 對話框放在元件外面：看板每秒更新時鐘，寫在 OrderCard 裡面會每秒重建、輸入框失去焦點
 function KdsDialog({ titleId, title, busy, onClose, onSubmit, children }) {
   return (
     <div

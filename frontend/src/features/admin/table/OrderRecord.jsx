@@ -91,6 +91,7 @@ export default function OrderRecord({ orders = [], onAddOrder, canAddOrder = fal
         <div className="w-26.2">
           <SOButton
             variant="secondary"
+            height="h-11"
             disabled={!canAddOrder}
             onClick={onAddOrder}
             content={[

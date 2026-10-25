@@ -1,29 +1,29 @@
 import SOButton from '@/components/SOButton'
 
 export default function Checkout({
-                                   orders = [],
-                                   subtotal = 0,
-                                   serviceFee = 0,
-                                   total = 0,
-                                   adultCount = 0,
-                                   childCount = 0,
-                                   onCash,
-                                   onCreditCard,
-                                   onBarcode,
-                                   canSettle = true,
-                                   isBusy = false,
-                                   showCancelSession = false,
-                                   onCancelSession,
-                                 }) {
+  orders = [],
+  subtotal = 0,
+  serviceFee = 0,
+  total = 0,
+  adultCount = 0,
+  childCount = 0,
+  onCash,
+  onCreditCard,
+  onBarcode,
+  canSettle = true,
+  isBusy = false,
+  showCancelSession = false,
+  onCancelSession,
+}) {
   // 商品總數量
   const itemCount = orders.reduce(
     (sum, order) =>
       sum +
       order.items.reduce(
         (count, item) => count + item.quantity,
-        0
+        0,
       ),
-    0
+    0,
   )
 
   // 總人數
@@ -98,9 +98,9 @@ export default function Checkout({
         <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
           <SOButton variant="default" height="h-11" onClick={onCash} type="button" text="現金" disabled={!canSettle || isBusy} />
 
-          <SOButton variant="secondary" height="h-11" onClick={onCreditCard} type="button" text="信用卡" disabled={!canSettle || isBusy} />
+          <SOButton variant="default" height="h-11" onClick={onCreditCard} type="button" text="信用卡" disabled={!canSettle || isBusy} />
 
-          <SOButton variant="secondary" height="h-11" onClick={onBarcode} type="button" text="條碼" disabled={!canSettle || isBusy} />
+          <SOButton variant="default" height="h-11" onClick={onBarcode} type="button" text="條碼" disabled={!canSettle || isBusy} />
         </div>
       </div>
 

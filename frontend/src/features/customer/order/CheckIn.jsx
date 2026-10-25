@@ -114,7 +114,7 @@ export function CheckIn() {
         <InfoBox icon={info.icon} col={info.col} text="F" custimtext={info.text} />
 
         <SOButton
-          height="h-12"
+          height="h-13"
           text={joining ? "加入中…" : "開始點餐"}
           disabled={!canOrder || joining}
           onClick={handleJoin}

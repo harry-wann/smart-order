@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   fetchSeats,
   updateSeatReservable,
@@ -9,8 +9,10 @@ import {
 import SOButton from '../../../components/SOButton'
 import TopBar from '@/components/dashboard/TopBar'
 import { SvgIconMap } from '@/assets/SvgIconMap'
+import { fetchTableQrCode } from '@/services/api/table/tableApi'
 import { openQrPrint } from './qrPrint'
 import SeatFormDialog from './SeatFormDialog'
+import './seatQrDialog.print.css'
 
 
 // 徽章樣式（對應設計稿的 .b-plain / .b-sold）
@@ -37,6 +39,8 @@ function SeatManagement() {
   const [activeBusyId, setActiveBusyId] = useState(null)
   // 停用失敗的原因（例如還在用餐、還有訂位），顯示在表格上方
   const [actionError, setActionError] = useState(null)
+  const [qrTable, setQrTable] = useState(null)
+  const closeQrDialog = useCallback(() => setQrTable(null), [])
 
   // 畫面第一次出現時，去後端拿桌位
   useEffect(() => {
@@ -174,16 +178,16 @@ function SeatManagement() {
 
         {/* 桌位表格 */}
         <div className="overflow-x-auto rounded-card border border-line bg-surface">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[1120px] table-fixed text-sm">
             <thead className="bg-surface-2 text-left text-[13px] font-bold tracking-wide whitespace-nowrap text-ink-600">
               <tr>
-                <th className="w-22.5 border-b border-line px-4 py-3">桌號</th>
-                <th className="w-22.5 border-b border-line px-4 py-3">座位數</th>
-                <th className="w-37.5 border-b border-line px-4 py-3">區域</th>
-                <th className="w-42.5 border-b border-line px-4 py-3">可否預約</th>
-                <th className="w-27.5 border-b border-line px-4 py-3">目前狀態</th>
-                <th className="border-b border-line px-4 py-3 xl:w-47.5">QR code</th>
-                <th className="w-50 border-b border-line px-4 py-3">操作</th>
+                <th className="w-[90px] border-b border-line px-4 py-3">桌號</th>
+                <th className="w-[90px] border-b border-line px-4 py-3">座位數</th>
+                <th className="w-[150px] border-b border-line px-4 py-3">區域</th>
+                <th className="w-[170px] border-b border-line px-4 py-3">可否預約</th>
+                <th className="w-[110px] border-b border-line px-4 py-3">目前狀態</th>
+                <th className="w-[190px] border-b border-line px-4 py-3">QR code</th>
+                <th className="w-[200px] border-b border-line px-4 py-3">操作</th>
               </tr>
             </thead>
             <tbody>
@@ -215,7 +219,7 @@ function SeatManagement() {
                 return (
                   <tr
                     key={t.tableNo}
-                    className={`border-b border-line last:border-b-0 ${t.active ? '' : 'bg-surface-2 text-ink-600'}`}
+                    className={`align-middle border-b border-line last:border-b-0 ${t.active ? '' : 'bg-surface-2 text-ink-600'}`}
                   >
                     <td className="px-4 py-3 text-base font-bold tabular-nums">{t.tableNo}</td>
                     <td className="px-4 py-3 whitespace-nowrap tabular-nums">{t.capacity} 人</td>
@@ -237,22 +241,19 @@ function SeatManagement() {
                       <span className={`${BADGE_BASE} ${status.className}`}>{status.label}</span>
                     </td>
                     <td className="px-4 py-3">
-                                            <div className="flex items-center gap-2">
-                        {/* 1280px 以下只留「印 QR」，網址格式在表格下方有說明 */}
-                        <span className="hidden type-caption text-ink-600 tabular-nums xl:inline">
-                          /order/checkin/{t.tableNo}
-                        </span>
+                      <div className="flex items-center whitespace-nowrap">
                         <TextButton
                           icon={SvgIconMap.DashboardQrcode}
-                          onClick={() => openQrPrint([t])}
+                          onClick={() => setQrTable(t)}
+                          aria-label={`顯示 ${t.tableNo} QR code`}
+                          className="!pl-0"
                         >
-                          印 QR
+                          顯示
                         </TextButton>
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      {/* 寬度不夠時兩顆按鈕上下排，不把表格撐出橫向捲軸 */}
-                      <div className="flex flex-wrap items-center gap-1">
+                      <div className="flex flex-nowrap items-center gap-1">
                         <TextButton icon={SvgIconMap.DashboardEdit} onClick={() => setFormTable(t)}>
                           編輯
                         </TextButton>
@@ -274,7 +275,7 @@ function SeatManagement() {
         </div>
 
         <p className="type-caption text-ink-600">
-                    桌上的 QR code 內容固定是 <span className="tabular-nums">/order/checkin/{'{桌號}'}</span>
+          每張桌的 QR code 都固定對應該桌，貼好後不需更換。
         </p>
       </div>
 
@@ -287,6 +288,166 @@ function SeatManagement() {
         />
       )}
 
+      {qrTable && <QrCodeDialog table={qrTable} onClose={closeQrDialog} />}
+
+    </div>
+  )
+}
+
+function QrCodeDialog({ table, onClose }) {
+  const [image, setImage] = useState({ status: 'loading', src: '', error: '' })
+  const [retryKey, setRetryKey] = useState(0)
+  const dialogRef = useRef(null)
+
+  useEffect(() => {
+    document.body.dataset.printingSeatQr = 'true'
+    return () => {
+      delete document.body.dataset.printingSeatQr
+    }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    let objectUrl = ''
+    setImage({ status: 'loading', src: '', error: '' })
+
+    fetchTableQrCode(table.id)
+      .then((blob) => {
+        objectUrl = URL.createObjectURL(blob)
+        if (active) {
+          setImage({ status: 'ready', src: objectUrl, error: '' })
+        } else {
+          URL.revokeObjectURL(objectUrl)
+          objectUrl = ''
+        }
+      })
+      .catch((error) => {
+        if (active) {
+          setImage({
+            status: 'error',
+            src: '',
+            error: error?.message ?? 'QR code 載入失敗，請稍後重試。',
+          })
+        }
+      })
+
+    return () => {
+      active = false
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [table.id, retryKey])
+
+  useEffect(() => {
+    const previouslyFocused = document.activeElement
+    const dialog = dialogRef.current
+    const focusableSelector =
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    const getFocusable = () =>
+      Array.from(dialog?.querySelectorAll(focusableSelector) ?? []).filter(
+        (element) => !element.hasAttribute('hidden') && element.getAttribute('aria-hidden') !== 'true',
+      )
+
+    dialog?.querySelector('button:not([disabled])')?.focus()
+
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') {
+        onClose()
+        return
+      }
+      if (event.key !== 'Tab') return
+
+      const focusable = getFocusable()
+      if (focusable.length === 0) {
+        event.preventDefault()
+        dialog?.focus()
+        return
+      }
+
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (!dialog?.contains(document.activeElement)) {
+        event.preventDefault()
+        const target = event.shiftKey ? last : first
+        target.focus()
+      } else if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      if (previouslyFocused instanceof HTMLElement && previouslyFocused.isConnected) previouslyFocused.focus()
+    }
+  }, [onClose])
+
+  return (
+    <div
+      data-seat-qr-dialog
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/50 p-4"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) onClose()
+      }}
+    >
+      <section
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="seat-qr-title"
+        tabIndex={-1}
+        data-seat-qr-dialog-panel
+        className="w-full max-w-sm rounded-card border border-line bg-surface p-6 text-center shadow-pop"
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <h2 id="seat-qr-title" className="type-h2 text-ink-900">
+            {table.tableNo} QR code
+          </h2>
+          <button
+            type="button"
+            aria-label="關閉 QR code"
+            data-seat-qr-dialog-close
+            onClick={onClose}
+            className="flex size-11 items-center justify-center rounded-full text-2xl leading-none text-ink-600 hover:bg-surface-2"
+          >
+            ×
+          </button>
+        </div>
+        {image.status === 'loading' && (
+          <p role="status" className="py-16 type-body text-ink-600">
+            QR code 載入中…
+          </p>
+        )}
+        {image.status === 'error' && (
+          <div role="alert" className="py-8">
+            <p className="type-body text-danger-ink">{image.error}</p>
+            <button
+              type="button"
+              onClick={() => setRetryKey((key) => key + 1)}
+              className="mt-4 inline-flex h-11 items-center justify-center rounded-btn border border-line px-5 text-base leading-none font-medium text-ink-700 hover:bg-surface-2"
+            >
+              重試
+            </button>
+          </div>
+        )}
+        {image.status === 'ready' && (
+          <>
+            <img
+              src={image.src}
+              alt={`${table.tableNo} 桌 QR code`}
+              data-seat-qr-dialog-image
+              className="mx-auto aspect-square w-full max-w-72 object-contain"
+            />
+            <p className="mt-3 type-caption text-ink-600">掃描後可開始點餐</p>
+            <div data-seat-qr-dialog-actions className="mt-5">
+              <SOButton height="h-11" text="列印 QR code" onClick={() => window.print()} />
+            </div>
+          </>
+        )}
+      </section>
     </div>
   )
 }
@@ -334,11 +495,11 @@ function Switch({ checked, onChange, label, disabled = false }) {
 }
 
 // 表格內的小文字按鈕（對應設計稿的 .btn-ghost.btn-sm）
-function TextButton({ icon, children, ...props }) {
+function TextButton({ icon, children, className = '', ...props }) {
   return (
     <button
       type="button"
-      className="inline-flex h-9 flex-none items-center gap-1.5 rounded-btn px-3.5 text-sm font-medium whitespace-nowrap text-ink-600 transition-colors hover:text-brand-600 disabled:cursor-wait disabled:opacity-60 disabled:hover:text-ink-600"
+      className={`inline-flex h-9 flex-none items-center gap-1.5 rounded-btn px-3.5 text-sm font-medium whitespace-nowrap text-ink-600 transition-colors hover:text-brand-600 disabled:cursor-wait disabled:opacity-60 disabled:hover:text-ink-600 ${className}`}
       {...props}
     >
       {icon && <Icon icon={icon} />}

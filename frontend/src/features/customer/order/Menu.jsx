@@ -647,7 +647,7 @@ export default function Menu() {
             }}
           >
             <SOButton
-                height="h-[56px]"
+                height="h-13"
                 content={[
                   <div key="cart-info" className="flex items-center gap-2">
                     <SvgIconMap.OrderShoppingCart role="img" aria-label="Cart" className="h-6 w-6" />

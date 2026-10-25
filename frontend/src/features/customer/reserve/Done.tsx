@@ -31,7 +31,7 @@ function Done() {
       <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-paper px-page text-center">
         <p className="type-body text-ink-600">{isError ? error.message : '訂位資料載入中…'}</p>
         {isError && (
-          <SOButton height="h-12" variant="secondary" text="回到訂位首頁" onClick={() => navigate('/reserve')} />
+          <SOButton height="h-11" variant="secondary" text="回到訂位首頁" onClick={() => navigate('/reserve')} />
         )}
       </div>
     )

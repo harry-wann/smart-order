@@ -6,7 +6,7 @@ import { employeeClient } from '@/services/client/employeeClient'
 import { isApiError } from '@/services/client/ApiError'
 import './kds.colors.css'
 
-// S-04 出菜看板：全站唯一的深色頁面（M4 4.10），固定橫式大螢幕，不做 RWD
+// S-04 出菜看板：沿用後台共用暖色 Token，固定橫式大螢幕，不做 RWD
 
 const kitchenKey = ['kitchen', 'tickets']
 const completedCountKey = ['kitchen', 'completed-count']
@@ -335,7 +335,7 @@ function KitchenOverview() {
   return (
     <div className="kds-theme flex h-full flex-col bg-[var(--kds-bg)] text-[var(--kds-ink)]">
       <header className="flex h-19 shrink-0 items-center gap-6 border-b border-[var(--kds-line)] bg-[var(--kds-topbar)] px-8">
-        <h1 className="type-h1">出菜看板</h1>
+        <h1 className="shrink-0 whitespace-nowrap type-h1">出菜看板</h1>
         <div role="group" aria-label="看板分頁" className="flex items-center gap-2">
           <button
             type="button"
