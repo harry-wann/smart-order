@@ -17,11 +17,10 @@ export default function VerifyCode() {
   const navigate = useNavigate();
   const location = useLocation();
   const returnTo = location.state?.returnTo;
-  const reservationType = location.state?.reservationType;
   // 「先不登入，繼續」的去處，登入頁依來源算好帶過來；沒帶就回入口頁
   const skipTo = location.state?.skipTo ?? "/";
   // 回登入頁（改號碼）時把來源帶回去，登入完或先不登入才回得到原本那一頁
-  const loginState = { returnTo, reservationType, skipTo };
+  const loginState = { returnTo, skipTo };
 
   const phone = location.state?.phone ?? "";
   const displayPhone = phone.replace(/(\d{4})(\d{3})(\d{3})/, "$1-$2-$3");
@@ -56,7 +55,7 @@ export default function VerifyCode() {
       if (data.newMember) {
         navigate("/member/register", {
           replace: true,
-          state: { returnTo, reservationType, phone },
+          state: { returnTo, phone },
         });
         return;
       }
@@ -66,15 +65,7 @@ export default function VerifyCode() {
         return;
       }
 
-      navigate(returnTo, {
-        replace: true,                                             
-        state: {
-          reservationType,
-          ...(reservationType === 'MEMBER'
-            ? { contact: { name: data.nickname ?? '', phone } }
-            : {}),
-        },
-      });
+      navigate(returnTo, { replace: true });
     } catch (e) {
       setError(e.details?.[0]?.message ?? e.message);
     } finally {

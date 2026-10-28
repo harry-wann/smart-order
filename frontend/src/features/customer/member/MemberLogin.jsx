@@ -4,43 +4,16 @@ import CustomerTopBar from "@/components/CustomerTopBar";
 import SOFormInput, { SOFormInputType } from "../../../components/input/SOFormInput";
 import SOButton from "../../../components/SOButton";
 import InfoBox from "../../../components/InfoBox";
-import CardMap from "../../../components/card/CardMap";
-import { SvgIconMap } from "@/assets/SvgIconMap";
 import { customerClient } from "@/services/client/customerClient";
 import { customerTokens } from "@/services/client/tokenStore";   
 import { formatCountdown, useRetryCountdown } from "@/hooks/member/useRetryCountdown";
 
-const iconSvg = (Icon) => {
-  return <Icon aria-hidden="true" className="svg-icon mx-3 w-5 h-5 shrink-0 text-brand-600" />;
-};
-
-const cardData = [
-  {
-    id: 1,
-    data: [
-      { justify: "start", tags: [["p", "會員能做什麼"]] },
-      {
-        justify: "start",
-        tags: [["other", iconSvg(SvgIconMap.CardCheck)], ["p", "訂位不用每次重填姓名電話"]],
-      },
-      {
-        justify: "start",
-        tags: [["other", iconSvg(SvgIconMap.CardCheck)], ["p", "換一支手機也查得到「我的預約」"]],
-      },
-    ],
-  },
-];
-
-// 「先不登入，繼續」要回哪裡：看是從哪一頁被帶來登入的（C-12：從訂位進來的改走匿名訂位）
+// 驗證碼頁按「先不登入」時回到原本的位置。
 function skipLoginPath(state) {
   // 驗證碼頁按「改號碼」回來時，已經算好帶回來了
   if (state?.skipTo) return state.skipTo;
   // 掃碼入桌頁：回那一桌。入桌頁目前還沒有會員登入的入口，之後加的話帶 state: { tableNo } 進來
   if (state?.tableNo) return `/order/checkin/${state.tableNo}`;
-  // 訂位選「用會員訂」進來的：改走直接訂位（C-16b）
-  if (state?.reservationType === "MEMBER") return "/reserve/guest";
-  // 我的預約按「登入／註冊會員」進來的：回去看這支手機記住的匿名訂位
-  if (state?.returnTo?.startsWith("/member/reservations")) return "/member/reservations";
   // 入口頁的「會員登入」或直接打網址：回入口頁 C-00
   return "/";
 }
@@ -49,7 +22,6 @@ export function MemberLogin() {
   const navigate = useNavigate();
   const location = useLocation();
   const returnTo = location.state?.returnTo;
-  const reservationType = location.state?.reservationType;
   const skipTo = skipLoginPath(location.state);
 
   const [phone, setPhone] = useState("");
@@ -68,7 +40,7 @@ export function MemberLogin() {
   try {
     const { data } = await customerClient.post("/member/otp", { phone: cleanPhone }, { customerAuth: [] });
     navigate("/member/verify", {
-      state: { returnTo, reservationType, skipTo, phone: cleanPhone, demoCode: data.demoCode },
+      state: { returnTo, skipTo, phone: cleanPhone, demoCode: data.demoCode },
     });
     } catch (e) {
       // 同一支手機 10 分鐘內要超過 3 次：後端回 429 和還要等幾秒，按鈕停用並倒數
@@ -85,7 +57,7 @@ export function MemberLogin() {
 
   useEffect(() => {
     if (customerTokens.member.get()) {
-      navigate(returnTo ?? "/member/center", { replace: true, state: { reservationType } });
+      navigate(returnTo ?? "/member/center", { replace: true });
     }
   }, []);
 
@@ -130,10 +102,6 @@ export function MemberLogin() {
               </p>
             }
           />
-        </div>
-
-        <div className="text-ink-600">
-          <CardMap data={cardData} col="1" />
         </div>
 
         <div className="flex w-full justify-center pt-section type-body text-ink-600">

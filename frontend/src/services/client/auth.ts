@@ -44,11 +44,3 @@ function clearCustomerSessionQueries() {
   // Clear bills cached by the previous, unscoped query key during a live session update.
   queryClient.removeQueries({ queryKey: ['customer', 'bill'] })
 }
-
-export function saveReservationToken(accessToken: string) {
-  customerTokens.reservation.set(accessToken)
-}
-
-export function clearReservationToken() {
-  customerTokens.reservation.clear()
-}

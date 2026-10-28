@@ -16,8 +16,8 @@ import { useAvailableTables } from '@/hooks/reservation/useAdminReservations'
 
 function WaitlistSeatDialog({ entry, onClose, onConfirm, busy = false, error = '' }) {
   // 空桌清單由後端篩好、排好（坐得下、不含預約保留、稍後有訂位的排最後）
-  // 不帶 reservationId：harry的 API 註解寫「從 S-10b 替候位選桌就不帶」
-  const tablesQuery = useAvailableTables(entry.partySize, undefined, true)
+  // 候位選桌只需要一般可用桌位，不帶訂位 id。
+  const tablesQuery = useAvailableTables(entry.partySize, true)
   const options = (tablesQuery.data ?? []).map(toOption)
 
   // 店員點過就用點的那張；沒點過預設第一張（資料回來前 options 是空的，所以不能用 useState 存預設值）

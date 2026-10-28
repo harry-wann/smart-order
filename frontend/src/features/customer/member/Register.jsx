@@ -18,7 +18,6 @@ export function Register() {
   const location = useLocation()
   const isEdit = location.state?.mode === 'edit'        
   const returnTo = location.state?.returnTo
-  const reservationType = location.state?.reservationType
 
   const [phone, setPhone] = useState(location.state?.phone ?? '')
   const [nickname, setNickname] = useState('')
@@ -68,18 +67,12 @@ export function Register() {
     },
   ]
 
-  function goNext(name) {
+  function goNext() {
     if (isEdit || !returnTo) {
       navigate('/member/center', { replace: true })
       return
     }
-    navigate(returnTo, {
-      replace: true,
-      state: {
-        reservationType,
-        ...(reservationType === 'MEMBER' ? { contact: { name, phone } } : {}),
-      },
-    })
+    navigate(returnTo, { replace: true })
   }
 
   async function saveProfile(skip) {
@@ -95,7 +88,7 @@ export function Register() {
           }
 
       await customerClient.put('/member/me/profile', body, { customerAuth: ['member'] })
-      goNext(body.nickname)
+      goNext()
     } catch (e) {
       // 欄位不對時（例如生日選到未來），後端把哪一欄、哪裡不對放在 details
       setError(e.details?.[0]?.message ?? e.message)
@@ -127,7 +120,7 @@ export function Register() {
           placeholder="請輸入姓名"
           onChange={(value) => setNickname(value)}
         />
-        <p className="pt-2">出現在訂位紀錄和櫃檯畫面上</p>
+        <p className="pt-2">櫃檯人員會用這個名字稱呼你</p>
 
         <p className="type-body-sm text-ink-600 pt-card-gap pb-2">性別</p>
         <Time timeSlots={timeSlots} label={null} defaultValue={gender} onChange={(value) => setGender(value)} />
@@ -151,7 +144,7 @@ export function Register() {
               className="w-6 h-6 type-body-sm accent-brand-600 rounded-check"
             />
             <label htmlFor="agree" className="pl-2">
-              我同意店家保存我的訂位與消費紀錄。
+              我同意店家保存我的會員資料與消費紀錄。
             </label>
             <a href="#">看條款</a>
           </div>

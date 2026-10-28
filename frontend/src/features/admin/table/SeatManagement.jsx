@@ -88,7 +88,11 @@ function SeatManagement() {
       const updated = await updateSeatActive(table.id, !table.active)
       setTables((prev) => prev.map((t) => (t.id === updated.id ? toTableRow(updated) : t)))
     } catch (err) {
-      setActionError(`${table.tableNo} ${table.active ? '停用' : '重新啟用'}失敗：${err.message}`)
+      const message = err?.message ?? '操作失敗，請重試。'
+      const detail = message.includes('預約管理')
+        ? '仍有尚未結束的預約，預約結束後才能停用。'
+        : message
+      setActionError(`${table.tableNo} ${table.active ? '停用' : '重新啟用'}失敗：${detail}`)
     } finally {
       setActiveBusyId(null)
     }

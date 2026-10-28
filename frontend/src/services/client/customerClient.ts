@@ -4,7 +4,7 @@ import { leaveTable, signOutMember } from './auth'
 import { createApiClient, sentHeader } from './createApiClient'
 import { customerTokens, getDeviceId } from './tokenStore'
 
-export type CustomerCredential = 'session' | 'member' | 'reservation'
+export type CustomerCredential = 'session' | 'member'
 
 declare module 'axios' {
   interface AxiosRequestConfig {
@@ -57,7 +57,6 @@ const CREDENTIAL_HEADERS: Record<CustomerCredential, () => [string, string | nul
     ['X-Guest-Token', customerTokens.guest.get()],
   ],
   member: () => [['Authorization', bearer(customerTokens.member.get())]],
-  reservation: () => [['X-Reservation-Token', customerTokens.reservation.get()]],
 }
 
 function bearer(token: string | null) {

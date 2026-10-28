@@ -160,7 +160,11 @@ function WaitlistManagement() {
       return result
     } catch (error) {
       if (mountedRef.current) {
-        setActionError(error?.message || '候位操作失敗，請重試。')
+        setActionError(
+          error?.code === 'TABLE_RESERVED'
+            ? '所選桌位剛保留給已預約客人，請重新選桌。'
+            : (error?.message || '候位操作失敗，請重試。'),
+        )
         onError?.(error)
       }
       await refreshAll()

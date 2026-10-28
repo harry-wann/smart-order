@@ -1,17 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router'
-import {
-  useCancelReservationByStaff,
-  useOpenOptions,
-  useSeatReservation,
-} from '@/hooks/reservation/useAdminReservations'
+import { useOpenOptions } from '@/hooks/reservation/useAdminReservations'
 import { fetchTables, openTable } from '@/services/api/table/tableApi'
 import { queryScope } from '@/services/client/queryClient'
 import SOButton from '@/components/SOButton'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import ServiceBellCounter from './ServiceBellCounter'
-import ReservationTab from './ReservationTab'
 import { seatWaitlist } from '@/services/api/waitlist/waitlistApi'
 
 // 開桌頁自己的頂列。
@@ -292,13 +287,10 @@ function TableOpen() {
   const tableId = table?.tableId
   const optionsQuery = useOpenOptions(tableId)
   const options = optionsQuery.data
-  const seatReservation = useSeatReservation()
-  const cancelByStaff = useCancelReservationByStaff()
   const [noticeState, setNoticeState] = useState(null)
   const notice = noticeState?.tableNo === tableNo ? noticeState.message : null
   const setNotice = (message) => setNoticeState(message == null ? null : { tableNo, message })
   const [openingAttempt, setOpeningAttempt] = useState(null)
-  const [cancelAttempt, setCancelAttempt] = useState(null)
   const [pickedTabState, setPickedTabState] = useState(null)
   const [pendingOpenState, setPendingOpenState] = useState(null)
   const mountedRef = useRef(false)
@@ -307,8 +299,6 @@ function TableOpen() {
 
   const isOpening =
     openingAttempt?.tableNo === tableNo && openingAttempt.generation === requestGenerationRef.current
-  const isCancelling =
-    cancelAttempt?.tableNo === tableNo && cancelAttempt.generation === requestGenerationRef.current
 
   // overview 只提供真實桌位資訊；walk-in / 候位操作還要等 open-options 成功。
   const tableInfo = options
@@ -330,23 +320,13 @@ function TableOpen() {
   const conflict = upcoming
     ? { time: toTime(upcoming.startTime), name: upcoming.name, people: upcoming.partySize }
     : null
-  const reservedHoldId = options?.heldFor?.reservationId ?? null
-
-  // 坐不坐得下、用餐時間在現在 −10 ～ +30 分的篩選都在後端做了，這裡不再 filter
-  const visibleReservations = (options?.reservations ?? []).map(toReservationRow)
-  const reservationCount = visibleReservations.length
   const openLabel = conflict ? '仍要開桌' : '開桌'
   const isHeld = Boolean(options?.heldFor)
   // 候位資料由 open-options 按這桌 seats 篩過；不再讀全店候位清單。
   const calledWaitlist = (options?.waitlist ?? [])
     .filter((group) => group.status === 'CALLED')
     .map(toWaitlistGroup)
-  const defaultTab =
-    isHeld || reservationCount > 0
-      ? 'reservation'
-      : calledWaitlist.length > 0
-        ? 'waitlist'
-        : 'walkin'
+  const defaultTab = calledWaitlist.length > 0 ? 'waitlist' : 'walkin'
   // 資料回來前不知道預設頁籤，沒手動切過就一直跟著資料決定。
   // 不用 effect 等資料回來再 setState，pickedTab 有值（手動切過）就以它為準，沒有就用算出來的
   const pickedTab = pickedTabState?.tableNo === tableNo ? pickedTabState.tab : null
@@ -373,13 +353,11 @@ function TableOpen() {
     setPendingOpen(null)
     setNotice(null)
     setOpeningAttempt(null)
-    setCancelAttempt(null)
   }, [tableNo])
 
   const tabs = [
     { key: 'walkin', label: '現場' },
     { key: 'waitlist', label: '候位', count: calledWaitlist.length },
-    { key: 'reservation', label: '預約', count: reservationCount },
   ]
 
   function beginAttempt() {
@@ -416,15 +394,14 @@ function TableOpen() {
 
   // 有訂位衝突就先跳確認框，沒有就直接開桌
   function requestOpen(payload) {
-    if (isOpening || isCancelling) return
+    if (isOpening) return
     if (!optionsReady || !canOpenTable) {
       setNotice('桌況或開桌資料已更新，請重試後再操作。')
       return
     }
 
-    const isReservedGuest = payload.type === 'reservation' && payload.reservationId === reservedHoldId
-    if (isHeld && !isReservedGuest) {
-      setNotice('這張桌目前保留給訂位客人，只能為該筆訂位報到。')
+    if (isHeld) {
+      setNotice('這張桌目前保留給已預約客人，現場與候位開桌無法使用。')
       return
     }
     if (payload.type === 'walkin' && (payload.adults < 0 || payload.kids < 0 || payload.adults + payload.kids < 1 || payload.adults + payload.kids > options.seats)) {
@@ -437,7 +414,7 @@ function TableOpen() {
     }
 
     setNotice(null)
-    if (conflict && !isReservedGuest) {
+    if (conflict) {
       setPendingOpen(payload)
     } else {
       void confirmOpen(payload)
@@ -451,10 +428,9 @@ function TableOpen() {
       return
     }
 
-    const isReservedGuest = payload.type === 'reservation' && payload.reservationId === reservedHoldId
-    if (isHeld && !isReservedGuest) {
+    if (isHeld) {
       setPendingOpen(null)
-      setNotice('這張桌目前保留給訂位客人，只能為該筆訂位報到。')
+      setNotice('這張桌目前保留給已預約客人，現場與候位開桌無法使用。')
       return
     }
     if (payload.type === 'walkin' && (payload.adults < 0 || payload.kids < 0 || payload.adults + payload.kids < 1 || payload.adults + payload.kids > options.seats)) {
@@ -468,25 +444,12 @@ function TableOpen() {
       return
     }
 
-    if (isOpening || isCancelling) return
+    if (isOpening) return
 
     setPendingOpen(null)
     setNotice(null)
     const attempt = beginAttempt()
     setOpeningAttempt(attempt)
-    if (payload.type === 'reservation') {
-      try {
-        await seatReservation.mutateAsync({ id: payload.reservationId, tableId })
-        if (attempt.isCurrent()) navigate('/admin/table_overview')
-      } catch (error) {
-        // 搶桌、撞到保留、訂位剛被取消或已逾時：留在本頁，清單會重抓
-        if (attempt.isCurrent()) setNotice(error?.message ?? '訂位報到失敗，請重試。')
-      } finally {
-        clearAttempt(setOpeningAttempt, attempt)
-      }
-      return
-    }
-
     try {
       if (payload.type === 'waitlist') {
         await seatWaitlist(payload.waitlistId, tableId)
@@ -496,28 +459,15 @@ function TableOpen() {
       if (attempt.isCurrent()) navigate('/admin/table_overview')
     } catch (error) {
       if (attempt.isCurrent()) {
-        setNotice(`${payload.type === 'waitlist' ? '候位開桌' : '開桌'}失敗：${error?.message ?? '請重試。'}`)
+        const message =
+          error?.code === 'TABLE_RESERVED'
+            ? '這張桌剛保留給已預約客人，現場與候位無法使用。請重新整理後改選其他桌。'
+            : (error?.message ?? '請重試。')
+        setNotice(`${payload.type === 'waitlist' ? '候位開桌' : '開桌'}失敗：${message}`)
       }
     } finally {
       clearAttempt(setOpeningAttempt, attempt)
     }
-  }
-
-  function cancelReservation(id) {
-    if (isOpening || isCancelling) return
-    // 不用自己從清單移掉：成功後 hook 會重抓開桌選項，那筆就消失，這張桌的保留也跟著解開
-    setNotice(null)
-    const attempt = beginAttempt()
-    setCancelAttempt(attempt)
-    cancelByStaff.mutate(
-      { id },
-      {
-        onError: (error) => {
-          if (attempt.isCurrent()) setNotice(error?.message ?? '取消訂位失敗，請重試。')
-        },
-        onSettled: () => clearAttempt(setCancelAttempt, attempt),
-      },
-    )
   }
 
   return (
@@ -552,9 +502,7 @@ function TableOpen() {
                   tone="hold"
                   title={`${tableNo} 預約保留中（${toTime(options.heldFor.startTime)} ${options.heldFor.name} ${options.heldFor.partySize} 位）`}
                 >
-                  這張桌保留給 {options.heldFor.name} {toTime(options.heldFor.startTime)}（{options.heldFor.partySize} 位）。客人來電取消的話，直接按下面的「取消訂位」。
-                  <br />
-                  {options.heldFor.name} 到了，直接在下面按「報到開桌」。
+                  這張桌保留給 {options.heldFor.name} {toTime(options.heldFor.startTime)}（{options.heldFor.partySize} 位），現場與候位客人無法使用。
                 </AlertBar>
               ) : (
                 conflict && (
@@ -618,18 +566,6 @@ function TableOpen() {
                     onOpen={requestOpen}
                   />
                 )}
-                {activeTab === 'reservation' && (
-                  <ReservationTab
-                    list={visibleReservations}
-                    tableNo={tableNo}
-                    seats={options.seats}
-                    holdId={reservedHoldId}
-                    openLabel={openLabel}
-                    busy={!canOpenTable || isOpening || isCancelling}
-                    onOpen={requestOpen}
-                    onCancel={cancelReservation}
-                  />
-                )}
               </section>
             </>
           )}
@@ -666,19 +602,6 @@ function toWaitlistGroup(w) {
     name: w.name,
     people: w.partySize,
     waitMinutes: w.waitedMinutes,
-  }
-}
-
-// 開桌頁預約頁籤要的欄位；電話後端已經遮好了
-function toReservationRow(item) {
-  return {
-    id: item.id,
-    time: toTime(item.startTime),
-    name: item.name,
-    phone: item.phoneMasked,
-    people: item.partySize,
-    preorderCount: item.preorderItemCount,
-    assignedTable: item.assignedTableNo ?? '—',
   }
 }
 

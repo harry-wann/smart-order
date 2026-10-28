@@ -1,10 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import {
-  cancelReservationByStaff,
   fetchAdminReservations,
   fetchAvailableTables,
   fetchOpenOptions,
-  seatReservation,
 } from '@/services/api/reservation/adminReservationApi'
 import { queryScope } from '@/services/client/queryClient'
 
@@ -13,8 +11,8 @@ export const adminReservationKeys = {
   day: (date: string) => [...adminReservationKeys.all, date] as const,
   // 空桌清單和開桌選項不放在 reservations 底下；報到、取消兩邊都會動到，所以 mutation 各 invalidate 一次
   tables: [...queryScope.employee, 'tables'] as const,
-  availableTables: (partySize: number, reservationId?: number) =>
-    [...adminReservationKeys.tables, 'available', partySize, reservationId ?? null] as const,
+  availableTables: (partySize: number) =>
+    [...adminReservationKeys.tables, 'available', partySize] as const,
   openOptions: (tableId: number) => [...adminReservationKeys.tables, 'open-options', tableId] as const,
 }
 
@@ -27,43 +25,13 @@ export function useAdminReservations(date: string) {
   })
 }
 
-export function useCancelReservationByStaff() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: cancelReservationByStaff,
-    // 取消會解開那張桌的保留，桌位相關的清單也要重抓。
-    // 桌況的即時推播（TABLE_STATUS）還沒接，目前靠這裡重抓；用 onSettled 是因為失敗
-    // （例如客人剛好自己取消了）時畫面也要對上後端現況
-    onSettled: () =>
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: adminReservationKeys.all }),
-        queryClient.invalidateQueries({ queryKey: adminReservationKeys.tables }),
-      ]),
-  })
-}
-
 // 對話框開著才查；空桌隨時在變，每次打開都重抓
-export function useAvailableTables(partySize: number, reservationId: number | undefined, enabled: boolean) {
+export function useAvailableTables(partySize: number, enabled: boolean) {
   return useQuery({
-    queryKey: adminReservationKeys.availableTables(partySize, reservationId),
-    queryFn: ({ signal }) => fetchAvailableTables(partySize, reservationId, signal),
+    queryKey: adminReservationKeys.availableTables(partySize),
+    queryFn: ({ signal }) => fetchAvailableTables(partySize, signal),
     enabled,
     staleTime: 0,
-  })
-}
-
-export function useSeatReservation() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: seatReservation,
-    // 成功是訂位轉 SEATED、桌子變使用中；失敗多半是桌子或訂位剛被改過，所以成功失敗都重抓
-    onSettled: () =>
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: adminReservationKeys.all }),
-        queryClient.invalidateQueries({ queryKey: adminReservationKeys.tables }),
-      ]),
   })
 }
 

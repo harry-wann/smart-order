@@ -19,11 +19,6 @@ import { MemberLogin } from './features/customer/member/MemberLogin'
 import VerifyCode from './features/customer/member/VerifyCode'
 import { Register } from './features/customer/member/Register'
 import { Center } from './features/customer/member/Center'
-import Reservations from './features/customer/member/Reservations'
-import { Reservation } from './features/customer/reserve/Reservation'
-import { Guest } from './features/customer/reserve/Guest'
-import DateTime from './features/customer/reserve/DateTime'
-import Done from './features/customer/reserve/Done'
 
 // 店家端
 import { Login } from './features/admin/Login'
@@ -33,7 +28,6 @@ import SeatManagement from './features/admin/table/SeatManagement'
 import KitchenOverview from './features/admin/kitchen/KitchenOverview'
 import WaitlistManagement from './features/admin/waitlist/WaitlistManagement'
 import WaitlistDisplay from './features/admin/waitlist/WaitlistDisplay'
-import ReservationManagement from './features/admin/reservation/ReservationManagement'
 import TableDetail from './features/admin/table/TableDetail'
 import MenuOptions from './features/admin/menuOptions/MenuOptions'
 import AdminMenu from './features/admin/adminMenu/AdminMenu'
@@ -86,16 +80,11 @@ function App() {
           <Route path="verify" element={<VerifyCode />} />
           <Route path="register" element={<Register />} />
           <Route path="center" element={<Center />} />
-          <Route path="reservations" element={<Reservations />} />
+          <Route path="reservations" element={<Navigate to="/member/center" replace />} />
         </Route>
 
-        {/* 顧客端 - 預約 頁面路徑 */}
-        <Route path="/reserve" element={<CustomerLayout />}>
-          <Route index element={<Reservation />} />
-          <Route path="guest" element={<Guest />} />
-          <Route path="datetime" element={<DateTime />} />
-          <Route path=":reservationId/done" element={<Done />} />
-        </Route>
+        {/* 舊的訂位網址回入口，避免書籤或舊連結落在空白頁。 */}
+        <Route path="/reserve/*" element={<Navigate to="/" replace />} />
       </Route>
 
       {/* 店家端 - 員工登入是整頁版面，不套 DashboardLayout */}
@@ -123,7 +112,7 @@ function App() {
         <Route path="table_overview" element={<TableOverview />} />
         <Route path="table_overview/:tableNo/open" element={<TableOpen />} />
         <Route path="table/:tableNumber" element={<TableDetail />} />
-        <Route path="reservations" element={<ReservationManagement />} />
+        <Route path="reservations" element={<Navigate to="/admin/table_overview" replace />} />
         <Route path="seats" element={<SeatManagement />} />
         <Route path="kitchen" element={<KitchenOverview />} />
         <Route path="waitlist" element={<WaitlistManagement />} />

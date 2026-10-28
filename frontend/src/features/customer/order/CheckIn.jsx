@@ -119,7 +119,6 @@ export function CheckIn() {
           disabled={!canOrder || joining}
           onClick={handleJoin}
         />
-        <a>有訂位？查詢我的預約</a>
       </div>
 
       <div className="flex w-full bg-surface fixed bottom-0 justify-center type-caption pt-2 pb-8">

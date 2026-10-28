@@ -10,23 +10,10 @@ import InfoBox from "../../components/InfoBox";
 
 export default function Entrance() {
   const navigate=useNavigate();
-  const card = {
-    icon: SvgIconMap.OrderEntrance,
-    textH2: "線上訂位",
-    textP: "先訂位，到店不用排",
-    onclick:()=>navigate("/reserve")
-  }
-
-  const ent = {
-    icon: SvgIconMap.OrderCheck,
-    textH2: "我的預約",
-    textP: "查看或取消訂位",
-    onclick:()=>navigate("/member/reservations")
-  }
   const member = {
     icon: SvgIconMap.OrderMember,
     textH2: "會員登入",
-    textP: "訂位免填資料、查我的預約",
+    textP: "查看與管理你的會員資料",
     onclick:()=>navigate("/member")
   }
 
@@ -42,8 +29,6 @@ export default function Entrance() {
         </div>
       </div>
       <div className="grid grid-cols-1 py-5 px-4 gap-3">
-        <CardLink data={card} />
-        <CardLink data={ent} />
         <CardLink data={member} />
       </div>
       {/* 這裡只是提示，真正的入口是桌上 QR（/order/checkin/桌號）；
@@ -53,8 +38,7 @@ export default function Entrance() {
             <>
               <p>
                 <span className="font-semibold">已經坐在店裡了？</span>
-                掃桌上的 QR code 就直接
-                開始點餐，不用先登入或訂位。
+                掃桌上的 QR code 就直接開始點餐。
               </p>
             </>} />
       </div>

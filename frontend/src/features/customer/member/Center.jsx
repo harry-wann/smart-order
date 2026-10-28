@@ -1,48 +1,24 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import CustomerTopBar from '../../../components/CustomerTopBar'
-import InfoBox from '../../../components/InfoBox'
 import Card from '../../../components/card/primary/Card'
 import CardLink from '../../../components/card/CardLink'
 import Badge from '../../../components/Badge'
 import { SvgIconMap } from '@/assets/SvgIconMap'
 import { customerClient } from '@/services/client/customerClient'
 import { signOutMember } from '@/services/client/auth'
-import { useMyReservations } from '@/hooks/reservation/useReservationQueries'
 
 // 原檔名 MemberCenter.jsx
 // 原 component 名 MemberCenter
 
-const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
-
 function formatPhone(phone) {
   return phone.replace(/(\d{4})(\d{3})(\d{3})/, '$1-$2-$3')
-}
-
-// 從訂位清單找「還沒到、狀態是已確認」裡最早的一筆
-function findNextReservation(list) {
-  const now = Date.now()
-  return (list ?? [])
-    .filter((r) => r.status === 'CONFIRMED' && Date.parse(r.startTime) > now)
-    .sort((a, b) => Date.parse(a.startTime) - Date.parse(b.startTime))[0]
-}
-
-// "2026-10-20T18:30:00+08:00" → "10/20（二）18:30・2 位"
-// 照組員的註解：顯示用直接切字串，不轉時區，手機設在別的時區也不會顯示錯
-function formatReservation(r) {
-  const [y, m, d] = r.startTime.slice(0, 10).split('-').map(Number)
-  const weekday = WEEKDAYS[new Date(y, m - 1, d).getDay()]
-  const time = r.startTime.slice(11, 16)
-  return `${m}/${d}（${weekday}）${time}・${r.partySize} 位`
 }
 
 export function Center() {
   const navigate = useNavigate()
   const [member, setMember] = useState(null)
   const [error, setError] = useState('')
-
-  // 我的預約（組員寫好的 hook，跟「我的預約」頁同一份資料）
-  const reservationsQuery = useMyReservations(true)
 
   useEffect(() => {
     customerClient
@@ -77,14 +53,6 @@ export function Center() {
     joinLabel: years < 1 ? '新會員' : `入會 ${years} 年`,
   }
 
-  // 「我的預約」下面那行字
-  const nextReservation = findNextReservation(reservationsQuery.data)
-  const reserveText = reservationsQuery.isPending
-    ? '載入中…'
-    : nextReservation
-      ? formatReservation(nextReservation)
-      : '沒有預約'
-
   const cardData = [
     {
       justify: 'between',
@@ -107,12 +75,6 @@ export function Center() {
     },
   ]
 
-  const reserve = {
-    icon: SvgIconMap.OrderEntrance,
-    textH2: '我的預約',
-    textP: reserveText,
-    onclick: () => navigate('/member/reservations?view=member'),
-  }
   const personal = {
     icon: SvgIconMap.OrderMember,
     textH2: '個人資料',
@@ -132,16 +94,8 @@ export function Center() {
       <div className="grid grid-cols-1 gap-section p-page">
         <Card data={cardData} />
         <div className="grid grid-cols-1 gap-2">
-          <CardLink data={reserve} />
           <CardLink data={personal} />
         </div>
-
-        <InfoBox
-          icon="circle"
-          col="quiet"
-          text="F"
-          custimtext={<p>訂位時自動帶入你的姓名與手機，不用每次重填。</p>}
-        />
       </div>
 
       <div className="fixed bottom-0 flex w-full flex-col justify-center bg-surface px-3 pt-2 pb-8 type-caption">
