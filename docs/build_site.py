@@ -360,6 +360,7 @@ def sidebar_html(pages, depth, current_html):
         '<div class="sub">專案文件 · %d 頁</div></a></div>' % (up, len(pages)))
     out.append('<a class="nav%s" href="%sindex.html">首頁</a>'
                % (" active" if current_html == "index.html" else "", up))
+    out.append('<a class="nav" href="%sworkpacks.html">工作包心智圖</a>' % up)
 
     for gtitle, gdir, collapsible in GROUPS:
         items = [p for p in pages if p[3] == gtitle]
@@ -512,11 +513,10 @@ def build_index(pages):
         '<p><a href="spec/00-架構分層與技術選型.html">00 架構分層與技術選型</a> —— '
         "兩個定位、基礎／進階分層原則、為什麼保留 WebSocket 與排程、不建議花時間的事。"
         "接著讀 <a href=\"tech/00-技術總表.html\">技術總表</a> 的必修八頁，大約 40 分鐘。</p></div>",
-        '<div class="callout pending"><div class="h">工作分配：待定</div>'
-        "<p>八大模組的規格都定稿後再開會分配。方法是<strong>以功能切分</strong>——"
-        "一個人負責一個功能的前後端，從資料表到畫面全部自己走一遍，"
-        "而不是切成前端組／後端組。原則見 "
-        '<a href="spec/05-開發流程與分工.html">05 開發流程與時程</a> §1。</p></div>',
+        '<div class="callout"><div class="h">工作包心智圖：基礎功能已完成</div>'
+        "<p>五個功能工作包已對應成員，並整理出各功能的畫面、Figma、資料表、前後端檔案與閱讀要點。"
+        '開啟 <a href="workpacks.html">互動式工作包心智圖</a>，依成員逐層瀏覽；Harry 另負責全隊共用 L0 技術地基。'
+        '分工原則見 <a href="spec/05-開發流程與分工.html">05 開發流程與時程</a> §1。</p></div>',
         "<h2>規格文件</h2>",
         "<p>功能、資料、介面的定義。全員的主要依據。</p>",
         '<div class="cards">' + cards("規格文件") + "</div>",
