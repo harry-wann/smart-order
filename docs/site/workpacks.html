@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f5f0">
+  <title>工作包心智圖｜Smart Order</title>
+  <link rel="stylesheet" href="workpacks.css">
+</head>
+<body>
+  <header class="masthead">
+    <a class="brand" href="index.html" aria-label="回專案文件首頁"><span class="brand-mark">鍋</span><span>SMART ORDER <small>專案地圖</small></span></a>
+    <div class="mast-actions">
+      <a href="../spec/05-開發流程與分工.html">工作包規格 <span aria-hidden="true">↗</span></a>
+      <a href="../ui/mockups/index.html">設計稿總覽 <span aria-hidden="true">↗</span></a>
+      <a href="../../feedback/index.html">實作紀錄 <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <section class="hero" aria-labelledby="page-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="eyebrow-dot"></span> 從工作包看完整系統</p>
+        <h1 id="page-title">每個人負責什麼，<br><em>一路追到畫面與程式碼。</em></h1>
+        <p class="hero-lede">由成員 → 工作包 → 功能 → 頁面展開。點選任一畫面，可查看設計稿預覽、Figma 畫框、資料表、前後端檔案與閱讀要點。</p>
+      </div>
+      <div class="hero-aside" aria-label="系統範圍">
+        <div class="project-stamp"><span>鍋</span><div><b>Smart Order</b><small>多人共鍋・線上點餐</small></div></div>
+        <div class="hero-legend"><i></i><span>基礎功能已完成</span><b>工作包 A—E</b></div>
+        <div class="hero-legend muted"><i></i><span>共用工程</span><b>Harry · L0</b></div>
+      </div>
+    </section>
+
+    <section class="stat-row" aria-label="工作包摘要">
+      <div class="stat"><strong>5</strong><span>位成員</span></div>
+      <div class="stat"><strong>5</strong><span>個功能工作包</span></div>
+      <div class="stat"><strong>8</strong><span>個主要模組</span></div>
+      <div class="stat"><strong>33<span class="stat-plus"> + 2</span></strong><span>基礎畫面＋整合面板</span></div>
+      <div class="stat-note">每人走完整條功能路徑<br><b>資料表 → API → 介面</b></div>
+    </section>
+
+    <div class="source-note">
+      <span class="note-icon" aria-hidden="true">i</span>
+      <p><b>閱讀方式</b>　左側展開分支；選擇頁面後，右側會列出關聯資料表、實際程式路徑、技術邏輯與 Figma。<br><span>畫面圖示若標示「實作截圖」即為 feedback 中的瀏覽器截圖；其餘是本機 HTML 設計稿預覽。修訂預覽可能尚未同步回 Figma，頁面會特別標示。</span></p>
+    </div>
+
+    <div class="workspace">
+      <aside class="tree-panel" aria-label="工作包心智圖導覽">
+        <div class="tree-top">
+          <div><p class="tree-kicker">MIND MAP</p><h2>工作包目錄</h2></div>
+          <button class="icon-button" id="collapseTree" type="button" title="收合全部分支" aria-label="收合全部分支">−</button>
+        </div>
+        <label class="searchbox"><span aria-hidden="true">⌕</span><input id="treeSearch" type="search" placeholder="搜尋功能、畫面、檔案…" autocomplete="off"><kbd>⌘ K</kbd></label>
+        <div class="filter-row" id="filters" aria-label="依工作包篩選"></div>
+        <div class="tree-scroll">
+          <div class="tree-root">
+            <button class="tree-root-button selected" type="button" data-kind="overview"><span class="root-glyph">◎</span><span><b>Smart Order</b><small>全系統工作地圖</small></span><span class="branch-count">5</span></button>
+            <div class="tree-people" id="treePeople"></div>
+          </div>
+        </div>
+        <div class="tree-footer"><span class="legend-dot" aria-hidden="true"></span>已完成的基礎工作包 <span class="footer-shortcut">點畫面看細節</span></div>
+      </aside>
+
+      <section class="detail-panel" aria-live="polite" aria-atomic="false">
+        <div class="detail-toolbar">
+          <div class="breadcrumbs" id="breadcrumbs"><span>Smart Order</span><span class="crumb-sep">/</span><b>總覽</b></div>
+          <div class="toolbar-actions">
+            <button id="expandTree" type="button" class="text-button">展開全部</button>
+            <a href="../spec/03-資料庫設計.html" class="text-button">資料庫規格 <span aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+        <div id="detailContent" class="detail-content" tabindex="-1"></div>
+      </section>
+    </div>
+
+    <footer class="page-footer">
+      <div><b>Smart Order</b><span>專案工作包心智圖</span></div>
+      <nav aria-label="延伸閱讀">
+        <a href="../spec/05-開發流程與分工.html">分工與時程</a>
+        <a href="../spec/06-圖表總覽.html">系統圖表</a>
+        <a href="../../feedback/index.html">實作回饋</a>
+      </nav>
+      <span class="footer-date">依目前程式與文件整理</span>
+    </footer>
+  </main>
+
+  <script src="workpacks-data.js"></script>
+  <script src="workpacks.js"></script>
+</body>
+</html>
