@@ -81,6 +81,29 @@ public class OptionGroupService {
     }
 
     @Transactional
+    public void reorderOptionGroups(List<Long> optionGroupIds) {
+        List<OptionGroupEntity> optionGroups = optionGroupRepository.findAll(
+                Sort.by("sortOrder").ascending().and(Sort.by("id").ascending()));
+        Set<Long> requestedIds = new HashSet<>(optionGroupIds);
+        Set<Long> existingIds = optionGroups.stream()
+                .map(OptionGroupEntity::getId)
+                .collect(Collectors.toSet());
+        if (requestedIds.size() != optionGroupIds.size() || !requestedIds.equals(existingIds)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "選項群組 ID 清單與目前資料不符");
+        }
+
+        Map<Long, OptionGroupEntity> optionGroupsById = optionGroups.stream()
+                .collect(Collectors.toMap(OptionGroupEntity::getId, group -> group));
+        LocalDateTime now = LocalDateTime.now();
+        for (int index = 0; index < optionGroupIds.size(); index++) {
+            OptionGroupEntity optionGroup = optionGroupsById.get(optionGroupIds.get(index));
+            optionGroup.setSortOrder(index + 1);
+            optionGroup.setUpdatedAt(now);
+        }
+        optionGroupRepository.saveAll(optionGroups);
+    }
+
+    @Transactional
     public void deleteOptionGroup(Long optionGroupId) {
         OptionGroupEntity group = optionGroupRepository.findById(optionGroupId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "找不到選項群組"));

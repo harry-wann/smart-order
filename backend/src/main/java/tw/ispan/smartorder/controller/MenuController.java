@@ -17,6 +17,7 @@ import tw.ispan.smartorder.dto.request.ReorderMenuCategoriesRequest;
 import tw.ispan.smartorder.dto.request.SaveMenuCategoryRequest;
 import tw.ispan.smartorder.dto.request.SaveMenuItemRequest;
 import tw.ispan.smartorder.dto.request.ReorderOptionValuesRequest;
+import tw.ispan.smartorder.dto.request.ReorderOptionGroupsRequest;
 import tw.ispan.smartorder.dto.request.UpdateOptionValueStatusRequest;
 import tw.ispan.smartorder.dto.request.UpdateOptionGroupRequest;
 import tw.ispan.smartorder.dto.request.UpdateMenuItemStatusRequest;
@@ -216,7 +217,16 @@ public class MenuController {
         return ResponseEntity.noContent().build();
     }
 
-    // MenuOptions 畫面 依照 optionGroupId 提取選項群組詳細資訊
+    // MenuOptions 畫面批次更新選項群組排序
+    @PatchMapping("/admin/optionGroups/sort-order")
+    public ResponseEntity<Void> reorderOptionGroups(
+            @Valid @RequestBody ReorderOptionGroupsRequest request
+    ) {
+        optionGroupService.reorderOptionGroups(request.optionGroupIds());
+        return ResponseEntity.noContent().build();
+    }
+
+    // MenuOptions 畫面依照 optionGroupId 提取選項群組詳細資訊
     @GetMapping("/admin/optionGroups/{optionGroupId}")
     public ResponseEntity<AdminOptionGroupDetailDto> getOptionGroupDetail(
             @PathVariable Long optionGroupId
