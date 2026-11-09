@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
 import { customerClient } from '@/services/client/customerClient'
@@ -51,7 +51,6 @@ function formatSyncTime(timestamp) {
 
 export default function OrderHistory() {
   const navigate = useNavigate()
-  const [isCheckoutNoticeOpen, setCheckoutNoticeOpen] = useState(false)
   const queryClient = useQueryClient()
   const refreshOrders = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: orderHistoryKey })
@@ -229,42 +228,10 @@ export default function OrderHistory() {
             height="h-[52px]"
             variant="secondary"
             text="我要結帳"
-            onClick={() => setCheckoutNoticeOpen(true)}
+            onClick={() => navigate('/order/checkout')}
           />
         </div>
       </div>
-
-      {isCheckoutNoticeOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-          <button
-            type="button"
-            aria-label="關閉結帳提醒"
-            className="absolute inset-0 bg-ink-900/50"
-            onClick={() => setCheckoutNoticeOpen(false)}
-          />
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="checkout-notice-title"
-            className="relative w-full max-w-sm rounded-card border border-line bg-surface p-card shadow-pop"
-          >
-            <h2 id="checkout-notice-title" className="type-h3 text-ink-900">
-              結帳提醒
-            </h2>
-            <p className="mt-2 type-body-sm text-ink-600">
-              用餐完畢請到櫃檯結帳。
-            </p>
-            <div className="mt-6 flex justify-end">
-              <SOButton
-                type="button"
-                height="h-11"
-                text="知道了"
-                onClick={() => setCheckoutNoticeOpen(false)}
-              />
-            </div>
-          </section>
-        </div>
-      )}
     </div>
   )
 }

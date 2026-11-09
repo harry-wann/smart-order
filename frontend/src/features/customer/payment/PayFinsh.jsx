@@ -39,6 +39,21 @@ async function getPayment(no, signal) {
   return data
 }
 
+// 發起人放棄這筆待確認付款，讓同桌其他人付款；用付款當下那組權杖，後端才認得是本人
+async function releasePayment(no) {
+  const credentials = getPaymentCredentials(no)
+  if (!credentials?.sessionToken || !credentials?.guestToken) {
+    throw new Error('只有發起這筆付款的手機可以改由別人付款')
+  }
+  const { data } = await receiptClient.post(`/dining/payments/${encodeURIComponent(no)}/release`, null, {
+    headers: {
+      'X-Session-Token': credentials.sessionToken,
+      'X-Guest-Token': credentials.guestToken,
+    },
+  })
+  return data
+}
+
 function DetailRow({ label, value }) {
   return (
     <div className="flex items-center justify-between py-2">
@@ -82,6 +97,8 @@ export default function PayFinsh() {
   const [searchParams] = useSearchParams()
   const no = searchParams.get('no')
   const [pollGeneration, setPollGeneration] = useState(0)
+  const [releasing, setReleasing] = useState(false)
+  const [releaseError, setReleaseError] = useState('')
   const [pollState, setPollState] = useState({
     no: null,
     result: null,
@@ -148,6 +165,21 @@ export default function PayFinsh() {
       controller.abort()
     }
   }, [no, pollGeneration])
+
+  async function handleRelease() {
+    if (releasing) return
+    setReleasing(true)
+    setReleaseError('')
+    try {
+      await releasePayment(no)
+      // 不管結果是放棄、其實已付款或待櫃檯確認，重新查一次讓畫面顯示最新狀態
+      retryQuery()
+    } catch (err) {
+      setReleaseError(err.details?.[0]?.message ?? err.message ?? '操作失敗，請稍後再試或請櫃檯協助')
+    } finally {
+      setReleasing(false)
+    }
+  }
 
   function retryQuery() {
     setPollState((current) =>
@@ -222,16 +254,29 @@ export default function PayFinsh() {
                 text="F"
                 custimtext={
                   state.error
-                    ? `${state.error}。目前仍未收到付款的最終通知，請勿重新付款。`
-                    : '目前仍未收到付款的最終通知。請稍後再查詢；若已完成扣款，請持交易編號至櫃檯確認。'
+                    ? `${state.error}。目前仍未收到付款的最終通知。`
+                    : '目前仍未收到付款的最終通知。若你在綠界頁面沒有完成付款，可以重新付款，系統會先向綠界確認，不會重複扣款。'
                 }
               />
             </div>
           ) : (
             <p className="mt-3 type-body-sm text-ink-600">請不要關閉頁面，也不要重複付款</p>
           )}
+          {releaseError && <p className="mt-3 type-body-sm text-danger">{releaseError}</p>}
         </section>
-        <div className="fixed right-0 bottom-0 left-0 z-10 border-t border-line bg-surface px-page pt-3 pb-6 shadow-pop">
+        <div className="fixed right-0 bottom-0 left-0 z-10 flex flex-col gap-2 border-t border-line bg-surface px-page pt-3 pb-6 shadow-pop">
+          {(state?.timedOut || state?.error) && (
+            <>
+              <SOButton height="h-[52px]" text="重新付款" onClick={() => navigate('/order/checkout/payment')} />
+              <SOButton
+                variant="secondary"
+                height="h-[52px]"
+                text={releasing ? '處理中…' : '改由同桌其他人付款'}
+                disabled={releasing}
+                onClick={handleRelease}
+              />
+            </>
+          )}
           <SOButton
             variant="secondary"
             height="h-[52px]"
@@ -244,7 +289,7 @@ export default function PayFinsh() {
     )
   }
 
-  if (result.status === 'REQUIRES_REVIEW' || !['SUCCESS', 'FAILED'].includes(result.status)) {
+  if (result.status === 'REQUIRES_REVIEW' || !['SUCCESS', 'FAILED', 'SUPERSEDED'].includes(result.status)) {
     return (
       <div className="mx-auto flex min-h-screen w-full flex-col bg-paper px-page pt-12 pb-24 text-ink-900">
         <section className="flex flex-1 flex-col items-center text-center">
@@ -272,12 +317,14 @@ export default function PayFinsh() {
   }
 
   const ok = result.status === 'SUCCESS'
+  // SUPERSEDED：綠界確認這筆沒付成功，已改用新的交易編號
+  const superseded = result.status === 'SUPERSEDED'
 
   return (
     <div className="relative mx-auto flex min-h-screen w-full flex-col bg-paper text-ink-900">
       <div className="flex flex-1 flex-col items-center px-page pt-12 pb-24">
         <ResultIcon ok={ok} />
-        <h1 className="mt-section type-h1 text-ink-900">{ok ? '付款完成' : '付款失敗'}</h1>
+        <h1 className="mt-section type-h1 text-ink-900">{ok ? '付款完成' : superseded ? '付款未完成' : '付款失敗'}</h1>
         <p className="mt-2 type-display text-brand-600 tabular-nums">{money(result.amount)}</p>
 
         <section className="mt-section w-full rounded-card border border-line bg-surface p-card shadow-card">
@@ -298,7 +345,11 @@ export default function PayFinsh() {
               icon="triangle"
               col="danger"
               text="F"
-              custimtext="付款平台已回報這筆交易失敗。若不確定款項狀態，請先到櫃檯確認，再決定是否重新付款。"
+              custimtext={
+                superseded
+                  ? '這筆交易沒有完成付款，已經取消。同桌其他人現在可以付款，你也可以重新付款。'
+                  : '付款平台已回報這筆交易失敗。若不確定款項狀態，請先到櫃檯確認，再決定是否重新付款。'
+              }
             />
           </div>
         )}

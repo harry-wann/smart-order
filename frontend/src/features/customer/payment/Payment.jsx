@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router'
 import CustomerTopBar from '@/components/CustomerTopBar.tsx'
 import InfoBox from '@/components/InfoBox.tsx'
 import SOButton from '@/components/SOButton.tsx'
 import { isApiError } from '@/services/client/ApiError.ts'
 import { customerClient } from '@/services/client/customerClient.ts'
+import { API_BASE } from '@/services/client/createApiClient.ts'
 import { customerTokens } from '@/services/client/tokenStore.ts'
 import { useBill } from '@/services/api/checkout/checkoutApi.js'
 import { canSavePaymentCredentials, savePaymentCredentials } from './paymentCredentials.js'
@@ -30,7 +32,23 @@ function createPaymentForm(action, params) {
   return form
 }
 
+// 解開「到櫃檯結帳」的鎖。用 fetch keepalive：關分頁、換頁時請求也送得出去
+function releaseCounterHold(holdRef) {
+  const hold = holdRef.current
+  if (!hold) return
+  holdRef.current = null
+  fetch(`${API_BASE}/dining/payments/counter-hold`, {
+    method: 'DELETE',
+    keepalive: true,
+    headers: {
+      'X-Session-Token': hold.sessionToken,
+      'X-Guest-Token': hold.guestToken,
+    },
+  }).catch(() => {})
+}
+
 export default function Payment() {
+  const navigate = useNavigate()
   const billQuery = useBill()
   const { data: bill, sessionToken: billSessionToken } = billQuery
   const [paying, setPaying] = useState(false)
@@ -38,6 +56,10 @@ export default function Payment() {
   const [reconfirmSession, setReconfirmSession] = useState(null)
   const [unavailableSession, setUnavailableSession] = useState(null)
   const [billRefreshFailedSession, setBillRefreshFailedSession] = useState(null)
+  const [isCheckoutNoticeOpen, setCheckoutNoticeOpen] = useState(false)
+  const [counterBusy, setCounterBusy] = useState(false)
+  // 上鎖時用的那組權杖，解鎖要用同一組，後端才認得是本人
+  const counterHoldRef = useRef(null)
   const attemptIdRef = useRef(0)
   const attemptLockedRef = useRef(false)
   const needsReconfirm = Boolean(billSessionToken && reconfirmSession === billSessionToken)
@@ -52,6 +74,62 @@ export default function Payment() {
       attemptLockedRef.current = false
     }
   }, [])
+
+  useEffect(() => {
+    const release = () => releaseCounterHold(counterHoldRef)
+    window.addEventListener('pagehide', release)
+    return () => {
+      window.removeEventListener('pagehide', release)
+      release()
+    }
+  }, [])
+
+  // 「到櫃檯結帳」：先跟後端上鎖，成功才打開視窗；同桌有人正在付款或結帳就跟線上付款一樣擋下
+  async function handleCounter() {
+    if (counterBusy || paying || attemptLockedRef.current) return
+    const sessionToken = customerTokens.session.get()
+    const guestToken = customerTokens.guest.get()
+    if (!sessionToken || !guestToken) {
+      setError('同桌身分已失效，請重新掃碼加入後再結帳')
+      return
+    }
+
+    setCounterBusy(true)
+    setError('')
+    try {
+      const { data } = await customerClient.post('/dining/payments/counter-hold', null, {
+        customerAuth: [],
+        headers: {
+          'X-Session-Token': sessionToken,
+          'X-Guest-Token': guestToken,
+        },
+      })
+      // 自己上一筆線上付款向綠界查到已付款：不用到櫃檯，直接看結果
+      const resolvedNo = data?.resolvedTransactionNo
+      if (typeof resolvedNo === 'string' && resolvedNo) {
+        savePaymentCredentials(resolvedNo, sessionToken, guestToken)
+        navigate(`/order/checkout/finish?no=${encodeURIComponent(resolvedNo)}`, { replace: true })
+        return
+      }
+      counterHoldRef.current = { sessionToken, guestToken }
+      setCheckoutNoticeOpen(true)
+    } catch (err) {
+      if (isApiError(err, 'PAYMENT_IN_PROGRESS')) {
+        setError('同桌有人正在付款或結帳，請稍候再試')
+      } else if (isApiError(err, 'PAYMENT_QUERY_FAILED')) {
+        setError('暫時無法確認上一筆付款的狀態，請稍後再試，或請櫃檯協助')
+      } else {
+        setError(err.message ?? '操作失敗，請再試一次')
+      }
+    } finally {
+      setCounterBusy(false)
+    }
+  }
+
+  function closeCounterNotice() {
+    setCheckoutNoticeOpen(false)
+    releaseCounterHold(counterHoldRef)
+  }
 
   async function handleEcpay() {
     if (attemptLockedRef.current || !bill || !billSessionToken || paymentUnavailable) return
@@ -98,6 +176,15 @@ export default function Payment() {
         return
       }
 
+      // 上一筆交易向綠界查到已付款：不送新表單，直接去結果頁
+      const resolvedNo = data?.resolvedTransactionNo
+      if (typeof resolvedNo === 'string' && resolvedNo) {
+        savePaymentCredentials(resolvedNo, sessionToken, guestToken)
+        submitted = true
+        navigate(`/order/checkout/finish?no=${encodeURIComponent(resolvedNo)}`, { replace: true })
+        return
+      }
+
       const transactionNo = data?.params?.MerchantTradeNo
       if (typeof transactionNo !== 'string' || !transactionNo) {
         throw new Error('付款資料缺少交易編號，請到櫃檯確認付款狀態')
@@ -138,6 +225,10 @@ export default function Payment() {
         }
       } else if (isApiError(err, 'ECPAY_AMOUNT_UNSUPPORTED')) {
         setError('這筆帳單金額不符合線上付款條件，請至櫃檯付款')
+      } else if (isApiError(err, 'PAYMENT_IN_PROGRESS')) {
+        setError('同桌有人正在付款或結帳，請稍候。若對方線上付款失敗，請對方在付款結果頁按「改由同桌其他人付款」')
+      } else if (isApiError(err, 'PAYMENT_QUERY_FAILED')) {
+        setError('暫時無法確認上一筆付款的狀態，請稍後再試，或請櫃檯協助')
       } else if (isApiError(err, 'PAYMENT_UNAVAILABLE')) {
         setUnavailableSession(sessionToken)
         setError('線上付款目前無法使用，請至櫃檯付款')
@@ -232,6 +323,12 @@ export default function Payment() {
             }
             onClick={handleEcpay}
           />
+          <SOButton
+            height="h-[52px]"
+            disabled={counterBusy || paying}
+            text={counterBusy ? '確認中…' : '到櫃檯結帳'}
+            onClick={handleCounter}
+          />
           <p className="text-center type-body-sm text-ink-600">
             {paymentUnavailable ? '線上付款目前無法使用，請至櫃檯付款' : '要付現金，請直接到櫃檯結帳'}
           </p>
@@ -256,6 +353,38 @@ export default function Payment() {
       <div className="fixed right-0 bottom-0 left-0 z-10 border-t border-line bg-surface px-page py-4 text-center">
         <p className="type-caption text-ink-600">按下後請勿重複點擊，處理約 2 秒</p>
       </div>
+
+      {isCheckoutNoticeOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <button
+            type="button"
+            aria-label="關閉結帳提醒"
+            className="absolute inset-0 bg-ink-900/50"
+            onClick={closeCounterNotice}
+          />
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="checkout-notice-title"
+            className="relative w-full max-w-sm rounded-card border border-line bg-surface p-card shadow-pop"
+          >
+            <h2 id="checkout-notice-title" className="type-h3 text-ink-900">
+              結帳提醒
+            </h2>
+            <p className="mt-2 type-body-sm text-ink-600">
+              用餐完畢請到櫃檯結帳。
+            </p>
+            <div className="mt-6 flex justify-end">
+              <SOButton
+                type="button"
+                height="h-11"
+                text="知道了"
+                onClick={closeCounterNotice}
+              />
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   )
 }
