@@ -29,7 +29,8 @@ public class PaymentEntity {
     @Column(name = "amount")
     private BigDecimal amount;
 
-    // PENDING / SUCCESS / FAILED / REQUIRES_REVIEW / REFUNDED
+    // PENDING / SUCCESS / FAILED / SUPERSEDED / REQUIRES_REVIEW / REFUNDED
+    // SUPERSEDED：綠界查詢確認沒付成功，已由新的交易編號取代
     @Column(name = "status")
     private String status;
 
@@ -38,6 +39,10 @@ public class PaymentEntity {
 
     @Column(name = "transaction_no")
     private String transactionNo;
+
+    // 發起線上付款的同桌 guest；只有本人能作廢自己的待確認付款
+    @Column(name = "created_by_guest_id")
+    private Long createdByGuestId;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

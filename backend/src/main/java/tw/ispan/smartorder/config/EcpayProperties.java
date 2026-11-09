@@ -9,7 +9,8 @@ public record EcpayProperties(
 				String hashIv,
 				String actionUrl,
 				String returnUrl,
-				String clientBackUrl
+				String clientBackUrl,
+				String queryUrl
 ) {
     public boolean available() {
         return present(merchantId) && present(hashKey) && present(hashIv)

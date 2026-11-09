@@ -3,6 +3,7 @@ package tw.ispan.smartorder.controller;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,8 +13,10 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import tw.ispan.smartorder.dto.CounterHoldResponse;
 import tw.ispan.smartorder.dto.EcpayCheckoutResponse;
 import tw.ispan.smartorder.dto.EcpayCreateRequest;
+import tw.ispan.smartorder.dto.PaymentReleaseResponse;
 import tw.ispan.smartorder.dto.PaymentResultResponse;
 import tw.ispan.smartorder.common.exception.ApiException;
 import tw.ispan.smartorder.repository.DiningSessionGuestRepository;
@@ -38,11 +41,34 @@ public class PaymentController {
 
     @PostMapping("/dining/payments/ecpay")
     public EcpayCheckoutResponse createEcpay(@RequestAttribute("diningSessionId") long sessionId,
+            @RequestAttribute("diningGuestId") long guestId,
             @RequestBody(required = false) EcpayCreateRequest request) {
         if (request == null || request.expectedTotal() == null || request.expectedTotal().signum() < 0) {
             throw ApiException.badRequest("請提供有效的預期金額");
         }
-        return ecpayService.createCheckout(sessionId, request.expectedTotal());
+        return ecpayService.createCheckout(sessionId, guestId, request.expectedTotal());
+    }
+
+    // 「到櫃檯結帳」視窗打開時上鎖、關掉時解鎖；鎖著的期間同桌別人不能線上付款
+    @PostMapping("/dining/payments/counter-hold")
+    public CounterHoldResponse holdCounter(@RequestAttribute("diningSessionId") long sessionId,
+            @RequestAttribute("diningGuestId") long guestId) {
+        return ecpayService.holdCounter(sessionId, guestId);
+    }
+
+    @DeleteMapping("/dining/payments/counter-hold")
+    public ResponseEntity<Void> releaseCounter(@RequestAttribute("diningSessionId") long sessionId,
+            @RequestAttribute("diningGuestId") long guestId) {
+        ecpayService.releaseCounter(sessionId, guestId);
+        return ResponseEntity.noContent().build();
+    }
+
+    // 發起人放棄自己的待確認付款，同桌其他人就能付款；身分由 SessionTokenFilter 驗過
+    @PostMapping("/dining/payments/{transactionNo}/release")
+    public PaymentReleaseResponse releaseEcpay(@RequestAttribute("diningSessionId") long sessionId,
+            @RequestAttribute("diningGuestId") long guestId,
+            @PathVariable String transactionNo) {
+        return ecpayService.releasePending(sessionId, guestId, transactionNo);
     }
 
     @PostMapping("/payments/ecpay/notify")
